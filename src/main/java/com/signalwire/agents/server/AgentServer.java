@@ -15,6 +15,8 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +37,7 @@ public class AgentServer {
     private final Map<String, AgentBase> agents = new ConcurrentHashMap<>();
     private final Map<String, String> sipRoutes = new ConcurrentHashMap<>();
     private String staticFilesDir;
+    private String staticFilesRoute;
     private HttpServer httpServer;
 
     public AgentServer() {
@@ -117,10 +120,23 @@ public class AgentServer {
     }
 
     /**
-     * Set directory for serving static files.
+     * Set directory for serving static files at /static route.
      */
     public AgentServer setStaticFilesDir(String dir) {
         this.staticFilesDir = dir;
+        this.staticFilesRoute = "/static";
+        return this;
+    }
+
+    /**
+     * Serve static files from a directory at a specific route.
+     *
+     * @param directory Filesystem path to the directory containing static files
+     * @param route     URL route prefix (e.g., "/static" or "/assets")
+     */
+    public AgentServer serveStaticFiles(String directory, String route) {
+        this.staticFilesDir = directory;
+        this.staticFilesRoute = normalizeRoute(route);
         return this;
     }
 
@@ -175,6 +191,12 @@ public class AgentServer {
                 log.error("Ready handler error", e);
             }
         });
+
+        // Static file handler
+        if (staticFilesDir != null && staticFilesRoute != null) {
+            httpServer.createContext(staticFilesRoute, this::handleStaticFile);
+            log.info("Serving static files from '%s' at '%s'", staticFilesDir, staticFilesRoute);
+        }
 
         // Main dispatch handler - catches all routes
         httpServer.createContext("/", this::handleRequest);
@@ -417,6 +439,73 @@ public class AgentServer {
         if (!route.startsWith("/")) route = "/" + route;
         if (route.endsWith("/") && route.length() > 1) route = route.substring(0, route.length() - 1);
         return route;
+    }
+
+    private void handleStaticFile(HttpExchange exchange) {
+        try {
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                exchange.close();
+                return;
+            }
+
+            String requestPath = exchange.getRequestURI().getPath();
+            // Strip the route prefix
+            String relativePath = requestPath.substring(staticFilesRoute.length());
+            if (relativePath.isEmpty() || "/".equals(relativePath)) {
+                relativePath = "/index.html";
+            }
+
+            // Prevent directory traversal
+            Path basePath = Path.of(staticFilesDir).toAbsolutePath().normalize();
+            Path filePath = basePath.resolve(relativePath.substring(1)).normalize();
+            if (!filePath.startsWith(basePath)) {
+                exchange.sendResponseHeaders(403, -1);
+                exchange.close();
+                return;
+            }
+
+            if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
+                exchange.sendResponseHeaders(404, -1);
+                exchange.close();
+                return;
+            }
+
+            // Determine content type
+            String contentType = guessContentType(filePath.toString());
+            byte[] data = Files.readAllBytes(filePath);
+
+            exchange.getResponseHeaders().set("Content-Type", contentType);
+            exchange.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+            exchange.sendResponseHeaders(200, data.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(data);
+            }
+        } catch (Exception e) {
+            log.error("Static file handler error", e);
+            try {
+                exchange.sendResponseHeaders(500, -1);
+                exchange.close();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private String guessContentType(String path) {
+        String lower = path.toLowerCase();
+        if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+        if (lower.endsWith(".css")) return "text/css";
+        if (lower.endsWith(".js")) return "application/javascript";
+        if (lower.endsWith(".json")) return "application/json";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".gif")) return "image/gif";
+        if (lower.endsWith(".svg")) return "image/svg+xml";
+        if (lower.endsWith(".ico")) return "image/x-icon";
+        if (lower.endsWith(".txt")) return "text/plain";
+        if (lower.endsWith(".xml")) return "application/xml";
+        if (lower.endsWith(".woff")) return "font/woff";
+        if (lower.endsWith(".woff2")) return "font/woff2";
+        return "application/octet-stream";
     }
 
     /**

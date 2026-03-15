@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# swaig-test -- CLI tool for testing SWAIG functions against a running agent.
+#
+# Usage:
+#   bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
+#   bin/swaig-test --url http://user:pass@localhost:3000 --dump-swml
+#   bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --param key=value
+#   bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --raw
+#   bin/swaig-test --url http://user:pass@localhost:3000 --verbose --list-tools
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Resolve JAVA_HOME
+if [ -z "${JAVA_HOME:-}" ]; then
+    if [ -d /home/devuser/jdk-21 ]; then
+        export JAVA_HOME=/home/devuser/jdk-21
+    fi
+fi
+
+JAVAC="${JAVA_HOME:-}/bin/javac"
+JAVA="${JAVA_HOME:-}/bin/java"
+
+if [ ! -x "$JAVA" ]; then
+    JAVA=java
+    JAVAC=javac
+fi
+
+CLI_SRC="$PROJECT_DIR/src/main/java/com/signalwire/agents/cli/SwaigTest.java"
+CLI_CLASS_DIR="$PROJECT_DIR/build/cli-classes"
+
+# Compile if needed (recompile if source is newer than class)
+CLI_CLASS="$CLI_CLASS_DIR/com/signalwire/agents/cli/SwaigTest.class"
+if [ ! -f "$CLI_CLASS" ] || [ "$CLI_SRC" -nt "$CLI_CLASS" ]; then
+    mkdir -p "$CLI_CLASS_DIR"
+    "$JAVAC" -d "$CLI_CLASS_DIR" "$CLI_SRC" 2>/dev/null
+fi
+
+exec "$JAVA" -cp "$CLI_CLASS_DIR" com.signalwire.agents.cli.SwaigTest "$@"

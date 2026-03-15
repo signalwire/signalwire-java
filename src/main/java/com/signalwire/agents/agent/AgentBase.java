@@ -608,6 +608,47 @@ public class AgentBase {
     public boolean isSipRoutingEnabled() { return sipRoutingEnabled; }
     public Set<String> getSipUsernames() { return Collections.unmodifiableSet(sipUsernames); }
 
+    /**
+     * Extract the username portion from a SIP URI.
+     * <p>
+     * Handles formats:
+     * <ul>
+     *   <li>{@code sip:user@host} -> {@code user}</li>
+     *   <li>{@code sip:user@host:port} -> {@code user}</li>
+     *   <li>{@code user@host} -> {@code user}</li>
+     *   <li>{@code +15551234567} -> {@code +15551234567} (returned as-is)</li>
+     * </ul>
+     *
+     * @param sipUri The SIP URI or phone number
+     * @return The extracted username, or the original string if no @ is found
+     */
+    public static String extractSipUsername(String sipUri) {
+        if (sipUri == null || sipUri.isEmpty()) {
+            return "";
+        }
+        // Strip sip: or sips: prefix
+        String work = sipUri;
+        if (work.startsWith("sip:") || work.startsWith("SIP:")) {
+            work = work.substring(4);
+        } else if (work.startsWith("sips:") || work.startsWith("SIPS:")) {
+            work = work.substring(5);
+        }
+        // Strip angle brackets if present: <sip:user@host> -> user@host
+        if (work.startsWith("<")) {
+            work = work.substring(1);
+        }
+        if (work.endsWith(">")) {
+            work = work.substring(0, work.length() - 1);
+        }
+        // Extract username before @
+        int atIdx = work.indexOf('@');
+        if (atIdx >= 0) {
+            return work.substring(0, atIdx);
+        }
+        // No @ found -- return as-is (could be a phone number)
+        return work;
+    }
+
     // ============================================================
     // Lifecycle Callbacks
     // ============================================================

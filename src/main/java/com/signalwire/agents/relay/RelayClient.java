@@ -418,7 +418,7 @@ public class RelayClient {
         pendingRequests.put(requestId, future);
 
         String json = gson.toJson(request);
-        log.debug("Authenticating: %s", json);
+        log.debug("Authenticating with project: %s", project);
         webSocket.send(json);
 
         // Handle auth response asynchronously
