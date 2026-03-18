@@ -1,5 +1,7 @@
 plugins {
     id 'java-library'
+    id 'maven-publish'
+    id 'signing'
 }
 
 group = 'com.signalwire'
@@ -35,4 +37,66 @@ jar {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',
                    'Implementation-Version': version
     }
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'SignalWire AI Agents SDK'
+                description = 'Java SDK for building, deploying, and managing SignalWire AI agents as microservices'
+                url = 'https://github.com/signalwire/signalwire-agents-java'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'signalwire'
+                        name = 'SignalWire'
+                        email = 'open.source@signalwire.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/signalwire/signalwire-agents-java.git'
+                    developerConnection = 'scm:git:ssh://github.com/signalwire/signalwire-agents-java.git'
+                    url = 'https://github.com/signalwire/signalwire-agents-java'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'MavenCentral'
+            url = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = System.getenv('MAVEN_USERNAME') ?: ''
+                password = System.getenv('MAVEN_PASSWORD') ?: ''
+            }
+        }
+    }
+}
+
+signing {
+    def signingKey = System.getenv('SIGNING_KEY')
+    def signingPassword = System.getenv('SIGNING_PASSWORD')
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.mavenJava
+}
+
+tasks.withType(Sign).configureEach {
+    onlyIf { System.getenv('SIGNING_KEY') != null }
 }
