@@ -11,6 +11,7 @@ This directory contains example agents demonstrating the key features of the Jav
 | [SimpleAgent.java](SimpleAgent.java) | Minimal agent with one tool and POM-based prompts |
 | [SimpleStatic.java](SimpleStatic.java) | Static agent with voice, params, hints, and global data |
 | [SimpleDynamicAgent.java](SimpleDynamicAgent.java) | Agent with per-request dynamic configuration |
+| [SimpleDynamicEnhanced.java](SimpleDynamicEnhanced.java) | Enhanced dynamic config: VIP, department, customer ID, language |
 | [ComprehensiveDynamic.java](ComprehensiveDynamic.java) | Multi-tenant dynamic config (tier, industry, A/B testing) |
 | [DeclarativeAgent.java](DeclarativeAgent.java) | Declarative prompt sections with tools and post-prompt |
 | [CustomPath.java](CustomPath.java) | Agent on a non-root path (/chat) with query-param personalization |
@@ -36,9 +37,14 @@ This directory contains example agents demonstrating the key features of the Jav
 | Example | Description |
 |---------|-------------|
 | [SkillsDemo.java](SkillsDemo.java) | Adding built-in skills (datetime, math, web_search, joke) |
+| [JokeSkillDemo.java](JokeSkillDemo.java) | Joke skill via the modular skills system with DataMap |
 | [WebSearchAgent.java](WebSearchAgent.java) | Web search skill with Google Custom Search |
+| [WebSearchMultiInstance.java](WebSearchMultiInstance.java) | Multiple web search instances (general, news, quick) |
 | [WikipediaAgent.java](WikipediaAgent.java) | Wikipedia search skill for factual lookups |
 | [DatasphereAgent.java](DatasphereAgent.java) | Multiple DataSphere skill instances for separate knowledge bases |
+| [DatasphereMultiInstance.java](DatasphereMultiInstance.java) | DataSphere multi-instance with custom tool names |
+| [DatasphereServerlessEnv.java](DatasphereServerlessEnv.java) | DataSphere serverless from environment variables |
+| [DatasphereWebhookEnv.java](DatasphereWebhookEnv.java) | Webhook-based DataSphere from environment variables |
 | [McpGateway.java](McpGateway.java) | MCP Gateway skill for Model Context Protocol tools |
 
 ### SWAIG Features and FunctionResult Actions
@@ -63,6 +69,7 @@ This directory contains example agents demonstrating the key features of the Jav
 
 | Example | Description |
 |---------|-------------|
+| [DynamicInfoGatherer.java](DynamicInfoGatherer.java) | Dynamic InfoGatherer with callback-based question selection |
 | [PrefabInfoGatherer.java](PrefabInfoGatherer.java) | Pre-built info-gathering agent with sequential questions |
 | [PrefabSurvey.java](PrefabSurvey.java) | Pre-built survey agent with typed questions |
 | [ConciergeExample.java](ConciergeExample.java) | Pre-built concierge agent for venues with amenities |
@@ -73,6 +80,7 @@ This directory contains example agents demonstrating the key features of the Jav
 
 | Example | Description |
 |---------|-------------|
+| [AutoVivifiedExample.java](AutoVivifiedExample.java) | Auto-vivified verb methods on SWMLService |
 | [SwmlService.java](SwmlService.java) | Raw SWML documents: voicemail, IVR, transfer, recording |
 | [DynamicSwmlService.java](DynamicSwmlService.java) | Dynamic SWML generation based on request data |
 | [SwmlServiceRouting.java](SwmlServiceRouting.java) | Multiple SWML sections with path-based routing |
