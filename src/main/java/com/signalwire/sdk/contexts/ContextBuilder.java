@@ -9,20 +9,81 @@ package com.signalwire.sdk.contexts;
 import java.util.*;
 
 /**
- * Main builder class for creating contexts and steps.
- * <p>
- * Provides validation for the contexts/steps hierarchy and serialization to SWML format.
+ * Builder for multi-step, multi-context AI agent workflows.
+ *
+ * <p>A ContextBuilder owns one or more {@link Context}s; each context owns an
+ * ordered list of {@link Step}s. Only one context and one step is active at a
+ * time. Per chat turn, the runtime injects the current step's instructions as
+ * a system message, then asks the LLM for a response.
+ *
+ * <h2>Native tools auto-injected by the runtime</h2>
+ *
+ * <p>When a step (or its enclosing context) declares valid_steps or
+ * valid_contexts, the runtime auto-injects two native tools so the model can
+ * navigate the flow:
+ * <ul>
+ *   <li>{@code next_step(step: enum)}        — present when valid_steps is set</li>
+ *   <li>{@code change_context(context: enum)} — present when valid_contexts is set</li>
+ * </ul>
+ *
+ * <p>A third native tool — {@code gather_submit} — is injected during
+ * gather_info questioning. These three names are <b>reserved</b>:
+ * {@link #validate()} rejects any agent that defines a SWAIG tool with one of
+ * these names. See {@link #RESERVED_NATIVE_TOOL_NAMES}.
+ *
+ * <h2>Function whitelisting (Step.setFunctions)</h2>
+ *
+ * <p>Each step may declare a functions whitelist. The whitelist is applied
+ * in-memory at the start of each LLM turn. CRITICALLY: if a step does NOT
+ * declare a functions field, it INHERITS the previous step's active set.
+ * See {@link Step#setFunctions(Object)} for details and examples.
  */
 public class ContextBuilder {
 
     static final int MAX_CONTEXTS = 50;
 
+    /**
+     * Reserved tool names auto-injected by the runtime when contexts/steps
+     * are in use. User-defined SWAIG tools must not collide with these names.
+     *
+     * <ul>
+     *   <li>{@code next_step} / {@code change_context} are injected when
+     *       valid_steps or valid_contexts is set so the model can navigate
+     *       the flow.</li>
+     *   <li>{@code gather_submit} is injected while a step's gather_info is
+     *       collecting answers.</li>
+     * </ul>
+     */
+    public static final Set<String> RESERVED_NATIVE_TOOL_NAMES =
+            Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(
+                    "next_step", "change_context", "gather_submit")));
+
     private final Map<String, Context> contexts;
     private final List<String> contextOrder;
+    /**
+     * Optional supplier returning the names of registered SWAIG tools, used
+     * by {@link #validate()} to detect collisions with reserved native names.
+     * Wired by {@code AgentBase.defineContexts()}.
+     */
+    private java.util.function.Supplier<Collection<String>> toolNameSupplier;
 
     public ContextBuilder() {
         this.contexts = new LinkedHashMap<>();
         this.contextOrder = new ArrayList<>();
+    }
+
+    /**
+     * Attach a supplier that returns registered SWAIG tool names so
+     * {@link #validate()} can check for collisions with
+     * {@link #RESERVED_NATIVE_TOOL_NAMES}. Called internally by
+     * {@code AgentBase.defineContexts()}.
+     *
+     * @param supplier returns the current set of registered tool names.
+     * @return this builder for chaining.
+     */
+    public ContextBuilder attachToolNameSupplier(java.util.function.Supplier<Collection<String>> supplier) {
+        this.toolNameSupplier = supplier;
+        return this;
     }
 
     /**
@@ -162,15 +223,54 @@ public class ContextBuilder {
                             if (stepIdx >= context.getStepOrder().size() - 1) {
                                 throw new IllegalStateException(
                                         "Step '" + stepName + "' in context '" + contextName
-                                                + "' has gather_info completion_action='next_step' but it is the last step");
+                                                + "' has gather_info completion_action='next_step' "
+                                                + "but it is the last step in the context. Either "
+                                                + "(1) add another step after '" + stepName + "', "
+                                                + "(2) set completion_action to the name of an "
+                                                + "existing step in this context to jump to it, or "
+                                                + "(3) set completion_action=null (default) to stay "
+                                                + "in '" + stepName + "' after gathering completes.");
                             }
                         } else if (!context.getSteps().containsKey(action)) {
+                            List<String> available = new ArrayList<>(context.getSteps().keySet());
+                            Collections.sort(available);
                             throw new IllegalStateException(
                                     "Step '" + stepName + "' in context '" + contextName
                                             + "' has gather_info completion_action='" + action
-                                            + "' but step '" + action + "' does not exist");
+                                            + "' but '" + action + "' is not a step in this context. "
+                                            + "Valid options: 'next_step' (advance to the next "
+                                            + "sequential step), null (stay in the current step), "
+                                            + "or one of " + available + ".");
                         }
                     }
+                }
+            }
+        }
+
+        // Validate that user-defined tools do not collide with reserved native
+        // tool names. The runtime auto-injects next_step / change_context /
+        // gather_submit when contexts/steps are present, so user tools sharing
+        // those names would never be called.
+        if (toolNameSupplier != null) {
+            Collection<String> registered = toolNameSupplier.get();
+            if (registered != null) {
+                List<String> colliding = new ArrayList<>();
+                for (String name : registered) {
+                    if (RESERVED_NATIVE_TOOL_NAMES.contains(name)) {
+                        colliding.add(name);
+                    }
+                }
+                if (!colliding.isEmpty()) {
+                    Collections.sort(colliding);
+                    List<String> reserved = new ArrayList<>(RESERVED_NATIVE_TOOL_NAMES);
+                    Collections.sort(reserved);
+                    throw new IllegalStateException(
+                            "Tool name(s) " + colliding + " collide with reserved "
+                                    + "native tools auto-injected by contexts/steps. "
+                                    + "The names " + reserved + " are reserved and "
+                                    + "cannot be used for user-defined SWAIG tools "
+                                    + "when contexts/steps are in use. Rename your "
+                                    + "tool(s) to avoid the collision.");
                 }
             }
         }

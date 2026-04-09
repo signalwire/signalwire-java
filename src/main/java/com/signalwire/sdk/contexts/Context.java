@@ -136,6 +136,28 @@ public class Context {
         return this;
     }
 
+    /**
+     * Mark this context as isolated — entering it wipes conversation history.
+     *
+     * <p>When {@code isolated=true} and the context is entered via
+     * change_context, the runtime wipes the conversation array. The model
+     * starts fresh with only the new context's system_prompt + step
+     * instructions, with no memory of prior turns.
+     *
+     * <p><b>EXCEPTION — reset overrides the wipe:</b> If the context also has
+     * a reset configuration (via {@link #setConsolidate(boolean)} or
+     * {@link #setFullReset(boolean)}), the wipe is skipped in favor of the
+     * reset behavior. Use reset with consolidate=true to summarize prior
+     * history into a single message instead of dropping it entirely.
+     *
+     * <p>Use cases: switching to a sensitive billing flow that should not see
+     * prior small-talk; handing off to a different agent persona; resetting
+     * after a long off-topic detour.
+     *
+     * @param isolated true to wipe conversation history on context entry
+     *     (subject to the reset exception above).
+     * @return this context for chaining.
+     */
     public Context setIsolated(boolean isolated) {
         this.isolated = isolated;
         return this;

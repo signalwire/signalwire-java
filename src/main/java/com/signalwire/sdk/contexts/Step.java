@@ -93,7 +93,39 @@ public class Step {
     }
 
     /**
-     * Set which functions are available. "none" to disable all, or a List of function names.
+     * Set which non-internal functions are callable while this step is active.
+     *
+     * <p><b>IMPORTANT — inheritance behavior:</b> If you do NOT call this method,
+     * the step inherits whichever function set was active on the previous step
+     * (or the previous context's last step). The server-side runtime only
+     * resets the active set when a step explicitly declares its {@code functions}
+     * field. This is the most common source of bugs in multi-step agents:
+     * forgetting {@code setFunctions()} on a later step lets the previous step's
+     * tools leak through. Best practice is to call {@code setFunctions()}
+     * explicitly on every step that should differ from the previous one.
+     *
+     * <p>Keep the per-step active set small: LLM tool selection accuracy
+     * degrades noticeably past ~7-8 simultaneously-active tools per call.
+     * Use per-step whitelisting to partition large tool collections.
+     *
+     * <p>Accepts:
+     * <ul>
+     *   <li>{@code List<String>} — whitelist of function names allowed in this
+     *       step. Functions not in the list become inactive.</li>
+     *   <li>{@code List.of()} (empty list) — explicit disable-all.</li>
+     *   <li>The string {@code "none"} — synonym for an empty list.</li>
+     * </ul>
+     *
+     * <p>Internal functions (e.g. {@code gather_submit}, hangup hook) are
+     * ALWAYS protected and cannot be deactivated by this whitelist. The native
+     * navigation tools {@code next_step} and {@code change_context} are
+     * injected automatically when {@code setValidSteps}/{@code setValidContexts}
+     * is used; they are not affected by this list and do not need to appear in
+     * it.
+     *
+     * @param functions a {@code List<String>} whitelist, an empty list, or
+     *     the string {@code "none"}.
+     * @return this step for chaining.
      */
     public Step setFunctions(Object functions) {
         this.functions = functions;
@@ -110,6 +142,22 @@ public class Step {
         return this;
     }
 
+    /**
+     * Mark this step as terminal for the step flow.
+     *
+     * <p><b>IMPORTANT:</b> {@code end=true} does NOT end the conversation or
+     * hang up the call. It exits step mode entirely after this step executes
+     * — clearing the steps list, current step index, valid_steps, and
+     * valid_contexts. The agent keeps running, but operates only under the
+     * base system prompt and the context-level prompt; no more step
+     * instructions are injected and no more {@code next_step} tool is offered.
+     *
+     * <p>To actually end the call, call a hangup tool or define a
+     * hangup hook.
+     *
+     * @param end true to exit step mode after this step.
+     * @return this step for chaining.
+     */
     public Step setEnd(boolean end) {
         this.end = end;
         return this;
@@ -135,7 +183,25 @@ public class Step {
 
     /**
      * Add a question to this step's gather_info configuration.
-     * setGatherInfo() must be called first.
+     * {@link #setGatherInfo(String, String, String)} must be called first.
+     *
+     * <p><b>IMPORTANT — gather mode locks function access:</b> While the model
+     * is asking gather questions, the runtime forcibly deactivates ALL of the
+     * step's other functions. The only callable tools during a gather
+     * question are:
+     * <ul>
+     *   <li>{@code gather_submit} (the native answer-submission tool)</li>
+     *   <li>Whatever names you pass in this question's {@code functions}
+     *       argument</li>
+     * </ul>
+     *
+     * <p>{@code next_step} and {@code change_context} are also filtered out —
+     * the model cannot navigate away until the gather completes. This is by
+     * design: it forces a tight ask → submit → next-question loop.
+     *
+     * <p>If a question needs to call out to a tool (e.g. validate an email,
+     * geocode a ZIP), list that tool name in this question's {@code functions}
+     * argument. Functions listed here are active ONLY for this question.
      */
     public Step addGatherQuestion(String key, String question, String type,
                                   boolean confirm, String prompt, List<String> functions) {

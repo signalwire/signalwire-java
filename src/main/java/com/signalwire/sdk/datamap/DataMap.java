@@ -45,7 +45,25 @@ public class DataMap {
     }
 
     /**
-     * Set the function description/purpose.
+     * Set the LLM-facing tool description — this is PROMPT ENGINEERING,
+     * not developer documentation.
+     *
+     * <p>The description string is rendered into the OpenAI tool schema
+     * {@code description} field on every LLM turn. The model reads it to
+     * decide WHEN to call this tool. A vague {@code purpose()} is the #1
+     * cause of "the model has the right tool but doesn't call it" failures
+     * with data-map tools.
+     *
+     * <h3>Bad vs good</h3>
+     * <pre>{@code
+     * BAD : .purpose("weather api")
+     * GOOD: .purpose("Get the current weather conditions and forecast "
+     *              + "for a specific city. Use this whenever the user "
+     *              + "asks about weather, temperature, rain, or similar "
+     *              + "conditions in a named location.")
+     * }</pre>
+     *
+     * @param description prompt-engineering description of when to call this tool.
      */
     public DataMap purpose(String description) {
         this.purpose = description;
@@ -53,14 +71,33 @@ public class DataMap {
     }
 
     /**
-     * Alias for purpose().
+     * Alias for {@link #purpose(String)}; sets the LLM-facing tool
+     * description. This string is read by the model to decide WHEN to
+     * call this tool. See {@link #purpose(String)} for bad-vs-good
+     * examples.
      */
     public DataMap description(String description) {
         return purpose(description);
     }
 
     /**
-     * Add a function parameter.
+     * Add a parameter to this data-map tool — the {@code description} is
+     * LLM-FACING.
+     *
+     * <p>Each parameter description is rendered into the OpenAI tool schema
+     * under {@code parameters.properties.<name>.description} and sent to
+     * the model. The model uses it to decide HOW to fill in the argument
+     * from user speech. It is prompt engineering, not developer FYI.
+     *
+     * <h3>Bad vs good</h3>
+     * <pre>{@code
+     * BAD : .parameter("city", "string", "the city", true, null)
+     * GOOD: .parameter("city", "string",
+     *           "The name of the city to get weather for, e.g. "
+     *           + "\"San Francisco\". Ask the user if they did not "
+     *           + "provide one. Include the state or country if the "
+     *           + "city name is ambiguous.", true, null)
+     * }</pre>
      */
     public DataMap parameter(String name, String paramType, String description,
                              boolean required, List<String> enumValues) {
