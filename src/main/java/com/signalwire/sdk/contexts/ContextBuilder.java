@@ -87,6 +87,19 @@ public class ContextBuilder {
     }
 
     /**
+     * Remove all contexts, returning the builder to its initial state.
+     * Use this in a dynamic config callback when you need to rebuild
+     * contexts from scratch for a specific request.
+     *
+     * @return this builder for chaining.
+     */
+    public ContextBuilder reset() {
+        this.contexts.clear();
+        this.contextOrder.clear();
+        return this;
+    }
+
+    /**
      * Add a new context.
      */
     public Context addContext(String name) {
@@ -137,6 +150,20 @@ public class ContextBuilder {
             Context context = entry.getValue();
             if (context.getSteps().isEmpty()) {
                 throw new IllegalStateException("Context '" + contextName + "' must have at least one step");
+            }
+        }
+
+        // Validate initial_step references a real step in the context
+        for (var entry : contexts.entrySet()) {
+            String contextName = entry.getKey();
+            Context context = entry.getValue();
+            String initialStep = context.getInitialStep();
+            if (initialStep != null && !context.getSteps().containsKey(initialStep)) {
+                List<String> available = new ArrayList<>(context.getSteps().keySet());
+                Collections.sort(available);
+                throw new IllegalStateException(
+                        "Context '" + contextName + "' has initial_step='" + initialStep
+                                + "' but that step does not exist. Available steps: " + available);
             }
         }
 

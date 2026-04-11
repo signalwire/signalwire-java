@@ -22,6 +22,7 @@ public class Context {
     private final List<String> stepOrder;
     private List<String> validContexts;
     private List<String> validSteps;
+    private String initialStep;
 
     // Context entry parameters
     private String postPrompt;
@@ -99,6 +100,25 @@ public class Context {
         stepOrder.remove(stepName);
         stepOrder.add(position, stepName);
         return this;
+    }
+
+    /**
+     * Set which step the context starts on when entered.
+     *
+     * <p>By default, a context starts on its first step (index 0). Use this
+     * to skip a preamble step on re-entry via {@code change_context}.
+     *
+     * @param stepName name of the step to start on (must exist in this context).
+     * @return this context for chaining.
+     */
+    public Context setInitialStep(String stepName) {
+        this.initialStep = stepName;
+        return this;
+    }
+
+    // Package-private accessor for validation
+    String getInitialStep() {
+        return initialStep;
     }
 
     public Context setValidContexts(List<String> contexts) {
@@ -252,6 +272,7 @@ public class Context {
 
         if (validContexts != null) map.put("valid_contexts", validContexts);
         if (validSteps != null) map.put("valid_steps", validSteps);
+        if (initialStep != null) map.put("initial_step", initialStep);
         if (postPrompt != null) map.put("post_prompt", postPrompt);
         if (systemPrompt != null) map.put("system_prompt", systemPrompt);
         if (consolidate) map.put("consolidate", true);

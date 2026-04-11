@@ -741,6 +741,21 @@ public class AgentBase {
         return this.contextBuilder;
     }
 
+    /**
+     * Remove all contexts, returning the agent to a no-contexts state.
+     * This is a convenience wrapper around {@code defineContexts().reset()}.
+     * Use it in a dynamic config callback when you need to rebuild
+     * contexts from scratch for a specific request.
+     *
+     * @return this agent for chaining.
+     */
+    public AgentBase resetContexts() {
+        if (this.contextBuilder != null) {
+            this.contextBuilder.reset();
+        }
+        return this;
+    }
+
     // ============================================================
     // Skills
     // ============================================================
