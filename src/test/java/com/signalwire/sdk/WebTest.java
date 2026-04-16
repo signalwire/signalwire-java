@@ -153,6 +153,59 @@ class WebTest {
         assertTrue(url.contains("/myagent/swaig"));
     }
 
+    // ======== Route preservation invariant (Lambda + proxy) ========
+
+    /**
+     * Regression test mirroring the bug fixed in Python and TypeScript
+     * SDKs: when a non-root route is combined with a proxy base URL
+     * (such as a Lambda Function URL), the rendered webhook URL must
+     * include the agent's route before {@code /swaig}. The proxy base
+     * must NOT be used bare.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void testRoutePreservedWithProxyBase() {
+        AgentBase routeAgent = AgentBase.builder()
+                .name("routed")
+                .route("/my-agent")
+                .authUser("u")
+                .authPassword("p")
+                .build();
+        routeAgent.setPromptText("Test");
+        routeAgent.manualSetProxyUrl("https://xyz.lambda-url.us-east-1.on.aws");
+        routeAgent.defineTool("t", "d", Map.of(), (a, r) -> new FunctionResult("ok"));
+
+        // renderSwml is passed the base URL that the HTTP server / Lambda
+        // adapter would have resolved — simulate that here.
+        Map<String, Object> swml = routeAgent.renderSwml(
+                "https://xyz.lambda-url.us-east-1.on.aws");
+        Map<String, Object> ai = extractAi(swml);
+        Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
+        List<Map<String, Object>> fns = (List<Map<String, Object>>) swaig.get("functions");
+        String url = (String) fns.get(0).get("web_hook_url");
+        assertEquals("https://xyz.lambda-url.us-east-1.on.aws/my-agent/swaig", url);
+        assertFalse(url.endsWith(".on.aws/swaig"),
+                "BUG REGRESSION: webhook URL lost the agent's route: " + url);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testRoutePreservedInPostPromptUrl() {
+        AgentBase routeAgent = AgentBase.builder()
+                .name("routed")
+                .route("/my-agent")
+                .authUser("u")
+                .authPassword("p")
+                .build();
+        routeAgent.setPromptText("Test");
+        routeAgent.setPostPrompt("Summarise");
+        Map<String, Object> swml = routeAgent.renderSwml(
+                "https://xyz.lambda-url.us-east-1.on.aws");
+        Map<String, Object> ai = extractAi(swml);
+        assertEquals("https://xyz.lambda-url.us-east-1.on.aws/my-agent/post_prompt",
+                ai.get("post_prompt_url"));
+    }
+
     // ======== Method chaining ========
 
     @Test

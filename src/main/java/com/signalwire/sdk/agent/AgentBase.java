@@ -1075,6 +1075,33 @@ public class AgentBase {
     public int getPort() { return port; }
     public String getAuthUser() { return authUser; }
     public String getAuthPassword() { return authPassword; }
+
+    /**
+     * @return the dynamic config callback, or {@code null} if none set.
+     *     Exposed primarily so alternative transports (e.g. the Lambda
+     *     adapter) can invoke it outside the HTTP server path.
+     */
+    public DynamicConfigCallback getDynamicConfigCallback() {
+        return dynamicConfigCallback;
+    }
+
+    /**
+     * @return the post-prompt summary callback, or {@code null}.
+     */
+    public BiConsumer<Map<String, Object>, Map<String, Object>> getOnSummaryCallback() {
+        return onSummaryCallback;
+    }
+
+    /**
+     * Return the agent's route normalised to an empty string for the
+     * root route or {@code "/<path>"} otherwise. Exposed so non-HTTP
+     * transports can construct paths correctly.
+     *
+     * @return normalised route prefix.
+     */
+    public String getNormalisedRoute() {
+        return normalizeRoute();
+    }
     public SkillManager getSkillManager() { return skillManager; }
 
     // ============================================================
@@ -1429,6 +1456,14 @@ public class AgentBase {
     private String detectBaseUrl(HttpExchange exchange) {
         if (proxyUrlBase != null) return embedCredentials(proxyUrlBase);
 
+        // Try environment-derived bases (Lambda, etc.) before falling
+        // back to request-derived ones. This covers the case where an
+        // API Gateway / Function URL is fronting the Java HTTP server
+        // via a container: requests come through with the public origin,
+        // but X-Forwarded headers may not be set.
+        String envBase = detectServerlessBaseUrl();
+        if (envBase != null) return embedCredentials(envBase);
+
         var headers = exchange.getRequestHeaders();
 
         // Check X-Forwarded headers
@@ -1445,6 +1480,34 @@ public class AgentBase {
         // Fall back to scheme://host:port with auth credentials in URL
         String scheme = "http";
         return scheme + "://" + authUser + ":" + authPassword + "@" + host + ":" + port;
+    }
+
+    /**
+     * Resolve a base URL from environment variables alone (proxy or
+     * serverless platform). Returns {@code null} if no suitable env
+     * vars are set.
+     *
+     * <p>This is used by both the HTTP server path (when no proxy is
+     * manually set) and by non-HTTP transports such as the Lambda
+     * adapter, so they agree on the origin to use for webhook URLs.
+     *
+     * <p>The returned origin is a bare scheme + host(:port) with NO
+     * route appended — callers must layer their route on top via
+     * {@link #buildWebhookUrl(String)} and the post-prompt URL builder.
+     * This matters: it is how we guarantee that the agent's route
+     * always appears in webhook URLs regardless of which source
+     * produced the base.
+     *
+     * @return base URL, or {@code null}.
+     */
+    public String detectServerlessBaseUrl() {
+        if (proxyUrlBase != null) return proxyUrlBase;
+        com.signalwire.sdk.runtime.ExecutionMode mode =
+                com.signalwire.sdk.runtime.ExecutionMode.detect();
+        if (mode == com.signalwire.sdk.runtime.ExecutionMode.LAMBDA) {
+            return new com.signalwire.sdk.runtime.LambdaUrlResolver().resolveBaseUrl();
+        }
+        return null;
     }
 
     private String embedCredentials(String url) {
