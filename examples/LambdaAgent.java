@@ -48,6 +48,7 @@
  */
 
 import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.lambda.LambdaAgentHandler;
 import com.signalwire.sdk.swaig.FunctionResult;
 
@@ -74,13 +75,32 @@ public class LambdaAgent {
         return HANDLER.handle(event).toMap();
     }
 
-    private static AgentBase buildAgent() {
+    /**
+     * Factory method discovered by {@code swaig-test --simulate-serverless
+     * lambda}. The CLI invokes this overload (EnvProvider-aware) so the
+     * simulated env values are visible to the {@link AgentBase.Builder}
+     * at build time (for {@code SWML_BASIC_AUTH_*} and
+     * {@code SWML_PROXY_URL_BASE} resolution).
+     */
+    public static AgentBase buildAgent(EnvProvider env) {
+        return configureAgent(AgentBase.builder()
+                .name("lambda-agent")
+                .route("/")
+                .port(3000)
+                .envProvider(env)
+                .build());
+    }
+
+    public static AgentBase buildAgent() {
         var agent = AgentBase.builder()
                 .name("lambda-agent")
                 .route("/")
                 .port(3000)
                 .build();
+        return configureAgent(agent);
+    }
 
+    private static AgentBase configureAgent(AgentBase agent) {
         agent.addLanguage("English", "en-US", "en-US-Standard-C");
 
         agent.promptAddSection("Role",

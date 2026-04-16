@@ -1,6 +1,13 @@
 package com.signalwire.sdk.cli;
 
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.cli.simulation.ServerlessSimulator;
+import com.signalwire.sdk.runtime.EnvProvider;
+import com.signalwire.sdk.runtime.lambda.LambdaAgentHandler;
+import com.signalwire.sdk.runtime.lambda.LambdaResponse;
+
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -9,17 +16,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * CLI tool for testing SWAIG functions against a running agent.
+ * CLI tool for testing SWAIG functions against an agent.
  * <p>
  * Uses only JDK classes (java.net.http.HttpClient) -- no external dependencies.
+ * <p>
+ * Two modes:
+ * <ul>
+ *   <li><b>URL mode</b> — hit a running agent HTTP server.</li>
+ *   <li><b>Simulation mode</b> — {@code --simulate-serverless &lt;platform&gt;} loads the
+ *       agent class directly and routes invocation through the matching
+ *       serverless adapter (e.g. {@link LambdaAgentHandler}) instead of
+ *       the HTTP server. Uses an injected {@link EnvProvider} to mask the
+ *       real process env with simulated values, since Java cannot mutate
+ *       {@link System#getenv()}.</li>
+ * </ul>
  * <p>
  * Usage:
  * <pre>
  *   swaig-test --url http://user:pass@localhost:3000 --list-tools
  *   swaig-test --url http://user:pass@localhost:3000 --dump-swml
  *   swaig-test --url http://user:pass@localhost:3000 --exec tool_name --param key=value
- *   swaig-test --url http://user:pass@localhost:3000 --exec tool_name --raw
- *   swaig-test --url http://user:pass@localhost:3000 --verbose --list-tools
+ *   swaig-test &lt;agent-class&gt; --simulate-serverless lambda --dump-swml
+ *   swaig-test &lt;agent-class&gt; --simulate-serverless lambda --exec tool_name --param k=v
+ *   swaig-test &lt;agent-class&gt; --simulate-serverless lambda
  * </pre>
  */
 public class SwaigTest {
@@ -36,22 +55,67 @@ public class SwaigTest {
     private String execTool;
     private final Map<String, String> params = new LinkedHashMap<>();
 
+    // Simulation mode
+    private String agentClassName;
+    private String simulatePlatformRaw;
+
+    // Testability hook: an alternative env source for the simulator's
+    // "real env" fallback layer. Never consulted unless explicitly set
+    // (in which case the CLI is being driven by a test harness that
+    // needs to inject a controlled real-env view without touching
+    // {@link System#getenv()}).
+    private EnvProvider realEnvOverride;
+
     public static void main(String[] args) {
+        int code = run(args);
+        if (code != 0) System.exit(code);
+    }
+
+    /**
+     * Run the CLI and return the exit code. Extracted so tests can drive
+     * {@code main} without calling {@link System#exit(int)}.
+     *
+     * @param args command-line arguments.
+     * @return 0 on success, non-zero on error.
+     */
+    public static int run(String[] args) {
         var cli = new SwaigTest();
         try {
             cli.parseArgs(args);
             cli.run();
+            return 0;
+        } catch (HelpRequested e) {
+            return 0;
         } catch (IllegalArgumentException e) {
             System.err.println("Error: " + e.getMessage());
-            printUsage();
-            System.exit(1);
+            if (args.length == 0 || argsContainHelp(args)) printUsage();
+            return 1;
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             if (cli.verbose) {
                 e.printStackTrace(System.err);
             }
-            System.exit(1);
+            return 1;
         }
+    }
+
+    /**
+     * Inject an alternative "real env" for the simulator's fallback
+     * layer. Primarily for tests that need to pretend the process env
+     * has {@code SWML_PROXY_URL_BASE} set without actually mutating it.
+     * Null means "use {@link EnvProvider#SYSTEM}".
+     *
+     * @param env env provider, or null.
+     */
+    void setRealEnvOverrideForTests(EnvProvider env) {
+        this.realEnvOverride = env;
+    }
+
+    private static boolean argsContainHelp(String[] args) {
+        for (String a : args) {
+            if ("--help".equals(a) || "-h".equals(a)) return true;
+        }
+        return false;
     }
 
     private void parseArgs(String[] args) {
@@ -78,22 +142,70 @@ public class SwaigTest {
                     if (eq <= 0) throw new IllegalArgumentException("--param must be key=value, got: " + kv);
                     params.put(kv.substring(0, eq), kv.substring(eq + 1));
                 }
+                case "--simulate-serverless" -> {
+                    if (++i >= args.length) {
+                        throw new IllegalArgumentException("--simulate-serverless requires a platform name");
+                    }
+                    simulatePlatformRaw = args[i];
+                }
                 case "--raw" -> raw = true;
                 case "--verbose" -> verbose = true;
                 case "--help", "-h" -> {
                     printUsage();
-                    System.exit(0);
+                    throw new HelpRequested();
                 }
-                default -> throw new IllegalArgumentException("Unknown option: " + args[i]);
+                default -> {
+                    if (args[i].startsWith("--")) {
+                        throw new IllegalArgumentException("Unknown option: " + args[i]);
+                    }
+                    // Positional: agent class name. Only one allowed.
+                    if (agentClassName != null) {
+                        throw new IllegalArgumentException(
+                                "Unexpected positional argument: " + args[i]
+                                        + " (agent class already set to: " + agentClassName + ")");
+                    }
+                    agentClassName = args[i];
+                }
             }
         }
 
-        if (baseUrl == null) {
-            throw new IllegalArgumentException("--url is required");
+        boolean simulating = simulatePlatformRaw != null;
+
+        if (simulating) {
+            if (agentClassName == null) {
+                throw new IllegalArgumentException(
+                        "--simulate-serverless requires a positional agent-class argument "
+                                + "(e.g. 'swaig-test MyAgent --simulate-serverless lambda')");
+            }
+            if (baseUrl != null) {
+                throw new IllegalArgumentException("--url cannot be combined with --simulate-serverless");
+            }
+            // list-tools is not yet implemented in simulation mode (not
+            // required by the task). Explicitly reject to avoid silent
+            // no-ops.
+            if (listTools) {
+                throw new IllegalArgumentException(
+                        "--list-tools is not supported in --simulate-serverless mode; "
+                                + "use --dump-swml and inspect the functions array");
+            }
+        } else {
+            if (baseUrl == null) {
+                throw new IllegalArgumentException(
+                        "--url is required (or pass <agent-class> --simulate-serverless <platform>)");
+            }
+            if (!dumpSwml && !listTools && execTool == null) {
+                throw new IllegalArgumentException(
+                        "One of --dump-swml, --list-tools, or --exec is required");
+            }
         }
-        if (!dumpSwml && !listTools && execTool == null) {
-            throw new IllegalArgumentException("One of --dump-swml, --list-tools, or --exec is required");
-        }
+    }
+
+    /**
+     * Sentinel signalling {@code --help} was requested. Distinct from
+     * {@link IllegalArgumentException} so the caller can exit 0.
+     */
+    static final class HelpRequested extends RuntimeException {
+        HelpRequested() { super("help requested"); }
     }
 
     /**
@@ -136,6 +248,10 @@ public class SwaigTest {
     }
 
     private void run() throws Exception {
+        if (simulatePlatformRaw != null) {
+            runSimulation();
+            return;
+        }
         if (dumpSwml) {
             doDumpSwml();
         } else if (listTools) {
@@ -143,6 +259,242 @@ public class SwaigTest {
         } else if (execTool != null) {
             doExecTool();
         }
+    }
+
+    // ── Simulate-serverless mode ─────────────────────────────────────
+
+    /**
+     * Drive the agent through the serverless adapter with a simulated
+     * env. Steps:
+     * <ol>
+     *   <li>Parse + validate the platform (reject unimplemented ones).</li>
+     *   <li>Build a layered {@link EnvProvider} that masks
+     *       {@code SWML_PROXY_URL_BASE} and overlays simulated values.</li>
+     *   <li>Warn if the real env had {@code SWML_PROXY_URL_BASE} set —
+     *       the simulated view hides it, matching Python's behaviour.</li>
+     *   <li>Load the agent class by reflection, call its factory method,
+     *       rebuild through {@link AgentBase.Builder#envProvider(EnvProvider)}
+     *       if the user returned a raw-{@code build()} instance.</li>
+     *   <li>Route the request through the platform's adapter (e.g.
+     *       {@link LambdaAgentHandler}) — NOT the HTTP server.</li>
+     *   <li>Nothing to restore — we never touched the real process env.
+     *       (The {@code try/finally} is still there for symmetry with
+     *       Python and for any future state-bearing resources.)</li>
+     * </ol>
+     */
+    private void runSimulation() throws Exception {
+        ServerlessSimulator.Platform platform =
+                ServerlessSimulator.parsePlatform(simulatePlatformRaw);
+
+        EnvProvider realEnv = realEnvOverride != null ? realEnvOverride : EnvProvider.SYSTEM;
+        ServerlessSimulator simulator =
+                new ServerlessSimulator(platform, realEnv, Collections.emptyMap());
+
+        if (simulator.proxyUrlBaseMaskedFromRealEnv()) {
+            System.err.println(
+                    "[warning] SWML_PROXY_URL_BASE is set in the real environment "
+                            + "but the --simulate-serverless harness is masking it so "
+                            + "the " + platform.name().toLowerCase()
+                            + " adapter's URL synthesis is actually exercised. "
+                            + "To use the real proxy base, drop --simulate-serverless.");
+        }
+
+        EnvProvider simEnv = simulator.buildEnvProvider();
+
+        if (verbose) {
+            System.err.println("[verbose] Simulating platform: " + platform);
+            System.err.println("[verbose] Simulated env keys: "
+                    + simulator.getSimulatedEnv().keySet());
+            System.err.println("[verbose] Masked env keys: " + simulator.getMaskedKeys());
+        }
+
+        try {
+            AgentBase agent = loadAgent(agentClassName, simEnv);
+
+            switch (platform) {
+                case LAMBDA -> runLambdaSimulation(agent, simEnv);
+                default -> throw new IllegalArgumentException(
+                        "No adapter wired up for platform: " + platform);
+            }
+        } finally {
+            // Nothing to restore: simEnv is a local view, never applied
+            // to System.getenv(). Kept as a finally block for parity
+            // with Python's mock_env.py contract ("restore on any
+            // exit path") so future state-bearing additions can't forget.
+        }
+    }
+
+    private void runLambdaSimulation(AgentBase agent, EnvProvider simEnv) throws Exception {
+        LambdaAgentHandler handler = new LambdaAgentHandler(agent, simEnv);
+
+        String route = normaliseAgentRoute(agent);
+        String path = route.isEmpty() ? "/" : route;
+
+        if (execTool != null) {
+            String body = buildSwaigRequestJson(execTool, params);
+            Map<String, Object> event = buildApiGatewayV2Event(
+                    "POST",
+                    route + "/swaig",
+                    basicAuthHeader(agent),
+                    body);
+            if (verbose) System.err.println("[verbose] Dispatching SWAIG: " + body);
+            LambdaResponse response = handler.handle(event);
+            emitResponse(response);
+            return;
+        }
+
+        // Bare or --dump-swml: render the SWML document through the adapter.
+        Map<String, Object> event = buildApiGatewayV2Event(
+                "GET",
+                path,
+                basicAuthHeader(agent),
+                null);
+        if (verbose) System.err.println("[verbose] Dispatching SWML render: GET " + path);
+        LambdaResponse response = handler.handle(event);
+        emitResponse(response);
+    }
+
+    private void emitResponse(LambdaResponse response) {
+        if (response.getStatusCode() >= 400) {
+            System.err.println("[warning] Lambda adapter returned HTTP "
+                    + response.getStatusCode());
+        }
+        String body = response.getBody();
+        if (body == null) body = "";
+        if (raw) {
+            System.out.println(body);
+        } else {
+            System.out.println(prettyPrintJson(body));
+        }
+    }
+
+    private static String normaliseAgentRoute(AgentBase agent) {
+        String r = agent.getNormalisedRoute();
+        return r == null ? "" : r;
+    }
+
+    private static Map<String, String> basicAuthHeader(AgentBase agent) {
+        Map<String, String> h = new LinkedHashMap<>();
+        String creds = agent.getAuthUser() + ":" + (agent.getAuthPassword() != null
+                ? agent.getAuthPassword() : "");
+        String encoded = Base64.getEncoder().encodeToString(creds.getBytes(StandardCharsets.UTF_8));
+        h.put("Authorization", "Basic " + encoded);
+        h.put("Content-Type", "application/json");
+        return h;
+    }
+
+    private static Map<String, Object> buildApiGatewayV2Event(String method, String path,
+                                                              Map<String, String> headers,
+                                                              String body) {
+        Map<String, Object> event = new LinkedHashMap<>();
+        event.put("version", "2.0");
+        event.put("rawPath", path);
+        event.put("headers", headers != null ? headers : new LinkedHashMap<>());
+        if (body != null) event.put("body", body);
+        Map<String, Object> http = new LinkedHashMap<>();
+        http.put("method", method);
+        http.put("path", path);
+        Map<String, Object> ctx = new LinkedHashMap<>();
+        ctx.put("http", http);
+        event.put("requestContext", ctx);
+        return event;
+    }
+
+    /**
+     * Build a SWAIG invocation payload. Mirrors the structure the real
+     * HTTP server expects and the Python simulation produces.
+     */
+    private static String buildSwaigRequestJson(String tool, Map<String, String> params) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"function\":\"").append(escapeJsonStatic(tool)).append("\"");
+        if (!params.isEmpty()) {
+            json.append(",\"argument\":{\"parsed\":[{");
+            boolean first = true;
+            for (Map.Entry<String, String> e : params.entrySet()) {
+                if (!first) json.append(",");
+                json.append("\"").append(escapeJsonStatic(e.getKey())).append("\":\"")
+                        .append(escapeJsonStatic(e.getValue())).append("\"");
+                first = false;
+            }
+            json.append("}]}");
+        }
+        json.append("}");
+        return json.toString();
+    }
+
+    /**
+     * Load the agent by reflection. The CLI expects the supplied class
+     * to expose a {@code public static AgentBase} factory method whose
+     * name is one of (in order of preference):
+     * {@code createAgent}, {@code buildAgent}, {@code newAgent},
+     * {@code getAgent}. If the factory method accepts an
+     * {@link EnvProvider} parameter, the simulated env is passed through
+     * directly. Otherwise the returned agent is rebuilt with the
+     * simulated env applied to its {@link AgentBase.Builder}.
+     *
+     * <p>Users whose agents live entirely inside a {@code main()} method
+     * should extract the build logic into a public static factory —
+     * that's the documented pattern for making an agent testable through
+     * this CLI (and is what {@code examples/LambdaAgent.java} already
+     * does with its {@code buildAgent()} method).
+     */
+    private AgentBase loadAgent(String className, EnvProvider simEnv) throws Exception {
+        Class<?> cls;
+        try {
+            cls = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(
+                    "Agent class not found on classpath: " + className
+                            + ". Ensure the compiled class is on the classpath.");
+        }
+
+        // Preferred: factory method that takes EnvProvider and returns AgentBase.
+        for (String name : List.of("createAgent", "buildAgent", "newAgent", "getAgent")) {
+            try {
+                Method m = cls.getDeclaredMethod(name, EnvProvider.class);
+                m.setAccessible(true);
+                Object result = m.invoke(null, simEnv);
+                if (result instanceof AgentBase agent) {
+                    return agent;
+                }
+                throw new IllegalStateException(
+                        className + "." + name + "(EnvProvider) must return AgentBase");
+            } catch (NoSuchMethodException ignored) {
+                // Try next name or signature.
+            }
+        }
+
+        // Fallback: no-arg factory. The agent was built with real env
+        // (which the simulator deliberately did not mutate), so we accept
+        // the instance as-is and trust the injected EnvProvider in the
+        // adapter to mask SWML_PROXY_URL_BASE. Warn the user that build-
+        // time env reads (SWML_BASIC_AUTH_*, SWML_PROXY_URL_BASE) won't
+        // see the simulated values — for full isolation they should use
+        // the EnvProvider-aware factory.
+        for (String name : List.of("createAgent", "buildAgent", "newAgent", "getAgent")) {
+            try {
+                Method m = cls.getDeclaredMethod(name);
+                m.setAccessible(true);
+                Object result = m.invoke(null);
+                if (result instanceof AgentBase agent) {
+                    if (verbose) {
+                        System.err.println("[verbose] Loaded agent via "
+                                + className + "." + name + "() (no EnvProvider).");
+                    }
+                    return agent;
+                }
+                throw new IllegalStateException(
+                        className + "." + name + "() must return AgentBase");
+            } catch (NoSuchMethodException ignored) {
+                // Try next.
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "Could not find a factory method on " + className + ". "
+                        + "Expected a public static method named one of "
+                        + "[createAgent, buildAgent, newAgent, getAgent] "
+                        + "returning AgentBase (optionally taking EnvProvider).");
     }
 
     private void doDumpSwml() throws Exception {
@@ -277,7 +629,7 @@ public class SwaigTest {
     /**
      * Minimal JSON pretty-printer (no dependencies).
      */
-    private String prettyPrintJson(String json) {
+    private static String prettyPrintJson(String json) {
         StringBuilder sb = new StringBuilder();
         int indent = 0;
         boolean inString = false;
@@ -337,7 +689,11 @@ public class SwaigTest {
         return sb.toString();
     }
 
-    private String escapeJson(String s) {
+    private static String escapeJson(String s) {
+        return escapeJsonStatic(s);
+    }
+
+    private static String escapeJsonStatic(String s) {
         return s.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -347,22 +703,35 @@ public class SwaigTest {
 
     private static void printUsage() {
         System.err.println("""
-                Usage: swaig-test [options]
+                Usage:
+                  swaig-test --url <URL> [--dump-swml | --list-tools | --exec <tool> [--param k=v ...]]
+                  swaig-test <agent-class> --simulate-serverless <platform> [--dump-swml | --exec <tool> [--param k=v ...]]
 
                 Options:
-                  --url URL           Agent URL (e.g. http://user:pass@localhost:3000)
-                  --dump-swml         Fetch and display the SWML document
-                  --list-tools        List all registered SWAIG tools
-                  --exec NAME         Execute a SWAIG tool by name
-                  --param key=value   Pass a parameter to the tool (repeatable)
-                  --raw               Output raw JSON without pretty-printing
-                  --verbose           Show verbose debug output
-                  --help, -h          Show this help message
+                  --url URL                       Agent URL (e.g. http://user:pass@localhost:3000)
+                  --simulate-serverless PLATFORM  Load agent class and route through the serverless adapter.
+                                                  Supported platforms: lambda
+                  --dump-swml                     Fetch / render the SWML document
+                  --list-tools                    List all registered SWAIG tools (URL mode only)
+                  --exec NAME                     Execute a SWAIG tool by name
+                  --param key=value               Pass a parameter to the tool (repeatable)
+                  --raw                           Output raw JSON without pretty-printing
+                  --verbose                       Show verbose debug output
+                  --help, -h                      Show this help message
 
                 Examples:
                   swaig-test --url http://user:pass@localhost:3000 --dump-swml
-                  swaig-test --url http://user:pass@localhost:3000 --list-tools
                   swaig-test --url http://user:pass@localhost:3000 --exec get_weather --param city=Austin
+                  swaig-test MyAgent --simulate-serverless lambda --dump-swml
+                  swaig-test MyAgent --simulate-serverless lambda --exec get_weather --param city=Austin
+
+                Agent class convention (simulate-serverless mode):
+                  The <agent-class> must be a fully-qualified Java class name with a public static
+                  factory method returning AgentBase. Accepted method names (in order):
+                    createAgent(EnvProvider) / buildAgent(EnvProvider) / newAgent(EnvProvider) / getAgent(EnvProvider)
+                    createAgent()            / buildAgent()            / newAgent()            / getAgent()
+                  The EnvProvider-aware signature is recommended — it lets the agent's build-time
+                  env reads (SWML_BASIC_AUTH_*, SWML_PROXY_URL_BASE) see the simulated values.
                 """);
     }
 }

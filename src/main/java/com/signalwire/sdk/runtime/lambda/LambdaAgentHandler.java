@@ -305,7 +305,11 @@ public final class LambdaAgentHandler {
         // The agent may already have a proxy base configured (from
         // SWML_PROXY_URL_BASE env or manual call). If so, defer to the
         // agent's own logic which preserves the route invariant.
-        String agentBase = agent.detectServerlessBaseUrl();
+        //
+        // Pass the injected EnvProvider through so the simulate-serverless
+        // harness (which masks the real env with a layered provider) sees
+        // the same view the adapter uses.
+        String agentBase = agent.detectServerlessBaseUrl(env);
         if (agentBase != null) return agentBase;
 
         // Otherwise synthesise from Lambda env vars using the injected
