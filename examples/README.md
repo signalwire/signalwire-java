@@ -90,7 +90,7 @@ This directory contains example agents demonstrating the key features of the Jav
 | Example | Description |
 |---------|-------------|
 | [KubernetesAgent.java](KubernetesAgent.java) | Production K8s agent with /health, /ready endpoints |
-| [LambdaAgent.java](LambdaAgent.java) | Agent designed for AWS Lambda serverless deployment |
+| [LambdaAgent.java](LambdaAgent.java) | Agent deployed on AWS Lambda via `LambdaAgentHandler` adapter |
 
 ### RELAY and REST Clients
 
@@ -139,3 +139,19 @@ Some examples require additional environment variables:
 | `MCP_GATEWAY_URL` | McpGateway | MCP gateway service URL |
 | `MCP_GATEWAY_AUTH_USER` | McpGateway | MCP gateway basic auth user |
 | `MCP_GATEWAY_AUTH_PASSWORD` | McpGateway | MCP gateway basic auth password |
+
+## Deploying to AWS Lambda
+
+The SDK ships a `LambdaAgentHandler` that translates API Gateway (v1 or
+v2) and Lambda Function URL events into the same dispatch logic the
+in-process HTTP server uses. See [LambdaAgent.java](LambdaAgent.java).
+
+Package a shaded JAR (e.g. with the Gradle Shadow plugin) that contains
+the SDK and its transitive dependencies, upload it to Lambda, and set
+the handler to `LambdaAgent::handleLambdaRequest`.
+
+Lambda auto-populates the environment variables the SDK reads
+(`AWS_LAMBDA_FUNCTION_URL`, `AWS_LAMBDA_FUNCTION_NAME`, `AWS_REGION`).
+Set `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD` in the Lambda
+configuration so external callers can authenticate. Optionally set
+`SWML_PROXY_URL_BASE` if you front the Lambda with a custom domain.

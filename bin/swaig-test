@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# swaig-test -- CLI tool for testing SWAIG functions against a running agent.
+# swaig-test -- CLI tool for testing SWAIG functions.
 #
-# Usage:
-#   bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
-#   bin/swaig-test --url http://user:pass@localhost:3000 --dump-swml
-#   bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --param key=value
-#   bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --raw
-#   bin/swaig-test --url http://user:pass@localhost:3000 --verbose --list-tools
+# Two modes:
+#   URL mode (hit a running agent):
+#     bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
+#     bin/swaig-test --url http://user:pass@localhost:3000 --dump-swml
+#     bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --param key=value
+#
+#   Simulate-serverless mode (route through adapter, no HTTP server):
+#     bin/swaig-test <agent-class> --simulate-serverless lambda
+#     bin/swaig-test <agent-class> --simulate-serverless lambda --dump-swml
+#     bin/swaig-test <agent-class> --simulate-serverless lambda --exec tool_name --param k=v
+#
+# The caller is responsible for putting their agent class on the classpath
+# via SWAIG_TEST_CLASSPATH (colon-separated paths, like -cp argument).
 
 set -euo pipefail
 
@@ -20,22 +27,40 @@ if [ -z "${JAVA_HOME:-}" ]; then
     fi
 fi
 
-JAVAC="${JAVA_HOME:-}/bin/javac"
 JAVA="${JAVA_HOME:-}/bin/java"
-
 if [ ! -x "$JAVA" ]; then
     JAVA=java
-    JAVAC=javac
 fi
 
-CLI_SRC="$PROJECT_DIR/src/main/java/com/signalwire/agents/cli/SwaigTest.java"
-CLI_CLASS_DIR="$PROJECT_DIR/build/cli-classes"
+# The CLI depends on SDK classes (AgentBase, LambdaAgentHandler, EnvProvider, etc.)
+# and Gson, so we need the whole project compiled. Prefer the published jar;
+# fall back to the build/classes directory for local development.
+SDK_JAR=$(ls "$PROJECT_DIR"/build/libs/*.jar 2>/dev/null | head -1 || true)
+SDK_CLASSES="$PROJECT_DIR/build/classes/java/main"
 
-# Compile if needed (recompile if source is newer than class)
-CLI_CLASS="$CLI_CLASS_DIR/com/signalwire/agents/cli/SwaigTest.class"
-if [ ! -f "$CLI_CLASS" ] || [ "$CLI_SRC" -nt "$CLI_CLASS" ]; then
-    mkdir -p "$CLI_CLASS_DIR"
-    "$JAVAC" -d "$CLI_CLASS_DIR" "$CLI_SRC" 2>/dev/null
+CLASSPATH=""
+if [ -n "$SDK_JAR" ] && [ -f "$SDK_JAR" ]; then
+    CLASSPATH="$SDK_JAR"
+elif [ -d "$SDK_CLASSES" ]; then
+    CLASSPATH="$SDK_CLASSES"
+else
+    echo "Error: No SDK classes found. Run './gradlew build' first." >&2
+    exit 1
 fi
 
-exec "$JAVA" -cp "$CLI_CLASS_DIR" com.signalwire.agents.cli.SwaigTest "$@"
+# Gson (runtime dep of the SDK). Look in the gradle cache.
+GSON_JAR=$(find ~/.gradle/caches/modules-2/files-2.1/com.google.code.gson -name 'gson-*.jar' 2>/dev/null | head -1 || true)
+if [ -z "$GSON_JAR" ]; then
+    GSON_JAR=$(find /tmp/java-gradle-home/caches/modules-2/files-2.1/com.google.code.gson -name 'gson-*.jar' 2>/dev/null | head -1 || true)
+fi
+if [ -n "$GSON_JAR" ]; then
+    CLASSPATH="$CLASSPATH:$GSON_JAR"
+fi
+
+# Append any user-supplied classpath (for --simulate-serverless mode,
+# the user needs to add their compiled agent class here).
+if [ -n "${SWAIG_TEST_CLASSPATH:-}" ]; then
+    CLASSPATH="$CLASSPATH:$SWAIG_TEST_CLASSPATH"
+fi
+
+exec "$JAVA" -cp "$CLASSPATH" com.signalwire.sdk.cli.SwaigTest "$@"
