@@ -1,183 +1,111 @@
 # Fabric Resources
 
-The Fabric API (`/api/fabric`) manages all resource types in your SignalWire project. Every resource type supports CRUD operations and address listing.
+The Fabric API (`/api/fabric`) manages resource types in your SignalWire project. The Java SDK surfaces the three most common resource groupings — `subscribers`, `addresses`, and the generic `resources` handle — through `client.fabric()`. Other resource types are accessed through the generic handle by ID.
 
 ## Standard CRUD Pattern
 
-All 13 resource types share the same methods:
+Each handle exposes list/get/create/update/delete via `CrudResource`:
 
-```python
-# List all resources of this type
-items = client.fabric.ai_agents.list()
-items = client.fabric.ai_agents.list(page=2, page_size=10)
+```java
+// List all fabric resources
+var items = client.fabric().resources().list();
 
-# Create a new resource
-agent = client.fabric.ai_agents.create(
-    name="Support Bot",
-    prompt={"text": "You are a helpful support agent."},
-)
+// Get a resource by ID
+var resource = client.fabric().resources().get("resource-uuid");
 
-# Get a resource by ID
-agent = client.fabric.ai_agents.get("agent-uuid")
+// Create a subscriber
+var sub = client.fabric().subscribers().create(Map.of(
+        "reference", "user@example.com",
+        "password",  "secret"
+));
 
-# Update a resource
-client.fabric.ai_agents.update("agent-uuid", name="Updated Name")
+// Update a subscriber
+client.fabric().subscribers().update("subscriber-uuid", Map.of("display_name", "Ada"));
 
-# Delete a resource
-client.fabric.ai_agents.delete("agent-uuid")
-
-# List addresses assigned to this resource
-addresses = client.fabric.ai_agents.list_addresses("agent-uuid")
+// Delete a resource
+client.fabric().resources().delete("resource-uuid");
 ```
 
-## Resource Types
+## Binding a phone number to a handler
 
-### PUT-Update Resources
+**This is the section that cost a user hours in the post-mortem.** Read it before writing code that creates SWML or cXML webhook resources manually.
 
-These resources use `PUT` for updates (full replacement):
+Phone-number bindings live on `client.phoneNumbers()`, not on Fabric. The server materializes the Fabric webhook resource automatically when you set `call_handler` on the phone number. Use the typed helpers:
 
-| Attribute | API Path |
-|-----------|----------|
-| `fabric.swml_scripts` | `/api/fabric/resources/swml_scripts` |
-| `fabric.relay_applications` | `/api/fabric/resources/relay_applications` |
-| `fabric.call_flows` | `/api/fabric/resources/call_flows` |
-| `fabric.conference_rooms` | `/api/fabric/resources/conference_rooms` |
-| `fabric.freeswitch_connectors` | `/api/fabric/resources/freeswitch_connectors` |
-| `fabric.subscribers` | `/api/fabric/resources/subscribers` |
-| `fabric.sip_endpoints` | `/api/fabric/resources/sip_endpoints` |
-| `fabric.cxml_scripts` | `/api/fabric/resources/cxml_scripts` |
-| `fabric.cxml_applications` | `/api/fabric/resources/cxml_applications` |
+```java
+import com.signalwire.sdk.rest.PhoneCallHandler;
 
-### PATCH-Update Resources
+// SWML webhook — your backend returns an SWML document per call
+client.phoneNumbers().setSwmlWebhook(pnSid, "https://example.com/swml");
 
-These resources use `PATCH` for updates (partial update):
+// cXML (Twilio-compat / LAML) webhook
+client.phoneNumbers().setCxmlWebhook(pnSid, "https://example.com/voice.xml");
 
-| Attribute | API Path |
-|-----------|----------|
-| `fabric.swml_webhooks` | `/api/fabric/resources/swml_webhooks` |
-| `fabric.ai_agents` | `/api/fabric/resources/ai_agents` |
-| `fabric.sip_gateways` | `/api/fabric/resources/sip_gateways` |
-| `fabric.cxml_webhooks` | `/api/fabric/resources/cxml_webhooks` |
+// Existing cXML application by ID
+client.phoneNumbers().setCxmlApplication(pnSid, "app-uuid");
 
-## Call Flows -- Extra Methods
+// AI Agent by ID
+client.phoneNumbers().setAiAgent(pnSid, "agent-uuid");
 
-Call flows support version management:
+// Call flow (optionally pin a version)
+client.phoneNumbers().setCallFlow(pnSid, "flow-uuid", "current_deployed");
 
-```python
-# List all versions of a call flow
-versions = client.fabric.call_flows.list_versions("call-flow-uuid")
+// Named RELAY application
+client.phoneNumbers().setRelayApplication(pnSid, "my-relay-app");
 
-# Deploy a new version
-client.fabric.call_flows.deploy_version("call-flow-uuid", document_version=3)
+// RELAY topic (client subscription)
+client.phoneNumbers().setRelayTopic(pnSid, "office");
 ```
 
-## Subscribers -- SIP Endpoints
+The wire-level form is always available:
 
-Subscribers have nested SIP endpoint management:
-
-```python
-# List subscriber's SIP endpoints
-endpoints = client.fabric.subscribers.list_sip_endpoints("subscriber-uuid")
-
-# Create a SIP endpoint for a subscriber
-endpoint = client.fabric.subscribers.create_sip_endpoint(
-    "subscriber-uuid",
-    username="user1",
-    password="secret",
-    caller_id="+15551234567",
-)
-
-# Get a specific SIP endpoint
-endpoint = client.fabric.subscribers.get_sip_endpoint("subscriber-uuid", "endpoint-uuid")
-
-# Update a SIP endpoint (uses PATCH)
-client.fabric.subscribers.update_sip_endpoint(
-    "subscriber-uuid", "endpoint-uuid",
-    caller_id="+15559876543",
-)
-
-# Delete a SIP endpoint
-client.fabric.subscribers.delete_sip_endpoint("subscriber-uuid", "endpoint-uuid")
+```java
+client.phoneNumbers().update(pnSid, Map.of(
+        "call_handler",          PhoneCallHandler.RELAY_SCRIPT.wireValue(),
+        "call_relay_script_url", "https://example.com/swml"
+));
 ```
 
-## cXML Applications
+See **[phone-binding.md](phone-binding.md)** for the full `PhoneCallHandler` enum, the mapping from each handler value to its auto-materialized Fabric resource, and the runnable example at `rest/examples/RestBindPhoneToSwmlWebhook.java`.
 
-cXML applications support list/get/update/delete but not create:
+### What the Java SDK deliberately does NOT expose
 
-```python
-apps = client.fabric.cxml_applications.list()
-app = client.fabric.cxml_applications.get("app-uuid")
-client.fabric.cxml_applications.update("app-uuid", voice_url="https://example.com/voice")
-client.fabric.cxml_applications.delete("app-uuid")
-
-# This raises NotImplementedError:
-# client.fabric.cxml_applications.create(...)
-```
+The Java SDK does not surface `assignPhoneRoute`, `swmlWebhooks().create()`, or `cxmlWebhooks().create()` on the Fabric namespace. Those endpoints exist on the server but are **not the way to bind a phone number** — doing so leaves orphan Fabric resources and the phone number unchanged. Every common binding case is covered by the `phoneNumbers().set*` helpers above; use them instead. If you have a truly unusual case that requires a direct Fabric call, build the request with `client.getHttpClient()` and the full REST reference.
 
 ## Generic Resources
 
-Operate on any resource type by ID:
+`client.fabric().resources()` is the generic handle for fabric resources referenced by ID regardless of type:
 
-```python
-# List all resources across all types
-all_resources = client.fabric.resources.list()
-
-# Get any resource by ID
-resource = client.fabric.resources.get("resource-uuid")
-
-# Delete any resource
-client.fabric.resources.delete("resource-uuid")
-
-# List addresses for any resource
-addresses = client.fabric.resources.list_addresses("resource-uuid")
-
-# Assign a resource to a phone route
-client.fabric.resources.assign_phone_route("resource-uuid", phone_route_id="route-uuid")
-
-# Assign a resource as a domain application handler
-client.fabric.resources.assign_domain_application("resource-uuid", domain_application_id="da-uuid")
+```java
+var all = client.fabric().resources().list();
+var one = client.fabric().resources().get("resource-uuid");
+client.fabric().resources().delete("resource-uuid");
 ```
+
+## Subscribers
+
+Subscribers are fabric-level user records. Use the helper for CRUD, and the generic `resources` handle for cross-type queries. The Java SDK currently exposes subscriber CRUD via the standard `CrudResource` surface (`list`, `get`, `create`, `update`, `delete`). Nested sub-resource helpers (SIP endpoints attached to a subscriber) are not yet surfaced as typed methods; fetch via `resources()` by ID if you need them.
 
 ## Fabric Addresses
 
-Read-only access to all fabric addresses:
+Read-mostly access to fabric addresses:
 
-```python
-# List all addresses (filter by type or display_name)
-addresses = client.fabric.addresses.list(type="room")
-
-# Get a specific address
-address = client.fabric.addresses.get("address-uuid")
+```java
+var addresses = client.fabric().addresses().list();
+var address   = client.fabric().addresses().get("address-uuid");
 ```
 
-## Tokens
+## Error Handling
 
-Create tokens for subscribers, guests, invites, and embeds:
+Every CRUD call throws `RestError` on non-2xx:
 
-```python
-# Subscriber token
-token = client.fabric.tokens.create_subscriber_token(
-    reference="user@example.com",
-    password="secret",
-)
-
-# Refresh a subscriber token
-refreshed = client.fabric.tokens.refresh_subscriber_token(
-    refresh_token="existing-refresh-token",
-)
-
-# Guest token
-token = client.fabric.tokens.create_guest_token(
-    allowed_addresses=["address-uuid-1", "address-uuid-2"],
-    expire_at="2025-12-31T23:59:59Z",
-)
-
-# Subscriber invite token
-token = client.fabric.tokens.create_invite_token(
-    address_id="address-uuid",
-    expires_at="2025-12-31T23:59:59Z",
-)
-
-# Click-to-call embed token
-token = client.fabric.tokens.create_embed_token(token="embed-source-token")
+```java
+try {
+    client.fabric().resources().get("bad-id");
+} catch (RestError e) {
+    System.out.println(e.getStatusCode()); // 404
+    System.out.println(e.getMethod());     // "GET"
+    System.out.println(e.getPath());       // "/fabric/resources/bad-id"
+    System.out.println(e.getResponseBody());
+}
 ```
