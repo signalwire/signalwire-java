@@ -53,6 +53,30 @@ public class HttpClient {
                 .build();
     }
 
+    /**
+     * Create an HTTP client with an explicit base URL (e.g., plain HTTP for
+     * local integration tests). Production callers use the
+     * {@code (space, project, token)} constructor instead.
+     *
+     * @param baseUrl fully qualified base URL ending in {@code /api}
+     * @param project project ID used as Basic Auth username
+     * @param token API token used as Basic Auth password
+     * @return a configured HTTP client
+     */
+    static HttpClient withBaseUrl(String baseUrl, String project, String token) {
+        return new HttpClient(baseUrl, project, token, null);
+    }
+
+    private HttpClient(String baseUrl, String project, String token, Void marker) {
+        this.baseUrl = baseUrl;
+        String credentials = project + ":" + token;
+        this.authHeader = "Basic " + Base64.getEncoder().encodeToString(
+                credentials.getBytes(StandardCharsets.UTF_8));
+        this.httpClient = java.net.http.HttpClient.newBuilder()
+                .connectTimeout(DEFAULT_TIMEOUT)
+                .build();
+    }
+
     // ── Public methods ───────────────────────────────────────────────
 
     /**
