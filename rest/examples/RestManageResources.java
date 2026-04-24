@@ -1,5 +1,11 @@
 /**
- * Example: Create an AI agent, assign a phone number, and place a test call.
+ * Example: Create an AI agent, search phone numbers, and place a test call.
+ *
+ * Java funnels AI-agent CRUD through the generic Fabric resources handle
+ * with {@code type="ai_agent"} — Python's dedicated {@code fabric.ai_agents}
+ * accessor is not ported (see {@code PORT_OMISSIONS.md}). Phone-number
+ * search uses the {@code Map<String,String>} query-param contract; pass
+ * all values as strings.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -20,32 +26,34 @@ public class RestManageResources {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create an AI agent
+        // 1. Create an AI agent via the generic Fabric resources handle.
         System.out.println("Creating AI agent...");
-        var agent = client.fabric().aiAgents().create(Map.of(
+        var agent = client.fabric().resources().create(Map.of(
+                "type", "ai_agent",
                 "name", "Demo Support Bot",
                 "prompt", Map.of("text", "You are a friendly support agent for Acme Corp.")
         ));
         String agentId = (String) agent.get("id");
         System.out.println("  Created agent: " + agentId);
 
-        // 2. List all AI agents
-        System.out.println("\nListing AI agents...");
-        var agents = client.fabric().aiAgents().list();
-        System.out.println("  Found agents: " + agents);
+        // 2. List Fabric resources (filter client-side by type="ai_agent"
+        //    on the returned list if needed).
+        System.out.println("\nListing Fabric resources...");
+        var resources = client.fabric().resources().list();
+        System.out.println("  Found: " + resources);
 
-        // 3. Search for a phone number
+        // 3. Search for a phone number. search() takes Map<String,String>.
         System.out.println("\nSearching for available phone numbers...");
         var available = client.phoneNumbers().search(Map.of(
                 "area_code", "512",
-                "max_results", 3
+                "max_results", "3"
         ));
         System.out.println("  Available: " + available);
 
-        // 4. Place a test call (requires valid numbers)
+        // 4. Place a test call via the native calling CRUD resource.
         System.out.println("\nPlacing a test call...");
         try {
-            var result = client.calling().execute("dial", Map.of(
+            var result = client.calling().calls().create(Map.of(
                     "from", "+15559876543",
                     "to", "+15551234567",
                     "url", "https://example.com/call-handler"
@@ -55,9 +63,9 @@ public class RestManageResources {
             System.out.println("  Call failed (expected in demo): " + e.getStatusCode());
         }
 
-        // 5. Clean up: delete the agent
+        // 5. Clean up: delete the agent resource.
         System.out.println("\nDeleting agent " + agentId + "...");
-        client.fabric().aiAgents().delete(agentId);
+        client.fabric().resources().delete(agentId);
         System.out.println("  Deleted.");
     }
 }

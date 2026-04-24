@@ -1,11 +1,13 @@
 /**
  * Auto-Vivified SWML Service Example.
  *
- * Demonstrates calling verb methods directly on a SWMLService instead
- * of using addVerb(). Builds voicemail, IVR, and call transfer services.
+ * Demonstrates calling verb methods directly on a Service (answer(), play(),
+ * record(), hangup(), etc.) instead of going through Document.addVerb().
+ * Builds voicemail, IVR, and call transfer services that share a single
+ * Service instance per route.
  */
 
-import com.signalwire.sdk.swml.SWMLService;
+import com.signalwire.sdk.swml.Service;
 
 import java.util.List;
 import java.util.Map;
@@ -14,13 +16,12 @@ public class AutoVivifiedExample {
 
     public static void main(String[] args) throws Exception {
         // --- Voicemail Service ---
-        var voicemail = SWMLService.builder()
-                .name("voicemail")
-                .route("/voicemail")
-                .port(3000)
-                .build();
+        // Auto-vivification: each Service method (answer, play, record,
+        // hangup) appends the matching verb to the underlying SWML
+        // Document; no manual Document.addVerb(...) required.
+        var voicemail = new Service("voicemail", "/voicemail");
 
-        voicemail.addAnswerVerb();
+        voicemail.answer(null);
         voicemail.play(Map.of("url",
                 "say:Hello, you have reached the voicemail service. Please leave a message after the beep."));
         voicemail.sleep(1000);
@@ -33,48 +34,37 @@ public class AutoVivifiedExample {
                 "terminators", "#",
                 "status_url", "https://example.com/voicemail-status"));
         voicemail.play(Map.of("url", "say:Thank you for your message. Goodbye!"));
-        voicemail.addHangupVerb();
+        voicemail.hangup();
 
         // --- IVR Menu Service ---
-        var ivr = SWMLService.builder()
-                .name("ivr")
-                .route("/ivr")
-                .port(3000)
-                .build();
+        // Same pattern, different composition. prompt() + transfer() are
+        // auto-vivified verb methods on Service.
+        var ivr = new Service("ivr", "/ivr");
 
-        ivr.addAnswerVerb();
-        ivr.addSection("main_menu");
-        ivr.addVerbToSection("main_menu", "prompt", Map.of(
+        ivr.answer(null);
+        ivr.prompt(Map.of(
                 "play", "say:Press 1 for sales, 2 for support, or 3 to leave a message.",
                 "max_digits", 1,
                 "terminators", "#"));
-        ivr.addVerbToSection("main_menu", "switch", Map.of(
-                "variable", "prompt_digits",
-                "case", Map.of(
-                        "1", List.of(Map.of("transfer", Map.of("dest", "sales"))),
-                        "2", List.of(Map.of("transfer", Map.of("dest", "support"))))));
-        ivr.addVerb("transfer", Map.of("dest", "main_menu"));
+        ivr.transfer(Map.of("dest", "main_menu"));
 
         // --- Call Transfer Service ---
-        var transfer = SWMLService.builder()
-                .name("transfer")
-                .route("/transfer")
-                .port(3000)
-                .build();
+        // connect() fans out to multiple destinations in parallel.
+        var transfer = new Service("transfer", "/transfer");
 
-        transfer.addAnswerVerb();
-        transfer.addVerb("play", Map.of("url", "say:Connecting you with the next available agent."));
-        transfer.addVerb("connect", Map.of(
+        transfer.answer(null);
+        transfer.play(Map.of("url", "say:Connecting you with the next available agent."));
+        transfer.connect(Map.of(
                 "from", "+15551234567",
                 "timeout", 30,
                 "parallel", List.of(
                         Map.of("to", "+15552223333"),
                         Map.of("to", "+15554445555"))));
-        transfer.addVerb("record", Map.of("format", "mp3", "beep", true, "max_length", 120));
-        transfer.addHangupVerb();
+        transfer.record(Map.of("format", "mp3", "beep", true, "max_length", 120));
+        transfer.hangup();
 
-        // Run the voicemail service by default
+        // Run the voicemail service by default.
         System.out.println("Starting voicemail service on port 3000...");
-        voicemail.run();
+        voicemail.serve();
     }
 }
