@@ -1,0 +1,67 @@
+name: Surface Audit
+
+# Phase 13 / Layer B symbol-level surface parity.
+#
+# Runs scripts/enumerate_surface.py to produce port_surface.json, then
+# invokes porting-sdk/scripts/diff_port_surface.py to compare against the
+# Python reference. Any drift not excused by PORT_OMISSIONS.md or
+# PORT_ADDITIONS.md fails the job.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Nightly at 04:30 UTC so we catch porting-sdk updates within 24h.
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  surface-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout signalwire-java
+        uses: actions/checkout@v5
+        with:
+          path: signalwire-java
+
+      - name: Checkout porting-sdk
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/porting-sdk
+          path: porting-sdk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Enumerate Java SDK surface
+        working-directory: signalwire-java
+        run: |
+          python3 scripts/enumerate_surface.py \
+            --repo . \
+            --reference ../porting-sdk/python_surface.json \
+            --output port_surface.json
+
+      - name: Verify committed port_surface.json is current
+        working-directory: signalwire-java
+        run: |
+          # The committed snapshot must match the generated one so reviewers
+          # see the real diff in PRs. The --check flag strips volatile
+          # metadata (git SHA) before comparing.
+          python3 scripts/enumerate_surface.py \
+            --repo . \
+            --reference ../porting-sdk/python_surface.json \
+            --output port_surface.json \
+            --check
+
+      - name: Diff against Python reference
+        working-directory: signalwire-java
+        run: |
+          python3 ../porting-sdk/scripts/diff_port_surface.py \
+            --reference ../porting-sdk/python_surface.json \
+            --port-surface port_surface.json \
+            --omissions PORT_OMISSIONS.md \
+            --additions PORT_ADDITIONS.md
