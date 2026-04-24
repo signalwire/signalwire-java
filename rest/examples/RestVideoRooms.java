@@ -40,10 +40,10 @@ public class RestVideoRooms {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. List video room sessions
+        // 3. List video room sessions (the live / historical room-instance feed).
         System.out.println("\nListing video sessions...");
         try {
-            var sessions = client.video().sessions().list();
+            var sessions = client.video().roomSessions().list();
             System.out.println("  Sessions: " + sessions);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());

@@ -1,5 +1,13 @@
 /**
- * Example: Subscriber and SIP endpoint management via the Fabric API.
+ * Example: Subscriber and SIP endpoint management via the REST API.
+ *
+ * Java routes Fabric subscribers through {@code client.fabric().subscribers()}
+ * and top-level SIP endpoints through the dedicated SIP namespace at
+ * {@code client.sip().endpoints()}. Python's
+ * {@code fabric.sip_endpoints} per-subresource accessor is not ported;
+ * SIP endpoints are owned by the SIP namespace in Java, while
+ * {@code fabric().resources()} is the generic handle for other Fabric
+ * subresource types. See {@code PORT_OMISSIONS.md}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -17,7 +25,7 @@ public class RestFabricSubscribersAndSip {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create a subscriber
+        // 1. Create a Fabric subscriber.
         System.out.println("Creating subscriber...");
         try {
             var subscriber = client.fabric().subscribers().create(Map.of(
@@ -30,7 +38,7 @@ public class RestFabricSubscribersAndSip {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
 
-        // 2. List subscribers
+        // 2. List Fabric subscribers.
         System.out.println("\nListing subscribers...");
         try {
             var subscribers = client.fabric().subscribers().list();
@@ -39,10 +47,10 @@ public class RestFabricSubscribersAndSip {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. Create a SIP endpoint
+        // 3. Create a SIP endpoint via the SIP namespace.
         System.out.println("\nCreating SIP endpoint...");
         try {
-            var sipEndpoint = client.fabric().sipEndpoints().create(Map.of(
+            var sipEndpoint = client.sip().endpoints().create(Map.of(
                     "name", "office-phone",
                     "username", "jane.doe",
                     "password", "secure-password-here"
@@ -52,11 +60,11 @@ public class RestFabricSubscribersAndSip {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
 
-        // 4. List SIP endpoints
+        // 4. List SIP endpoints.
         System.out.println("\nListing SIP endpoints...");
         try {
-            var sipEndpoints = client.fabric().sipEndpoints().list();
-            System.out.println("  SIP endpoints: " + sipEndpoints);
+            var endpoints = client.sip().endpoints().list();
+            System.out.println("  SIP endpoints: " + endpoints);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }

@@ -17,11 +17,23 @@ Module paths use the **Python reference module names** so symbols line up in
 ``EnvProvider``) get a naturally-translated module path rooted at
 ``signalwire.*``.
 
+Two emission modes:
+
+- **Python-reference** (default, ``--output port_surface.json``) — method
+  names translated to snake_case so ``diff_port_surface.py`` can diff
+  against ``python_surface.json``. Used for Layer B parity auditing.
+- **Native names** (``--native``, ``--output port_surface_native.json``) —
+  method names kept in Java camelCase (``setPromptText``,
+  ``addSkill``). Used for Layer C doc↔code alignment auditing via
+  ``audit_docs.py``, which extracts method-call patterns from
+  ``docs/`` and ``examples/*.java`` in their natural Java form.
+
 Usage::
 
     python3 scripts/enumerate_surface.py                      # stdout
     python3 scripts/enumerate_surface.py --output port_surface.json
     python3 scripts/enumerate_surface.py --check --output port_surface.json
+    python3 scripts/enumerate_surface.py --native --output port_surface_native.json
 """
 
 from __future__ import annotations
@@ -105,7 +117,8 @@ def camel_to_snake(name: str) -> str:
     return s2
 
 
-def translate_method_name(java_name: str, class_name: str) -> str | None:
+def translate_method_name(java_name: str, class_name: str,
+                           native: bool = False) -> str | list[str] | None:
     """Java method → Python-reference method name, or None if skipped.
 
     - Constructors (``ClassName``) map to ``__init__``.
@@ -114,7 +127,28 @@ def translate_method_name(java_name: str, class_name: str) -> str | None:
     - If the result collides with a Python keyword (``pass``), a trailing
       underscore is added (``pass_``) — this matches signalwire-python's
       convention for ``Call.pass_``.
+
+    When ``native=True`` the method appears under BOTH names — its Java
+    identifier (``addSkill``) and its Python-reference form (``add_skill``).
+    This lets ``audit_docs.py`` resolve calls written in either convention:
+    Java examples naturally use camelCase, while the reference docs imported
+    from ``porting-sdk`` (``docs/agent_guide.md``, ``rest/docs/calling.md``,
+    etc.) carry snake_case Python snippets. Both refer to the same port
+    method. A doc-audit "phantom" is only a phantom when neither form
+    resolves.
     """
+    if native:
+        names: list[str] = [java_name]
+        # Also include the Python-reference form so snake_case doc snippets
+        # resolve. Skip ``__init__``/``__repr__`` — those Python-only
+        # dunders never appear as ``.something()`` call patterns in docs.
+        snake = camel_to_snake(java_name)
+        if snake in _PY_KEYWORDS:
+            snake += "_"
+        snake = _METHOD_RENAMES.get(snake, snake)
+        if snake != java_name:
+            names.append(snake)
+        return names
     if java_name == class_name:
         return "__init__"
     if java_name == "toString":
@@ -195,6 +229,7 @@ def parse_type_body(
     src: str, outer_name: str,
     known_python_classes: set[str] | None = None,
     java_outer_name: str | None = None,
+    native: bool = False,
 ) -> dict[str, dict]:
     """Parse a class/interface/enum body. Returns ``{ClassName: [methods]}``
     for the outer class and any public nested classes found inside it.
@@ -250,7 +285,7 @@ def parse_type_body(
             inner_body = src[body_open + 1 : body_close]
             inner_classes = parse_type_body(
                 inner_body, effective_name, known_python_classes,
-                java_outer_name=name,
+                java_outer_name=name, native=native,
             )
             for cls_name, cls_methods in inner_classes.items():
                 if cls_name in classes:
@@ -299,9 +334,12 @@ def parse_type_body(
             else:
                 body_end = after_params
 
-            translated = translate_method_name(name, java_outer_name)
+            translated = translate_method_name(name, java_outer_name, native=native)
             if translated is not None:
-                methods.append(translated)
+                if isinstance(translated, list):
+                    methods.extend(translated)
+                else:
+                    methods.append(translated)
             i = body_end + 1
 
     return classes
@@ -347,8 +385,8 @@ def java_to_python_module(java_package: str, class_name: str,
 _PACKAGE_RE = re.compile(r"^\s*package\s+([\w.]+)\s*;", re.MULTILINE)
 
 
-def enumerate_file(path: Path, class_to_module: dict[str, str]
-                   ) -> dict[str, dict]:
+def enumerate_file(path: Path, class_to_module: dict[str, str],
+                   native: bool = False) -> dict[str, dict]:
     """Return {module: {"classes": {Name: [methods]}, "functions": []}}."""
     raw = path.read_text(encoding="utf-8", errors="replace")
     stripped = strip_comments_and_strings(raw)
@@ -362,7 +400,10 @@ def enumerate_file(path: Path, class_to_module: dict[str, str]
         return {}
 
     outer_name_raw = m_type.group("name")
-    outer_name = _CLASS_RENAMES.get(outer_name_raw, outer_name_raw)
+    # In native mode we skip the Python-reference class renames — Java docs
+    # reference Java names like CallDialEvent, not DialEvent.
+    outer_name = (outer_name_raw if native
+                  else _CLASS_RENAMES.get(outer_name_raw, outer_name_raw))
     body_open = stripped.find("{", m_type.end())
     if body_open < 0:
         return {}
@@ -372,7 +413,7 @@ def enumerate_file(path: Path, class_to_module: dict[str, str]
     known_python_classes = set(class_to_module.keys())
     classes = parse_type_body(
         body, outer_name, known_python_classes,
-        java_outer_name=outer_name_raw,
+        java_outer_name=outer_name_raw, native=native,
     )
 
     # Assign each class to its Python-reference module.
@@ -391,12 +432,12 @@ def enumerate_file(path: Path, class_to_module: dict[str, str]
     return out
 
 
-def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str]
-                  ) -> dict[str, dict]:
+def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
+                  native: bool = False) -> dict[str, dict]:
     """Walk ``java_src_root/com/signalwire/sdk`` and collect all classes."""
     merged: dict[str, dict] = {}
     for path in sorted(java_src_root.rglob("*.java")):
-        per_file = enumerate_file(path, class_to_module)
+        per_file = enumerate_file(path, class_to_module, native=native)
         for mod, entry in per_file.items():
             dest = merged.setdefault(mod, {"classes": {}, "functions": []})
             for cls_name, methods in entry["classes"].items():
@@ -422,16 +463,18 @@ def git_sha(repo: Path) -> str:
         return "N/A"
 
 
-def build_snapshot(repo_root: Path, reference_json: Path) -> dict:
+def build_snapshot(repo_root: Path, reference_json: Path,
+                   native: bool = False) -> dict:
     class_to_module = build_class_to_module_map(reference_json)
     java_src = repo_root / "src" / "main" / "java"
     if not java_src.is_dir():
         raise SystemExit(f"error: java source not found at {java_src}")
-    modules = enumerate_sdk(java_src, class_to_module)
+    modules = enumerate_sdk(java_src, class_to_module, native=native)
     return {
         "version": "1",
         "generated_from": f"signalwire-java @ {git_sha(repo_root)}",
         "language": "java",
+        "names": "java-native" if native else "python-reference",
         "modules": modules,
     }
 
@@ -455,6 +498,12 @@ def main(argv: list[str]) -> int:
         "--check", action="store_true",
         help="Compare against file at --output; exit 1 on drift",
     )
+    parser.add_argument(
+        "--native", action="store_true",
+        help="Emit Java-native method names (camelCase) instead of "
+             "Python-reference snake_case. Used for Layer C doc↔code "
+             "alignment auditing via audit_docs.py.",
+    )
     args = parser.parse_args(argv)
 
     if args.check and not args.output:
@@ -463,7 +512,7 @@ def main(argv: list[str]) -> int:
         print(f"error: reference {args.reference} not found", file=sys.stderr)
         return 1
 
-    snapshot = build_snapshot(args.repo, args.reference)
+    snapshot = build_snapshot(args.repo, args.reference, native=args.native)
     rendered = json.dumps(snapshot, indent=2, sort_keys=True) + "\n"
 
     if args.check:

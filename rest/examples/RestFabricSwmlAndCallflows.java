@@ -1,5 +1,13 @@
 /**
- * Example: SWML scripts and call flow management via the Fabric API.
+ * Example: SWML scripts and call flow management via the REST API.
+ *
+ * Java routes SWML scripts through {@code client.swml().scripts()} (the
+ * top-level SWML namespace) and call-flow resources through the generic
+ * {@code client.fabric().resources()} handle — filtered by resource type.
+ * The Python SDK's per-subresource accessors on {@code fabric.swml_scripts}
+ * and {@code fabric.call_flows} are folded into these two entry points;
+ * see {@code PORT_OMISSIONS.md} and {@code rest/docs/fabric.md} for the
+ * full mapping.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -18,10 +26,10 @@ public class RestFabricSwmlAndCallflows {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create a SWML script
+        // 1. Create a SWML script via the top-level SWML namespace.
         System.out.println("Creating SWML script...");
         try {
-            var swml = client.fabric().swmlScripts().create(Map.of(
+            var swml = client.swml().scripts().create(Map.of(
                     "name", "greeting-script",
                     "content", Map.of(
                             "version", "1.0.0",
@@ -37,19 +45,23 @@ public class RestFabricSwmlAndCallflows {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
 
-        // 2. List SWML scripts
+        // 2. List SWML scripts.
         System.out.println("\nListing SWML scripts...");
         try {
-            var scripts = client.fabric().swmlScripts().list();
+            var scripts = client.swml().scripts().list();
             System.out.println("  Scripts: " + scripts);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. Create a call flow
+        // 3. Create a call flow via the generic Fabric resources handle
+        //    with type="call_flow". Java funnels every Fabric subresource
+        //    through this one CrudResource rather than exposing a bespoke
+        //    accessor per type.
         System.out.println("\nCreating call flow...");
         try {
-            var callFlow = client.fabric().callFlows().create(Map.of(
+            var callFlow = client.fabric().resources().create(Map.of(
+                    "type", "call_flow",
                     "name", "main-routing",
                     "description", "Main IVR with AI fallback"
             ));

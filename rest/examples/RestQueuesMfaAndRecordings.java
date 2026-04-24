@@ -1,5 +1,11 @@
 /**
- * Example: Queue management, MFA verification, and recording operations.
+ * Example: Queue and recording management via the REST API.
+ *
+ * The Java SDK exposes queue and recording CRUD through dedicated
+ * namespaces: {@code client.queues().queues()} and
+ * {@code client.recordings().recordings()}. MFA verification is not
+ * surfaced on the Java port — see {@code PORT_OMISSIONS.md}; it is
+ * typically invoked via the messaging or voice flows.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -17,19 +23,19 @@ public class RestQueuesMfaAndRecordings {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. List call queues
+        // 1. List call queues via the queues namespace.
         System.out.println("Listing queues...");
         try {
-            var queues = client.queue().list();
+            var queues = client.queues().queues().list();
             System.out.println("  Queues: " + queues);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 2. Create a queue
+        // 2. Create a queue.
         System.out.println("\nCreating a queue...");
         try {
-            var queue = client.queue().create(Map.of(
+            var queue = client.queues().queues().create(Map.of(
                     "name", "support-queue",
                     "max_size", 50
             ));
@@ -38,26 +44,22 @@ public class RestQueuesMfaAndRecordings {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
 
-        // 3. List recordings
+        // 3. List recordings via the recordings namespace.
         System.out.println("\nListing recordings...");
         try {
-            var recordings = client.recording().list();
+            var recordings = client.recordings().recordings().list();
             System.out.println("  Recordings: " + recordings);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 4. Send MFA verification
-        System.out.println("\nSending MFA verification...");
+        // 4. Fetch a specific recording by ID (demo).
+        System.out.println("\nFetching a recording by ID (demo)...");
         try {
-            // MFA is typically handled through the calling or messaging namespace
-            var result = client.calling().execute("send_digits", Map.of(
-                    "call_id", "example-call-id",
-                    "digits", "1234#"
-            ));
-            System.out.println("  MFA sent: " + result);
+            var recording = client.recordings().recordings().get("example-recording-id");
+            System.out.println("  Recording: " + recording);
         } catch (RestError e) {
-            System.out.println("  MFA failed (expected in demo): " + e.getStatusCode());
+            System.out.println("  Fetch failed (expected in demo): " + e.getStatusCode());
         }
     }
 }

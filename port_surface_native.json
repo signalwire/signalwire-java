@@ -5,15 +5,23 @@
     "signalwire.agent.agent_base_builder": {
       "classes": {
         "AgentBaseBuilder": [
+          "authPassword",
+          "authUser",
           "auth_password",
           "auth_user",
+          "autoAnswer",
           "auto_answer",
           "build",
+          "envProvider",
           "env_provider",
           "host",
+          "maxDuration",
           "max_duration",
           "name",
           "port",
+          "recordCall",
+          "recordFormat",
+          "recordStereo",
           "record_call",
           "record_format",
           "record_stereo",
@@ -31,14 +39,21 @@
     "signalwire.agent_server": {
       "classes": {
         "AgentServer": [
-          "__init__",
+          "AgentServer",
+          "agent_server",
+          "getAgent",
+          "getRoutes",
+          "getSipRoute",
           "get_agent",
           "get_routes",
           "get_sip_route",
           "register",
+          "registerSipRoute",
           "register_sip_route",
           "run",
+          "serveStaticFiles",
           "serve_static_files",
+          "setStaticFilesDir",
           "set_static_files_dir",
           "stop",
           "unregister"
@@ -49,9 +64,12 @@
     "signalwire.cli.simulation.mock_env": {
       "classes": {
         "ServerlessSimulator": [
-          "__init__",
+          "ServerlessSimulator",
+          "parsePlatform",
           "parse_platform",
-          "preset_for"
+          "presetFor",
+          "preset_for",
+          "serverless_simulator"
         ]
       },
       "functions": []
@@ -74,6 +92,20 @@
     "signalwire.core.agent_base": {
       "classes": {
         "AgentBase": [
+          "addAnswerVerb",
+          "addFunctionInclude",
+          "addHint",
+          "addHints",
+          "addInternalFiller",
+          "addLanguage",
+          "addMcpServer",
+          "addPatternHint",
+          "addPostAiVerb",
+          "addPostAnswerVerb",
+          "addPreAnswerVerb",
+          "addPronunciation",
+          "addSkill",
+          "addSwaigQueryParams",
           "add_answer_verb",
           "add_function_include",
           "add_hint",
@@ -88,23 +120,52 @@
           "add_pronunciation",
           "add_skill",
           "add_swaig_query_params",
+          "buildMcpToolList",
           "build_mcp_tool_list",
           "builder",
+          "clearPostAiVerbs",
+          "clearPostAnswerVerbs",
+          "clearPreAnswerVerbs",
+          "clearSwaigQueryParams",
           "clear_post_ai_verbs",
           "clear_post_answer_verbs",
           "clear_pre_answer_verbs",
           "clear_swaig_query_params",
           "clone",
           "contexts",
+          "defineContexts",
+          "defineTool",
+          "defineTools",
           "define_contexts",
           "define_tool",
           "define_tools",
+          "detectServerlessBaseUrl",
           "detect_serverless_base_url",
+          "enableDebugEvents",
+          "enableDebugRoutes",
+          "enableMcpServer",
+          "enableSipRouting",
           "enable_debug_events",
           "enable_debug_routes",
           "enable_mcp_server",
           "enable_sip_routing",
+          "extractSipUsername",
           "extract_sip_username",
+          "getAuthPassword",
+          "getAuthUser",
+          "getDynamicConfigCallback",
+          "getGlobalData",
+          "getHost",
+          "getMcpServers",
+          "getName",
+          "getNormalisedRoute",
+          "getOnSummaryCallback",
+          "getPort",
+          "getPrompt",
+          "getRoute",
+          "getSipUsernames",
+          "getSkillManager",
+          "getTools",
           "get_auth_password",
           "get_auth_user",
           "get_dynamic_config_callback",
@@ -120,26 +181,62 @@
           "get_sip_usernames",
           "get_skill_manager",
           "get_tools",
+          "handleMcpRequest",
           "handle_mcp_request",
+          "hasSkill",
+          "hasTool",
           "has_skill",
           "has_tool",
+          "isMcpServerEnabled",
+          "isSipRoutingEnabled",
           "is_mcp_server_enabled",
           "is_sip_routing_enabled",
+          "listSkills",
           "list_skills",
+          "manualSetProxyUrl",
           "manual_set_proxy_url",
+          "onDebugEvent",
+          "onFunctionCall",
+          "onSummary",
           "on_debug_event",
           "on_function_call",
           "on_summary",
+          "promptAddSection",
+          "promptAddSubsection",
+          "promptAddToSection",
+          "promptHasSection",
           "prompt_add_section",
           "prompt_add_subsection",
           "prompt_add_to_section",
           "prompt_has_section",
+          "registerSipUsername",
+          "registerSwaigFunction",
           "register_sip_username",
           "register_swaig_function",
+          "removeSkill",
           "remove_skill",
+          "renderSwml",
+          "renderSwmlJson",
           "render_swml",
           "render_swml_json",
+          "resetContexts",
           "reset_contexts",
+          "setDynamicConfigCallback",
+          "setFunctionIncludes",
+          "setGlobalData",
+          "setInternalFillers",
+          "setInternalFillersMap",
+          "setLanguages",
+          "setNativeFunctions",
+          "setParam",
+          "setParams",
+          "setPostPrompt",
+          "setPostPromptLlmParams",
+          "setPostPromptUrl",
+          "setPromptLlmParams",
+          "setPromptText",
+          "setPronunciations",
+          "setWebHookUrl",
           "set_dynamic_config_callback",
           "set_function_includes",
           "set_global_data",
@@ -156,6 +253,7 @@
           "set_prompt_text",
           "set_pronunciations",
           "set_web_hook_url",
+          "updateGlobalData",
           "update_global_data"
         ]
       },
@@ -164,16 +262,38 @@
     "signalwire.core.contexts": {
       "classes": {
         "Context": [
-          "__init__",
+          "Context",
+          "addBullets",
+          "addEnterFiller",
+          "addExitFiller",
+          "addSection",
+          "addStep",
           "add_bullets",
           "add_enter_filler",
           "add_exit_filler",
           "add_section",
           "add_step",
+          "context",
+          "getName",
+          "getStep",
           "get_name",
           "get_step",
+          "moveStep",
           "move_step",
+          "removeStep",
           "remove_step",
+          "setConsolidate",
+          "setEnterFillers",
+          "setExitFillers",
+          "setFullReset",
+          "setInitialStep",
+          "setIsolated",
+          "setPostPrompt",
+          "setPrompt",
+          "setSystemPrompt",
+          "setUserPrompt",
+          "setValidContexts",
+          "setValidSteps",
           "set_consolidate",
           "set_enter_fillers",
           "set_exit_fillers",
@@ -186,37 +306,70 @@
           "set_user_prompt",
           "set_valid_contexts",
           "set_valid_steps",
+          "toMap",
           "to_dict"
         ],
         "ContextBuilder": [
-          "__init__",
+          "ContextBuilder",
+          "addContext",
           "add_context",
+          "attachToolNameSupplier",
           "attach_tool_name_supplier",
+          "context_builder",
+          "getContext",
           "get_context",
+          "isEmpty",
           "is_empty",
           "reset",
+          "toMap",
           "to_dict",
           "validate"
         ],
         "GatherInfo": [
-          "__init__",
+          "GatherInfo",
+          "addQuestion",
           "add_question",
+          "gather_info",
+          "getCompletionAction",
+          "getQuestions",
           "get_completion_action",
           "get_questions",
+          "toMap",
           "to_dict"
         ],
         "GatherQuestion": [
-          "__init__",
+          "GatherQuestion",
+          "gather_question",
+          "getKey",
           "get_key",
+          "toMap",
           "to_dict"
         ],
         "Step": [
-          "__init__",
+          "Step",
+          "addBullets",
+          "addGatherQuestion",
+          "addSection",
           "add_bullets",
           "add_gather_question",
           "add_section",
+          "clearSections",
           "clear_sections",
+          "getName",
           "get_name",
+          "setEnd",
+          "setFunctions",
+          "setGatherInfo",
+          "setResetConsolidate",
+          "setResetFullReset",
+          "setResetSystemPrompt",
+          "setResetUserPrompt",
+          "setSkipToNextStep",
+          "setSkipUserTurn",
+          "setStepCriteria",
+          "setText",
+          "setValidContexts",
+          "setValidSteps",
           "set_end",
           "set_functions",
           "set_gather_info",
@@ -230,6 +383,8 @@
           "set_text",
           "set_valid_contexts",
           "set_valid_steps",
+          "step",
+          "toMap",
           "to_dict"
         ]
       },
@@ -238,19 +393,25 @@
     "signalwire.core.data_map": {
       "classes": {
         "DataMap": [
-          "__init__",
+          "DataMap",
           "body",
+          "data_map",
           "description",
+          "errorKeys",
           "error_keys",
           "expression",
+          "fallbackOutput",
           "fallback_output",
           "foreach",
+          "getName",
           "get_name",
+          "globalErrorKeys",
           "global_error_keys",
           "output",
           "parameter",
           "params",
           "purpose",
+          "toSwaigFunction",
           "to_swaig_function",
           "webhook"
         ]
@@ -260,59 +421,106 @@
     "signalwire.core.function_result": {
       "classes": {
         "FunctionResult": [
-          "__init__",
+          "FunctionResult",
+          "addAction",
+          "addActions",
+          "addDynamicHints",
           "add_action",
           "add_actions",
           "add_dynamic_hints",
+          "clearDynamicHints",
           "clear_dynamic_hints",
           "connect",
+          "createPaymentAction",
+          "createPaymentParameter",
+          "createPaymentPrompt",
           "create_payment_action",
           "create_payment_parameter",
           "create_payment_prompt",
+          "enableExtensiveData",
+          "enableFunctionsOnTimeout",
           "enable_extensive_data",
           "enable_functions_on_timeout",
+          "executeRpc",
+          "executeSwml",
           "execute_rpc",
           "execute_swml",
+          "function_result",
+          "getActions",
+          "getResponse",
           "get_actions",
           "get_response",
           "hangup",
           "hold",
+          "isPostProcess",
           "is_post_process",
+          "joinConference",
+          "joinRoom",
           "join_conference",
           "join_room",
           "pay",
+          "playBackgroundFile",
           "play_background_file",
+          "recordCall",
           "record_call",
+          "removeGlobalData",
+          "removeMetadata",
           "remove_global_data",
           "remove_metadata",
+          "replaceInHistory",
           "replace_in_history",
+          "rpcAiMessage",
+          "rpcAiUnhold",
+          "rpcDial",
           "rpc_ai_message",
           "rpc_ai_unhold",
           "rpc_dial",
           "say",
+          "sendSms",
           "send_sms",
+          "setEndOfSpeechTimeout",
+          "setMetadata",
+          "setPostProcess",
+          "setResponse",
+          "setSpeechEventTimeout",
           "set_end_of_speech_timeout",
           "set_metadata",
           "set_post_process",
           "set_response",
           "set_speech_event_timeout",
+          "simulateUserInput",
           "simulate_user_input",
+          "sipRefer",
           "sip_refer",
           "stop",
+          "stopBackgroundFile",
+          "stopRecordCall",
+          "stopTap",
           "stop_background_file",
           "stop_record_call",
           "stop_tap",
+          "switchContext",
           "switch_context",
+          "swmlChangeContext",
+          "swmlChangeStep",
+          "swmlTransfer",
+          "swmlUserEvent",
           "swml_change_context",
           "swml_change_step",
           "swml_transfer",
           "swml_user_event",
           "tap",
+          "toJson",
+          "toMap",
           "to_dict",
           "to_json",
+          "toggleFunctions",
           "toggle_functions",
+          "updateGlobalData",
+          "updateSettings",
           "update_global_data",
           "update_settings",
+          "waitForUser",
           "wait_for_user"
         ]
       },
@@ -321,8 +529,11 @@
     "signalwire.core.security.session_manager": {
       "classes": {
         "SessionManager": [
-          "__init__",
+          "SessionManager",
+          "createToken",
           "create_token",
+          "session_manager",
+          "validateToken",
           "validate_token"
         ]
       },
@@ -337,12 +548,17 @@
     "signalwire.core.skill_manager": {
       "classes": {
         "SkillManager": [
-          "__init__",
+          "SkillManager",
+          "addSkill",
           "add_skill",
           "cleanup",
+          "hasSkill",
           "has_skill",
+          "listSkills",
           "list_skills",
-          "remove_skill"
+          "removeSkill",
+          "remove_skill",
+          "skill_manager"
         ]
       },
       "functions": []
@@ -350,13 +566,18 @@
     "signalwire.logging.logger": {
       "classes": {
         "Logger": [
-          "__init__",
+          "Logger",
           "debug",
           "error",
+          "getGlobalLevel",
+          "getLogger",
           "get_global_level",
           "get_logger",
           "info",
+          "isEnabled",
           "is_enabled",
+          "logger",
+          "setGlobalLevel",
           "set_global_level",
           "warn"
         ]
@@ -366,6 +587,7 @@
     "signalwire.logging.logger_level": {
       "classes": {
         "LoggerLevel": [
+          "getValue",
           "get_value"
         ]
       },
@@ -374,8 +596,10 @@
     "signalwire.prefabs.concierge": {
       "classes": {
         "ConciergeAgent": [
-          "__init__",
+          "ConciergeAgent",
           "amenity",
+          "concierge_agent",
+          "getAgent",
           "get_agent",
           "run",
           "serve"
@@ -386,8 +610,10 @@
     "signalwire.prefabs.faq_bot": {
       "classes": {
         "FAQBotAgent": [
-          "__init__",
+          "FAQBotAgent",
           "faq",
+          "faq_bot_agent",
+          "getAgent",
           "get_agent",
           "run",
           "serve"
@@ -398,8 +624,10 @@
     "signalwire.prefabs.info_gatherer": {
       "classes": {
         "InfoGathererAgent": [
-          "__init__",
+          "InfoGathererAgent",
+          "getAgent",
           "get_agent",
+          "info_gatherer_agent",
           "question",
           "run",
           "serve"
@@ -410,11 +638,15 @@
     "signalwire.prefabs.receptionist": {
       "classes": {
         "ReceptionistAgent": [
-          "__init__",
+          "ReceptionistAgent",
+          "getAgent",
           "get_agent",
+          "phoneDepartment",
           "phone_department",
+          "receptionist_agent",
           "run",
           "serve",
+          "swmlDepartment",
           "swml_department"
         ]
       },
@@ -423,13 +655,19 @@
     "signalwire.prefabs.survey": {
       "classes": {
         "SurveyAgent": [
-          "__init__",
+          "SurveyAgent",
+          "getAgent",
           "get_agent",
+          "multipleChoiceQuestion",
           "multiple_choice_question",
+          "openEndedQuestion",
           "open_ended_question",
+          "ratingQuestion",
           "rating_question",
           "run",
           "serve",
+          "survey_agent",
+          "yesNoQuestion",
           "yes_no_question"
         ]
       },
@@ -438,7 +676,8 @@
     "signalwire.relay.action_play_and_collect_action": {
       "classes": {
         "ActionPlayAndCollectAction": [
-          "__init__",
+          "PlayAndCollectAction",
+          "play_and_collect_action",
           "stop",
           "volume"
         ]
@@ -448,7 +687,8 @@
     "signalwire.relay.action_receive_fax_action": {
       "classes": {
         "ActionReceiveFaxAction": [
-          "__init__",
+          "ReceiveFaxAction",
+          "receive_fax_action",
           "stop"
         ]
       },
@@ -457,7 +697,8 @@
     "signalwire.relay.action_send_fax_action": {
       "classes": {
         "ActionSendFaxAction": [
-          "__init__",
+          "SendFaxAction",
+          "send_fax_action",
           "stop"
         ]
       },
@@ -466,42 +707,69 @@
     "signalwire.relay.call": {
       "classes": {
         "AIAction": [
-          "__init__",
+          "AiAction",
+          "ai_action",
           "stop"
         ],
         "Action": [
-          "__init__",
-          "__repr__",
+          "Action",
+          "action",
+          "getCall",
+          "getControlId",
+          "getResult",
+          "getState",
           "get_call",
           "get_control_id",
           "get_result",
           "get_state",
+          "isDone",
           "is_done",
           "resolve",
+          "setOnCompleted",
           "set_on_completed",
           "stop",
+          "toString",
+          "to_string",
+          "updateState",
           "update_state",
+          "waitForCompletion",
           "wait_for_completion"
         ],
         "Call": [
-          "__init__",
-          "__repr__",
+          "Call",
           "ai",
+          "aiHold",
+          "aiMessage",
+          "aiUnhold",
           "ai_hold",
           "ai_message",
           "ai_unhold",
+          "amazonBedrock",
           "amazon_bedrock",
           "answer",
+          "bindDigit",
           "bind_digit",
+          "call",
+          "clearDigitBindings",
           "clear_digit_bindings",
           "collect",
           "connect",
           "denoise",
+          "denoiseStop",
           "denoise_stop",
           "detect",
           "disconnect",
+          "dispatchEvent",
           "dispatch_event",
           "echo",
+          "getAction",
+          "getCallId",
+          "getDevice",
+          "getDirection",
+          "getEndReason",
+          "getNodeId",
+          "getState",
+          "getTag",
           "get_action",
           "get_call_id",
           "get_device",
@@ -512,27 +780,50 @@
           "get_tag",
           "hangup",
           "hold",
+          "isEnded",
           "is_ended",
+          "joinConference",
+          "joinRoom",
           "join_conference",
           "join_room",
+          "leaveConference",
+          "leaveRoom",
           "leave_conference",
           "leave_room",
+          "liveTranscribe",
+          "liveTranslate",
           "live_transcribe",
           "live_translate",
           "on",
+          "pass",
           "pass_",
           "pay",
           "play",
+          "playAndCollect",
           "play_and_collect",
+          "queueEnter",
+          "queueLeave",
           "queue_enter",
           "queue_leave",
+          "receiveFax",
           "receive_fax",
           "record",
           "refer",
+          "registerAction",
           "register_action",
+          "resolveAllActions",
           "resolve_all_actions",
+          "sendDigits",
+          "sendFax",
           "send_digits",
           "send_fax",
+          "setClient",
+          "setDevice",
+          "setDirection",
+          "setEndReason",
+          "setNodeId",
+          "setState",
+          "setTag",
           "set_client",
           "set_device",
           "set_direction",
@@ -542,49 +833,62 @@
           "set_tag",
           "stream",
           "tap",
+          "toString",
+          "to_string",
           "transcribe",
           "transfer",
           "unhold",
+          "userEvent",
           "user_event"
         ],
         "CollectAction": [
-          "__init__",
+          "CollectAction",
+          "collect_action",
+          "startInputTimers",
           "start_input_timers",
           "stop"
         ],
         "DetectAction": [
-          "__init__",
+          "DetectAction",
+          "detect_action",
           "stop"
         ],
         "PayAction": [
-          "__init__",
+          "PayAction",
+          "pay_action",
           "stop"
         ],
         "PlayAction": [
-          "__init__",
+          "PlayAction",
           "pause",
+          "play_action",
           "resume",
           "stop",
           "volume"
         ],
         "RecordAction": [
-          "__init__",
+          "RecordAction",
           "pause",
+          "pauseWithBehavior",
           "pause_with_behavior",
+          "record_action",
           "resume",
           "stop"
         ],
         "StreamAction": [
-          "__init__",
-          "stop"
+          "StreamAction",
+          "stop",
+          "stream_action"
         ],
         "TapAction": [
-          "__init__",
-          "stop"
+          "TapAction",
+          "stop",
+          "tap_action"
         ],
         "TranscribeAction": [
-          "__init__",
-          "stop"
+          "TranscribeAction",
+          "stop",
+          "transcribe_action"
         ]
       },
       "functions": []
@@ -596,15 +900,23 @@
           "dial",
           "disconnect",
           "execute",
+          "getContexts",
+          "getProject",
+          "getSpace",
           "get_contexts",
           "get_project",
           "get_space",
+          "isConnected",
           "is_connected",
+          "onCall",
+          "onEvent",
+          "onMessage",
           "on_call",
           "on_event",
           "on_message",
           "receive",
           "run",
+          "sendMessage",
           "send_message",
           "unreceive"
         ]
@@ -614,6 +926,10 @@
     "signalwire.relay.constants": {
       "classes": {
         "Constants": [
+          "isCallGoneCode",
+          "isTerminalActionState",
+          "isTerminalCallState",
+          "isTerminalMessageState",
           "is_call_gone_code",
           "is_terminal_action_state",
           "is_terminal_call_state",
@@ -625,7 +941,13 @@
     "signalwire.relay.event": {
       "classes": {
         "CallReceiveEvent": [
-          "__init__",
+          "CallReceiveEvent",
+          "call_receive_event",
+          "getCallId",
+          "getCallState",
+          "getContext",
+          "getDevice",
+          "getNodeId",
           "get_call_id",
           "get_call_state",
           "get_context",
@@ -633,7 +955,15 @@
           "get_node_id"
         ],
         "CallStateEvent": [
-          "__init__",
+          "CallStateEvent",
+          "call_state_event",
+          "getCallId",
+          "getCallState",
+          "getDevice",
+          "getDirection",
+          "getEndReason",
+          "getNodeId",
+          "getTag",
           "get_call_id",
           "get_call_state",
           "get_device",
@@ -643,31 +973,53 @@
           "get_tag"
         ],
         "CollectEvent": [
-          "__init__",
+          "CallCollectEvent",
+          "call_collect_event",
+          "getCallId",
+          "getControlId",
+          "getResult",
+          "getResultType",
           "get_call_id",
           "get_control_id",
           "get_result",
           "get_result_type"
         ],
         "ConferenceEvent": [
-          "__init__",
+          "ConferenceEvent",
+          "conference_event",
+          "getCallId",
+          "getConferenceId",
           "get_call_id",
           "get_conference_id"
         ],
         "ConnectEvent": [
-          "__init__",
+          "CallConnectEvent",
+          "call_connect_event",
+          "getCallId",
+          "getConnectState",
           "get_call_id",
           "get_connect_state"
         ],
         "DetectEvent": [
-          "__init__",
+          "CallDetectEvent",
+          "call_detect_event",
+          "getCallId",
+          "getControlId",
+          "getDetect",
+          "getDetectEvent",
           "get_call_id",
           "get_control_id",
           "get_detect",
           "get_detect_event"
         ],
         "DialEvent": [
-          "__init__",
+          "CallDialEvent",
+          "call_dial_event",
+          "getCallId",
+          "getCallInfo",
+          "getDialState",
+          "getNodeId",
+          "getTag",
           "get_call_id",
           "get_call_info",
           "get_dial_state",
@@ -675,13 +1027,27 @@
           "get_tag"
         ],
         "FaxEvent": [
-          "__init__",
+          "CallFaxEvent",
+          "call_fax_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
         ],
         "MessageReceiveEvent": [
-          "__init__",
+          "MessagingReceiveEvent",
+          "getBody",
+          "getContext",
+          "getDirection",
+          "getFromNumber",
+          "getMedia",
+          "getMessageId",
+          "getMessageState",
+          "getSegments",
+          "getTags",
+          "getToNumber",
           "get_body",
           "get_context",
           "get_direction",
@@ -691,10 +1057,22 @@
           "get_message_state",
           "get_segments",
           "get_tags",
-          "get_to_number"
+          "get_to_number",
+          "messaging_receive_event"
         ],
         "MessageStateEvent": [
-          "__init__",
+          "MessagingStateEvent",
+          "getBody",
+          "getContext",
+          "getDirection",
+          "getFromNumber",
+          "getMedia",
+          "getMessageId",
+          "getMessageState",
+          "getReason",
+          "getSegments",
+          "getTags",
+          "getToNumber",
           "get_body",
           "get_context",
           "get_direction",
@@ -705,27 +1083,46 @@
           "get_reason",
           "get_segments",
           "get_tags",
-          "get_to_number"
+          "get_to_number",
+          "messaging_state_event"
         ],
         "PayEvent": [
-          "__init__",
+          "CallPayEvent",
+          "call_pay_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
         ],
         "PlayEvent": [
-          "__init__",
+          "CallPlayEvent",
+          "call_play_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
         ],
         "QueueEvent": [
-          "__init__",
+          "QueueEvent",
+          "getCallId",
+          "getQueueId",
           "get_call_id",
-          "get_queue_id"
+          "get_queue_id",
+          "queue_event"
         ],
         "RecordEvent": [
-          "__init__",
+          "CallRecordEvent",
+          "call_record_event",
+          "getCallId",
+          "getControlId",
+          "getDuration",
+          "getSize",
+          "getState",
+          "getUrl",
           "get_call_id",
           "get_control_id",
           "get_duration",
@@ -734,38 +1131,63 @@
           "get_url"
         ],
         "ReferEvent": [
-          "__init__",
+          "CallReferEvent",
+          "call_refer_event",
+          "getCallId",
+          "getReferState",
           "get_call_id",
           "get_refer_state"
         ],
         "RelayEvent": [
-          "__init__",
-          "__repr__",
+          "RelayEvent",
+          "fromRawParams",
           "from_raw_params",
+          "getEventType",
+          "getParams",
+          "getStringParam",
+          "getTimestamp",
           "get_event_type",
           "get_params",
           "get_string_param",
-          "get_timestamp"
+          "get_timestamp",
+          "relay_event",
+          "toString",
+          "to_string"
         ],
         "SendDigitsEvent": [
-          "__init__",
+          "CallSendDigitsEvent",
+          "call_send_digits_event",
+          "getCallId",
+          "getState",
           "get_call_id",
           "get_state"
         ],
         "StreamEvent": [
-          "__init__",
+          "CallStreamEvent",
+          "call_stream_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
         ],
         "TapEvent": [
-          "__init__",
+          "CallTapEvent",
+          "call_tap_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
         ],
         "TranscribeEvent": [
-          "__init__",
+          "CallTranscribeEvent",
+          "call_transcribe_event",
+          "getCallId",
+          "getControlId",
+          "getState",
           "get_call_id",
           "get_control_id",
           "get_state"
@@ -776,9 +1198,21 @@
     "signalwire.relay.message": {
       "classes": {
         "Message": [
-          "__init__",
-          "__repr__",
+          "Message",
+          "fromReceiveEvent",
           "from_receive_event",
+          "getBody",
+          "getContext",
+          "getDirection",
+          "getFromNumber",
+          "getMedia",
+          "getMessageId",
+          "getReason",
+          "getResult",
+          "getSegments",
+          "getState",
+          "getTags",
+          "getToNumber",
           "get_body",
           "get_context",
           "get_direction",
@@ -791,8 +1225,19 @@
           "get_state",
           "get_tags",
           "get_to_number",
+          "isDone",
           "is_done",
+          "message",
           "on",
+          "setBody",
+          "setContext",
+          "setDirection",
+          "setFromNumber",
+          "setMedia",
+          "setOnCompleted",
+          "setSegments",
+          "setTags",
+          "setToNumber",
           "set_body",
           "set_context",
           "set_direction",
@@ -802,7 +1247,11 @@
           "set_segments",
           "set_tags",
           "set_to_number",
+          "toString",
+          "to_string",
+          "updateFromEvent",
           "update_from_event",
+          "waitForCompletion",
           "wait_for_completion"
         ]
       },
@@ -823,7 +1272,9 @@
     "signalwire.relay.relay_event_authorization_state_event": {
       "classes": {
         "RelayEventAuthorizationStateEvent": [
-          "__init__",
+          "AuthorizationStateEvent",
+          "authorization_state_event",
+          "getAuthorizationState",
           "get_authorization_state"
         ]
       },
@@ -832,17 +1283,21 @@
     "signalwire.rest._base": {
       "classes": {
         "CrudResource": [
-          "__init__",
+          "CrudResource",
           "create",
+          "crud_resource",
           "delete",
           "get",
+          "getBasePath",
+          "getHttpClient",
           "get_base_path",
           "get_http_client",
           "list",
           "update"
         ],
         "HttpClient": [
-          "__init__"
+          "HttpClient",
+          "http_client"
         ]
       },
       "functions": []
@@ -850,7 +1305,9 @@
     "signalwire.rest.call_handler": {
       "classes": {
         "PhoneCallHandler": [
-          "__repr__",
+          "toString",
+          "to_string",
+          "wireValue",
           "wire_value"
         ]
       },
@@ -870,13 +1327,19 @@
           "datasphere",
           "fabric",
           "fax",
+          "getHttpClient",
+          "getProject",
+          "getSpace",
           "get_http_client",
           "get_project",
           "get_space",
           "messaging",
+          "numberLookup",
           "number_lookup",
+          "phoneNumbers",
           "phone_numbers",
           "project",
+          "pubSub",
           "pub_sub",
           "queues",
           "recordings",
@@ -892,7 +1355,8 @@
     "signalwire.rest.namespaces.billing_namespace": {
       "classes": {
         "BillingNamespace": [
-          "__init__",
+          "BillingNamespace",
+          "billing_namespace",
           "invoices",
           "usage"
         ]
@@ -902,7 +1366,8 @@
     "signalwire.rest.namespaces.calling": {
       "classes": {
         "CallingNamespace": [
-          "__init__",
+          "CallingNamespace",
+          "calling_namespace",
           "calls"
         ]
       },
@@ -911,9 +1376,10 @@
     "signalwire.rest.namespaces.campaign_namespace": {
       "classes": {
         "CampaignNamespace": [
-          "__init__",
+          "CampaignNamespace",
           "assignments",
           "brands",
+          "campaign_namespace",
           "campaigns",
           "orders"
         ]
@@ -923,8 +1389,9 @@
     "signalwire.rest.namespaces.chat_namespace": {
       "classes": {
         "ChatNamespace": [
-          "__init__",
+          "ChatNamespace",
           "channels",
+          "chat_namespace",
           "members",
           "messages"
         ]
@@ -934,14 +1401,18 @@
     "signalwire.rest.namespaces.compat": {
       "classes": {
         "CompatNamespace": [
-          "__init__",
+          "CompatNamespace",
           "accounts",
           "applications",
           "calls",
+          "compat_namespace",
           "conferences",
           "messages",
           "queues",
           "recordings",
+          "sipCredentialLists",
+          "sipDomains",
+          "sipIpAccessControlLists",
           "sip_credential_lists",
           "sip_domains",
           "sip_ip_access_control_lists",
@@ -953,8 +1424,11 @@
     "signalwire.rest.namespaces.compliance_namespace": {
       "classes": {
         "ComplianceNamespace": [
-          "__init__",
+          "ComplianceNamespace",
+          "cnamRegistrations",
           "cnam_registrations",
+          "compliance_namespace",
+          "shakenStir",
           "shaken_stir"
         ]
       },
@@ -963,7 +1437,8 @@
     "signalwire.rest.namespaces.conference_namespace": {
       "classes": {
         "ConferenceNamespace": [
-          "__init__",
+          "ConferenceNamespace",
+          "conference_namespace",
           "conferences",
           "participants"
         ]
@@ -973,7 +1448,8 @@
     "signalwire.rest.namespaces.datasphere": {
       "classes": {
         "DatasphereNamespace": [
-          "__init__",
+          "DatasphereNamespace",
+          "datasphere_namespace",
           "documents",
           "search"
         ]
@@ -983,8 +1459,9 @@
     "signalwire.rest.namespaces.fabric": {
       "classes": {
         "FabricNamespace": [
-          "__init__",
+          "FabricNamespace",
           "addresses",
+          "fabric_namespace",
           "resources",
           "subscribers"
         ]
@@ -994,7 +1471,8 @@
     "signalwire.rest.namespaces.fax_namespace": {
       "classes": {
         "FaxNamespace": [
-          "__init__",
+          "FaxNamespace",
+          "fax_namespace",
           "faxes"
         ]
       },
@@ -1003,8 +1481,9 @@
     "signalwire.rest.namespaces.messaging_namespace": {
       "classes": {
         "MessagingNamespace": [
-          "__init__",
+          "MessagingNamespace",
           "messages",
+          "messaging_namespace",
           "send"
         ]
       },
@@ -1013,22 +1492,32 @@
     "signalwire.rest.namespaces.number_lookup_namespace": {
       "classes": {
         "NumberLookupNamespace": [
-          "__init__",
-          "lookup"
+          "NumberLookupNamespace",
+          "lookup",
+          "number_lookup_namespace"
         ]
       },
       "functions": []
     },
-    "signalwire.rest.namespaces.phone_numbers": {
+    "signalwire.rest.namespaces.phone_numbers_namespace": {
       "classes": {
-        "PhoneNumbersResource": [
-          "__init__",
+        "PhoneNumbersNamespace": [
+          "PhoneNumbersNamespace",
           "create",
           "delete",
           "get",
+          "getResource",
           "get_resource",
           "list",
+          "phone_numbers_namespace",
           "search",
+          "setAiAgent",
+          "setCallFlow",
+          "setCxmlApplication",
+          "setCxmlWebhook",
+          "setRelayApplication",
+          "setRelayTopic",
+          "setSwmlWebhook",
           "set_ai_agent",
           "set_call_flow",
           "set_cxml_application",
@@ -1044,10 +1533,13 @@
     "signalwire.rest.namespaces.project": {
       "classes": {
         "ProjectNamespace": [
-          "__init__",
+          "ProjectNamespace",
+          "createToken",
           "create_token",
           "get",
+          "listTokens",
           "list_tokens",
+          "project_namespace",
           "update"
         ]
       },
@@ -1056,8 +1548,9 @@
     "signalwire.rest.namespaces.pub_sub_namespace": {
       "classes": {
         "PubSubNamespace": [
-          "__init__",
+          "PubSubNamespace",
           "channels",
+          "pub_sub_namespace",
           "publish"
         ]
       },
@@ -1066,7 +1559,8 @@
     "signalwire.rest.namespaces.queue_namespace": {
       "classes": {
         "QueueNamespace": [
-          "__init__",
+          "QueueNamespace",
+          "queue_namespace",
           "queues"
         ]
       },
@@ -1075,7 +1569,8 @@
     "signalwire.rest.namespaces.recording_namespace": {
       "classes": {
         "RecordingNamespace": [
-          "__init__",
+          "RecordingNamespace",
+          "recording_namespace",
           "recordings"
         ]
       },
@@ -1084,9 +1579,10 @@
     "signalwire.rest.namespaces.sip_namespace": {
       "classes": {
         "SipNamespace": [
-          "__init__",
+          "SipNamespace",
           "endpoints",
-          "profiles"
+          "profiles",
+          "sip_namespace"
         ]
       },
       "functions": []
@@ -1094,7 +1590,8 @@
     "signalwire.rest.namespaces.stream_namespace": {
       "classes": {
         "StreamNamespace": [
-          "__init__",
+          "StreamNamespace",
+          "stream_namespace",
           "streams"
         ]
       },
@@ -1103,8 +1600,9 @@
     "signalwire.rest.namespaces.swml_namespace": {
       "classes": {
         "SwmlNamespace": [
-          "__init__",
-          "scripts"
+          "SwmlNamespace",
+          "scripts",
+          "swml_namespace"
         ]
       },
       "functions": []
@@ -1112,7 +1610,8 @@
     "signalwire.rest.namespaces.transcription_namespace": {
       "classes": {
         "TranscriptionNamespace": [
-          "__init__",
+          "TranscriptionNamespace",
+          "transcription_namespace",
           "transcriptions"
         ]
       },
@@ -1121,10 +1620,12 @@
     "signalwire.rest.namespaces.video": {
       "classes": {
         "VideoNamespace": [
-          "__init__",
+          "VideoNamespace",
           "recordings",
+          "roomSessions",
           "room_sessions",
-          "rooms"
+          "rooms",
+          "video_namespace"
         ]
       },
       "functions": []
@@ -1143,15 +1644,24 @@
     "signalwire.rest.rest_error": {
       "classes": {
         "RestError": [
-          "__init__",
+          "RestError",
+          "getMethod",
+          "getPath",
+          "getResponseBody",
+          "getStatusCode",
           "get_method",
           "get_path",
           "get_response_body",
           "get_status_code",
+          "isClientError",
+          "isNotFound",
+          "isServerError",
+          "isUnauthorized",
           "is_client_error",
           "is_not_found",
           "is_server_error",
-          "is_unauthorized"
+          "is_unauthorized",
+          "rest_error"
         ]
       },
       "functions": []
@@ -1173,8 +1683,9 @@
     "signalwire.runtime.lambda.lambda_agent_handler": {
       "classes": {
         "LambdaAgentHandler": [
-          "__init__",
-          "handle"
+          "LambdaAgentHandler",
+          "handle",
+          "lambda_agent_handler"
         ]
       },
       "functions": []
@@ -1182,12 +1693,18 @@
     "signalwire.runtime.lambda.lambda_response": {
       "classes": {
         "LambdaResponse": [
-          "__init__",
+          "LambdaResponse",
+          "getBody",
+          "getHeaders",
+          "getStatusCode",
           "get_body",
           "get_headers",
           "get_status_code",
+          "isBase64Encoded",
           "is_base64_encoded",
           "json",
+          "lambda_response",
+          "toMap",
           "to_dict"
         ]
       },
@@ -1196,7 +1713,9 @@
     "signalwire.runtime.lambda_url_resolver": {
       "classes": {
         "LambdaUrlResolver": [
-          "__init__",
+          "LambdaUrlResolver",
+          "lambda_url_resolver",
+          "resolveBaseUrl",
           "resolve_base_url"
         ]
       },
@@ -1205,11 +1724,16 @@
     "signalwire.skills.builtin.api_ninja_trivia_skill": {
       "classes": {
         "ApiNinjaTriviaSkill": [
+          "getDescription",
+          "getName",
+          "getSwaigFunctions",
           "get_description",
           "get_name",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1218,10 +1742,14 @@
     "signalwire.skills.builtin.custom_skills_skill": {
       "classes": {
         "CustomSkillsSkill": [
+          "getDescription",
+          "getName",
           "get_description",
           "get_name",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1230,13 +1758,20 @@
     "signalwire.skills.builtin.datasphere_serverless_skill": {
       "classes": {
         "DatasphereServerlessSkill": [
+          "getDescription",
+          "getGlobalData",
+          "getName",
+          "getPromptSections",
+          "getSwaigFunctions",
           "get_description",
           "get_global_data",
           "get_name",
           "get_prompt_sections",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1245,10 +1780,14 @@
     "signalwire.skills.builtin.datasphere_skill": {
       "classes": {
         "DatasphereSkill": [
+          "getDescription",
+          "getName",
           "get_description",
           "get_name",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1257,11 +1796,16 @@
     "signalwire.skills.builtin.datetime_skill": {
       "classes": {
         "DatetimeSkill": [
+          "getDescription",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1270,11 +1814,17 @@
     "signalwire.skills.builtin.mcp_gateway_skill": {
       "classes": {
         "McpGatewaySkill": [
+          "getDescription",
+          "getGlobalData",
+          "getHints",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_global_data",
           "get_hints",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup"
         ]
@@ -1284,13 +1834,20 @@
     "signalwire.skills.builtin.swml_transfer_skill": {
       "classes": {
         "SwmlTransferSkill": [
+          "getDescription",
+          "getHints",
+          "getName",
+          "getPromptSections",
+          "getSwaigFunctions",
           "get_description",
           "get_hints",
           "get_name",
           "get_prompt_sections",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1299,12 +1856,18 @@
     "signalwire.skills.claude_skills.skill": {
       "classes": {
         "ClaudeSkillsSkill": [
+          "getDescription",
+          "getHints",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_hints",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1313,10 +1876,15 @@
     "signalwire.skills.google_maps.skill": {
       "classes": {
         "GoogleMapsSkill": [
+          "getDescription",
+          "getHints",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_hints",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup"
         ]
@@ -1326,12 +1894,18 @@
     "signalwire.skills.info_gatherer.skill": {
       "classes": {
         "InfoGathererSkill": [
+          "getDescription",
+          "getGlobalData",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_global_data",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1340,9 +1914,13 @@
     "signalwire.skills.joke.skill": {
       "classes": {
         "JokeSkill": [
+          "getDescription",
+          "getName",
+          "getSwaigFunctions",
           "get_description",
           "get_name",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup"
         ]
@@ -1352,11 +1930,16 @@
     "signalwire.skills.math.skill": {
       "classes": {
         "MathSkill": [
+          "getDescription",
+          "getName",
+          "getPromptSections",
           "get_description",
           "get_name",
           "get_prompt_sections",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1365,11 +1948,16 @@
     "signalwire.skills.native_vector_search.skill": {
       "classes": {
         "NativeVectorSearchSkill": [
+          "getDescription",
+          "getHints",
+          "getName",
           "get_description",
           "get_hints",
           "get_name",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1378,11 +1966,16 @@
     "signalwire.skills.play_background_file.skill": {
       "classes": {
         "PlayBackgroundFileSkill": [
+          "getDescription",
+          "getName",
+          "getSwaigFunctions",
           "get_description",
           "get_name",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1403,11 +1996,16 @@
     "signalwire.skills.spider.skill": {
       "classes": {
         "SpiderSkill": [
+          "getDescription",
+          "getHints",
+          "getName",
           "get_description",
           "get_hints",
           "get_name",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1416,9 +2014,13 @@
     "signalwire.skills.weather_api.skill": {
       "classes": {
         "WeatherApiSkill": [
+          "getDescription",
+          "getName",
+          "getSwaigFunctions",
           "get_description",
           "get_name",
           "get_swaig_functions",
+          "registerTools",
           "register_tools",
           "setup"
         ]
@@ -1428,13 +2030,20 @@
     "signalwire.skills.web_search.skill": {
       "classes": {
         "WebSearchSkill": [
+          "getDescription",
+          "getGlobalData",
+          "getName",
+          "getPromptSections",
+          "getVersion",
           "get_description",
           "get_global_data",
           "get_name",
           "get_prompt_sections",
           "get_version",
+          "registerTools",
           "register_tools",
           "setup",
+          "supportsMultipleInstances",
           "supports_multiple_instances"
         ]
       },
@@ -1443,8 +2052,11 @@
     "signalwire.skills.wikipedia_search.skill": {
       "classes": {
         "WikipediaSearchSkill": [
+          "getDescription",
+          "getName",
           "get_description",
           "get_name",
+          "registerTools",
           "register_tools",
           "setup"
         ]
@@ -1454,17 +2066,28 @@
     "signalwire.swaig.tool_definition": {
       "classes": {
         "ToolDefinition": [
-          "__init__",
+          "ToolDefinition",
+          "getDescription",
+          "getExtraFields",
+          "getHandler",
+          "getName",
+          "getParameters",
           "get_description",
           "get_extra_fields",
           "get_handler",
           "get_name",
           "get_parameters",
+          "hasHandler",
           "has_handler",
+          "isSecure",
           "is_secure",
+          "setExtraFields",
+          "setSecure",
           "set_extra_fields",
           "set_secure",
-          "to_swaig_function"
+          "toSwaigFunction",
+          "to_swaig_function",
+          "tool_definition"
         ]
       },
       "functions": []
@@ -1478,16 +2101,25 @@
     "signalwire.swml.document": {
       "classes": {
         "Document": [
-          "__init__",
+          "Document",
+          "addSection",
+          "addVerb",
+          "addVerbToSection",
           "add_section",
           "add_verb",
           "add_verb_to_section",
+          "document",
+          "getSectionVerbs",
+          "getVerbs",
           "get_section_verbs",
           "get_verbs",
+          "hasSection",
           "has_section",
           "render",
+          "renderPretty",
           "render_pretty",
           "reset",
+          "toMap",
           "to_dict"
         ]
       },
@@ -1496,10 +2128,15 @@
     "signalwire.swml.schema": {
       "classes": {
         "Schema": [
+          "getInstance",
+          "getVerb",
+          "getVerbNames",
           "get_instance",
           "get_verb",
           "get_verb_names",
+          "isValidVerb",
           "is_valid_verb",
+          "verbCount",
           "verb_count"
         ]
       },
@@ -1508,55 +2145,79 @@
     "signalwire.swml.service": {
       "classes": {
         "Service": [
-          "__init__",
+          "Service",
           "ai",
+          "amazonBedrock",
           "amazon_bedrock",
           "answer",
           "cond",
           "connect",
           "denoise",
+          "detectMachine",
           "detect_machine",
+          "enterQueue",
           "enter_queue",
           "execute",
+          "getAuthPassword",
+          "getAuthUser",
+          "getDocument",
           "get_auth_password",
           "get_auth_user",
           "get_document",
+          "gotoLabel",
           "goto_label",
           "hangup",
+          "joinConference",
+          "joinRoom",
           "join_conference",
           "join_room",
           "label",
+          "liveTranscribe",
+          "liveTranslate",
           "live_transcribe",
           "live_translate",
           "pay",
           "play",
           "prompt",
+          "receiveFax",
           "receive_fax",
           "record",
+          "recordCall",
           "record_call",
           "request",
+          "returnVerb",
           "return_verb",
+          "sendDigits",
+          "sendFax",
+          "sendSms",
           "send_digits",
           "send_fax",
           "send_sms",
           "serve",
+          "service",
           "set",
+          "sipRefer",
           "sip_refer",
           "sleep",
           "stop",
+          "stopDenoise",
+          "stopRecordCall",
+          "stopTap",
           "stop_denoise",
           "stop_record_call",
           "stop_tap",
+          "switchVerb",
           "switch_verb",
           "tap",
           "transfer",
           "unset",
+          "userEvent",
           "user_event"
         ]
       },
       "functions": []
     }
   },
-  "names": "python-reference",
+  "names": "java-native",
   "version": "1"
 }

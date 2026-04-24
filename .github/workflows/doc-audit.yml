@@ -1,0 +1,104 @@
+name: Doc Audit
+
+# Phase 13 / Layer C doc↔code alignment.
+#
+# Regenerates the Java-native surface snapshot, compiles every file under
+# examples/, rest/examples/, and relay/examples/ against the built SDK JAR,
+# and finally runs porting-sdk/scripts/audit_docs.py to verify that every
+# method reference in docs/, rest/docs/, relay/docs/, and examples/*
+# resolves to a public symbol in the SDK (or is listed in
+# DOC_AUDIT_IGNORE.md with a rationale).
+#
+# This catches the "phantom API" bug class where a doc or example promises
+# a method that was never implemented — the class of bug that motivated
+# the phone-binding rewrite. Any unresolved identifier without a rationale
+# fails the build.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Nightly at 05:00 UTC so we catch porting-sdk updates within 24h.
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  doc-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout signalwire-java
+        uses: actions/checkout@v5
+        with:
+          path: signalwire-java
+
+      - name: Checkout porting-sdk
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/porting-sdk
+          path: porting-sdk
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build SDK JAR
+        working-directory: signalwire-java
+        run: ./gradlew --no-daemon jar
+
+      - name: Compile every example against the SDK JAR
+        working-directory: signalwire-java
+        # Every file under examples/, rest/examples/, relay/examples/ must
+        # compile cleanly against the freshly built JAR. A broken example
+        # is a phantom-API signal. Output goes to /tmp so the repo stays
+        # clean.
+        run: |
+          JAR="$(ls build/libs/signalwire-sdk-*.jar | head -1)"
+          if [ -z "$JAR" ]; then
+            echo "error: no signalwire-sdk jar found under build/libs/" >&2
+            exit 1
+          fi
+          mkdir -p /tmp/example-compile
+          find examples rest/examples relay/examples -name '*.java' \
+            -print0 \
+            | xargs -0 javac -d /tmp/example-compile -cp "$JAR"
+
+      - name: Regenerate Java-native surface for doc audit
+        working-directory: signalwire-java
+        # The doc audit compares against Java-native identifier names
+        # (camelCase) — distinct from the Python-reference snake_case form
+        # consumed by surface-audit.yml. The --native flag emits the
+        # Java-native variant, which also includes the snake_case form of
+        # each method so shared Python reference docs resolve too.
+        run: |
+          python3 scripts/enumerate_surface.py \
+            --repo . \
+            --reference ../porting-sdk/python_surface.json \
+            --native \
+            --output port_surface_native.json
+
+      - name: Verify committed port_surface_native.json is current
+        working-directory: signalwire-java
+        run: |
+          python3 scripts/enumerate_surface.py \
+            --repo . \
+            --reference ../porting-sdk/python_surface.json \
+            --native \
+            --output port_surface_native.json \
+            --check
+
+      - name: Run audit_docs.py
+        working-directory: signalwire-java
+        run: |
+          python3 ../porting-sdk/scripts/audit_docs.py \
+            --root . \
+            --surface port_surface_native.json \
+            --ignore DOC_AUDIT_IGNORE.md

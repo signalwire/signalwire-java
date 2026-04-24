@@ -203,19 +203,7 @@ self.prompt_add_section("Context",
                                "Check for existing tickets"])
 ```
 
-For convenience, the SDK also provides wrapper methods that some users may prefer:
-
-```python
-# Convenience methods
-self.setPersonality("You are a friendly assistant.") 
-self.setGoal("Help users with their questions.")
-self.setInstructions([
-    "Answer questions clearly",
-    "Be helpful and polite"
-])
-```
-
-These convenience methods call `prompt_add_section()` internally with the appropriate section titles.
+All three sections (Personality, Goal, Instructions) are built on top of the same `prompt_add_section(title, body=..., bullets=...)` primitive — there are no `setPersonality` / `setGoal` / `setInstructions` wrappers in this SDK. Pass the section title ("Personality", "Goal", "Instructions") explicitly, as shown above.
 
 ### 2. Using Raw Text Prompts
 
@@ -2641,9 +2629,6 @@ my-prefab-agents/
 - `prompt_add_to_section(title, body=None, bullet=None, bullets=None)`
 - `set_prompt_text(prompt_text)` or `set_prompt(prompt_text)`
 - `set_post_prompt(prompt_text)`
-- `setPersonality(text)` - Convenience method that calls prompt_add_section
-- `setGoal(text)` - Convenience method that calls prompt_add_section
-- `setInstructions(bullets)` - Convenience method that calls prompt_add_section
 
 ### SWAIG Methods
 
