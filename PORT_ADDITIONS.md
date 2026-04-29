@@ -665,3 +665,20 @@ signalwire.swml.service.Service.tap: idiomatic Java surface extension (builder, 
 signalwire.swml.service.Service.transfer: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.unset: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.user_event: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+
+# --- Audit-harness / Java-idiom additions appended 2026-04-28 ---
+
+signalwire.core.agent_base.AgentBase.run: Java AgentBase exposes Service.run() under the AgentBase namespace — Python inherits via mixin lookup; the Java surface generator records it as an explicit override
+signalwire.relay.client.RelayClient.internal_web_socket: Java's java-websocket-backed inner class surfaced as a public reflective member; Python uses an aiohttp ClientSession kept as a private attribute
+signalwire.relay.client.RelayClient.on_close: Java WebSocketClient lifecycle override — required by the Java-WebSocket library and surfaced as public; Python's transport is closed via aiohttp without this method
+signalwire.relay.client.RelayClient.on_error: Java WebSocketClient lifecycle override surfaced public; Python handles errors via aiohttp exception flow
+signalwire.relay.client.RelayClient.on_open: Java WebSocketClient lifecycle override surfaced public; Python performs the same step as part of the async connect coroutine
+signalwire.relay.client.RelayClient.send_raw: Java helper that sends a raw JSON-RPC frame on the underlying socket — used by examples/RelayAuditHarness.java to satisfy the audit fixture's method=signalwire.event filter; Python tests inject equivalent frames via internal helpers
+signalwire.rest.client.RestClient.with_base_url: Java factory for pointing the REST client at an explicit base URL (loopback fixture, plain HTTP) — used by examples/RestAuditHarness.java; Python tests use httpx_mock to redirect transport instead
+signalwire.swml.service.Service.define_tool: Java exposes define_tool on Service (the SWAIG host) plus on AgentBase for chained returns; Python only defines it on AgentBase
+signalwire.swml.service.Service.define_tools: Java's bulk-add convenience for ToolDefinition lists — Python adds tools one at a time
+signalwire.swml.service.Service.get_registered_swaig_functions: Java public accessor for raw DataMap entries — used by introspection (CLI --list-tools file mode) and audit harnesses; Python exposes this via a private attribute and helper
+signalwire.swml.service.Service.get_registered_tools: Java public accessor for the tool-definition map — used by CLI --list-tools and audit harnesses; Python exposes this via a private attribute and helper
+signalwire.swml.service.Service.list_tool_names: Java public accessor returning insertion-ordered tool names — used by CLI --list-tools introspection; Python returns from the registry's keys() directly
+signalwire.swml.service.Service.on_function_call: Java exposes on_function_call on Service (the SWAIG host) and AgentBase; Python only defines it on AgentBase
+signalwire.swml.service.Service.register_swaig_function: Java exposes register_swaig_function on Service (DataMap registration) and AgentBase; Python only defines it on AgentBase

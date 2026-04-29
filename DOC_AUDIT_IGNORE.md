@@ -43,6 +43,56 @@ of: Map.of / List.of / Set.of static factories (JDK 9+) — pervasive in example
 ofPattern: DateTimeFormatter.ofPattern (java.time) — example formatters
 asList: Arrays.asList (JDK) — list construction in examples
 getOrDefault: Map#getOrDefault (JDK) — safe-get pattern in examples
+emptyMap: Collections.emptyMap (JDK) — empty-map literal in examples
+entrySet: Map#entrySet (JDK) — iteration in examples
+toList: Stream#toList (JDK 16+) — stream collection in examples
+randomUUID: UUID.randomUUID (JDK) — id generation in examples / harnesses
+toMap: Collectors.toMap / SDK FunctionResult#toMap — name shared with JDK; SDK form is the SignalWire one
+length: String/array length (JDK) — substring math in examples / harnesses
+indexOf: String#indexOf (JDK) — template-expansion math in harnesses
+substring: String#substring (JDK) — string slicing in harnesses
+startsWith: String#startsWith (JDK) — prefix tests in examples / harnesses
+endsWith: String#endsWith (JDK) — suffix tests in examples / harnesses
+replaceAll: String#replaceAll (JDK) — regex helpers in examples / harnesses
+getBytes: String#getBytes (JDK) — UTF-8 bytes for HTTP I/O in examples
+min: Math.min (JDK) — numeric min in examples / harnesses
+
+### java.net.http / java.net (JDK 11+ HTTP client)
+
+newHttpClient: HttpClient.newHttpClient (JDK) — build a default client in examples
+newBuilder: HttpClient/HttpRequest builders (JDK) — fluent client config in examples
+header: HttpRequest.Builder#header (JDK) — set request header in examples
+uri: HttpRequest.Builder#uri (JDK) — set request URI in examples / DataMap webhooks
+ofString: HttpResponse.BodyHandlers.ofString (JDK) — string-body response handler
+noBody: HttpRequest.BodyPublishers.noBody (JDK) — empty-body request publisher
+statusCode: HttpResponse#statusCode (JDK) — response status check in examples
+getRawPath: URI#getRawPath (JDK) — URL path extraction in harnesses
+getRawQuery: URI#getRawQuery (JDK) — URL query extraction in harnesses
+GET: HttpRequest.Builder#GET / HTTP method literal — JDK fluent client method
+POST: HttpRequest.Builder#POST / HTTP method literal — JDK fluent client method
+PUT: HttpRequest.Builder#PUT / HTTP method literal — JDK fluent client method
+DELETE: HttpRequest.Builder#DELETE / HTTP method literal — JDK fluent client method
+
+### com.sun.net.httpserver (JDK built-in HTTP server)
+
+createContext: HttpServer#createContext (JDK) — example server route binding
+sendResponseHeaders: HttpExchange#sendResponseHeaders (JDK) — example server reply
+getResponseHeaders: HttpExchange#getResponseHeaders (JDK) — example server reply
+getRequestBody: HttpExchange#getRequestBody (JDK) — example server input stream
+readAllBytes: InputStream#readAllBytes (JDK) — example server input read
+
+### Gson (JSON binding library used by SignalWire SDK)
+
+fromJson: com.google.gson.Gson#fromJson — JSON parse helper in harnesses
+getType: TypeToken#getType — generic-erasure helper for Gson in harnesses
+
+### java.lang.System (timing / clock)
+
+currentTimeMillis: System.currentTimeMillis (JDK) — deadline math in harnesses
+
+### java.util.concurrent
+
+call: Callable#call (JDK) — incidental match in harness lambda contexts
 
 ---
 

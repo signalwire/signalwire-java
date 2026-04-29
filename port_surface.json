@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 32bb7f2485ac40b2d53fad927e76714d49600e06",
+  "generated_from": "signalwire-java @ 0d0f903f3617c0cc7595896832e81b78a2ab50a1",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -140,6 +140,7 @@
           "render_swml",
           "render_swml_json",
           "reset_contexts",
+          "run",
           "set_dynamic_config_callback",
           "set_function_includes",
           "set_global_data",
@@ -599,13 +600,18 @@
           "get_contexts",
           "get_project",
           "get_space",
+          "internal_web_socket",
           "is_connected",
           "on_call",
+          "on_close",
+          "on_error",
           "on_event",
           "on_message",
+          "on_open",
           "receive",
           "run",
           "send_message",
+          "send_raw",
           "unreceive"
         ]
       },
@@ -884,7 +890,8 @@
           "streams",
           "swml",
           "transcriptions",
-          "video"
+          "video",
+          "with_base_url"
         ]
       },
       "functions": []
@@ -1514,6 +1521,8 @@
           "answer",
           "cond",
           "connect",
+          "define_tool",
+          "define_tools",
           "denoise",
           "detect_machine",
           "enter_queue",
@@ -1521,19 +1530,24 @@
           "get_auth_password",
           "get_auth_user",
           "get_document",
+          "get_registered_swaig_functions",
+          "get_registered_tools",
           "goto_label",
           "hangup",
           "join_conference",
           "join_room",
           "label",
+          "list_tool_names",
           "live_transcribe",
           "live_translate",
+          "on_function_call",
           "pay",
           "play",
           "prompt",
           "receive_fax",
           "record",
           "record_call",
+          "register_swaig_function",
           "request",
           "return_verb",
           "send_digits",
