@@ -46,6 +46,30 @@ public class SpiderSkill implements SkillBase {
                 urlParams,
                 (args, raw) -> {
                     String url = (String) args.get("url");
+                    // Allow tests / audit fixtures to redirect every fetch
+                    // through a loopback host by setting SPIDER_BASE_URL. The
+                    // path component of the requested URL is preserved so the
+                    // audit can still assert it on the wire (the audit feeds
+                    // a synthetic upstream like "https://audit.example/page"
+                    // and expects to see "/page" hit on the fixture).
+                    String spiderBase = System.getenv("SPIDER_BASE_URL");
+                    if (spiderBase != null && !spiderBase.isEmpty()) {
+                        if (spiderBase.endsWith("/")) {
+                            spiderBase = spiderBase.substring(0, spiderBase.length() - 1);
+                        }
+                        try {
+                            URI parsed = URI.create(url);
+                            String path = parsed.getRawPath();
+                            String queryPart = parsed.getRawQuery();
+                            String suffix = (path == null || path.isEmpty()) ? "/" : path;
+                            if (queryPart != null && !queryPart.isEmpty()) {
+                                suffix += "?" + queryPart;
+                            }
+                            url = spiderBase + suffix;
+                        } catch (IllegalArgumentException ignored) {
+                            // Malformed input — leave url untouched.
+                        }
+                    }
                     try {
                         HttpClient client = HttpClient.newBuilder()
                                 .followRedirects(HttpClient.Redirect.NORMAL)

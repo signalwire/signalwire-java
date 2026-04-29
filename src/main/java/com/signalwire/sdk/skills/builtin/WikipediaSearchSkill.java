@@ -58,7 +58,18 @@ public class WikipediaSearchSkill implements SkillBase {
                     }
                     try {
                         String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
-                        String searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search" +
+                        // Allow tests / audit fixtures to redirect the upstream
+                        // by setting WIKIPEDIA_BASE_URL. The path /w/api.php is
+                        // preserved so the audit can assert the documented
+                        // Wikipedia API path on the wire.
+                        String wikiBase = System.getenv("WIKIPEDIA_BASE_URL");
+                        if (wikiBase == null || wikiBase.isEmpty()) {
+                            wikiBase = "https://en.wikipedia.org";
+                        }
+                        if (wikiBase.endsWith("/")) {
+                            wikiBase = wikiBase.substring(0, wikiBase.length() - 1);
+                        }
+                        String searchUrl = wikiBase + "/w/api.php?action=query&list=search" +
                                 "&srsearch=" + encoded + "&srlimit=" + numResults +
                                 "&format=json&utf8=1";
 

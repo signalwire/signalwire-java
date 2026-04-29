@@ -69,9 +69,21 @@ public class WebSearchSkill implements SkillBase {
 
         try {
             String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            // Allow tests / audit fixtures to redirect the upstream host by
+            // setting WEB_SEARCH_BASE_URL (e.g. http://127.0.0.1:NNNN). The
+            // path segment "/customsearch/v1" is preserved so the audit can
+            // assert the documented Google CSE path on the wire.
+            String base = System.getenv("WEB_SEARCH_BASE_URL");
+            if (base == null || base.isEmpty()) {
+                base = "https://www.googleapis.com";
+            }
+            // Strip trailing slash so the format string produces a clean URL.
+            if (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
             String url = String.format(
-                    "https://www.googleapis.com/customsearch/v1?key=%s&cx=%s&q=%s&num=%d",
-                    apiKey, searchEngineId, encodedQuery, numResults);
+                    "%s/customsearch/v1?key=%s&cx=%s&q=%s&num=%d",
+                    base, apiKey, searchEngineId, encodedQuery, numResults);
 
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
