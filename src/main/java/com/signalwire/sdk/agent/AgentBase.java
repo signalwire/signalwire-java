@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
  *     .build();
  * </pre>
  */
-public class AgentBase {
+public class AgentBase extends Service {
 
     private static final Logger log = Logger.getLogger(AgentBase.class);
     private static final int MAX_REQUEST_BODY_SIZE = 1_048_576; // 1 MB
@@ -58,19 +58,13 @@ public class AgentBase {
     private static final Pattern SIP_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]{1,64}$");
 
     // --- Configuration ---
-    private String name;
-    private String route;
-    private String host;
-    private int port;
+    // name, route, host, port, authUser, authPassword, document, httpServer
+    // are inherited from Service. Only agent-specific fields below.
     private boolean autoAnswer;
     private int maxDuration;
     private boolean recordCall;
     private String recordFormat;
     private boolean recordStereo;
-
-    // --- Auth ---
-    private String authUser;
-    private String authPassword;
 
     // --- Prompt ---
     private String promptText;
@@ -93,8 +87,9 @@ public class AgentBase {
     private final List<Map<String, Object>> functionIncludes = new ArrayList<>();
 
     // --- Tools ---
-    private final Map<String, ToolDefinition> tools = new LinkedHashMap<>();
-    private final List<Map<String, Object>> registeredSwaigFunctions = new ArrayList<>();
+    // tools and registeredSwaigFunctions are now declared on Service (lifted
+    // so non-agent SWMLService instances can host SWAIG functions).
+    // AgentBase inherits via `extends Service`.
 
     // --- Verbs ---
     private final List<Map<String, Object>> preAnswerVerbs = new ArrayList<>();
@@ -131,30 +126,20 @@ public class AgentBase {
     private final SessionManager sessionManager = new SessionManager();
 
     // --- HTTP Server ---
-    private HttpServer httpServer;
+    // httpServer is now inherited from Service.
 
     /**
-     * Private constructor - use builder.
+     * Package-private constructor — use the Builder. Calls Service's
+     * full constructor with all configuration.
      */
-    AgentBase() {
-        this.name = "agent";
-        this.route = "/";
-        this.host = "0.0.0.0";
-        this.port = resolvePort();
+    AgentBase(String name, String route, String host, int port,
+              String authUser, String authPassword) {
+        super(name, route, host, port, authUser, authPassword);
         this.autoAnswer = true;
         this.maxDuration = 3600;
         this.recordCall = false;
         this.recordFormat = "mp4";
         this.recordStereo = true;
-    }
-
-    private static int resolvePort() {
-        String envPort = System.getenv("PORT");
-        if (envPort != null) {
-            try { return Integer.parseInt(envPort); }
-            catch (NumberFormatException ignored) {}
-        }
-        return 3000;
     }
 
     // ============================================================
@@ -166,24 +151,37 @@ public class AgentBase {
     }
 
     public static class Builder {
-        private final AgentBase agent = new AgentBase();
+        // Collect Service-level args until build(), then call super(..) once.
+        private String name = "agent";
+        private String route = "/";
+        private String host = "0.0.0.0";
+        private Integer port = null;
+        private String authUser = null;
+        private String authPassword = null;
+
+        // Agent-level config — applied to the constructed AgentBase post-super.
+        private boolean autoAnswer = true;
+        private int maxDuration = 3600;
+        private boolean recordCall = false;
+        private String recordFormat = "mp4";
+        private boolean recordStereo = true;
         private EnvProvider envProvider;
 
-        public Builder name(String name) { agent.name = name; return this; }
+        public Builder name(String name) { this.name = name; return this; }
         public Builder route(String route) {
-            agent.route = route.endsWith("/") && route.length() > 1
+            this.route = route.endsWith("/") && route.length() > 1
                     ? route.substring(0, route.length() - 1) : route;
             return this;
         }
-        public Builder host(String host) { agent.host = host; return this; }
-        public Builder port(int port) { agent.port = port; return this; }
-        public Builder autoAnswer(boolean autoAnswer) { agent.autoAnswer = autoAnswer; return this; }
-        public Builder maxDuration(int maxDuration) { agent.maxDuration = maxDuration; return this; }
-        public Builder recordCall(boolean recordCall) { agent.recordCall = recordCall; return this; }
-        public Builder recordFormat(String format) { agent.recordFormat = format; return this; }
-        public Builder recordStereo(boolean stereo) { agent.recordStereo = stereo; return this; }
-        public Builder authUser(String user) { agent.authUser = user; return this; }
-        public Builder authPassword(String password) { agent.authPassword = password; return this; }
+        public Builder host(String host) { this.host = host; return this; }
+        public Builder port(int port) { this.port = port; return this; }
+        public Builder autoAnswer(boolean autoAnswer) { this.autoAnswer = autoAnswer; return this; }
+        public Builder maxDuration(int maxDuration) { this.maxDuration = maxDuration; return this; }
+        public Builder recordCall(boolean recordCall) { this.recordCall = recordCall; return this; }
+        public Builder recordFormat(String format) { this.recordFormat = format; return this; }
+        public Builder recordStereo(boolean stereo) { this.recordStereo = stereo; return this; }
+        public Builder authUser(String user) { this.authUser = user; return this; }
+        public Builder authPassword(String password) { this.authPassword = password; return this; }
 
         /**
          * Supply an alternative {@link EnvProvider} for the build-time env
@@ -207,21 +205,36 @@ public class AgentBase {
         public AgentBase build() {
             EnvProvider env = this.envProvider != null ? this.envProvider : EnvProvider.SYSTEM;
 
-            // Resolve auth
-            if (agent.authUser == null) {
+            // Resolve auth before constructing the agent; Service's constructor
+            // does its own env-fallback if both are null, but we want builder
+            // overrides + the auto-generated-password warning here.
+            String resolvedUser = this.authUser;
+            if (resolvedUser == null) {
                 String envUser = env.get("SWML_BASIC_AUTH_USER");
-                agent.authUser = (envUser != null && !envUser.isEmpty()) ? envUser : agent.name;
+                resolvedUser = (envUser != null && !envUser.isEmpty()) ? envUser : this.name;
             }
+            String resolvedPass = this.authPassword;
             boolean passwordAutoGenerated = false;
-            if (agent.authPassword == null) {
+            if (resolvedPass == null) {
                 String envPass = env.get("SWML_BASIC_AUTH_PASSWORD");
                 if (envPass != null && !envPass.isEmpty()) {
-                    agent.authPassword = envPass;
+                    resolvedPass = envPass;
                 } else {
-                    agent.authPassword = generatePassword();
+                    resolvedPass = Service.generatePassword();
                     passwordAutoGenerated = true;
                 }
             }
+
+            int resolvedPort = this.port != null ? this.port : Service.resolvePort();
+
+            AgentBase agent = new AgentBase(
+                    this.name, this.route, this.host, resolvedPort,
+                    resolvedUser, resolvedPass);
+            agent.autoAnswer = this.autoAnswer;
+            agent.maxDuration = this.maxDuration;
+            agent.recordCall = this.recordCall;
+            agent.recordFormat = this.recordFormat;
+            agent.recordStereo = this.recordStereo;
 
             // Resolve proxy URL base
             String envProxy = env.get("SWML_PROXY_URL_BASE");
@@ -251,14 +264,10 @@ public class AgentBase {
 
             return agent;
         }
-
-        private static String generatePassword() {
-            var random = new SecureRandom();
-            byte[] bytes = new byte[32];
-            random.nextBytes(bytes);
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        }
     }
+
+    // generatePassword() is provided by Service — use Service.generatePassword()
+    // from this class (subclass) or via `Service` reference from Builder.
 
     // ============================================================
     // Prompt Methods
@@ -402,31 +411,33 @@ public class AgentBase {
      *     descriptions for each parameter.
      * @param handler the Java handler invoked when the model calls this tool.
      */
-    public AgentBase defineTool(String name, String description, Map<String, Object> parameters, ToolHandler handler) {
-        ToolDefinition tool = new ToolDefinition(name, description, parameters, handler);
-        tools.put(name, tool);
+    // defineTool / registerSwaigFunction / defineTools logic now lives on
+    // Service. AgentBase keeps thin covariant overrides that just return the
+    // AgentBase instance, so existing fluent-chain users keep an AgentBase
+    // reference (rather than the parent Service type).
+
+    @Override
+    public AgentBase defineTool(String name, String description,
+                                Map<String, Object> parameters, ToolHandler handler) {
+        super.defineTool(name, description, parameters, handler);
         return this;
     }
 
-    /**
-     * Register a SWAIG tool from a pre-built {@link ToolDefinition}.
-     * See the other {@code defineTool} overload for a full discussion of
-     * description strings being LLM-facing prompt engineering.
-     */
+    @Override
     public AgentBase defineTool(ToolDefinition toolDef) {
-        tools.put(toolDef.getName(), toolDef);
+        super.defineTool(toolDef);
         return this;
     }
 
+    @Override
     public AgentBase registerSwaigFunction(Map<String, Object> swaigFunc) {
-        registeredSwaigFunctions.add(new LinkedHashMap<>(swaigFunc));
+        super.registerSwaigFunction(swaigFunc);
         return this;
     }
 
+    @Override
     public AgentBase defineTools(List<ToolDefinition> toolDefs) {
-        for (ToolDefinition td : toolDefs) {
-            tools.put(td.getName(), td);
-        }
+        super.defineTools(toolDefs);
         return this;
     }
 
@@ -1340,18 +1351,16 @@ public class AgentBase {
      * Create a deep copy of this agent for per-request customization.
      */
     public AgentBase clone() {
-        AgentBase copy = new AgentBase();
-        copy.name = this.name;
-        copy.route = this.route;
-        copy.host = this.host;
-        copy.port = this.port;
+        // Service's name/route/host/port are constructor-only; use the
+        // protected constructor to seed those + auth, then copy agent-level
+        // state field-by-field below.
+        AgentBase copy = new AgentBase(this.name, this.route, this.host, this.port,
+                this.authUser, this.authPassword);
         copy.autoAnswer = this.autoAnswer;
         copy.maxDuration = this.maxDuration;
         copy.recordCall = this.recordCall;
         copy.recordFormat = this.recordFormat;
         copy.recordStereo = this.recordStereo;
-        copy.authUser = this.authUser;
-        copy.authPassword = this.authPassword;
         copy.promptText = this.promptText;
         copy.postPrompt = this.postPrompt;
         copy.postPromptUrl = this.postPromptUrl;
@@ -1407,76 +1416,10 @@ public class AgentBase {
     // HTTP Server
     // ============================================================
 
-    /**
-     * Timing-safe basic auth validation.
-     */
-    private boolean validateAuth(HttpExchange exchange) {
-        String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Basic ")) {
-            return false;
-        }
+    // validateAuth, addSecurityHeaders, sendJson, sendUnauthorized,
+    // sendPayloadTooLarge, and readBody are now provided by Service (parent).
+    // Inherited via `extends Service`.
 
-        byte[] decoded;
-        try {
-            decoded = Base64.getDecoder().decode(authHeader.substring(6));
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-
-        String credentials = new String(decoded, StandardCharsets.UTF_8);
-        int colonIdx = credentials.indexOf(':');
-        if (colonIdx < 0) return false;
-
-        String user = credentials.substring(0, colonIdx);
-        String pass = credentials.substring(colonIdx + 1);
-
-        boolean userMatch = MessageDigest.isEqual(
-                user.getBytes(StandardCharsets.UTF_8),
-                authUser.getBytes(StandardCharsets.UTF_8));
-        boolean passMatch = MessageDigest.isEqual(
-                pass.getBytes(StandardCharsets.UTF_8),
-                authPassword.getBytes(StandardCharsets.UTF_8));
-
-        return userMatch && passMatch;
-    }
-
-    private void addSecurityHeaders(HttpExchange exchange) {
-        var headers = exchange.getResponseHeaders();
-        headers.set("X-Content-Type-Options", "nosniff");
-        headers.set("X-Frame-Options", "DENY");
-        headers.set("Cache-Control", "no-store");
-    }
-
-    private void sendJson(HttpExchange exchange, int status, Object body) throws IOException {
-        String json = gson.toJson(body);
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
-        exchange.sendResponseHeaders(status, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
-    }
-
-    private void sendUnauthorized(HttpExchange exchange) throws IOException {
-        exchange.getResponseHeaders().set("WWW-Authenticate", "Basic realm=\"SWML Agent\"");
-        exchange.sendResponseHeaders(401, -1);
-        exchange.close();
-    }
-
-    private String readBody(HttpExchange exchange) throws IOException {
-        try (InputStream is = exchange.getRequestBody()) {
-            byte[] buf = new byte[MAX_REQUEST_BODY_SIZE + 1];
-            int total = 0;
-            int n;
-            while ((n = is.read(buf, total, buf.length - total)) > 0) {
-                total += n;
-                if (total > MAX_REQUEST_BODY_SIZE) {
-                    throw new IOException("Request body exceeds maximum size");
-                }
-            }
-            return new String(buf, 0, total, StandardCharsets.UTF_8);
-        }
-    }
 
     private String detectBaseUrl(HttpExchange exchange) {
         if (proxyUrlBase != null) return embedCredentials(proxyUrlBase);
@@ -1594,104 +1537,17 @@ public class AgentBase {
         return params;
     }
 
-    /**
-     * Start the HTTP server and listen for requests.
-     */
-    public void serve() throws IOException {
-        httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
-        httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+    // serve() and the main /swaig and / handlers are now provided by Service
+    // (parent). AgentBase plugs in via the two extension points below to add
+    // agent-specific behavior:
+    //   - renderMainSwml() — builds the SWML doc with prompts + dynamic config
+    //   - registerAdditionalRoutes() — adds /post_prompt and /mcp
 
-        String basePath = route.equals("/") ? "" : route;
-
-        // Health endpoint (no auth)
-        httpServer.createContext("/health", exchange -> {
-            try {
-                sendJson(exchange, 200, Map.of("status", "healthy"));
-            } catch (Exception e) {
-                log.error("Health handler error", e);
-            }
-        });
-
-        // Ready endpoint (no auth)
-        httpServer.createContext("/ready", exchange -> {
-            try {
-                sendJson(exchange, 200, Map.of("status", "ready"));
-            } catch (Exception e) {
-                log.error("Ready handler error", e);
-            }
-        });
-
-        // SWAIG endpoint
-        httpServer.createContext(basePath + "/swaig", exchange -> {
-            try {
-                handleSwaig(exchange);
-            } catch (Exception e) {
-                log.error("SWAIG handler error", e);
-                try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
-                catch (Exception ignored) {}
-            }
-        });
-
-        // Post-prompt endpoint
-        httpServer.createContext(basePath + "/post_prompt", exchange -> {
-            try {
-                handlePostPrompt(exchange);
-            } catch (Exception e) {
-                log.error("Post-prompt handler error", e);
-                try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
-                catch (Exception ignored) {}
-            }
-        });
-
-        // MCP server endpoint (JSON-RPC 2.0)
-        if (mcpServerEnabled) {
-            httpServer.createContext(basePath + "/mcp", exchange -> {
-                try {
-                    handleMcpEndpoint(exchange);
-                } catch (Exception e) {
-                    log.error("MCP handler error", e);
-                    try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
-                    catch (Exception ignored) {}
-                }
-            });
-        }
-
-        // Main SWML endpoint
-        String mainPath = basePath.isEmpty() ? "/" : basePath;
-        httpServer.createContext(mainPath, exchange -> {
-            try {
-                handleSwml(exchange);
-            } catch (Exception e) {
-                log.error("SWML handler error", e);
-                try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
-                catch (Exception ignored) {}
-            }
-        });
-
-        httpServer.start();
-        log.info("Agent '%s' listening on %s:%d%s", name, host, port, mainPath);
-    }
-
-    private void handleSwml(HttpExchange exchange) throws IOException {
+    @Override
+    protected Map<String, Object> renderMainSwml(HttpExchange exchange) {
         String method = exchange.getRequestMethod();
-        String path = exchange.getRequestURI().getPath();
-
-        // Don't handle sub-paths that belong to other handlers
-        String basePath = route.equals("/") ? "" : route;
-        if (path.equals(basePath + "/swaig") || path.equals(basePath + "/post_prompt")
-                || path.equals(basePath + "/mcp")) {
-            return;
-        }
-
-        if (!validateAuth(exchange)) {
-            sendUnauthorized(exchange);
-            return;
-        }
-        addSecurityHeaders(exchange);
-
         String baseUrl = detectBaseUrl(exchange);
 
-        // Dynamic config support
         AgentBase renderAgent = this;
         if (dynamicConfigCallback != null) {
             renderAgent = this.clone();
@@ -1712,72 +1568,36 @@ public class AgentBase {
             exchange.getRequestHeaders().forEach((k, v) -> headerMap.put(k, v));
             dynamicConfigCallback.configure(queryParams, bodyParams, headerMap, renderAgent);
         }
-
-        sendJson(exchange, 200, renderAgent.renderSwml(baseUrl));
+        return renderAgent.renderSwml(baseUrl);
     }
 
-    private void handleSwaig(HttpExchange exchange) throws IOException {
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            exchange.sendResponseHeaders(405, -1);
-            exchange.close();
-            return;
-        }
+    @Override
+    protected void registerAdditionalRoutes(com.sun.net.httpserver.HttpServer server) {
+        String basePath = route.equals("/") ? "" : route;
 
-        if (!validateAuth(exchange)) {
-            sendUnauthorized(exchange);
-            return;
-        }
-        addSecurityHeaders(exchange);
-
-        String body;
-        try {
-            body = readBody(exchange);
-        } catch (IOException e) {
-            exchange.sendResponseHeaders(413, -1);
-            exchange.close();
-            return;
-        }
-
-        Map<String, Object> payload;
-        try {
-            Type type = new TypeToken<Map<String, Object>>() {}.getType();
-            payload = gson.fromJson(body, type);
-        } catch (Exception e) {
-            sendJson(exchange, 400, Map.of("error", "Invalid JSON"));
-            return;
-        }
-
-        if (payload == null) {
-            sendJson(exchange, 400, Map.of("error", "Empty payload"));
-            return;
-        }
-
-        String funcName = (String) payload.get("function");
-        if (funcName == null || funcName.isEmpty()) {
-            sendJson(exchange, 400, Map.of("error", "Missing function name"));
-            return;
-        }
-
-        // Validate function exists
-        if (!tools.containsKey(funcName)) {
-            sendJson(exchange, 404, Map.of("error", "Function not found: " + funcName));
-            return;
-        }
-
-        // Extract args from argument.parsed[0]
-        Map<String, Object> args = new LinkedHashMap<>();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> argument = (Map<String, Object>) payload.get("argument");
-        if (argument != null) {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> parsed = (List<Map<String, Object>>) argument.get("parsed");
-            if (parsed != null && !parsed.isEmpty()) {
-                args.putAll(parsed.get(0));
+        // Post-prompt endpoint
+        server.createContext(basePath + "/post_prompt", exchange -> {
+            try {
+                handlePostPrompt(exchange);
+            } catch (Exception e) {
+                log.error("Post-prompt handler error", e);
+                try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
+                catch (Exception ignored) {}
             }
-        }
+        });
 
-        FunctionResult result = onFunctionCall(funcName, args, payload);
-        sendJson(exchange, 200, result.toMap());
+        // MCP server endpoint (JSON-RPC 2.0) — opt-in
+        if (mcpServerEnabled) {
+            server.createContext(basePath + "/mcp", exchange -> {
+                try {
+                    handleMcpEndpoint(exchange);
+                } catch (Exception e) {
+                    log.error("MCP handler error", e);
+                    try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
+                    catch (Exception ignored) {}
+                }
+            });
+        }
     }
 
     private void handlePostPrompt(HttpExchange exchange) throws IOException {
@@ -1866,21 +1686,13 @@ public class AgentBase {
     }
 
     /**
-     * Start the agent server. Equivalent to serve().
+     * Start the agent server. Equivalent to {@link #serve()} (inherited).
      */
     public void run() throws IOException {
         serve();
     }
 
-    /**
-     * Stop the HTTP server.
-     */
-    public void stop() {
-        if (httpServer != null) {
-            httpServer.stop(0);
-            log.info("Agent '%s' stopped", name);
-        }
-    }
+    // stop() is inherited from Service.
 
     // ============================================================
     // Dynamic Config Callback Interface

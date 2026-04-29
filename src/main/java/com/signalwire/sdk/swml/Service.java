@@ -40,12 +40,23 @@ public class Service {
     protected int port;
     protected final Document document;
 
-    // Auth
-    private String authUser;
-    private String authPassword;
+    // SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
+    // non-agent verb host) can register and dispatch SWAIG functions.
+    protected final java.util.Map<String, com.signalwire.sdk.swaig.ToolDefinition> tools =
+            new java.util.LinkedHashMap<>();
+    protected final java.util.List<java.util.Map<String, Object>> registeredSwaigFunctions =
+            new java.util.ArrayList<>();
 
-    // HTTP server
-    private HttpServer httpServer;
+    private static final java.util.regex.Pattern SWAIG_FN_NAME =
+            java.util.regex.Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
+
+    // Auth — protected so AgentBase (extends Service) can read them in subclass
+    // helpers. Don't expose via getters that mutate; use the constructor.
+    protected String authUser;
+    protected String authPassword;
+
+    // HTTP server — protected so AgentBase can register additional routes
+    protected HttpServer httpServer;
 
     public Service(String name) {
         this(name, "/", "0.0.0.0", resolvePort(), null, null);
@@ -78,7 +89,7 @@ public class Service {
         log.info("Service '%s' initialized with auth user: %s", name, this.authUser);
     }
 
-    private static int resolvePort() {
+    protected static int resolvePort() {
         String envPort = System.getenv("PORT");
         if (envPort != null) {
             try {
@@ -89,7 +100,7 @@ public class Service {
         return 3000;
     }
 
-    private static String generatePassword() {
+    protected static String generatePassword() {
         var random = new SecureRandom();
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
@@ -141,6 +152,88 @@ public class Service {
                 authPassword.getBytes(StandardCharsets.UTF_8));
 
         return userMatch && passMatch;
+    }
+
+    // ------------------------------------------------------------------
+    // SWAIG tool registry (lifted from AgentBase)
+    // ------------------------------------------------------------------
+
+    /**
+     * Define a SWAIG function the AI can call. Tool descriptions and
+     * parameter descriptions are LLM-facing prompt engineering — see
+     * PORTING_GUIDE for guidance on writing them.
+     */
+    public Service defineTool(String name, String description,
+                              java.util.Map<String, Object> parameters,
+                              com.signalwire.sdk.swaig.ToolHandler handler) {
+        tools.put(name, new com.signalwire.sdk.swaig.ToolDefinition(name, description, parameters, handler));
+        return this;
+    }
+
+    /** Register a SWAIG tool from a pre-built ToolDefinition. */
+    public Service defineTool(com.signalwire.sdk.swaig.ToolDefinition toolDef) {
+        tools.put(toolDef.getName(), toolDef);
+        return this;
+    }
+
+    /** Register a raw SWAIG function definition (e.g. DataMap tools). */
+    public Service registerSwaigFunction(java.util.Map<String, Object> swaigFunc) {
+        registeredSwaigFunctions.add(new java.util.LinkedHashMap<>(swaigFunc));
+        return this;
+    }
+
+    /** Register multiple tool definitions at once. */
+    public Service defineTools(java.util.List<com.signalwire.sdk.swaig.ToolDefinition> toolDefs) {
+        for (var def : toolDefs) {
+            defineTool(def);
+        }
+        return this;
+    }
+
+    /** Dispatch a function call to the registered handler. */
+    public com.signalwire.sdk.swaig.FunctionResult onFunctionCall(
+            String funcName,
+            java.util.Map<String, Object> args,
+            java.util.Map<String, Object> rawData) {
+        var tool = tools.get(funcName);
+        if (tool == null) {
+            return null;
+        }
+        return tool.getHandler().handle(args, rawData);
+    }
+
+    /** List registered SWAIG tool names in insertion order. */
+    public java.util.List<String> listToolNames() {
+        return new java.util.ArrayList<>(tools.keySet());
+    }
+
+    /**
+     * Extension point: invoked between argument parsing and function
+     * dispatch. Returns a 2-element array: [target Service, shortCircuit Map].
+     * If shortCircuit is non-null, it's returned as the SWAIG response
+     * without calling onFunctionCall. AgentBase may override to add
+     * session-token validation or ephemeral dynamic-config copies.
+     */
+    protected Object[] swaigPreDispatch(java.util.Map<String, Object> requestData,
+                                        String funcName) {
+        return new Object[] { this, null };
+    }
+
+    /**
+     * Extension point: render the SWML document for the main path or for
+     * GET /swaig. Default returns the currently-built Document. AgentBase
+     * overrides to emit prompt + AI verb at request time.
+     */
+    protected java.util.Map<String, Object> renderMainSwml(HttpExchange exchange) {
+        return document.toMap();
+    }
+
+    /**
+     * Extension point: register additional HTTP routes after Service
+     * mounts /health, /ready, /swaig and the main route. AgentBase uses
+     * this to add /post_prompt and /mcp.
+     */
+    protected void registerAdditionalRoutes(HttpServer server) {
     }
 
     /**
@@ -412,7 +505,10 @@ public class Service {
     }
 
     /**
-     * Start the HTTP server with health, ready, and main SWML endpoint.
+     * Start the HTTP server with health, ready, /swaig, and main SWML endpoint.
+     * Subclasses (AgentBase) add additional routes via
+     * {@link #registerAdditionalRoutes(HttpServer)} and customize SWML
+     * rendering via {@link #renderMainSwml(HttpExchange)}.
      */
     public void serve() throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
@@ -436,16 +532,39 @@ public class Service {
             }
         });
 
+        String basePath = route.equals("/") ? "" : route;
+
+        // SWAIG endpoint (with auth) — GET returns SWML, POST dispatches a tool.
+        httpServer.createContext(basePath + "/swaig", exchange -> {
+            try {
+                handleSwaigEndpoint(exchange);
+            } catch (Exception e) {
+                log.error("SWAIG handler error", e);
+                try { exchange.sendResponseHeaders(500, -1); exchange.close(); }
+                catch (Exception ignored) {}
+            }
+        });
+
+        // Subclass extension hook — AgentBase adds /post_prompt, /mcp here.
+        registerAdditionalRoutes(httpServer);
+
         // Main SWML endpoint (with auth)
-        String swmlPath = route.isEmpty() || route.equals("/") ? "/" : route;
+        String swmlPath = basePath.isEmpty() ? "/" : basePath;
         httpServer.createContext(swmlPath, exchange -> {
             try {
+                String path = exchange.getRequestURI().getPath();
+                // Don't shadow sub-paths owned by sibling handlers.
+                if (path.equals(basePath + "/swaig")
+                        || path.equals(basePath + "/post_prompt")
+                        || path.equals(basePath + "/mcp")) {
+                    return;
+                }
                 if (!validateAuth(exchange)) {
                     sendUnauthorized(exchange);
                     return;
                 }
                 addSecurityHeaders(exchange);
-                sendJson(exchange, 200, document.toMap());
+                sendJson(exchange, 200, renderMainSwml(exchange));
             } catch (Exception e) {
                 log.error("SWML handler error", e);
                 exchange.sendResponseHeaders(500, -1);
@@ -455,6 +574,94 @@ public class Service {
 
         httpServer.start();
         log.info("Service '%s' listening on %s:%d%s", name, host, port, swmlPath);
+    }
+
+    /**
+     * Handle GET/POST to /swaig. Lifted from AgentBase.
+     * GET: returns the rendered SWML doc (parallel to root /).
+     * POST: parses {function, argument, call_id}, validates the function
+     * name, calls swaigPreDispatch hook, then dispatches via onFunctionCall.
+     */
+    private void handleSwaigEndpoint(HttpExchange exchange) throws IOException {
+        if (!validateAuth(exchange)) {
+            sendUnauthorized(exchange);
+            return;
+        }
+        addSecurityHeaders(exchange);
+
+        String method = exchange.getRequestMethod();
+        if ("GET".equalsIgnoreCase(method)) {
+            sendJson(exchange, 200, renderMainSwml(exchange));
+            return;
+        }
+
+        String body;
+        try {
+            body = readBody(exchange);
+        } catch (IOException e) {
+            exchange.sendResponseHeaders(413, -1);
+            exchange.close();
+            return;
+        }
+
+        java.util.Map<String, Object> payload;
+        try {
+            java.lang.reflect.Type type =
+                    new com.google.gson.reflect.TypeToken<java.util.Map<String, Object>>() {}.getType();
+            payload = gson.fromJson(body, type);
+        } catch (Exception e) {
+            sendJson(exchange, 400, Map.of("error", "Invalid JSON"));
+            return;
+        }
+        if (payload == null) {
+            sendJson(exchange, 400, Map.of("error", "Empty payload"));
+            return;
+        }
+
+        String funcName = (String) payload.get("function");
+        if (funcName == null || funcName.isEmpty()) {
+            sendJson(exchange, 400, Map.of("error", "Missing function name"));
+            return;
+        }
+        if (!SWAIG_FN_NAME.matcher(funcName).matches()) {
+            sendJson(exchange, 400, Map.of("error", "Invalid function name format: '" + funcName + "'"));
+            return;
+        }
+
+        // Argument extraction: nested {argument:{parsed:[...]}} OR flat {arguments:{...}}
+        java.util.Map<String, Object> args = new java.util.LinkedHashMap<>();
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> argument = (java.util.Map<String, Object>) payload.get("argument");
+        if (argument != null) {
+            @SuppressWarnings("unchecked")
+            java.util.List<java.util.Map<String, Object>> parsed =
+                    (java.util.List<java.util.Map<String, Object>>) argument.get("parsed");
+            if (parsed != null && !parsed.isEmpty()) {
+                args.putAll(parsed.get(0));
+            }
+        } else {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> arguments = (java.util.Map<String, Object>) payload.get("arguments");
+            if (arguments != null) {
+                args.putAll(arguments);
+            }
+        }
+
+        Object[] dispatch = swaigPreDispatch(payload, funcName);
+        Service target = (Service) dispatch[0];
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> shortCircuit = (java.util.Map<String, Object>) dispatch[1];
+        if (shortCircuit != null) {
+            sendJson(exchange, 200, shortCircuit);
+            return;
+        }
+
+        var result = target.onFunctionCall(funcName, args, payload);
+        if (result == null) {
+            sendJson(exchange, 404, Map.of("error", "Function not found: " + funcName));
+            return;
+        }
+        sendJson(exchange, 200, result.toMap());
     }
 
     /**
