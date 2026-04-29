@@ -362,7 +362,14 @@ public class RelayClient {
 
     private void connect() {
         try {
-            URI uri = new URI("wss://" + space);
+            // Permit tests and audit fixtures to point the client at a
+            // plain-ws loopback by passing space="ws://127.0.0.1:NNNN" (or
+            // "ws://127.0.0.1:NNNN/path"). Production callers pass a bare
+            // hostname like "example.signalwire.com", which is upgraded to
+            // wss:// here.
+            URI uri = space.startsWith("ws://") || space.startsWith("wss://")
+                    ? new URI(space)
+                    : new URI("wss://" + space);
             webSocket = new InternalWebSocket(uri);
             webSocket.connect();
         } catch (Exception e) {
@@ -716,6 +723,21 @@ public class RelayClient {
             log.info("Server-initiated disconnect - will reconnect with session");
         }
         // Don't set a closing flag; let the reconnect happen naturally when the socket closes
+    }
+
+    /**
+     * Send a raw JSON-RPC frame on the underlying socket. Production code
+     * uses {@link #execute(String, Map)}, which adds project_id/protocol
+     * automatically. This helper exists for the porting-sdk RELAY-handshake
+     * audit harness, which has to emit a {@code method:"signalwire.event"}
+     * frame from inside the on-event callback so the fixture's dispatch
+     * counter fires (see SUBAGENT_PLAYBOOK lesson on event-ACK semantics).
+     *
+     * @param frame a Gson-serializable map representing the frame
+     */
+    public void sendRaw(Map<String, Object> frame) {
+        if (webSocket == null || !webSocket.isOpen()) return;
+        webSocket.send(gson.toJson(frame));
     }
 
     private void sendAck(String id) {
