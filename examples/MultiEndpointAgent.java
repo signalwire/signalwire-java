@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-public class MultiEndpoint {
+public class MultiEndpointAgent {
 
     public static void main(String[] args) throws Exception {
         // Create voice AI agent at /swml

@@ -9,7 +9,7 @@ import com.signalwire.sdk.prefabs.SurveyAgent;
 
 import java.util.List;
 
-public class PrefabSurvey {
+public class SurveyAgentExample {
 
     public static void main(String[] args) throws Exception {
         var agent = new SurveyAgent(

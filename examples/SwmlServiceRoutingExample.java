@@ -14,7 +14,7 @@ import com.signalwire.sdk.swml.Service;
 
 import java.util.Map;
 
-public class SwmlServiceRouting {
+public class SwmlServiceRoutingExample {
 
     public static void main(String[] args) throws Exception {
         // Main service at /main

@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-public class SwaigFeatures {
+public class SwaigFeaturesAgent {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

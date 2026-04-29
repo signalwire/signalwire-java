@@ -9,7 +9,7 @@ import com.signalwire.sdk.prefabs.ConciergeAgent;
 
 import java.util.List;
 
-public class ConciergeExample {
+public class ConciergeAgentExample {
 
     public static void main(String[] args) throws Exception {
         var agent = new ConciergeAgent(

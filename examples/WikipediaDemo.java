@@ -9,7 +9,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-public class WikipediaAgent {
+public class WikipediaDemo {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

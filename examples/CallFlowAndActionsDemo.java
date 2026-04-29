@@ -15,7 +15,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-public class CallFlow {
+public class CallFlowAndActionsDemo {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

@@ -9,7 +9,7 @@ import com.signalwire.sdk.prefabs.InfoGathererAgent;
 
 import java.util.List;
 
-public class PrefabInfoGatherer {
+public class InfoGathererExample {
 
     public static void main(String[] args) throws Exception {
         var agent = new InfoGathererAgent(

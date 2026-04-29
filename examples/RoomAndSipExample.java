@@ -13,7 +13,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-public class RoomAndSip {
+public class RoomAndSipExample {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

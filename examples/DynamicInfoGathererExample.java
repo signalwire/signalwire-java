@@ -18,7 +18,7 @@ import com.signalwire.sdk.prefabs.InfoGathererAgent;
 import java.util.List;
 import java.util.Map;
 
-public class DynamicInfoGatherer {
+public class DynamicInfoGathererExample {
 
     public static void main(String[] args) throws Exception {
         Map<String, List<Map<String, Object>>> questionSets = Map.of(

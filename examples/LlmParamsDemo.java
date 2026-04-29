@@ -16,7 +16,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-public class LlmParams {
+public class LlmParamsDemo {
 
     public static void main(String[] args) throws Exception {
         String mode = args.length > 0 ? args[0].toLowerCase() : "support";

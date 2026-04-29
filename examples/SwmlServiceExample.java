@@ -9,7 +9,7 @@ import com.signalwire.sdk.swml.Service;
 
 import java.util.Map;
 
-public class SwmlService {
+public class SwmlServiceExample {
 
     public static void main(String[] args) throws Exception {
         String mode = args.length > 0 ? args[0] : "voicemail";

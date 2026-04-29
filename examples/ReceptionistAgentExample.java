@@ -9,7 +9,7 @@ import com.signalwire.sdk.prefabs.ReceptionistAgent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ReceptionistExample {
+public class ReceptionistAgentExample {
 
     public static void main(String[] args) throws Exception {
         Map<String, Map<String, Object>> departments = new LinkedHashMap<>();

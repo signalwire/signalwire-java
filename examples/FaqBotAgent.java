@@ -8,7 +8,7 @@ import com.signalwire.sdk.prefabs.FAQBotAgent;
 
 import java.util.List;
 
-public class FaqBotExample {
+public class FaqBotAgent {
 
     public static void main(String[] args) throws Exception {
         var agent = new FAQBotAgent(

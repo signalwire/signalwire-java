@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SessionState {
+public class SessionAndStateDemo {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

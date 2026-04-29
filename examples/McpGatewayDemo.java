@@ -19,7 +19,7 @@ import com.signalwire.sdk.agent.AgentBase;
 import java.util.List;
 import java.util.Map;
 
-public class McpGateway {
+public class McpGatewayDemo {
 
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()

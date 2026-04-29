@@ -12,7 +12,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-public class DatasphereWebhookEnv {
+public class DatasphereWebhookEnvDemo {
 
     static String requireEnv(String name) {
         String val = System.getenv(name);

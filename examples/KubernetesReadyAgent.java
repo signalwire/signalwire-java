@@ -16,7 +16,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-public class KubernetesAgent {
+public class KubernetesReadyAgent {
 
     public static void main(String[] args) throws Exception {
         // PORT env var is automatically respected by AgentBase

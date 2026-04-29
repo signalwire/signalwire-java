@@ -11,7 +11,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-public class WebSearchMultiInstance {
+public class WebSearchMultiInstanceDemo {
 
     public static void main(String[] args) throws Exception {
         String apiKey = System.getenv("GOOGLE_SEARCH_API_KEY");
