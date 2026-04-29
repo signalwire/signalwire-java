@@ -10,10 +10,16 @@
  * validation -- but {@code defineTool}, {@code registerSwaigFunction}, and
  * {@code onFunctionCall} all live on {@code Service} itself.
  *
- * <p>Run:
+ * <p>The class extends {@link com.signalwire.sdk.swml.Service} directly and
+ * registers its SWAIG tools in the constructor. {@code main()} only calls
+ * {@code serve()}. This shape is reusable: the SDK's {@code swaig-test} CLI
+ * can load the class in-process via reflection and inspect the tool registry
+ * without starting an HTTP server.
+ *
+ * <p>Run as a server:
  * <pre>
- *     javac -cp build/classes/java/main examples/SwmlServiceSwaigStandalone.java -d /tmp/swaig-standalone
- *     java  -cp build/classes/java/main:/tmp/swaig-standalone SwmlServiceSwaigStandalone
+ *     javac -cp build/libs/signalwire-sdk-*.jar -d /tmp/swaig-standalone examples/SwmlServiceSwaigStandalone.java
+ *     java  -cp build/libs/signalwire-sdk-*.jar:/tmp/swaig-standalone SwmlServiceSwaigStandalone
  * </pre>
  *
  * <p>Then exercise the endpoints (auth user/password are printed at startup):
@@ -24,10 +30,16 @@
  *         -d '{"function":"lookup_competitor","argument":{"parsed":[{"competitor":"ACME"}]}}'
  * </pre>
  *
- * <p>Or drive it through the SDK's {@code swaig-test} CLI (URL mode):
+ * <p>Or drive it through the SDK's {@code swaig-test} CLI:
  * <pre>
+ *     # In-process (no HTTP -- inspect the tool registry directly):
+ *     SWAIG_TEST_CLASSPATH=/tmp/swaig-standalone bin/swaig-test \
+ *         --class SwmlServiceSwaigStandalone --list-tools
+ *
+ *     # Or against a running server (URL mode):
  *     bin/swaig-test --url http://USER:PASS@localhost:3000/standalone --list-tools
- *     bin/swaig-test --url http://USER:PASS@localhost:3000/standalone --exec lookup_competitor --param competitor=ACME
+ *     bin/swaig-test --url http://USER:PASS@localhost:3000/standalone \
+ *         --exec lookup_competitor --param competitor=ACME
  * </pre>
  */
 
@@ -36,17 +48,17 @@ import com.signalwire.sdk.swml.Service;
 
 import java.util.Map;
 
-public class SwmlServiceSwaigStandalone {
+public class SwmlServiceSwaigStandalone extends Service {
 
-    public static void main(String[] args) throws Exception {
+    public SwmlServiceSwaigStandalone() {
         // 1. Plain Service -- no AgentBase. Route is independent of the SWAIG
         //    surface; /standalone/swaig is what answers tool calls.
-        var svc = new Service("standalone-swaig", "/standalone");
+        super("standalone-swaig", "/standalone");
 
         // 2. Build a minimal SWML document. Any verbs are fine -- the SWAIG
         //    HTTP surface is independent of the document contents.
-        svc.answer(Map.of());
-        svc.hangup();
+        answer(Map.of());
+        hangup();
 
         // 3. Register a SWAIG function. defineTool's signature on Service is:
         //
@@ -57,7 +69,7 @@ public class SwmlServiceSwaigStandalone {
         //
         //    The handler receives parsed arguments + the raw POST body and
         //    returns a FunctionResult.
-        svc.defineTool(
+        defineTool(
                 "lookup_competitor",
                 "Look up competitor pricing by company name. Use this when "
                         + "the user asks how a competitor's price compares to ours.",
@@ -73,7 +85,10 @@ public class SwmlServiceSwaigStandalone {
                             competitor + " pricing is $99/seat; we're $79/seat.");
                 }
         );
+    }
 
+    public static void main(String[] args) throws Exception {
+        var svc = new SwmlServiceSwaigStandalone();
         System.out.printf("Starting standalone SWAIG service on /standalone%n");
         System.out.printf("  auth user: %s%n", svc.getAuthUser());
         System.out.printf("  auth pass: %s%n", svc.getAuthPassword());

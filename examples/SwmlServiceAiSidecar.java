@@ -9,6 +9,11 @@
  * It is NOT an agent -- it does not own the call. So the right host is
  * {@code Service}, not {@code AgentBase}.
  *
+ * <p>The class extends {@link com.signalwire.sdk.swml.Service} directly so
+ * the SDK's {@code swaig-test} CLI can load it in-process via reflection
+ * (no HTTP) and inspect its tool registry -- the SWML doc + tools live in
+ * the constructor, {@code main()} only calls {@code serve()}.
+ *
  * <p>What this serves:
  * <pre>
  *     GET  /sales-sidecar           -> SWML doc with the ai_sidecar verb
@@ -18,6 +23,11 @@
  *
  * <p>Drive the SWAIG path through the SDK's {@code swaig-test} CLI:
  * <pre>
+ *     # In-process (no HTTP -- list registered tools directly):
+ *     SWAIG_TEST_CLASSPATH=/tmp/swaig-sidecar bin/swaig-test \
+ *         --class SwmlServiceAiSidecar --list-tools
+ *
+ *     # Or against a running server (URL mode):
  *     bin/swaig-test --url http://USER:PASS@localhost:3000/sales-sidecar --list-tools
  *     bin/swaig-test --url http://USER:PASS@localhost:3000/sales-sidecar \
  *         --exec lookup_competitor --param competitor=ACME
@@ -35,71 +45,31 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-public class SwmlServiceAiSidecar {
+public class SwmlServiceAiSidecar extends Service {
 
     /**
-     * A {@code Service} subclass that overrides {@code registerAdditionalRoutes}
-     * to mount a {@code /events} sink for ai_sidecar lifecycle events. The
-     * Java equivalent of Python's {@code register_routing_callback}.
+     * Public URL of this service (env-overridable). The ai_sidecar verb
+     * needs a fully-qualified URL to POST SWAIG calls back to. Reading
+     * the env at construction time keeps the SWML doc and the tool
+     * registry build-once-and-reusable.
      */
-    static class SalesSidecar extends Service {
-
-        SalesSidecar() {
-            super("sales-sidecar", "/sales-sidecar");
-        }
-
-        @Override
-        protected void registerAdditionalRoutes(HttpServer server) {
-            String basePath = "/sales-sidecar";
-            server.createContext(basePath + "/events", exchange -> {
-                try {
-                    if (!validateAuth(exchange)) {
-                        sendUnauthorized(exchange);
-                        return;
-                    }
-                    addSecurityHeaders(exchange);
-                    String body = readEventBody(exchange);
-                    System.out.printf("[sidecar event] %s%n", body);
-                    byte[] resp = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
-                    exchange.getResponseHeaders().set("Content-Type", "application/json");
-                    exchange.sendResponseHeaders(200, resp.length);
-                    try (OutputStream os = exchange.getResponseBody()) {
-                        os.write(resp);
-                    }
-                } catch (Exception e) {
-                    try {
-                        exchange.sendResponseHeaders(500, -1);
-                        exchange.close();
-                    } catch (IOException ignored) {
-                    }
-                }
-            });
-        }
-
-        private static String readEventBody(com.sun.net.httpserver.HttpExchange exchange)
-                throws IOException {
-            try (InputStream is = exchange.getRequestBody()) {
-                byte[] buf = is.readAllBytes();
-                return new String(buf, StandardCharsets.UTF_8);
-            }
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        // 1. Public URL of this service (env-overridable). The ai_sidecar verb
-        //    needs a fully-qualified URL to POST SWAIG calls back to.
-        String publicUrl = System.getenv().getOrDefault(
+    private static String resolvePublicUrl() {
+        return System.getenv().getOrDefault(
                 "PUBLIC_URL",
                 "https://your-host.example.com/sales-sidecar");
+    }
 
-        var svc = new SalesSidecar();
+    public SwmlServiceAiSidecar() {
+        super("sales-sidecar", "/sales-sidecar");
 
-        // 2. Emit any SWML -- including ai_sidecar. Service exposes
+        String publicUrl = resolvePublicUrl();
+
+        // 1. Emit any SWML -- including ai_sidecar. Service exposes
         //    addVerbToSection via getDocument(), so new platform verbs work
         //    without an SDK release. UPPERCASE "SWAIG" is the SWML schema key
         //    that registers the LLM-callable webhook for the sidecar.
-        svc.answer(Map.of());
-        svc.getDocument().addVerbToSection(
+        answer(Map.of());
+        getDocument().addVerbToSection(
                 "main",
                 "ai_sidecar",
                 Map.of(
@@ -117,11 +87,11 @@ public class SwmlServiceAiSidecar {
                         )
                 )
         );
-        svc.hangup();
+        hangup();
 
-        // 3. Register tools the sidecar's LLM can call. Same defineTool you'd
+        // 2. Register tools the sidecar's LLM can call. Same defineTool you'd
         //    use on AgentBase -- it lives on Service.
-        svc.defineTool(
+        defineTool(
                 "lookup_competitor",
                 "Look up competitor pricing by company name. The sidecar should "
                         + "call this whenever the caller mentions a competitor.",
@@ -138,9 +108,48 @@ public class SwmlServiceAiSidecar {
                                     + "plan is $79/seat with the same SLA.");
                 }
         );
+    }
 
+    @Override
+    protected void registerAdditionalRoutes(HttpServer server) {
+        String basePath = "/sales-sidecar";
+        server.createContext(basePath + "/events", exchange -> {
+            try {
+                if (!validateAuth(exchange)) {
+                    sendUnauthorized(exchange);
+                    return;
+                }
+                addSecurityHeaders(exchange);
+                String body = readEventBody(exchange);
+                System.out.printf("[sidecar event] %s%n", body);
+                byte[] resp = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+            } catch (Exception e) {
+                try {
+                    exchange.sendResponseHeaders(500, -1);
+                    exchange.close();
+                } catch (IOException ignored) {
+                }
+            }
+        });
+    }
+
+    private static String readEventBody(com.sun.net.httpserver.HttpExchange exchange)
+            throws IOException {
+        try (InputStream is = exchange.getRequestBody()) {
+            byte[] buf = is.readAllBytes();
+            return new String(buf, StandardCharsets.UTF_8);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        var svc = new SwmlServiceAiSidecar();
         System.out.printf("Starting ai_sidecar service on /sales-sidecar%n");
-        System.out.printf("  public URL: %s%n", publicUrl);
+        System.out.printf("  public URL: %s%n", resolvePublicUrl());
         System.out.printf("  auth user:  %s%n", svc.getAuthUser());
         System.out.printf("  auth pass:  %s%n", svc.getAuthPassword());
         System.out.printf("  tools:      %s%n", svc.listToolNames());

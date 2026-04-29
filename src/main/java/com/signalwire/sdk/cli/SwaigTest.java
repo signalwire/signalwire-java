@@ -59,6 +59,12 @@ public class SwaigTest {
     private String agentClassName;
     private String simulatePlatformRaw;
 
+    // File/class mode (in-process load of a Service subclass — no HTTP).
+    // Used by --list-tools to inspect a Service that doesn't emit an
+    // <ai> verb (sidecar / standalone SWAIG host) and therefore can't
+    // be inspected by walking the SWML doc.
+    private String fileLoaderClassName;
+
     // Testability hook: an alternative env source for the simulator's
     // "real env" fallback layer. Never consulted unless explicitly set
     // (in which case the CLI is being driven by a test harness that
@@ -148,6 +154,12 @@ public class SwaigTest {
                     }
                     simulatePlatformRaw = args[i];
                 }
+                case "--class" -> {
+                    if (++i >= args.length) {
+                        throw new IllegalArgumentException("--class requires a fully-qualified class name");
+                    }
+                    fileLoaderClassName = args[i];
+                }
                 case "--raw" -> raw = true;
                 case "--verbose" -> verbose = true;
                 case "--help", "-h" -> {
@@ -170,6 +182,16 @@ public class SwaigTest {
         }
 
         boolean simulating = simulatePlatformRaw != null;
+        boolean fileLoading = fileLoaderClassName != null;
+
+        // The three modes are mutually exclusive.
+        if (simulating && fileLoading) {
+            throw new IllegalArgumentException(
+                    "--class cannot be combined with --simulate-serverless");
+        }
+        if (fileLoading && baseUrl != null) {
+            throw new IllegalArgumentException("--url cannot be combined with --class");
+        }
 
         if (simulating) {
             if (agentClassName == null) {
@@ -188,10 +210,28 @@ public class SwaigTest {
                         "--list-tools is not supported in --simulate-serverless mode; "
                                 + "use --dump-swml and inspect the functions array");
             }
+        } else if (fileLoading) {
+            // File/class mode — currently supports --list-tools only.
+            // No HTTP, no serverless adapter; we instantiate the class
+            // and read the registry directly.
+            if (agentClassName != null) {
+                throw new IllegalArgumentException(
+                        "--class takes the FQCN as its argument; do not also pass a positional class name");
+            }
+            if (!listTools) {
+                throw new IllegalArgumentException(
+                        "--class currently supports only --list-tools "
+                                + "(use --url for --dump-swml / --exec)");
+            }
+            if (execTool != null || dumpSwml) {
+                throw new IllegalArgumentException(
+                        "--class supports only --list-tools; --dump-swml and --exec require --url");
+            }
         } else {
             if (baseUrl == null) {
                 throw new IllegalArgumentException(
-                        "--url is required (or pass <agent-class> --simulate-serverless <platform>)");
+                        "--url is required (or pass <agent-class> --simulate-serverless <platform>, "
+                                + "or --class <FQCN> --list-tools)");
             }
             if (!dumpSwml && !listTools && execTool == null) {
                 throw new IllegalArgumentException(
@@ -252,12 +292,117 @@ public class SwaigTest {
             runSimulation();
             return;
         }
+        if (fileLoaderClassName != null) {
+            runFileLoaderListTools();
+            return;
+        }
         if (dumpSwml) {
             doDumpSwml();
         } else if (listTools) {
             doListTools();
         } else if (execTool != null) {
             doExecTool();
+        }
+    }
+
+    // ── File/class mode (in-process, no HTTP) ────────────────────────
+
+    /**
+     * Load the class named by {@code --class} via reflection, instantiate
+     * it through its declared no-arg constructor, verify it is a
+     * {@link com.signalwire.sdk.swml.Service}, and print every registered
+     * SWAIG tool's name + description + parameters.
+     *
+     * <p>This is the introspection path for Service subclasses that don't
+     * emit an {@code <ai>} verb — sidecar / standalone SWAIG hosts whose
+     * tools are invisible to {@code --list-tools --url} because there's
+     * no AI verb to walk for {@code "function":"name"} markers.
+     *
+     * <p>No HTTP server is started; no socket is bound. The user is
+     * responsible for putting the compiled class on the JVM classpath
+     * (typically via the {@code SWAIG_TEST_CLASSPATH} env var honoured
+     * by {@code bin/swaig-test}).
+     */
+    private void runFileLoaderListTools() throws Exception {
+        if (verbose) {
+            System.err.println("[verbose] Loading class via reflection: " + fileLoaderClassName);
+        }
+        Class<?> cls;
+        try {
+            cls = Class.forName(fileLoaderClassName);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(
+                    "Class not found on classpath: " + fileLoaderClassName
+                            + ". Add the directory or jar containing this class to the "
+                            + "classpath (set SWAIG_TEST_CLASSPATH when invoking bin/swaig-test).");
+        }
+
+        Object instance;
+        try {
+            var ctor = cls.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            instance = ctor.newInstance();
+        } catch (NoSuchMethodException e) {
+            throw new IllegalArgumentException(
+                    fileLoaderClassName + " must have a public no-arg constructor "
+                            + "to be loaded by --class. Move build logic out of static "
+                            + "initialisers and into the constructor or main().");
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new RuntimeException(
+                    "Constructor of " + fileLoaderClassName + " threw: " + cause, cause);
+        }
+
+        if (!(instance instanceof com.signalwire.sdk.swml.Service service)) {
+            throw new IllegalArgumentException(
+                    fileLoaderClassName + " must extend com.signalwire.sdk.swml.Service "
+                            + "(got " + instance.getClass().getName() + ")");
+        }
+
+        java.util.Map<String, com.signalwire.sdk.swaig.ToolDefinition> tools =
+                service.getRegisteredTools();
+        java.util.List<java.util.Map<String, Object>> rawFns = service.getRegisteredSwaigFunctions();
+
+        int total = tools.size() + rawFns.size();
+        if (total == 0) {
+            System.out.println("No tools found.");
+            return;
+        }
+
+        System.out.println("Tools (" + total + "):");
+        for (var def : tools.values()) {
+            printToolDefinition(def);
+        }
+        for (var fn : rawFns) {
+            printRawSwaigFunction(fn);
+        }
+    }
+
+    private static void printToolDefinition(com.signalwire.sdk.swaig.ToolDefinition def) {
+        System.out.println("  - " + def.getName());
+        String desc = def.getDescription();
+        if (desc != null && !desc.isEmpty()) {
+            System.out.println("      description: " + desc);
+        }
+        java.util.Map<String, Object> params = def.getParameters();
+        if (params != null && !params.isEmpty()) {
+            System.out.println("      parameters:");
+            for (var entry : params.entrySet()) {
+                System.out.println("        " + entry.getKey() + ": " + entry.getValue());
+            }
+        }
+    }
+
+    private static void printRawSwaigFunction(java.util.Map<String, Object> fn) {
+        Object name = fn.get("function");
+        System.out.println("  - " + (name != null ? name.toString() : "(unnamed)"));
+        Object purpose = fn.get("purpose");
+        if (purpose != null) {
+            System.out.println("      description: " + purpose);
+        }
+        Object args = fn.get("argument");
+        if (args != null) {
+            System.out.println("      parameters: " + args);
         }
     }
 
@@ -706,13 +851,18 @@ public class SwaigTest {
                 Usage:
                   swaig-test --url <URL> [--dump-swml | --list-tools | --exec <tool> [--param k=v ...]]
                   swaig-test <agent-class> --simulate-serverless <platform> [--dump-swml | --exec <tool> [--param k=v ...]]
+                  swaig-test --class <FQCN> --list-tools
 
                 Options:
                   --url URL                       Agent URL (e.g. http://user:pass@localhost:3000)
                   --simulate-serverless PLATFORM  Load agent class and route through the serverless adapter.
                                                   Supported platforms: lambda
+                  --class FQCN                    Load a Service subclass in-process (no HTTP) and
+                                                  introspect its SWAIG tool registry. Use with
+                                                  --list-tools when the Service does not emit an
+                                                  <ai> verb (sidecar / standalone SWAIG host).
                   --dump-swml                     Fetch / render the SWML document
-                  --list-tools                    List all registered SWAIG tools (URL mode only)
+                  --list-tools                    List all registered SWAIG tools
                   --exec NAME                     Execute a SWAIG tool by name
                   --param key=value               Pass a parameter to the tool (repeatable)
                   --raw                           Output raw JSON without pretty-printing
@@ -724,6 +874,7 @@ public class SwaigTest {
                   swaig-test --url http://user:pass@localhost:3000 --exec get_weather --param city=Austin
                   swaig-test MyAgent --simulate-serverless lambda --dump-swml
                   swaig-test MyAgent --simulate-serverless lambda --exec get_weather --param city=Austin
+                  swaig-test --class examples.SwmlServiceSwaigStandalone --list-tools
 
                 Agent class convention (simulate-serverless mode):
                   The <agent-class> must be a fully-qualified Java class name with a public static
@@ -732,6 +883,12 @@ public class SwaigTest {
                     createAgent()            / buildAgent()            / newAgent()            / getAgent()
                   The EnvProvider-aware signature is recommended — it lets the agent's build-time
                   env reads (SWML_BASIC_AUTH_*, SWML_PROXY_URL_BASE) see the simulated values.
+
+                Service class convention (--class mode):
+                  The FQCN must extend com.signalwire.sdk.swml.Service and have a public no-arg
+                  constructor. The CLI instantiates it, reads the SWAIG tool registry via
+                  Service#getRegisteredTools(), and prints each tool's name, description, and
+                  parameters. No HTTP server is started; no socket is bound.
                 """);
     }
 }

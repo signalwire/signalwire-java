@@ -208,6 +208,32 @@ public class Service {
     }
 
     /**
+     * Public, read-only view of the registered SWAIG tool registry.
+     * Returned in insertion order; the map and its definitions are
+     * unmodifiable. Used by introspection callers (CLI {@code --list-tools}
+     * file-loader path, tests, audit tooling) that need name + description +
+     * parameters without going through {@code /swaig} HTTP.
+     */
+    public java.util.Map<String, com.signalwire.sdk.swaig.ToolDefinition> getRegisteredTools() {
+        return java.util.Collections.unmodifiableMap(tools);
+    }
+
+    /**
+     * Read-only view of the raw SWAIG function entries registered via
+     * {@link #registerSwaigFunction(java.util.Map)}. These are typically
+     * DataMap or schema-only tools that don't have a Java {@link com.signalwire.sdk.swaig.ToolHandler}.
+     * Each entry is a defensive copy of the original map; the outer list
+     * is unmodifiable.
+     */
+    public java.util.List<java.util.Map<String, Object>> getRegisteredSwaigFunctions() {
+        java.util.List<java.util.Map<String, Object>> copy = new java.util.ArrayList<>(registeredSwaigFunctions.size());
+        for (var fn : registeredSwaigFunctions) {
+            copy.add(java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(fn)));
+        }
+        return java.util.Collections.unmodifiableList(copy);
+    }
+
+    /**
      * Extension point: invoked between argument parsing and function
      * dispatch. Returns a 2-element array: [target Service, shortCircuit Map].
      * If shortCircuit is non-null, it's returned as the SWAIG response
