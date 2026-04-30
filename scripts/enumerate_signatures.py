@@ -132,6 +132,12 @@ def translate_java_type(t: str, aliases: dict[str, str], context: str) -> str:
             return f"optional<{canon_args[0]}>" if canon_args else "optional<any>"
         if head in ("java.util.concurrent.CompletableFuture", "java.util.concurrent.Future"):
             return canon_args[0] if canon_args else "any"
+        if head == "java.util.Map$Entry":
+            # Java's Map.Entry<K, V> is the idiomatic two-arity tuple shape;
+            # surfaces as Python's Tuple[K, V] in the canonical vocab.
+            if len(canon_args) >= 2:
+                return f"tuple<{canon_args[0]},{canon_args[1]}>"
+            return "tuple<any>"
         if head in ("java.util.function.Function", "java.util.function.BiFunction"):
             ret = canon_args[-1] if canon_args else "any"
             args_canon = canon_args[:-1]
@@ -224,7 +230,12 @@ JAVA_SKILL_RENAMES = {
 JAVA_MODULE_OVERRIDES = {
     "com.signalwire.sdk.swml.Service": "signalwire.core.swml_service",
     "com.signalwire.sdk.swml.Document": "signalwire.core.swml_builder",
-    "com.signalwire.sdk.swml.Schema": "signalwire.utils.schema_utils",
+    # SchemaUtils.java is the canonical SchemaUtils port (Python parity
+    # at signalwire.utils.schema_utils.SchemaUtils); class-name lookup
+    # routes it automatically.  The pre-existing Schema.java is a
+    # singleton sidecar — leave it under signalwire.swml.schema (a
+    # port-only home) instead of layering its 3 methods onto the
+    # SchemaUtils canonical surface.
     "com.signalwire.sdk.logging.Logger": "signalwire.core.logging_config",
     "com.signalwire.sdk.swaig.ToolDefinition": "signalwire.core.swaig_function",
     "com.signalwire.sdk.swaig.ToolHandler": "signalwire.core.swaig_function",

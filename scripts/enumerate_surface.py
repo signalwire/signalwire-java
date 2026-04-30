@@ -110,6 +110,9 @@ _METHOD_RENAMES: dict[str, str] = {
     # Python ``AgentBase.pom`` is a @property; Java exposes it as the
     # getter ``getPom()``. Project the Java getter onto the Python name.
     "get_pom": "pom",
+    # Python ``SWMLService.schema_utils`` is a public attribute exposed
+    # via Java's ``getSchemaUtils()`` getter.  Strip the get_ prefix.
+    "get_schema_utils": "schema_utils",
 }
 
 

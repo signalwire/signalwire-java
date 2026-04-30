@@ -39,6 +39,10 @@ public class Service {
     protected String host;
     protected int port;
     protected final Document document;
+    // SchemaUtils helper — Python parity at
+    // signalwire.utils.schema_utils.SchemaUtils. Built lazily so existing
+    // subclasses constructed without the schema env still work.
+    protected SchemaUtils schemaUtilsInstance;
 
     // SWAIG tool registry — lifted from AgentBase so any Service (sidecar,
     // non-agent verb host) can register and dispatch SWAIG functions.
@@ -384,6 +388,18 @@ public class Service {
 
     public Document getDocument() {
         return document;
+    }
+
+    /**
+     * SchemaUtils helper bound to this Service.  Mirrors Python's
+     * {@code self.schema_utils} public instance attribute on
+     * {@code SWMLService}.  Built lazily on first access.
+     */
+    public SchemaUtils getSchemaUtils() {
+        if (schemaUtilsInstance == null) {
+            schemaUtilsInstance = new SchemaUtils(null, true);
+        }
+        return schemaUtilsInstance;
     }
 
     // -------- 38 Schema-Driven Verb Methods --------

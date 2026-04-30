@@ -614,12 +614,15 @@ signalwire.swml.document.Document.render: idiomatic Java surface extension (buil
 signalwire.swml.document.Document.render_pretty: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.document.Document.reset: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.document.Document.to_dict: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema.get_instance: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema.get_verb: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema.get_verb_names: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema.is_valid_verb: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.swml.schema.Schema.verb_count: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.swml.Schema: idiomatic Java surface extension (singleton sidecar; canonical SchemaUtils ships separately at signalwire.utils.schema_utils.SchemaUtils)
+signalwire.swml.Schema.get_instance: idiomatic Java surface extension (singleton accessor) not present in Python
+signalwire.swml.Schema.get_verb: idiomatic Java surface extension (singleton accessor) not present in Python
+signalwire.swml.Schema.get_verb_names: idiomatic Java surface extension (singleton accessor) not present in Python
+signalwire.swml.Schema.is_valid_verb: idiomatic Java surface extension (singleton accessor) not present in Python
+signalwire.swml.Schema.verb_count: idiomatic Java surface extension (singleton accessor) not present in Python
+signalwire.utils.schema_utils.SchemaUtils.generate_method_signature: Python-source codegen helper; canonical Python signatures filter this method out (Python-only output shape)
+signalwire.utils.schema_utils.SchemaUtils.generate_method_body: Python-source codegen helper; canonical Python signatures filter this method out (Python-only output shape)
+signalwire.utils.schema_utils.SchemaUtils.is_full_validation_available: @property in Python (filtered as bool-returning attribute); ports expose it as an explicit method per spec
 signalwire.swml.service.Service: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.__init__: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.ai: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
