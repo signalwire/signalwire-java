@@ -259,6 +259,26 @@ JAVA_MODULE_OVERRIDES = {
     "com.signalwire.sdk.skills.builtin.CustomSkillsSkill": "signalwire.skills.registry",
 }
 
+# Free-function projections: lift a static method on an SDK class up to
+# a Python module-level free function. Keyed by the Java fully-qualified
+# class plus method name; value is the (py_module, py_function) target.
+# Example: Python's signalwire.utils.url_validator.validate_url is a free
+# function; Java exposes it as UrlValidator.validateUrl. Without this,
+# the audit would be looking for "signalwire.utils.url_validator.validate_url"
+# but the port emits "signalwire.utils.url_validator.UrlValidator.validate_url".
+FREE_FUNCTION_PROJECTIONS = {
+    ("com.signalwire.sdk.utils.UrlValidator", "validateUrl"):
+        ("signalwire.utils.url_validator", "validate_url"),
+    # ExecutionMode helpers — Python ships them as free functions in
+    # two distinct modules; Java groups both static methods on the
+    # ExecutionMode enum for cohesion.
+    ("com.signalwire.sdk.runtime.ExecutionMode", "getExecutionMode"):
+        ("signalwire.core.logging_config", "get_execution_mode"),
+    ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"):
+        ("signalwire.utils", "is_serverless_mode"),
+}
+
+
 MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
         "add_function_include", "add_hint", "add_hints", "add_internal_filler",
@@ -342,6 +362,7 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             mod = _pkg_to_module(pkg)
 
         methods_out: dict = {}
+        free_functions_out: list[tuple[str, str, dict]] = []  # (target_mod, target_fn, sig)
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
             if native == "<init>":
@@ -353,6 +374,27 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
                 method_canonical = _METHOD_RENAMES.get(snake, snake)
                 if method_canonical in _PY_KEYWORDS:
                     continue
+            # Free-function projection: a static method that should
+            # surface as a module-level Python function, not a class
+            # method.
+            ff_key = (full_pkg, native)
+            if ff_key in FREE_FUNCTION_PROJECTIONS:
+                target_mod, target_fn = FREE_FUNCTION_PROJECTIONS[ff_key]
+                ctx = f"{target_mod}.{target_fn}"
+                try:
+                    sig = build_signature(m, aliases, ctx, target_mod, canonical_name)
+                except TypeTranslationError as e:
+                    failures.append(str(e))
+                    continue
+                # Strip implicit ``self`` — free functions have no receiver.
+                # build_signature only adds self for non-static methods, so
+                # any ``self`` prefix here means the source method wasn't
+                # marked static; drop it for the projection regardless.
+                params = sig.get("params", [])
+                if params and params[0].get("kind") == "self":
+                    sig["params"] = params[1:]
+                free_functions_out.append((target_mod, target_fn, sig))
+                continue
             ctx = f"{mod}.{canonical_name}.{method_canonical}"
             try:
                 sig = build_signature(m, aliases, ctx, mod, canonical_name)
@@ -378,6 +420,16 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
                 if len(sig["params"]) >= len(existing["params"]):
                     continue
             methods_out[method_canonical] = sig
+
+        for target_mod, target_fn, sig in free_functions_out:
+            out_modules.setdefault(target_mod, {"classes": {}})
+            out_modules[target_mod].setdefault("functions", {})
+            # Java overloads collapse — prefer the fewer-param overload so
+            # the projection lines up with Python's single signature.
+            existing = out_modules[target_mod]["functions"].get(target_fn)
+            if existing is not None and len(sig.get("params", [])) >= len(existing.get("params", [])):
+                continue
+            out_modules[target_mod]["functions"][target_fn] = sig
 
         if not methods_out:
             continue
@@ -416,11 +468,19 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
     sorted_modules = {}
     for k in sorted(out_modules):
         entry = out_modules[k]
-        sorted_modules[k] = {
-            "classes": {
+        out_entry: dict = {}
+        if entry.get("classes"):
+            out_entry["classes"] = {
                 cls: entry["classes"][cls] for cls in sorted(entry["classes"])
             }
-        }
+        if entry.get("functions"):
+            out_entry["functions"] = {
+                fn: entry["functions"][fn] for fn in sorted(entry["functions"])
+            }
+        # Skip modules that ended up with neither classes nor functions
+        # after the various projection passes.
+        if out_entry:
+            sorted_modules[k] = out_entry
     return {
         "version": "2",
         "generated_from": "signalwire-java JAR via SignatureDump (java.lang.reflect)",
