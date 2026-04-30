@@ -67,4 +67,57 @@ public enum ExecutionMode {
         }
         return SERVER;
     }
+
+    /**
+     * Cross-language SDK contract: return the execution mode as the
+     * canonical lower-case-with-underscores string used by every port.
+     * Mirrors {@code signalwire.core.logging_config.get_execution_mode}
+     * in Python: one of {@code "cgi"}, {@code "lambda"},
+     * {@code "google_cloud_function"}, {@code "azure_function"}, or
+     * {@code "server"}.
+     *
+     * @return canonical mode string detected from the process environment
+     */
+    public static String getExecutionMode() {
+        return getExecutionMode(EnvProvider.SYSTEM);
+    }
+
+    /**
+     * Same as {@link #getExecutionMode()} but reads from the supplied
+     * {@link EnvProvider}, allowing tests to drive every branch
+     * deterministically.
+     *
+     * @param env environment variable source (injectable for tests).
+     * @return canonical mode string.
+     */
+    public static String getExecutionMode(EnvProvider env) {
+        switch (detect(env)) {
+            case CGI:                    return "cgi";
+            case LAMBDA:                 return "lambda";
+            case GOOGLE_CLOUD_FUNCTION:  return "google_cloud_function";
+            case AZURE_FUNCTION:         return "azure_function";
+            case SERVER:
+            default:                     return "server";
+        }
+    }
+
+    /**
+     * Cross-language SDK contract: true when the process is running
+     * inside any serverless / short-lived environment (i.e. anything
+     * other than {@code "server"}). Mirrors
+     * {@code signalwire.utils.is_serverless_mode} in Python.
+     *
+     * @return {@code true} unless the detected mode is {@code "server"}.
+     */
+    public static boolean isServerlessMode() {
+        return isServerlessMode(EnvProvider.SYSTEM);
+    }
+
+    /**
+     * @param env environment variable source (injectable for tests).
+     * @return true unless the detected mode is {@code "server"}.
+     */
+    public static boolean isServerlessMode(EnvProvider env) {
+        return !"server".equals(getExecutionMode(env));
+    }
 }
