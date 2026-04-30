@@ -967,6 +967,15 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "pom": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
             "register_sip_username": {
               "params": [
                 {

@@ -107,6 +107,9 @@ _METHOD_RENAMES: dict[str, str] = {
     # Java's ``pubSub`` field snake-cases to ``pub_sub``; Python keeps it
     # as a single token ``pubsub``.
     "pub_sub": "pubsub",
+    # Python ``AgentBase.pom`` is a @property; Java exposes it as the
+    # getter ``getPom()``. Project the Java getter onto the Python name.
+    "get_pom": "pom",
 }
 
 
