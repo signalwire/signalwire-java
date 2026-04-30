@@ -474,6 +474,40 @@ public class AgentBase extends Service {
         return tools.containsKey(name);
     }
 
+    /**
+     * Mint a per-call SWAIG-function token via the agent's SessionManager.
+     *
+     * <p>Python parity: {@code state_mixin.StateMixin._create_tool_token}.
+     * Returns an empty string when the underlying SessionManager throws
+     * (Python catches all exceptions and returns "" on error).
+     */
+    public String createToolToken(String toolName, String callId) {
+        try {
+            return sessionManager.createToken(toolName, callId);
+        } catch (RuntimeException e) {
+            return "";
+        }
+    }
+
+    /**
+     * Validate a per-call SWAIG-function token. Returns false when the
+     * function is not registered, when the SessionManager rejects the
+     * token, or on any underlying exception.
+     *
+     * <p>Python parity: {@code state_mixin.StateMixin.validate_tool_token}
+     * — rejects unknown functions up-front and swallows exceptions.
+     */
+    public boolean validateToolToken(String functionName, String token, String callId) {
+        if (!hasTool(functionName)) {
+            return false;
+        }
+        try {
+            return sessionManager.validateToken(token, functionName, callId == null ? "" : callId);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     // ============================================================
     // AI Config Methods
     // ============================================================
