@@ -346,6 +346,80 @@ public class AgentBase extends Service {
         return Map.of("text", "");
     }
 
+    /**
+     * Returns the post-prompt text that was set via setPostPrompt, or null
+     * when none has been set.
+     *
+     * Mirrors Python's PromptManager.get_post_prompt /
+     * PromptMixin.get_post_prompt — used by SWML rendering when a post-prompt
+     * is configured.
+     */
+    public String getPostPrompt() {
+        return postPrompt;
+    }
+
+    /**
+     * Returns the raw prompt text whatever setPromptText stored, or null when
+     * no raw prompt has been set. Distinct from getPrompt() which may return
+     * a POM map when usePom is true.
+     *
+     * Mirrors Python's PromptManager.get_raw_prompt.
+     */
+    public String getRawPrompt() {
+        return promptText;
+    }
+
+    /**
+     * Sets the prompt as a list of POM section maps. Each section map
+     * supports keys "title", "body", "bullets", "numbered",
+     * "numbered_bullets", and "subsections". Switches the agent to POM mode.
+     *
+     * Mirrors Python's PromptManager.set_prompt_pom — accepts a list of
+     * section dicts and stores them in pomSections.
+     */
+    public AgentBase setPromptPom(List<Map<String, Object>> pom) {
+        this.usePom = true;
+        pomSections.clear();
+        if (pom != null) {
+            for (Map<String, Object> section : pom) {
+                pomSections.add(new LinkedHashMap<>(section));
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Read-only snapshot of the agent's POM section list.
+     *
+     * <p>Python parity: {@code agent.pom} instance attribute
+     * (agent_base.py line 209). Returns {@code null} when {@code usePom} is
+     * false (mirroring Python's {@code self.pom = None}); otherwise returns
+     * an unmodifiable view of the section list. Callers cannot mutate the
+     * agent's internal state through this accessor.
+     *
+     * @return Unmodifiable list of POM section maps, or {@code null} when POM mode is off.
+     */
+    public List<Map<String, Object>> getPom() {
+        if (!usePom) {
+            return null;
+        }
+        return Collections.unmodifiableList(pomSections);
+    }
+
+    /**
+     * Returns the contexts dictionary as serialised SWML, or null when no
+     * contexts have been defined yet.
+     *
+     * Mirrors Python's PromptManager.get_contexts which returns the contexts
+     * dict or None.
+     */
+    public Map<String, Object> getContexts() {
+        if (contextBuilder == null) {
+            return null;
+        }
+        return contextBuilder.toMap();
+    }
+
     // ============================================================
     // Tool Methods
     // ============================================================
