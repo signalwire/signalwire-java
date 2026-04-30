@@ -1,7 +1,12 @@
 package com.signalwire.sdk.skills;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,5 +83,50 @@ class RegistryTest {
             assertNotNull(skill.getDescription(), "Missing description for: " + name);
             assertFalse(skill.getDescription().isEmpty(), "Empty description for: " + name);
         }
+    }
+
+    // ── add_skill_directory parity ───────────────────────────────────
+    // Mirrors Python's
+    // signalwire.skills.registry.SkillRegistry.add_skill_directory
+    // (test_registry.py::TestDirectoryScanning::test_add_skill_directory_*).
+
+    @Test
+    void testAddSkillDirectoryValidPath(@TempDir Path tmpDir) {
+        SkillRegistry registry = new SkillRegistry();
+        registry.addSkillDirectory(tmpDir.toString());
+        List<String> paths = registry.getExternalPaths();
+        assertTrue(paths.contains(tmpDir.toString()),
+                "tmpDir should be present in externalPaths");
+    }
+
+    @Test
+    void testAddSkillDirectoryNotExistsThrows() {
+        SkillRegistry registry = new SkillRegistry();
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry.addSkillDirectory("/no/such/swjava_does_not_exist_xyz"));
+        assertTrue(ex.getMessage().contains("does not exist"),
+                "expected 'does not exist' in: " + ex.getMessage());
+    }
+
+    @Test
+    void testAddSkillDirectoryNotADirectoryThrows(@TempDir Path tmpDir) throws IOException {
+        Path file = Files.createFile(tmpDir.resolve("regular_file.txt"));
+        SkillRegistry registry = new SkillRegistry();
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> registry.addSkillDirectory(file.toString()));
+        assertTrue(ex.getMessage().contains("not a directory"),
+                "expected 'not a directory' in: " + ex.getMessage());
+    }
+
+    @Test
+    void testAddSkillDirectoryDeduplicates(@TempDir Path tmpDir) {
+        SkillRegistry registry = new SkillRegistry();
+        registry.addSkillDirectory(tmpDir.toString());
+        registry.addSkillDirectory(tmpDir.toString());
+        List<String> paths = registry.getExternalPaths();
+        long count = paths.stream().filter(p -> p.equals(tmpDir.toString())).count();
+        assertEquals(1, count, "duplicate addSkillDirectory should not double-add");
     }
 }

@@ -10581,6 +10581,29 @@
         },
         "SkillRegistry": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "add_skill_directory": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
             "get": {
               "params": [
                 {
@@ -10590,6 +10613,15 @@
                 }
               ],
               "returns": "class:signalwire.core.skill_base.SkillBase"
+            },
+            "get_external_paths": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
             },
             "has": {
               "params": [
