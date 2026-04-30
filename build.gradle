@@ -13,6 +13,14 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+// Preserve method-parameter names in compiled bytecode. Required by the
+// signature-audit adapter (scripts/SignatureDump.java) which reads
+// parameter names via reflection; without -parameters they show up as
+// arg0/arg1/... and the diff against the Python reference loses them.
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += '-parameters'
+}
+
 repositories {
     mavenCentral()
 }
