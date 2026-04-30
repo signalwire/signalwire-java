@@ -3580,6 +3580,44 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "on_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "on_swml_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
             }
           }
         }
@@ -4603,6 +4641,44 @@
                 }
               ],
               "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
+            "on_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "on_swml_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "callback_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "pay": {
               "params": [

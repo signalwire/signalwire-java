@@ -328,6 +328,49 @@ public class Service {
     }
 
     /**
+     * Customization hook called when SWML is requested. Default
+     * delegates to {@link #onSwmlRequest(java.util.Map, String)} and
+     * returns its result. Subclasses typically override
+     * {@code onSwmlRequest} rather than this method.
+     *
+     * <p>Returning {@code null} uses the default rendered SWML;
+     * returning a non-null map merges the entries as modifications.
+     *
+     * <p>Python parity: {@code WebMixin.on_request(request_data,
+     * callback_path)}. The Python third {@code request} parameter is
+     * FastAPI-specific and intentionally not mirrored.
+     *
+     * @param requestData parsed request body, or {@code null}
+     * @param callbackPath optional callback sub-path, or {@code null}
+     * @return modifications map, or {@code null} for default rendering
+     */
+    public java.util.Map<String, Object> onRequest(
+            java.util.Map<String, Object> requestData,
+            String callbackPath) {
+        return onSwmlRequest(requestData, callbackPath);
+    }
+
+    /**
+     * Customization point for subclasses to modify SWML based on
+     * request data. The default implementation returns {@code null}
+     * (no modification). Subclasses override to inspect the body or
+     * callback path and return a map of SWML overrides.
+     *
+     * <p>Python parity: {@code WebMixin.on_swml_request(request_data,
+     * callback_path)}. The Python third {@code request} parameter is
+     * FastAPI-specific and intentionally not mirrored.
+     *
+     * @param requestData parsed request body, or {@code null}
+     * @param callbackPath optional callback sub-path, or {@code null}
+     * @return modifications map, or {@code null}
+     */
+    public java.util.Map<String, Object> onSwmlRequest(
+            java.util.Map<String, Object> requestData,
+            String callbackPath) {
+        return null;
+    }
+
+    /**
      * Add security headers to every authenticated response.
      */
     protected void addSecurityHeaders(HttpExchange exchange) {
