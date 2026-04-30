@@ -104,6 +104,9 @@ _PY_KEYWORDS = {"pass", "class", "def", "from", "import", "return", "yield",
 # ``toMap`` vs Python's ``to_dict``).
 _METHOD_RENAMES: dict[str, str] = {
     "to_map": "to_dict",
+    # Java's ``pubSub`` field snake-cases to ``pub_sub``; Python keeps it
+    # as a single token ``pubsub``.
+    "pub_sub": "pubsub",
 }
 
 

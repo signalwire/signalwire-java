@@ -140,6 +140,20 @@ public class SignatureDump {
             methodEntries.add(dumpMethod(m));
         }
 
+        // Public fields — Python's reference adapter projects instance
+        // attributes whose type is an SDK class as zero-arg accessor
+        // methods (RestClient.fabric -> FabricNamespace). Mirror that for
+        // Java's idiomatic ``public final FabricNamespace fabric;`` so
+        // the cross-language audit lines up. Filtering to SDK classes
+        // happens later in enumerate_signatures.py via the same rule.
+        java.lang.reflect.Field[] fields = c.getDeclaredFields();
+        Arrays.sort(fields, Comparator.comparing(java.lang.reflect.Field::getName));
+        for (java.lang.reflect.Field f : fields) {
+            if (!Modifier.isPublic(f.getModifiers())) continue;
+            if (f.isSynthetic()) continue;
+            methodEntries.add(dumpField(f));
+        }
+
         for (int i = 0; i < methodEntries.size(); i++) {
             if (i > 0) sb.append(",");
             sb.append("\n        ").append(methodEntries.get(i));
@@ -168,6 +182,22 @@ public class SignatureDump {
         sb.append("\"is_static\":").append(Modifier.isStatic(m.getModifiers())).append(",");
         sb.append("\"parameters\":").append(dumpParams(m.getParameters(), m.getGenericParameterTypes())).append(",");
         sb.append("\"return_type\":").append(jsonString(typeName(m.getGenericReturnType())));
+        sb.append("}");
+        return sb.toString();
+    }
+
+    // Synthesize a "method" entry from a public field so Python's
+    // attribute-projection convention (RestClient.fabric) lines up with
+    // Java's ``public final FabricNamespace fabric``.
+    static String dumpField(java.lang.reflect.Field f) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"name\":").append(jsonString(f.getName())).append(",");
+        sb.append("\"is_constructor\":false,");
+        sb.append("\"is_field\":true,");
+        sb.append("\"is_static\":").append(Modifier.isStatic(f.getModifiers())).append(",");
+        sb.append("\"parameters\":[],");
+        sb.append("\"return_type\":").append(jsonString(typeName(f.getGenericType())));
         sb.append("}");
         return sb.toString();
     }

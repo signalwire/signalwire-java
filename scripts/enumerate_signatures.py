@@ -335,6 +335,19 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             except TypeTranslationError as e:
                 failures.append(str(e))
                 continue
+            # Public fields project as zero-arg accessor methods only when
+            # their type names an SDK class — primitive state fields drop
+            # out (matches Python adapter's _is_sdk_class_type filter).
+            if m.get("is_field"):
+                ret = sig.get("returns", "")
+                is_sdk = (
+                    ret.startswith("class:")
+                    or ret.startswith("optional<class:")
+                    or ret.startswith("list<class:")
+                    or (ret.startswith("union<") and "class:" in ret)
+                )
+                if not is_sdk:
+                    continue
             # Java overloads collapse to one entry; prefer fewer-param overload
             if method_canonical in methods_out:
                 existing = methods_out[method_canonical]

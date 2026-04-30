@@ -7376,7 +7376,7 @@
               ],
               "returns": "class:signalwire.rest.namespaces.project.ProjectNamespace"
             },
-            "pub_sub": {
+            "pubsub": {
               "params": [
                 {
                   "name": "self",
