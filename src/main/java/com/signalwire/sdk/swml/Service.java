@@ -207,6 +207,31 @@ public class Service {
         return new java.util.ArrayList<>(tools.keySet());
     }
 
+    /** Whether a SWAIG function with the given name is registered.
+     * (Python parity: ``ToolRegistry.has_function``.) */
+    public boolean hasFunction(String name) {
+        return tools.containsKey(name);
+    }
+
+    /** Get a registered SWAIG function by name, or null when absent.
+     * (Python parity: ``ToolRegistry.get_function``.) */
+    public com.signalwire.sdk.swaig.ToolDefinition getFunction(String name) {
+        return tools.get(name);
+    }
+
+    /** Snapshot of all registered SWAIG functions keyed by name.
+     * (Python parity: ``ToolRegistry.get_all_functions``.) */
+    public java.util.Map<String, com.signalwire.sdk.swaig.ToolDefinition> getAllFunctions() {
+        return new java.util.LinkedHashMap<>(tools);
+    }
+
+    /** Remove a registered SWAIG function. Returns true when removed,
+     * false when the function was not registered.
+     * (Python parity: ``ToolRegistry.remove_function``.) */
+    public boolean removeFunction(String name) {
+        return tools.remove(name) != null;
+    }
+
     /**
      * Public, read-only view of the registered SWAIG tool registry.
      * Returned in insertion order; the map and its definitions are
