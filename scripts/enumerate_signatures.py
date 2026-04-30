@@ -204,6 +204,92 @@ def _pkg_to_module(pkg: str) -> str:
 CLASS_TO_MODULE: dict[str, str] = {}
 
 
+# Additional Java class renames not in enumerate_surface.py:
+# These are core SDK classes that Java names differently from Python.
+JAVA_EXTRA_RENAMES = {
+    "Service": "SWMLService",       # SignalWire.SWML.Service → core.swml_service.SWMLService
+    "AgentBase": "AgentBase",       # already matches
+}
+
+# Java skill class renames to match Python casing
+JAVA_SKILL_RENAMES = {
+    "DatasphereSkill": "DataSphereSkill",
+    "DatasphereServerlessSkill": "DataSphereServerlessSkill",
+    "McpGatewaySkill": "MCPGatewaySkill",
+    "SwmlTransferSkill": "SWMLTransferSkill",
+}
+
+# Java module path overrides for canonical Python paths
+# Key: Java fully-qualified package.Class
+JAVA_MODULE_OVERRIDES = {
+    "com.signalwire.sdk.swml.Service": "signalwire.core.swml_service",
+    "com.signalwire.sdk.swml.Document": "signalwire.core.swml_builder",
+    "com.signalwire.sdk.swml.Schema": "signalwire.utils.schema_utils",
+    "com.signalwire.sdk.logging.Logger": "signalwire.core.logging_config",
+    "com.signalwire.sdk.swaig.ToolDefinition": "signalwire.core.swaig_function",
+    "com.signalwire.sdk.swaig.ToolHandler": "signalwire.core.swaig_function",
+    "com.signalwire.sdk.swaig.FunctionResult": "signalwire.core.function_result",
+    "com.signalwire.sdk.rest.RestError": "signalwire.rest._base",
+    "com.signalwire.sdk.skills.SkillBase": "signalwire.core.skill_base",
+    "com.signalwire.sdk.skills.SkillManager": "signalwire.core.skill_manager",
+    "com.signalwire.sdk.contexts.Context": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.ContextBuilder": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.Step": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.GatherInfo": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.GatherQuestion": "signalwire.core.contexts",
+    "com.signalwire.sdk.datamap.DataMap": "signalwire.core.data_map",
+    # Skills go under signalwire.skills.<name>.skill
+    "com.signalwire.sdk.skills.builtin.WebSearchSkill": "signalwire.skills.web_search.skill",
+    "com.signalwire.sdk.skills.builtin.WikipediaSearchSkill": "signalwire.skills.wikipedia_search.skill",
+    "com.signalwire.sdk.skills.builtin.DatasphereSkill": "signalwire.skills.datasphere.skill",
+    "com.signalwire.sdk.skills.builtin.DatasphereServerlessSkill": "signalwire.skills.datasphere_serverless.skill",
+    "com.signalwire.sdk.skills.builtin.SpiderSkill": "signalwire.skills.spider.skill",
+    "com.signalwire.sdk.skills.builtin.JokeSkill": "signalwire.skills.joke.skill",
+    "com.signalwire.sdk.skills.builtin.MathSkill": "signalwire.skills.math.skill",
+    "com.signalwire.sdk.skills.builtin.WeatherApiSkill": "signalwire.skills.weather_api.skill",
+    "com.signalwire.sdk.skills.builtin.ApiNinjasTriviaSkill": "signalwire.skills.api_ninjas_trivia.skill",
+    "com.signalwire.sdk.skills.builtin.NativeVectorSearchSkill": "signalwire.skills.native_vector_search.skill",
+    "com.signalwire.sdk.skills.builtin.DateTimeSkill": "signalwire.skills.datetime.skill",
+    "com.signalwire.sdk.skills.builtin.GoogleMapsSkill": "signalwire.skills.google_maps.skill",
+    "com.signalwire.sdk.skills.builtin.PlayBackgroundFileSkill": "signalwire.skills.play_background_file.skill",
+    "com.signalwire.sdk.skills.builtin.InfoGathererSkill": "signalwire.skills.info_gatherer.skill",
+    "com.signalwire.sdk.skills.builtin.McpGatewaySkill": "signalwire.skills.mcp_gateway.skill",
+    "com.signalwire.sdk.skills.builtin.ClaudeSkillsSkill": "signalwire.skills.claude_skills.skill",
+    "com.signalwire.sdk.skills.builtin.SwmlTransferSkill": "signalwire.skills.swml_transfer.skill",
+    "com.signalwire.sdk.skills.builtin.CustomSkillsSkill": "signalwire.skills.registry",
+}
+
+MIXIN_PROJECTIONS = {
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
+        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
+        "add_language", "add_pattern_hint", "add_pronunciation",
+        "enable_debug_events", "set_function_includes", "set_global_data",
+        "set_internal_fillers", "set_languages", "set_native_functions",
+        "set_param", "set_params", "set_post_prompt_llm_params",
+        "set_prompt_llm_params", "set_pronunciations", "update_global_data",
+    ],
+    ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
+        "define_contexts", "get_prompt", "prompt_add_section",
+        "prompt_add_subsection", "prompt_add_to_section",
+        "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "set_prompt_text",
+    ],
+    ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
+        "add_skill", "has_skill", "list_skills", "remove_skill",
+    ],
+    ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
+        "define_tool", "on_function_call", "register_swaig_function",
+    ],
+    ("signalwire.core.mixins.web_mixin", "WebMixin"): [
+        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
+        "set_dynamic_config_callback",
+    ],
+    ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
+        "add_mcp_server",
+    ],
+}
+
+
 def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
     out_modules: dict = {}
     failures: list = []
@@ -215,9 +301,18 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             continue
         if type_entry.get("kind") in ("annotation",):
             continue
-        canonical_name = _CLASS_RENAMES.get(java_name, java_name)
-        # Find Python module
-        if canonical_name in CLASS_TO_MODULE:
+
+        # First check explicit Java module overrides
+        full_pkg = f"{pkg}.{java_name}" if pkg else java_name
+        canonical_name = (
+            _CLASS_RENAMES.get(java_name)
+            or JAVA_EXTRA_RENAMES.get(java_name)
+            or JAVA_SKILL_RENAMES.get(java_name)
+            or java_name
+        )
+        if full_pkg in JAVA_MODULE_OVERRIDES:
+            mod = JAVA_MODULE_OVERRIDES[full_pkg]
+        elif canonical_name in CLASS_TO_MODULE:
             mod = CLASS_TO_MODULE[canonical_name]
         else:
             mod = _pkg_to_module(pkg)
@@ -254,6 +349,26 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
         out_modules[mod]["classes"][canonical_name] = {
             "methods": dict(sorted(methods_out.items())),
         }
+
+    # Mixin projection
+    ab_entry = out_modules.get("signalwire.core.agent_base", {}).get("classes", {}).get("AgentBase")
+    if ab_entry:
+        ab_methods = ab_entry["methods"]
+        projected: set[str] = set()
+        for (target_mod, target_cls), expected in MIXIN_PROJECTIONS.items():
+            present = {m: ab_methods[m] for m in expected if m in ab_methods}
+            if not present:
+                continue
+            out_modules.setdefault(target_mod, {"classes": {}})
+            out_modules[target_mod]["classes"].setdefault(target_cls, {"methods": {}})
+            out_modules[target_mod]["classes"][target_cls]["methods"].update(present)
+            projected.update(present)
+        for n in projected:
+            ab_methods.pop(n, None)
+        if not ab_methods:
+            out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
+            if not out_modules["signalwire.core.agent_base"].get("classes"):
+                out_modules.pop("signalwire.core.agent_base", None)
 
     sorted_modules = {}
     for k in sorted(out_modules):
