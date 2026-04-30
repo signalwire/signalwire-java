@@ -117,6 +117,46 @@ public class Service {
         return authPassword;
     }
 
+    /** Validate provided basic-auth credentials against the configured ones
+     * using a constant-time comparison. (Python parity:
+     * ``AuthMixin.validate_basic_auth(username, password)``.) */
+    public boolean validateBasicAuth(String username, String password) {
+        if (authUser == null || authPassword == null) return false;
+        return java.security.MessageDigest.isEqual(
+                username.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                authUser.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+            && java.security.MessageDigest.isEqual(
+                password.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                authPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** Get the configured (user, password) pair as a String[2] tuple.
+     * (Python parity: ``AuthMixin.get_basic_auth_credentials``.) */
+    public String[] getBasicAuthCredentials() {
+        return new String[] { authUser != null ? authUser : "", authPassword != null ? authPassword : "" };
+    }
+
+    /** Get (user, password, source) where source is "provided",
+     * "environment", or "generated". (Python parity:
+     * ``AuthMixin.get_basic_auth_credentials(include_source=True)``.) */
+    public String[] getBasicAuthCredentialsWithSource() {
+        String user = authUser != null ? authUser : "";
+        String pass = authPassword != null ? authPassword : "";
+        String envUser = System.getenv("SWML_BASIC_AUTH_USER");
+        String envPass = System.getenv("SWML_BASIC_AUTH_PASSWORD");
+        String source;
+        if (envUser != null && !envUser.isEmpty()
+            && envPass != null && !envPass.isEmpty()
+            && user.equals(envUser) && pass.equals(envPass)) {
+            source = "environment";
+        } else if (user.startsWith("user_") && pass.length() > 20) {
+            source = "generated";
+        } else {
+            source = "provided";
+        }
+        return new String[] { user, pass, source };
+    }
+
     /**
      * Timing-safe basic auth validation using MessageDigest.isEqual.
      */
