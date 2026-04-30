@@ -9,8 +9,6 @@ Entries marked `not_yet_implemented:` are honest — a future PR will close the 
 # Regenerate with `python3 scripts/generate_exemptions.py` after
 # a surface change.
 
-signalwire.RestClient: Python's ``from signalwire import RestClient`` is a re-export; Java users import com.signalwire.sdk.rest.RestClient directly
-signalwire.add_skill_directory: Python top-level skill-discovery helper; Java registers skills via SkillRegistry directly
 signalwire.agent_server.AgentServer.get_agents: Java's AgentServer exposes getRoutes() and getAgent(route); a bulk getAgents() listing is redundant
 signalwire.agent_server.AgentServer.register_global_routing_callback: Python global-routing callback hook; Java apps install equivalent behaviour via AgentServer.register() with a routed AgentBase
 signalwire.agent_server.AgentServer.register_sip_username: SIP routing by username is configured on AgentBase directly in Java (registerSipUsername), not at the AgentServer level
@@ -379,7 +377,6 @@ signalwire.core.swml_service.SWMLService.reset_document: Python's SWMLService wr
 signalwire.core.swml_service.SWMLService.serve: Python's SWMLService wraps a stand-alone SWML endpoint; Java's AgentBase embeds the SWML-serving path directly
 signalwire.core.swml_service.SWMLService.stop: Python's SWMLService wraps a stand-alone SWML endpoint; Java's AgentBase embeds the SWML-serving path directly
 signalwire.list_skills: Python top-level helper; Java exposes SkillRegistry.list()
-signalwire.list_skills_with_params: Python top-level helper; Java exposes SkillRegistry.list() and users inspect each registered skill for params
 signalwire.livewire.Agent: LiveKit compatibility shim is Python-specific; Java apps interop with realtime systems directly via the SignalWire REST/RELAY APIs
 signalwire.livewire.Agent.__init__: LiveKit compatibility shim is Python-specific; Java apps interop with realtime systems directly via the SignalWire REST/RELAY APIs
 signalwire.livewire.Agent.llm_node: LiveKit compatibility shim is Python-specific; Java apps interop with realtime systems directly via the SignalWire REST/RELAY APIs
@@ -511,7 +508,6 @@ signalwire.prefabs.receptionist.ReceptionistAgent.on_summary: Python prefab expo
 signalwire.prefabs.survey.SurveyAgent.log_response: Python prefab exposes additional internal helpers not needed in Java's equivalent prefab class
 signalwire.prefabs.survey.SurveyAgent.on_summary: Python prefab exposes additional internal helpers not needed in Java's equivalent prefab class
 signalwire.prefabs.survey.SurveyAgent.validate_response: Python prefab exposes additional internal helpers not needed in Java's equivalent prefab class
-signalwire.register_skill: Python top-level helper; Java exposes SkillRegistry.register()
 signalwire.relay.call.Action.wait: Java's Call class exposes the equivalent surface; the listed Python method is an internal helper or uses a Python-specific signature (e.g. kwargs) that has no direct Java analog
 signalwire.relay.call.Call.wait_for: Java's Call class exposes the equivalent surface; the listed Python method is an internal helper or uses a Python-specific signature (e.g. kwargs) that has no direct Java analog
 signalwire.relay.call.Call.wait_for_ended: Java's Call class exposes the equivalent surface; the listed Python method is an internal helper or uses a Python-specific signature (e.g. kwargs) that has no direct Java analog

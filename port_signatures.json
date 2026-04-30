@@ -2,6 +2,49 @@
   "version": "2",
   "generated_from": "signalwire-java JAR via SignatureDump (java.lang.reflect)",
   "modules": {
+    "signalwire": {
+      "functions": {
+        "RestClient": {
+          "params": [
+            {
+              "name": "args",
+              "type": "list<string>",
+              "required": true
+            },
+            {
+              "name": "kwargs",
+              "type": "dict<string,string>",
+              "required": true
+            }
+          ],
+          "returns": "class:signalwire.rest.client.RestClient"
+        },
+        "add_skill_directory": {
+          "params": [
+            {
+              "name": "path",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "returns": "void"
+        },
+        "list_skills_with_params": {
+          "params": [],
+          "returns": "dict<string,dict<string,any>>"
+        },
+        "register_skill": {
+          "params": [
+            {
+              "name": "skill_class",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "void"
+        }
+      }
+    },
     "signalwire.agent_server": {
       "classes": {
         "AgentServer": {
@@ -10622,6 +10665,15 @@
                 }
               ],
               "returns": "class:signalwire.core.skill_base.SkillBase"
+            },
+            "get_all_skills_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,dict<string,any>>"
             },
             "get_external_paths": {
               "params": [

@@ -129,4 +129,47 @@ public final class SkillRegistry {
     public synchronized List<String> getExternalPaths() {
         return Collections.unmodifiableList(new ArrayList<>(externalPaths));
     }
+
+    /**
+     * Get complete schema for all registered skills.
+     *
+     * <p>Mirrors Python's instance-method
+     * {@code SkillRegistry.get_all_skills_schema()} — returns a map
+     * keyed by skill name where each value contains parameter metadata.
+     * Java skills don't carry rich Python-style parameter introspection
+     * in v1, so the value defaults to a minimal shape with the skill
+     * name; built-in skills that expose {@code getSkillDescription} /
+     * {@code getSkillVersion} get those merged in.
+     *
+     * @return ordered map of skill name to schema metadata
+     */
+    public Map<String, Map<String, Object>> getAllSkillsSchema() {
+        Map<String, Map<String, Object>> out = new java.util.LinkedHashMap<>();
+        for (String name : new java.util.TreeSet<>(registry.keySet())) {
+            Map<String, Object> entry = new java.util.LinkedHashMap<>();
+            entry.put("name", name);
+            entry.put("parameters", new HashMap<String, Object>());
+            try {
+                SkillBase skill = get(name);
+                if (skill != null) {
+                    try {
+                        java.lang.reflect.Method m =
+                                skill.getClass().getMethod("getSkillDescription");
+                        Object v = m.invoke(skill);
+                        if (v != null) entry.put("description", v.toString());
+                    } catch (NoSuchMethodException ignore) { /* no-op */ }
+                    try {
+                        java.lang.reflect.Method m =
+                                skill.getClass().getMethod("getSkillVersion");
+                        Object v = m.invoke(skill);
+                        if (v != null) entry.put("version", v.toString());
+                    } catch (NoSuchMethodException ignore) { /* no-op */ }
+                }
+            } catch (Exception e) {
+                // Fall back to the minimal entry on reflection errors.
+            }
+            out.put(name, entry);
+        }
+        return out;
+    }
 }

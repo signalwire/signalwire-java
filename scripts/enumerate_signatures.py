@@ -86,6 +86,16 @@ def translate_java_type(t: str, aliases: dict[str, str], context: str) -> str:
         return "any"
     t = t.strip()
 
+    # Wildcard bounds — ``? extends Foo`` collapses to ``Foo``,
+    # ``? super Foo`` collapses to ``any`` (covariant write-side has no
+    # canonical analog), bare ``?`` collapses to ``any``.
+    if t.startswith("? extends "):
+        return translate_java_type(t[len("? extends "):], aliases, context)
+    if t.startswith("? super "):
+        return "any"
+    if t == "?":
+        return "any"
+
     # Array suffix
     while t.endswith("[]"):
         inner = translate_java_type(t[:-2], aliases, context)
@@ -287,6 +297,19 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.logging_config", "get_execution_mode"),
     ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"):
         ("signalwire.utils", "is_serverless_mode"),
+    # Top-level Signalwire class projects each static helper onto the
+    # canonical signalwire.<name> free function. The Java method is
+    # PascalCase ``RestClient`` to mirror Python's same-cased function;
+    # other helpers use camelCase that converts to snake_case via
+    # camel_to_snake (registerSkill -> register_skill, etc.).
+    ("com.signalwire.sdk.Signalwire", "RestClient"):
+        ("signalwire", "RestClient"),
+    ("com.signalwire.sdk.Signalwire", "registerSkill"):
+        ("signalwire", "register_skill"),
+    ("com.signalwire.sdk.Signalwire", "addSkillDirectory"):
+        ("signalwire", "add_skill_directory"),
+    ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"):
+        ("signalwire", "list_skills_with_params"),
 }
 
 
