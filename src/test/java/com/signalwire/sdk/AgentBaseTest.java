@@ -437,4 +437,50 @@ class AgentBaseTest {
         List<Map<String, Object>> functions = (List<Map<String, Object>>) swaig.get("functions");
         assertTrue(functions.stream().anyMatch(f -> "weather".equals(f.get("function"))));
     }
+
+    // ======== getPom() (Python parity: agent.pom) ========
+    //
+    // Mirrors signalwire-python tests/unit/core/test_agent_base.py::
+    //   TestAgentBasePromptMethods::test_set_prompt_pom_succeeds_when_use_pom_true
+
+    @Test
+    void testGetPomReturnsAssignedSections() {
+        Map<String, Object> section = new LinkedHashMap<>();
+        section.put("title", "Greeting");
+        section.put("body", "Hello");
+        agent.setPromptPom(List.of(section));
+
+        List<Map<String, Object>> pom = agent.getPom();
+        assertNotNull(pom);
+        assertEquals(1, pom.size());
+        assertEquals("Greeting", pom.get(0).get("title"));
+        assertEquals("Hello", pom.get(0).get("body"));
+    }
+
+    @Test
+    void testGetPomReturnsSectionsAfterPromptAddSection() {
+        agent.promptAddSection("Topic", "Body text", null);
+
+        List<Map<String, Object>> pom = agent.getPom();
+        assertNotNull(pom);
+        assertEquals(1, pom.size());
+        assertEquals("Topic", pom.get(0).get("title"));
+        assertEquals("Body text", pom.get(0).get("body"));
+    }
+
+    @Test
+    void testGetPomReturnsUnmodifiableList() {
+        agent.promptAddSection("X", "y", null);
+        List<Map<String, Object>> pom = agent.getPom();
+        assertNotNull(pom);
+        assertThrows(UnsupportedOperationException.class, () -> pom.add(new LinkedHashMap<>()));
+    }
+
+    @Test
+    void testGetPomNullAfterSetPromptText() {
+        // setPromptText flips usePom to false; getPom() must mirror Python's
+        // "self.pom is None when use_pom=False" by returning null.
+        agent.setPromptText("plain text");
+        assertNull(agent.getPom(), "getPom() must return null when usePom is false");
+    }
 }
