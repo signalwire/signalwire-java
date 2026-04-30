@@ -7179,6 +7179,46 @@
       "classes": {
         "PhoneCallHandler": {
           "methods": {
+            "ai_agent": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "call_flow": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "dialogflow": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "laml_application": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "laml_webhooks": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "relay_application": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "relay_connector": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "relay_context": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "relay_script": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
+            "relay_topic": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
+            },
             "to_string": {
               "params": [
                 {
@@ -7201,6 +7241,10 @@
             "values": {
               "params": [],
               "returns": "list<class:signalwire.rest.call_handler.PhoneCallHandler>"
+            },
+            "video_room": {
+              "params": [],
+              "returns": "class:signalwire.rest.call_handler.PhoneCallHandler"
             },
             "wire_value": {
               "params": [
@@ -8229,6 +8273,78 @@
               ],
               "returns": "class:signalwire.rest._base.CrudResource"
             },
+            "ai_agents": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "call_flows": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "conference_rooms": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "cxml_applications": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "cxml_scripts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "cxml_webhooks": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "freeswitch_connectors": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "relay_applications": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
             "resources": {
               "params": [
                 {
@@ -8238,7 +8354,52 @@
               ],
               "returns": "class:signalwire.rest._base.CrudResource"
             },
+            "sip_endpoints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "sip_gateways": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
             "subscribers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "swml_scripts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "swml_webhooks": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "tokens": {
               "params": [
                 {
                   "name": "self",
@@ -8647,12 +8808,32 @@
                 }
               ],
               "returns": "bool"
+            },
+            "system": {
+              "params": [],
+              "returns": "class:signalwire.runtime.EnvProvider"
             }
           }
         },
         "ExecutionMode": {
           "methods": {
+            "azure_function": {
+              "params": [],
+              "returns": "class:signalwire.runtime.ExecutionMode"
+            },
+            "cgi": {
+              "params": [],
+              "returns": "class:signalwire.runtime.ExecutionMode"
+            },
             "detect": {
+              "params": [],
+              "returns": "class:signalwire.runtime.ExecutionMode"
+            },
+            "google_cloud_function": {
+              "params": [],
+              "returns": "class:signalwire.runtime.ExecutionMode"
+            },
+            "server": {
               "params": [],
               "returns": "class:signalwire.runtime.ExecutionMode"
             },
