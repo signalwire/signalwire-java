@@ -56,6 +56,42 @@ public final class MockTest {
     }
 
     /**
+     * Walk this repo's working directory upward looking for an adjacent
+     * {@code porting-sdk/test_harness/<name>/<name>/__init__.py}. The
+     * adjacency contract is "porting-sdk lives next to signalwire-java in
+     * ~/src/", so a fresh clone of either repo can find the mock harness
+     * with no prior {@code pip install -e}.
+     *
+     * <p>Returns the absolute path to the directory containing the Python
+     * package (i.e. the value to put on PYTHONPATH so that
+     * {@code python -m <name>} resolves), or {@code null} when no adjacent
+     * porting-sdk is reachable.
+     *
+     * <p>Java's classloader can't reliably hand us the test source file's
+     * location (tests run from compiled classes / test JAR), so we anchor the
+     * walk at {@code user.dir}, which Gradle sets to the project root for
+     * the test JVM.
+     */
+    static String discoverPortingSdkPackage(String name) {
+        String userDir = System.getProperty("user.dir");
+        if (userDir == null || userDir.isEmpty()) {
+            return null;
+        }
+        Path dir = Path.of(userDir).toAbsolutePath();
+        while (dir != null) {
+            Path parent = dir.getParent();
+            if (parent == null) break;
+            Path candidate = parent.resolve("porting-sdk").resolve("test_harness").resolve(name);
+            Path init = candidate.resolve(name).resolve("__init__.py");
+            if (Files.isRegularFile(init)) {
+                return candidate.toString();
+            }
+            dir = parent;
+        }
+        return null;
+    }
+
+    /**
      * Wraps the live mock server and exposes journal/scenario controls.
      */
     public static final class Harness {
@@ -307,7 +343,10 @@ public final class MockTest {
                 p.destroy();
                 startupFailure = new IllegalStateException(
                         "MockTest: `python -m mock_signalwire` did not become ready within "
-                                + STARTUP_TIMEOUT + " on port " + port);
+                                + STARTUP_TIMEOUT + " on port " + port
+                                + " (clone porting-sdk next to signalwire-java so tests can find "
+                                + "porting-sdk/test_harness/mock_signalwire/, or pip install the "
+                                + "mock_signalwire package)");
                 throw (IllegalStateException) startupFailure;
             } catch (IOException e) {
                 startupFailure = new IllegalStateException(
@@ -340,6 +379,25 @@ public final class MockTest {
                 "--port", String.valueOf(port),
                 "--log-level", "error"
         );
+        // Try to inject porting-sdk/test_harness/mock_signalwire/ into
+        // PYTHONPATH so `python -m mock_signalwire` resolves without a
+        // prior `pip install -e ...`. Adjacency contract: porting-sdk
+        // next to signalwire-java in ~/src/. When the walk fails (e.g.
+        // porting-sdk is not adjacent), we still spawn — the child falls
+        // back to whatever is on the system Python's sys.path, and the
+        // readiness probe surfaces a clear timeout error if neither mode
+        // is available.
+        String pkgDir = discoverPortingSdkPackage("mock_signalwire");
+        if (pkgDir != null) {
+            Map<String, String> env = pb.environment();
+            String existing = env.get("PYTHONPATH");
+            String sep = System.getProperty("path.separator", ":");
+            String newPP = (existing != null && !existing.isEmpty())
+                    ? pkgDir + sep + existing
+                    : pkgDir;
+            env.put("PYTHONPATH", newPP);
+        }
+
         // Detach by routing IO to /dev/null so the child does not block on
         // pipe buffers when the test JVM exits.
         Path devnull = Path.of("/dev/null");
