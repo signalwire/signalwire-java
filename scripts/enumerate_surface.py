@@ -92,6 +92,26 @@ _CLASS_RENAMES: dict[str, str] = {
     # ``<Foo>Namespace`` accessor — expose the namespace under both names so
     # Python's ``set_*`` helpers on the Resource line up.
     "PhoneNumbersNamespace": "PhoneNumbersResource",
+    # Same idiom: Java exposes top-level helpers as <Foo>Namespace while the
+    # Python reference exposes them as <Foo>Resource.  Rename so the audit
+    # walks the same canonical class.
+    "AddressesNamespace": "AddressesResource",
+    "ImportedNumbersNamespace": "ImportedNumbersResource",
+    "MfaNamespace": "MfaResource",
+    "ShortCodesNamespace": "ShortCodesResource",
+    "SipProfileNamespace": "SipProfileResource",
+    "NumberGroupsNamespace": "NumberGroupsResource",
+    # QueueNamespace and RecordingNamespace also map onto Python's
+    # <Foo>Resource (Python files: queues.py::QueuesResource,
+    # recordings.py::RecordingsResource).
+    "QueueNamespace": "QueuesResource",
+    "RecordingNamespace": "RecordingsResource",
+    # Java's FabricNamespace.FabricSubscribers nested class corresponds to
+    # Python's fabric.SubscribersResource.
+    "FabricSubscribers": "SubscribersResource",
+    # Java's RestError is the canonical port-only error; Python names it
+    # SignalWireRestError.
+    "RestError": "SignalWireRestError",
 }
 
 _CAMEL_RE_1 = re.compile(r"(.)([A-Z][a-z]+)")

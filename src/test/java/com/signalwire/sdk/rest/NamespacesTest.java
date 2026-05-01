@@ -58,7 +58,12 @@ class NamespacesTest {
         var ns = new VideoNamespace(httpClient);
         assertEquals("/video/rooms", ns.rooms().getBasePath());
         assertEquals("/video/room_sessions", ns.roomSessions().getBasePath());
-        assertEquals("/video/recordings", ns.recordings().getBasePath());
+        // Python parity: VideoRoomRecordings lives at /video/room_recordings;
+        // recordings() is a legacy alias retained for backwards compat.
+        assertEquals("/video/room_recordings", ns.recordings().getBasePath());
+        assertEquals("/video/room_recordings", ns.roomRecordings().getBasePath());
+        assertEquals("/video/conferences", ns.conferences().getBasePath());
+        assertEquals("/video/streams", ns.streams().getBasePath());
     }
 
     @Test

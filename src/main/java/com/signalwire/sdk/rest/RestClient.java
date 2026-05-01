@@ -56,6 +56,15 @@ public class RestClient {
     private volatile QueueNamespace queueNs;
     private volatile RecordingNamespace recordingNs;
     private volatile TranscriptionNamespace transcriptionNs;
+    // Python parity namespaces (closing the small-namespaces gap).
+    private volatile AddressesNamespace addressesNs;
+    private volatile ShortCodesNamespace shortCodesNs;
+    private volatile ImportedNumbersNamespace importedNumbersNs;
+    private volatile MfaNamespace mfaNs;
+    private volatile SipProfileNamespace sipProfileNs;
+    private volatile NumberGroupsNamespace numberGroupsNs;
+    private volatile RegistryNamespace registryNs;
+    private volatile LogsNamespace logsNs;
 
     private RestClient(Builder builder) {
         this.project = builder.project;
@@ -238,5 +247,47 @@ public class RestClient {
     public TranscriptionNamespace transcriptions() {
         if (transcriptionNs == null) { synchronized (this) { if (transcriptionNs == null) transcriptionNs = new TranscriptionNamespace(httpClient); } }
         return transcriptionNs;
+    }
+
+    // ── Python-parity namespaces ─────────────────────────────────────────
+
+    public AddressesNamespace addresses() {
+        if (addressesNs == null) { synchronized (this) { if (addressesNs == null) addressesNs = new AddressesNamespace(httpClient); } }
+        return addressesNs;
+    }
+
+    public ShortCodesNamespace shortCodes() {
+        if (shortCodesNs == null) { synchronized (this) { if (shortCodesNs == null) shortCodesNs = new ShortCodesNamespace(httpClient); } }
+        return shortCodesNs;
+    }
+
+    public ImportedNumbersNamespace importedNumbers() {
+        if (importedNumbersNs == null) { synchronized (this) { if (importedNumbersNs == null) importedNumbersNs = new ImportedNumbersNamespace(httpClient); } }
+        return importedNumbersNs;
+    }
+
+    public MfaNamespace mfa() {
+        if (mfaNs == null) { synchronized (this) { if (mfaNs == null) mfaNs = new MfaNamespace(httpClient); } }
+        return mfaNs;
+    }
+
+    public SipProfileNamespace sipProfile() {
+        if (sipProfileNs == null) { synchronized (this) { if (sipProfileNs == null) sipProfileNs = new SipProfileNamespace(httpClient); } }
+        return sipProfileNs;
+    }
+
+    public NumberGroupsNamespace numberGroups() {
+        if (numberGroupsNs == null) { synchronized (this) { if (numberGroupsNs == null) numberGroupsNs = new NumberGroupsNamespace(httpClient); } }
+        return numberGroupsNs;
+    }
+
+    public RegistryNamespace registry() {
+        if (registryNs == null) { synchronized (this) { if (registryNs == null) registryNs = new RegistryNamespace(httpClient); } }
+        return registryNs;
+    }
+
+    public LogsNamespace logs() {
+        if (logsNs == null) { synchronized (this) { if (logsNs == null) logsNs = new LogsNamespace(httpClient); } }
+        return logsNs;
     }
 }

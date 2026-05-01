@@ -9,7 +9,6 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -32,10 +31,12 @@ public class CompatNamespace {
     private final CompatPhoneNumbers phoneNumbers;
     private final CompatRecordings recordings;
     private final CompatTranscriptions transcriptions;
-    private final CrudResource accounts;
-    private final CrudResource queues;
-    private final CrudResource conferences;
-    private final CrudResource applications;
+    private final CompatAccounts accounts;
+    private final CompatQueues queues;
+    private final CompatConferences conferences;
+    private final CompatApplications applications;
+    private final CompatLamlBins lamlBins;
+    private final CompatTokens tokens;
     private final CrudResource sipDomains;
     private final CrudResource sipCredentialLists;
     private final CrudResource sipIpAccessControlLists;
@@ -51,10 +52,14 @@ public class CompatNamespace {
         this.phoneNumbers = new CompatPhoneNumbers(httpClient, accountBase + "/IncomingPhoneNumbers");
         this.recordings = new CompatRecordings(httpClient, accountBase + "/Recordings");
         this.transcriptions = new CompatTranscriptions(httpClient, accountBase + "/Transcriptions");
-        this.accounts = new CrudResource(httpClient, accountBase);
-        this.queues = new CrudResource(httpClient, accountBase + "/Queues");
-        this.conferences = new CrudResource(httpClient, accountBase + "/Conferences");
-        this.applications = new CrudResource(httpClient, accountBase + "/Applications");
+        // Accounts.create lives at the top-level Accounts collection (no
+        // AccountSid prefix); the per-sid path is accountBase itself.
+        this.accounts = new CompatAccounts(httpClient);
+        this.queues = new CompatQueues(httpClient, accountBase + "/Queues");
+        this.conferences = new CompatConferences(httpClient, accountBase + "/Conferences");
+        this.applications = new CompatApplications(httpClient, accountBase + "/Applications");
+        this.lamlBins = new CompatLamlBins(httpClient, accountBase + "/LamlBins");
+        this.tokens = new CompatTokens(httpClient, accountBase + "/tokens");
         this.sipDomains = new CrudResource(httpClient, accountBase + "/SIP/Domains");
         this.sipCredentialLists = new CrudResource(httpClient, accountBase + "/SIP/CredentialLists");
         this.sipIpAccessControlLists = new CrudResource(httpClient, accountBase + "/SIP/IpAccessControlLists");
@@ -66,10 +71,12 @@ public class CompatNamespace {
     public CompatPhoneNumbers phoneNumbers() { return phoneNumbers; }
     public CompatRecordings recordings() { return recordings; }
     public CompatTranscriptions transcriptions() { return transcriptions; }
-    public CrudResource accounts() { return accounts; }
-    public CrudResource queues() { return queues; }
-    public CrudResource conferences() { return conferences; }
-    public CrudResource applications() { return applications; }
+    public CompatAccounts accounts() { return accounts; }
+    public CompatQueues queues() { return queues; }
+    public CompatConferences conferences() { return conferences; }
+    public CompatApplications applications() { return applications; }
+    public CompatLamlBins lamlBins() { return lamlBins; }
+    public CompatTokens tokens() { return tokens; }
     public CrudResource sipDomains() { return sipDomains; }
     public CrudResource sipCredentialLists() { return sipCredentialLists; }
     public CrudResource sipIpAccessControlLists() { return sipIpAccessControlLists; }
@@ -307,6 +314,237 @@ public class CompatNamespace {
 
         public Map<String, Object> delete(String sid) {
             return httpClient.delete(basePath + "/" + sid);
+        }
+    }
+
+    /**
+     * Compat account / sub-project management.
+     *
+     * <p>Mirrors {@code signalwire.rest.namespaces.compat.CompatAccounts}:
+     * accounts.create lives at the top-level {@code /Accounts} collection
+     * (no AccountSid prefix); accounts.get/update operate on
+     * {@code /Accounts/{sid}}. update is a Twilio-compat POST (not PATCH/PUT).
+     */
+    public static class CompatAccounts {
+
+        private static final String BASE_PATH = "/laml/2010-04-01/Accounts";
+        private final HttpClient httpClient;
+
+        public CompatAccounts(HttpClient httpClient) {
+            this.httpClient = httpClient;
+        }
+
+        public String getBasePath() { return BASE_PATH; }
+
+        public Map<String, Object> list() {
+            return httpClient.get(BASE_PATH);
+        }
+
+        public Map<String, Object> list(Map<String, String> queryParams) {
+            return httpClient.get(BASE_PATH, queryParams);
+        }
+
+        public Map<String, Object> create(Map<String, Object> body) {
+            return httpClient.post(BASE_PATH, body);
+        }
+
+        public Map<String, Object> get(String sid) {
+            return httpClient.get(BASE_PATH + "/" + sid);
+        }
+
+        public Map<String, Object> update(String sid, Map<String, Object> body) {
+            return httpClient.post(BASE_PATH + "/" + sid, body);
+        }
+    }
+
+    /**
+     * Compat conference management with participants, recordings, and
+     * stream sub-resources.
+     */
+    public static class CompatConferences {
+
+        private final HttpClient httpClient;
+        private final String basePath;
+
+        public CompatConferences(HttpClient httpClient, String basePath) {
+            this.httpClient = httpClient;
+            this.basePath = basePath;
+        }
+
+        public String getBasePath() { return basePath; }
+
+        public Map<String, Object> list() {
+            return httpClient.get(basePath);
+        }
+
+        public Map<String, Object> list(Map<String, String> queryParams) {
+            return httpClient.get(basePath, queryParams);
+        }
+
+        public Map<String, Object> get(String sid) {
+            return httpClient.get(basePath + "/" + sid);
+        }
+
+        public Map<String, Object> update(String sid, Map<String, Object> body) {
+            return httpClient.post(basePath + "/" + sid, body);
+        }
+
+        // ── Participants ────────────────────────────────────────────────
+
+        public Map<String, Object> listParticipants(String conferenceSid) {
+            return httpClient.get(basePath + "/" + conferenceSid + "/Participants");
+        }
+
+        public Map<String, Object> listParticipants(
+                String conferenceSid, Map<String, String> queryParams) {
+            return httpClient.get(basePath + "/" + conferenceSid + "/Participants", queryParams);
+        }
+
+        public Map<String, Object> getParticipant(String conferenceSid, String callSid) {
+            return httpClient.get(
+                    basePath + "/" + conferenceSid + "/Participants/" + callSid);
+        }
+
+        public Map<String, Object> updateParticipant(
+                String conferenceSid, String callSid, Map<String, Object> body) {
+            return httpClient.post(
+                    basePath + "/" + conferenceSid + "/Participants/" + callSid, body);
+        }
+
+        public Map<String, Object> removeParticipant(String conferenceSid, String callSid) {
+            return httpClient.delete(
+                    basePath + "/" + conferenceSid + "/Participants/" + callSid);
+        }
+
+        // ── Recordings ─────────────────────────────────────────────────
+
+        public Map<String, Object> listRecordings(String conferenceSid) {
+            return httpClient.get(basePath + "/" + conferenceSid + "/Recordings");
+        }
+
+        public Map<String, Object> listRecordings(
+                String conferenceSid, Map<String, String> queryParams) {
+            return httpClient.get(basePath + "/" + conferenceSid + "/Recordings", queryParams);
+        }
+
+        public Map<String, Object> getRecording(String conferenceSid, String recordingSid) {
+            return httpClient.get(
+                    basePath + "/" + conferenceSid + "/Recordings/" + recordingSid);
+        }
+
+        public Map<String, Object> updateRecording(
+                String conferenceSid, String recordingSid, Map<String, Object> body) {
+            return httpClient.post(
+                    basePath + "/" + conferenceSid + "/Recordings/" + recordingSid, body);
+        }
+
+        public Map<String, Object> deleteRecording(String conferenceSid, String recordingSid) {
+            return httpClient.delete(
+                    basePath + "/" + conferenceSid + "/Recordings/" + recordingSid);
+        }
+
+        // ── Streams ────────────────────────────────────────────────────
+
+        public Map<String, Object> startStream(String conferenceSid, Map<String, Object> body) {
+            return httpClient.post(basePath + "/" + conferenceSid + "/Streams", body);
+        }
+
+        public Map<String, Object> stopStream(
+                String conferenceSid, String streamSid, Map<String, Object> body) {
+            return httpClient.post(
+                    basePath + "/" + conferenceSid + "/Streams/" + streamSid, body);
+        }
+    }
+
+    /**
+     * Compat application management. Twilio-compat update is POST.
+     */
+    public static class CompatApplications extends CrudResource {
+
+        public CompatApplications(HttpClient httpClient, String basePath) {
+            super(httpClient, basePath);
+        }
+
+        @Override
+        public Map<String, Object> update(String sid, Map<String, Object> body) {
+            return getHttpClient().post(getBasePath() + "/" + sid, body);
+        }
+    }
+
+    /**
+     * Compat cXML/LaML script bin management. Twilio-compat update is POST.
+     */
+    public static class CompatLamlBins extends CrudResource {
+
+        public CompatLamlBins(HttpClient httpClient, String basePath) {
+            super(httpClient, basePath);
+        }
+
+        @Override
+        public Map<String, Object> update(String sid, Map<String, Object> body) {
+            return getHttpClient().post(getBasePath() + "/" + sid, body);
+        }
+    }
+
+    /**
+     * Compat queue management with member operations.
+     */
+    public static class CompatQueues extends CrudResource {
+
+        public CompatQueues(HttpClient httpClient, String basePath) {
+            super(httpClient, basePath);
+        }
+
+        @Override
+        public Map<String, Object> update(String sid, Map<String, Object> body) {
+            return getHttpClient().post(getBasePath() + "/" + sid, body);
+        }
+
+        public Map<String, Object> listMembers(String queueSid) {
+            return getHttpClient().get(getBasePath() + "/" + queueSid + "/Members");
+        }
+
+        public Map<String, Object> listMembers(String queueSid, Map<String, String> queryParams) {
+            return getHttpClient().get(getBasePath() + "/" + queueSid + "/Members", queryParams);
+        }
+
+        public Map<String, Object> getMember(String queueSid, String callSid) {
+            return getHttpClient().get(getBasePath() + "/" + queueSid + "/Members/" + callSid);
+        }
+
+        public Map<String, Object> dequeueMember(
+                String queueSid, String callSid, Map<String, Object> body) {
+            return getHttpClient().post(
+                    getBasePath() + "/" + queueSid + "/Members/" + callSid, body);
+        }
+    }
+
+    /**
+     * Compat API token management. Note: update is PATCH (BaseResource style),
+     * not POST.
+     */
+    public static class CompatTokens {
+
+        private final HttpClient httpClient;
+        private final String basePath;
+
+        public CompatTokens(HttpClient httpClient, String basePath) {
+            this.httpClient = httpClient;
+            this.basePath = basePath;
+        }
+
+        public String getBasePath() { return basePath; }
+
+        public Map<String, Object> create(Map<String, Object> body) {
+            return httpClient.post(basePath, body);
+        }
+
+        public Map<String, Object> update(String tokenId, Map<String, Object> body) {
+            return httpClient.patch(basePath + "/" + tokenId, body);
+        }
+
+        public Map<String, Object> delete(String tokenId) {
+            return httpClient.delete(basePath + "/" + tokenId);
         }
     }
 }

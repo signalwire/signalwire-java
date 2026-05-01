@@ -38,13 +38,19 @@ class CallingTest {
     @Test
     void testQueueNamespacePath() {
         var ns = new QueueNamespace(httpClient);
-        assertEquals("/calling/queues", ns.queues().getBasePath());
+        // Python parity: client.queues hits /api/relay/rest/queues. The
+        // legacy queues() accessor still returns a CrudResource scoped to
+        // that path for backwards compat.
+        assertEquals("/relay/rest/queues", ns.queues().getBasePath());
+        assertEquals("/relay/rest/queues", ns.getBasePath());
     }
 
     @Test
     void testRecordingNamespacePath() {
         var ns = new RecordingNamespace(httpClient);
-        assertEquals("/calling/recordings", ns.recordings().getBasePath());
+        // Python parity: client.recordings hits /api/relay/rest/recordings.
+        assertEquals("/relay/rest/recordings", ns.recordings().getBasePath());
+        assertEquals("/relay/rest/recordings", ns.getBasePath());
     }
 
     @Test

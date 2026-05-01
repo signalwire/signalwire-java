@@ -99,9 +99,38 @@ public class SignatureDump {
             if (!first) out.append(",");
             first = false;
             out.append("\n    ").append(dumpType(c));
+            // Walk public nested classes (Java idiom collapses related
+            // resource classes into a single namespace file; cross-language
+            // surface auditing needs each nested class as its own type entry
+            // so it lines up with Python's class-per-file layout).
+            for (Class<?> nested : collectNestedPublic(c)) {
+                out.append(",");
+                out.append("\n    ").append(dumpType(nested));
+            }
         }
         out.append("\n  ]\n}\n");
         System.out.print(out.toString());
+    }
+
+    /**
+     * Recursively collect every public nested class within {@code outer},
+     * skipping nested annotations and the outer class itself.
+     */
+    static List<Class<?>> collectNestedPublic(Class<?> outer) {
+        List<Class<?>> result = new ArrayList<>();
+        try {
+            Class<?>[] declared = outer.getDeclaredClasses();
+            Arrays.sort(declared, Comparator.comparing(Class::getSimpleName));
+            for (Class<?> nested : declared) {
+                if (!Modifier.isPublic(nested.getModifiers())) continue;
+                if (nested.isAnnotation()) continue;
+                result.add(nested);
+                result.addAll(collectNestedPublic(nested));
+            }
+        } catch (Throwable t) {
+            // best-effort
+        }
+        return result;
     }
 
     static String dumpType(Class<?> c) {

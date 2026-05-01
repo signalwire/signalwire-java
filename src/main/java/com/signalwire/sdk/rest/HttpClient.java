@@ -125,6 +125,20 @@ public class HttpClient {
     }
 
     /**
+     * PATCH request with JSON body. java.net.http.HttpRequest doesn't have a
+     * dedicated builder for PATCH, so use {@code method("PATCH", ...)}.
+     */
+    public Map<String, Object> patch(String path, Map<String, Object> body) {
+        String url = buildUrl(path, null);
+        String json = body != null ? gson.toJson(body) : "{}";
+        HttpRequest request = requestBuilder(url)
+                .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                .header("Content-Type", "application/json")
+                .build();
+        return executeRequest("PATCH", path, request);
+    }
+
+    /**
      * DELETE request.
      */
     public Map<String, Object> delete(String path) {

@@ -15,7 +15,8 @@ class FabricTest {
     @Test
     void testSubscribersPath() {
         var ns = new FabricNamespace(httpClient);
-        assertEquals("/fabric/subscribers", ns.subscribers().getBasePath());
+        // Python parity: subscribers live under /fabric/resources/subscribers.
+        assertEquals("/fabric/resources/subscribers", ns.subscribers().getBasePath());
     }
 
     @Test
@@ -56,22 +57,24 @@ class FabricTest {
     }
 
     // Python parity: signalwire/rest/namespaces/fabric.py::FabricNamespace
-    // exposes 16 sub-resource accessors. Java had 3; adding the 13 missing.
+    // exposes 16 sub-resource accessors. Note that all resource sub-types
+    // hang off /fabric/resources (Python parity), and tokens has no base
+    // path because each token endpoint sits at a distinct fixed URL.
     @Test
     void testFabricPythonParitySubResources() {
         var ns = new FabricNamespace(httpClient);
-        assertEquals("/fabric/ai_agents", ns.aiAgents().getBasePath());
-        assertEquals("/fabric/call_flows", ns.callFlows().getBasePath());
-        assertEquals("/fabric/conference_rooms", ns.conferenceRooms().getBasePath());
-        assertEquals("/fabric/cxml_applications", ns.cxmlApplications().getBasePath());
-        assertEquals("/fabric/cxml_scripts", ns.cxmlScripts().getBasePath());
-        assertEquals("/fabric/cxml_webhooks", ns.cxmlWebhooks().getBasePath());
-        assertEquals("/fabric/freeswitch_connectors", ns.freeswitchConnectors().getBasePath());
-        assertEquals("/fabric/relay_applications", ns.relayApplications().getBasePath());
-        assertEquals("/fabric/sip_endpoints", ns.sipEndpoints().getBasePath());
-        assertEquals("/fabric/sip_gateways", ns.sipGateways().getBasePath());
-        assertEquals("/fabric/swml_scripts", ns.swmlScripts().getBasePath());
-        assertEquals("/fabric/swml_webhooks", ns.swmlWebhooks().getBasePath());
-        assertEquals("/fabric/tokens", ns.tokens().getBasePath());
+        assertEquals("/fabric/resources/ai_agents", ns.aiAgents().getBasePath());
+        assertEquals("/fabric/resources/call_flows", ns.callFlows().getBasePath());
+        assertEquals("/fabric/resources/conference_rooms", ns.conferenceRooms().getBasePath());
+        assertEquals("/fabric/resources/cxml_applications", ns.cxmlApplications().getBasePath());
+        assertEquals("/fabric/resources/cxml_scripts", ns.cxmlScripts().getBasePath());
+        assertEquals("/fabric/resources/cxml_webhooks", ns.cxmlWebhooks().getBasePath());
+        assertEquals("/fabric/resources/freeswitch_connectors", ns.freeswitchConnectors().getBasePath());
+        assertEquals("/fabric/resources/relay_applications", ns.relayApplications().getBasePath());
+        assertEquals("/fabric/resources/sip_endpoints", ns.sipEndpoints().getBasePath());
+        assertEquals("/fabric/resources/sip_gateways", ns.sipGateways().getBasePath());
+        assertEquals("/fabric/resources/swml_scripts", ns.swmlScripts().getBasePath());
+        assertEquals("/fabric/resources/swml_webhooks", ns.swmlWebhooks().getBasePath());
+        assertNotNull(ns.tokens());
     }
 }

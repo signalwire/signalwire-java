@@ -130,7 +130,9 @@ class RestTest {
             assertNotNull(ns.subscribers());
             assertNotNull(ns.addresses());
             assertNotNull(ns.resources());
-            assertEquals("/fabric/subscribers", ns.subscribers().getBasePath());
+            // Python parity: subscribers live under /fabric/resources/subscribers;
+            // addresses is its own top-level collection at /fabric/addresses.
+            assertEquals("/fabric/resources/subscribers", ns.subscribers().getBasePath());
             assertEquals("/fabric/addresses", ns.addresses().getBasePath());
             assertEquals("/fabric/resources", ns.resources().getBasePath());
         }
@@ -168,7 +170,8 @@ class RestTest {
             assertNotNull(ns.recordings());
             assertEquals("/video/rooms", ns.rooms().getBasePath());
             assertEquals("/video/room_sessions", ns.roomSessions().getBasePath());
-            assertEquals("/video/recordings", ns.recordings().getBasePath());
+            // Python parity: VideoRoomRecordings lives at /video/room_recordings.
+            assertEquals("/video/room_recordings", ns.recordings().getBasePath());
         }
 
         @Test
@@ -278,14 +281,16 @@ class RestTest {
         @DisplayName("QueueNamespace has queues")
         void queueNamespace() {
             var ns = new QueueNamespace(httpClient);
-            assertEquals("/calling/queues", ns.queues().getBasePath());
+            // Python parity: /api/relay/rest/queues.
+            assertEquals("/relay/rest/queues", ns.queues().getBasePath());
         }
 
         @Test
         @DisplayName("RecordingNamespace has recordings")
         void recordingNamespace() {
             var ns = new RecordingNamespace(httpClient);
-            assertEquals("/calling/recordings", ns.recordings().getBasePath());
+            // Python parity: /api/relay/rest/recordings.
+            assertEquals("/relay/rest/recordings", ns.recordings().getBasePath());
         }
 
         @Test
