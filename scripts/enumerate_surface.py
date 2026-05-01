@@ -133,6 +133,50 @@ _METHOD_RENAMES: dict[str, str] = {
     # Python ``SWMLService.schema_utils`` is a public attribute exposed
     # via Java's ``getSchemaUtils()`` getter.  Strip the get_ prefix.
     "get_schema_utils": "schema_utils",
+    # Python's RestClient property names (rest.client.RestClient.X) are
+    # served by Java's ``getX()`` accessor — strip the ``get_`` prefix so
+    # both surfaces line up at the same canonical name.
+    "get_chat": "chat",
+    "get_pubsub": "pubsub",
+    "get_compat": "compat",
+    "get_fabric": "fabric",
+    "get_video": "video",
+    "get_logs": "logs",
+    "get_messaging": "messaging",
+    "get_phone_numbers": "phone_numbers",
+    "get_addresses": "addresses",
+    "get_subscribers": "subscribers",
+    "get_imported_numbers": "imported_numbers",
+    "get_mfa": "mfa",
+    "get_number_groups": "number_groups",
+    "get_short_codes": "short_codes",
+    "get_sip_profile": "sip_profile",
+    "get_registry": "registry",
+}
+
+# Free-function projection at surface level (mirrors FREE_FUNCTION_PROJECTIONS
+# in enumerate_signatures.py). Static methods on certain Java helper classes
+# are projected to module-level free functions so they line up with Python's
+# free-function namespace. Each entry: java FQN class + Java method name →
+# (target python module, target python free function).
+#
+# The signature audit already projects these at the signature layer; the
+# surface enumerator needs the same projection to avoid `signalwire.RestClient`
+# / `signalwire.register_skill` showing up as missing-port at the surface
+# level. Without the projection, Java's class methods appear under
+# `signalwire.signalwire.Signalwire.*` and Python's module-level
+# `signalwire.RestClient` appears as missing.
+_FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
+    # signalwire.signalwire.Signalwire static helpers → signalwire.X
+    ("Signalwire", "RestClient"): ("signalwire", "RestClient"),
+    ("Signalwire", "registerSkill"): ("signalwire", "register_skill"),
+    ("Signalwire", "addSkillDirectory"): ("signalwire", "add_skill_directory"),
+    ("Signalwire", "listSkillsWithParams"): ("signalwire", "list_skills_with_params"),
+    # ExecutionMode helpers
+    ("ExecutionMode", "getExecutionMode"): ("signalwire.core.logging_config", "get_execution_mode"),
+    ("ExecutionMode", "isServerlessMode"): ("signalwire.utils", "is_serverless_mode"),
+    # UrlValidator
+    ("UrlValidator", "validateUrl"): ("signalwire.utils.url_validator", "validate_url"),
 }
 
 
@@ -445,6 +489,30 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         java_outer_name=outer_name_raw, native=native,
     )
 
+    # Free-function projection: a static method on certain Java classes
+    # surfaces as a Python module-level free function. Without this, the
+    # surface diff sees Java's ``Signalwire.registerSkill`` as a port-only
+    # method and Python's ``signalwire.register_skill`` as missing. Mirrors
+    # FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py. We use the bare
+    # Java class name (not full path) because the surface enumerator works
+    # at the source-file level, one Java type per file.
+    projected_free_fns: list[tuple[str, str]] = []  # (target_mod, target_fn)
+    if not native:
+        for (java_cls, java_method), (target_mod, target_fn) in (
+            _FREE_FUNCTION_SURFACE_PROJECTIONS.items()
+        ):
+            if java_cls != outer_name_raw:
+                continue
+            cls_methods = classes.get(outer_name, [])
+            # The surface parser stores method names already-translated;
+            # check both Java-native and snake_case forms.
+            snake_form = camel_to_snake(java_method)
+            if snake_form in _PY_KEYWORDS:
+                snake_form += "_"
+            snake_form = _METHOD_RENAMES.get(snake_form, snake_form)
+            if java_method in cls_methods or snake_form in cls_methods:
+                projected_free_fns.append((target_mod, target_fn))
+
     # Assign each class to its Python-reference module.
     out: dict[str, dict] = {}
     for cls_name, methods in classes.items():
@@ -458,6 +526,14 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
             )
         else:
             entry["classes"][cls_name] = unique_sorted
+
+    # Add free-function projections after class assignment so they don't
+    # collide with the class-method emission.
+    for target_mod, target_fn in projected_free_fns:
+        entry = out.setdefault(target_mod, {"classes": {}, "functions": []})
+        if target_fn not in entry["functions"]:
+            entry["functions"] = sorted(set(entry["functions"]) | {target_fn})
+
     return out
 
 

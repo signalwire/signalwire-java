@@ -212,6 +212,21 @@ def _pkg_to_module(pkg: str) -> str:
     return "signalwire." + ".".join(parts)
 
 
+def _pkg_to_module_with_class(pkg: str, class_name: str) -> str:
+    """Mirror surface enumerator's java_to_python_module: append a snake_cased
+    class-name segment so each Java class lands at its own module path —
+    ``signalwire.<pkg>.<snake_class>``. Used for classes that are neither in
+    CLASS_TO_MODULE nor in JAVA_MODULE_OVERRIDES; without the class-name
+    segment, multiple Java classes in the same package collide at one path
+    (port-only Builder + AgentBase both at ``signalwire.agent`` etc.).
+    """
+    base = _pkg_to_module(pkg)
+    snake = camel_to_snake(class_name)
+    if base == "signalwire":
+        return f"signalwire.{snake}"
+    return f"{base}.{snake}"
+
+
 # ---------------------------------------------------------------------------
 # Building canonical inventory
 # ---------------------------------------------------------------------------
@@ -225,6 +240,119 @@ CLASS_TO_MODULE: dict[str, str] = {}
 JAVA_EXTRA_RENAMES = {
     "Service": "SWMLService",       # SignalWire.SWML.Service → core.swml_service.SWMLService
     "AgentBase": "AgentBase",       # already matches
+}
+
+# Nested-class qualification: SignatureDump emits each nested class with its
+# bare ``getSimpleName()`` ("Builder"), losing the parent-class context. The
+# surface enumerator (text-based) qualifies those names with the outer class
+# (``AgentBaseBuilder``); without the same projection here, the signature
+# diff would see ``signalwire.agent.Builder.host`` while the surface diff
+# sees ``signalwire.agent.agent_base_builder.AgentBaseBuilder.host`` — two
+# different identities for the same Java member.
+#
+# Keys: ``(java_package, java_simple_name)`` of the nested class as emitted
+# by SignatureDump. Values: ``(canonical_class_name, canonical_module)``.
+# Mirrors the surface enumerator's ``effective_name = outer_name + renamed``
+# convention plus its ``java_to_python_module`` placement, so the two layers
+# end up at identical fully-qualified symbol paths.
+JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
+    # AgentBase.Builder, AgentBase.DynamicConfigCallback (nested in AgentBase.java)
+    ("com.signalwire.sdk.agent", "Builder"):
+        ("AgentBaseBuilder", "signalwire.agent.agent_base_builder"),
+    ("com.signalwire.sdk.agent", "DynamicConfigCallback"):
+        ("AgentBaseDynamicConfigCallback", "signalwire.agent.agent_base_dynamic_config_callback"),
+    # RelayClient.Builder (nested in RelayClient.java)
+    ("com.signalwire.sdk.relay", "Builder"):
+        ("RelayClientBuilder", "signalwire.relay.relay_client_builder"),
+    # RestClient.Builder (nested in RestClient.java)
+    ("com.signalwire.sdk.rest", "Builder"):
+        ("RestClientBuilder", "signalwire.rest.rest_client_builder"),
+    # Action subtypes nested under Call.java's relay package — Java's
+    # ``Call.PlayAndCollectAction`` etc. are exposed at the same path as
+    # the surface, but we keep the symbol stable here for diff continuity.
+    ("com.signalwire.sdk.relay", "PlayAndCollectAction"):
+        ("CallPlayAndCollectAction", "signalwire.relay.call_play_and_collect_action"),
+    ("com.signalwire.sdk.relay", "ReceiveFaxAction"):
+        ("CallReceiveFaxAction", "signalwire.relay.call_receive_fax_action"),
+    ("com.signalwire.sdk.relay", "SendFaxAction"):
+        ("CallSendFaxAction", "signalwire.relay.call_send_fax_action"),
+    # AuthorizationStateEvent — nested under RelayEvent in Java
+    ("com.signalwire.sdk.relay", "AuthorizationStateEvent"):
+        ("RelayEventAuthorizationStateEvent", "signalwire.relay.relay_event_authorization_state_event"),
+    # Constants — top-level in Java but with no Python counterpart
+    ("com.signalwire.sdk.relay", "Constants"):
+        ("RelayConstants", "signalwire.relay.relay_constants"),
+    # SwaigTest.Platform (the inner enum in SwaigTest.java)
+    ("com.signalwire.sdk.cli", "SwaigTest"):
+        ("SwaigTest", "signalwire.cli.swaig_test"),
+    # ServerlessSimulator.Platform — Java nests Platform inside ServerlessSimulator
+    ("com.signalwire.sdk.cli.simulation", "Platform"):
+        ("ServerlessSimulatorPlatform", "signalwire.cli.simulation.serverless_simulator_platform"),
+    # Logger — top-level in com.signalwire.sdk.logging
+    ("com.signalwire.sdk.logging", "Logger"):
+        ("Logger", "signalwire.core.logging_config"),
+    ("com.signalwire.sdk.logging", "Level"):
+        ("LoggingLevel", "signalwire.logging.logging_level"),
+    # ToolDefinition / ToolHandler — top-level swaig classes
+    ("com.signalwire.sdk.swaig", "ToolDefinition"):
+        ("ToolDefinition", "signalwire.swaig.tool_definition"),
+    ("com.signalwire.sdk.swaig", "ToolHandler"):
+        ("ToolHandler", "signalwire.swaig.tool_handler"),
+    # Document — Java's swml.Document (note: there's also a JAVA_MODULE_OVERRIDES entry
+    # routing it to signalwire.core.swml_builder; the projection here keeps the class
+    # name aligned with the surface emission for the audit walker).
+    # Document is already correctly named; routing handled elsewhere.
+    # Skill builtin classes — Java exposes builtin skills under
+    # signalwire.skills.builtin.* with their own naming, but Python uses
+    # signalwire.skills.<name>.skill.<NameSkill>. Map per-class.
+    ("com.signalwire.sdk.skills.builtin", "ApiNinjasTriviaSkill"):
+        ("ApiNinjasTriviaSkill", "signalwire.skills.builtin"),
+    ("com.signalwire.sdk.skills.builtin", "DateTimeSkill"):
+        ("DateTimeSkill", "signalwire.skills.builtin"),
+    # PhoneCallHandler — top-level enum in rest.call_handler
+    ("com.signalwire.sdk.rest", "PhoneCallHandler"):
+        ("PhoneCallHandler", "signalwire.rest.call_handler"),
+    # HttpClient (rest._base) — top-level
+    ("com.signalwire.sdk.rest", "HttpClient"):
+        ("HttpClient", "signalwire.rest._base"),
+    # Lambda runtime — Java nests handlers under runtime.lambda
+    ("com.signalwire.sdk.runtime.lambda", "LambdaAgentHandler"):
+        ("LambdaAgentHandler", "signalwire.runtime.lambda.lambda_agent_handler"),
+    ("com.signalwire.sdk.runtime.lambda", "LambdaResponse"):
+        ("LambdaResponse", "signalwire.runtime.lambda.lambda_response"),
+    # EnvProvider / ExecutionMode — runtime helpers (top-level interfaces/enums)
+    ("com.signalwire.sdk.runtime", "EnvProvider"):
+        ("EnvProvider", "signalwire.runtime.env_provider"),
+    ("com.signalwire.sdk.runtime", "ExecutionMode"):
+        ("ExecutionMode", "signalwire.runtime.execution_mode"),
+    # REST namespace classes — Java exposes <Name>Namespace at top-level rest.namespaces;
+    # Python doesn't have these classes (they're erased through indexed CrudResource).
+    ("com.signalwire.sdk.rest.namespaces", "BillingNamespace"):
+        ("BillingNamespace", "signalwire.rest.namespaces.billing"),
+    ("com.signalwire.sdk.rest.namespaces", "CampaignNamespace"):
+        ("CampaignNamespace", "signalwire.rest.namespaces.campaign"),
+    ("com.signalwire.sdk.rest.namespaces", "ChatNamespace"):
+        ("ChatNamespace", "signalwire.rest.namespaces.chat"),
+    ("com.signalwire.sdk.rest.namespaces", "ComplianceNamespace"):
+        ("ComplianceNamespace", "signalwire.rest.namespaces.compliance"),
+    ("com.signalwire.sdk.rest.namespaces", "ConferenceNamespace"):
+        ("ConferenceNamespace", "signalwire.rest.namespaces.conference"),
+    ("com.signalwire.sdk.rest.namespaces", "FaxNamespace"):
+        ("FaxNamespace", "signalwire.rest.namespaces.fax"),
+    ("com.signalwire.sdk.rest.namespaces", "MessagingNamespace"):
+        ("MessagingNamespace", "signalwire.rest.namespaces.messaging"),
+    ("com.signalwire.sdk.rest.namespaces", "NumberLookupNamespace"):
+        ("NumberLookupNamespace", "signalwire.rest.namespaces.number_lookup"),
+    ("com.signalwire.sdk.rest.namespaces", "PubSubNamespace"):
+        ("PubSubNamespace", "signalwire.rest.namespaces.pub_sub"),
+    ("com.signalwire.sdk.rest.namespaces", "SipNamespace"):
+        ("SipNamespace", "signalwire.rest.namespaces.sip"),
+    ("com.signalwire.sdk.rest.namespaces", "StreamNamespace"):
+        ("StreamNamespace", "signalwire.rest.namespaces.stream"),
+    ("com.signalwire.sdk.rest.namespaces", "SwmlNamespace"):
+        ("SwmlNamespace", "signalwire.rest.namespaces.swml"),
+    ("com.signalwire.sdk.rest.namespaces", "TranscriptionNamespace"):
+        ("TranscriptionNamespace", "signalwire.rest.namespaces.transcription"),
 }
 
 # Java skill class renames to match Python casing
@@ -382,18 +510,31 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
 
         # First check explicit Java module overrides
         full_pkg = f"{pkg}.{java_name}" if pkg else java_name
-        canonical_name = (
-            _CLASS_RENAMES.get(java_name)
-            or JAVA_EXTRA_RENAMES.get(java_name)
-            or JAVA_SKILL_RENAMES.get(java_name)
-            or java_name
-        )
-        if full_pkg in JAVA_MODULE_OVERRIDES:
-            mod = JAVA_MODULE_OVERRIDES[full_pkg]
-        elif canonical_name in CLASS_TO_MODULE:
-            mod = CLASS_TO_MODULE[canonical_name]
+        # Nested-class rename (Java's bare ``Builder`` → canonical
+        # ``AgentBaseBuilder`` etc.). Mirrors the surface enumerator's
+        # ``effective_name = outer_name + renamed`` convention. Each entry
+        # is ``(pkg, simple_name) → (canonical_class, canonical_module)``.
+        nested_key = (pkg, java_name)
+        nested_rename = JAVA_NESTED_CLASS_RENAMES.get(nested_key)
+        if nested_rename is not None:
+            canonical_name, mod = nested_rename
         else:
-            mod = _pkg_to_module(pkg)
+            canonical_name = (
+                _CLASS_RENAMES.get(java_name)
+                or JAVA_EXTRA_RENAMES.get(java_name)
+                or JAVA_SKILL_RENAMES.get(java_name)
+                or java_name
+            )
+            if full_pkg in JAVA_MODULE_OVERRIDES:
+                mod = JAVA_MODULE_OVERRIDES[full_pkg]
+            elif canonical_name in CLASS_TO_MODULE:
+                mod = CLASS_TO_MODULE[canonical_name]
+            else:
+                # Unknown / port-only class: place at its own
+                # ``signalwire.<pkg>.<snake_class>`` so multiple port-only
+                # classes in the same Java package don't collide. Mirrors
+                # surface enumerator's ``java_to_python_module`` placement.
+                mod = _pkg_to_module_with_class(pkg, canonical_name)
 
         methods_out: dict = {}
         free_functions_out: list[tuple[str, str, dict]] = []  # (target_mod, target_fn, sig)

@@ -1,7 +1,16 @@
 {
-  "generated_from": "signalwire-java @ c3f42ac58c9e6eda8ea5ec7e079e2c7e91ccde5e",
+  "generated_from": "signalwire-java @ 4f5e39560adcd79fed0e10829e6fcdb4028f230a",
   "language": "java",
   "modules": {
+    "signalwire": {
+      "classes": {},
+      "functions": [
+        "RestClient",
+        "add_skill_directory",
+        "list_skills_with_params",
+        "register_skill"
+      ]
+    },
     "signalwire.agent.agent_base_builder": {
       "classes": {
         "AgentBaseBuilder": [
@@ -325,6 +334,12 @@
         ]
       },
       "functions": []
+    },
+    "signalwire.core.logging_config": {
+      "classes": {},
+      "functions": [
+        "get_execution_mode"
+      ]
     },
     "signalwire.core.security.session_manager": {
       "classes": {
@@ -2065,6 +2080,12 @@
       },
       "functions": []
     },
+    "signalwire.utils": {
+      "classes": {},
+      "functions": [
+        "is_serverless_mode"
+      ]
+    },
     "signalwire.utils.schema_utils": {
       "classes": {
         "SchemaUtils": [
@@ -2094,7 +2115,9 @@
           "validate_url"
         ]
       },
-      "functions": []
+      "functions": [
+        "validate_url"
+      ]
     }
   },
   "names": "python-reference",
