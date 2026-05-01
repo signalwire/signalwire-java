@@ -175,8 +175,8 @@ class RestTest {
         @DisplayName("CompatNamespace paths include account SID")
         void compatNamespace() {
             var ns = new CompatNamespace(httpClient, "AC123");
-            assertEquals("/compat/2010-04-01/Accounts/AC123/Calls", ns.calls().getBasePath());
-            assertEquals("/compat/2010-04-01/Accounts/AC123/Messages", ns.messages().getBasePath());
+            assertEquals("/laml/2010-04-01/Accounts/AC123/Calls", ns.calls().getBasePath());
+            assertEquals("/laml/2010-04-01/Accounts/AC123/Messages", ns.messages().getBasePath());
             assertNotNull(ns.recordings());
             assertNotNull(ns.queues());
             assertNotNull(ns.conferences());
