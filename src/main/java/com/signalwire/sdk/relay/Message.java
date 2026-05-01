@@ -82,6 +82,7 @@ public class Message {
     public void setMedia(List<String> media) { this.media = media != null ? media : Collections.emptyList(); }
     public void setSegments(int segments) { this.segments = segments; }
     public void setTags(List<String> tags) { this.tags = tags != null ? tags : Collections.emptyList(); }
+    public void setState(String state) { this.state = state; }
 
     public void setOnCompleted(Consumer<Message> onCompleted) {
         this.onCompleted = onCompleted;

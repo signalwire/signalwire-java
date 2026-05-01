@@ -685,3 +685,15 @@ signalwire.swml.service.Service.get_registered_tools: Java public accessor for t
 signalwire.swml.service.Service.list_tool_names: Java public accessor returning insertion-ordered tool names — used by CLI --list-tools introspection; Python returns from the registry's keys() directly
 signalwire.swml.service.Service.on_function_call: Java exposes on_function_call on Service (the SWAIG host) and AgentBase; Python only defines it on AgentBase
 signalwire.swml.service.Service.register_swaig_function: Java exposes register_swaig_function on Service (DataMap registration) and AgentBase; Python only defines it on AgentBase
+
+# --- mock-relay backed test helpers appended 2026-04-30 ---
+
+signalwire.relay.call.Call.collect_digits: Java overload of collect() that takes a digits-shaped Map directly + explicit control_id — Python uses keyword arguments instead of overloads
+signalwire.relay.call.Call.detect_with: Java overload of detect() that takes the detect config + explicit control_id — keyword-args translation
+signalwire.relay.call.Call.record_audio: Java overload of record() that wraps the audio config as record={audio:...} — keyword-args translation
+signalwire.relay.client.RelayClient.get_authorization_state: Java accessor for the SDK's stored authorization_state blob (used by reconnect-with-protocol tests); Python reads ._authorization_state directly
+signalwire.relay.client.RelayClient.get_relay_protocol: Java getter for the protocol identifier issued by signalwire.connect; Python uses the relay_protocol property
+signalwire.relay.client.RelayClient.set_relay_protocol: Java test-only setter to seed a stored protocol before connect (simulates reconnect-with-protocol); Python tests assign client._relay_protocol directly
+signalwire.relay.message.Message.set_state: Java setter for the message state field — used internally by sendMessage() to seed initial 'queued' state; Python's __init__ sets it
+signalwire.relay.relay_client_builder.RelayClientBuilder.host: Java builder alias for space() — matches the Python keyword argument name for adjacency
+signalwire.relay.relay_client_builder.RelayClientBuilder.jwt_token: Java builder for the JWT-only auth path — Python takes jwt_token as a kwarg to RelayClient.__init__

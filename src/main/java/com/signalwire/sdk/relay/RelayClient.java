@@ -67,6 +67,7 @@ public class RelayClient {
     // ── Configuration ────────────────────────────────────────────────
     private final String project;
     private final String token;
+    private final String jwtToken;
     private final String space;
     private final List<String> contexts;
 
@@ -77,6 +78,9 @@ public class RelayClient {
     private volatile boolean connected;
     private volatile boolean running;
     private volatile boolean restartOnDisconnect;
+
+    /** Future that completes when the initial signalwire.connect handshake finishes. */
+    private volatile CompletableFuture<Void> connectFuture;
 
     // ── Correlation maps ─────────────────────────────────────────────
     /** JSON-RPC id -> CompletableFuture<Map> for RPC response matching */
@@ -113,6 +117,7 @@ public class RelayClient {
     private RelayClient(Builder builder) {
         this.project = builder.project;
         this.token = builder.token;
+        this.jwtToken = builder.jwtToken;
         this.space = builder.space;
         this.contexts = builder.contexts != null ? new ArrayList<>(builder.contexts) : new ArrayList<>();
     }
@@ -126,17 +131,24 @@ public class RelayClient {
     public static class Builder {
         private String project;
         private String token;
+        private String jwtToken;
         private String space;
         private List<String> contexts;
 
         public Builder project(String project) { this.project = project; return this; }
         public Builder token(String token) { this.token = token; return this; }
+        public Builder jwtToken(String jwtToken) { this.jwtToken = jwtToken; return this; }
         public Builder space(String space) { this.space = space; return this; }
+        public Builder host(String host) { this.space = host; return this; }
         public Builder contexts(List<String> contexts) { this.contexts = contexts; return this; }
 
         public RelayClient build() {
-            Objects.requireNonNull(project, "project is required");
-            Objects.requireNonNull(token, "token is required");
+            // JWT-only path: skip project/token requirement. Otherwise both
+            // project and token are required (existing contract: throws NPE).
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                Objects.requireNonNull(project, "project is required");
+                Objects.requireNonNull(token, "token is required");
+            }
             Objects.requireNonNull(space, "space is required");
             return new RelayClient(this);
         }
@@ -148,6 +160,30 @@ public class RelayClient {
     public String getSpace() { return space; }
     public List<String> getContexts() { return Collections.unmodifiableList(contexts); }
     public boolean isConnected() { return connected; }
+
+    /**
+     * Returns the protocol identifier issued by the server during the
+     * signalwire.connect handshake. Empty string before connect completes.
+     */
+    public String getRelayProtocol() {
+        return protocol != null ? protocol : "";
+    }
+
+    /**
+     * Returns the authorization state blob the server pushed via the
+     * {@code signalwire.authorization.state} event, or null.
+     */
+    public String getAuthorizationState() {
+        return authorizationState;
+    }
+
+    /**
+     * Test-only setter for the protocol — used by reconnect-with-protocol
+     * tests that simulate "I already have a session token from last time".
+     */
+    public void setRelayProtocol(String protocol) {
+        this.protocol = protocol;
+    }
 
     /**
      * Register a handler for inbound calls.
@@ -175,7 +211,7 @@ public class RelayClient {
      */
     public void run() {
         running = true;
-        connect();
+        connectInternal();
         try {
             runLatch.await();
         } catch (InterruptedException e) {
@@ -183,6 +219,34 @@ public class RelayClient {
         } finally {
             running = false;
         }
+    }
+
+    /**
+     * Open the WebSocket connection and complete the signalwire.connect
+     * handshake without blocking the caller.
+     *
+     * <p>Mirrors the Python {@code RelayClient.connect()} coroutine. Tests use
+     * this directly; production code typically uses {@link #run()} instead.
+     *
+     * @param timeoutMs how long to wait for the handshake to complete
+     * @throws RuntimeException if connect fails or times out
+     */
+    public void connect(long timeoutMs) {
+        running = true;
+        connectFuture = new CompletableFuture<>();
+        connectInternal();
+        try {
+            connectFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            throw new RuntimeException("RelayClient.connect failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Connect with a 30-second timeout.
+     */
+    public void connect() {
+        connect(30_000);
     }
 
     /**
@@ -224,7 +288,8 @@ public class RelayClient {
      * @return the answered Call
      */
     public Call dial(List<List<Map<String, Object>>> devices, Map<String, Object> options, long timeout) {
-        String tag = UUID.randomUUID().toString();
+        String explicitTag = options != null ? Objects.toString(options.get("tag"), null) : null;
+        String tag = explicitTag != null ? explicitTag : UUID.randomUUID().toString();
 
         // Register pending dial BEFORE sending RPC
         CompletableFuture<Call> future = new CompletableFuture<>();
@@ -235,7 +300,11 @@ public class RelayClient {
         params.put("tag", tag);
         params.put("devices", devices);
         if (options != null) {
-            params.putAll(options);
+            for (Map.Entry<String, Object> entry : options.entrySet()) {
+                if (!"tag".equals(entry.getKey())) {
+                    params.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
 
         try {
@@ -244,8 +313,14 @@ public class RelayClient {
 
             // Wait for calling.call.dial event to resolve the future
             return future.get(timeout, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            throw new RuntimeException("Dial failed: " + e.getMessage(), e);
+        } catch (java.util.concurrent.TimeoutException e) {
+            throw new RelayError("Dial timed out after " + timeout + "ms", e);
+        } catch (java.util.concurrent.ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new RelayError("Dial failed: " + cause.getMessage(), cause);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RelayError("Dial interrupted", e);
         } finally {
             pendingDials.remove(tag);
         }
@@ -270,8 +345,23 @@ public class RelayClient {
      */
     public Message sendMessage(String context, String fromNumber, String toNumber,
                                String body, List<String> mediaUrls) {
+        return sendMessage(context, fromNumber, toNumber, body, mediaUrls, null);
+    }
+
+    /**
+     * Send a message with optional tags.
+     */
+    public Message sendMessage(String context, String fromNumber, String toNumber,
+                               String body, List<String> mediaUrls, List<String> tags) {
+        // The default context is the protocol string (post-handshake) — matches
+        // the Python SDK's behavior of context = context or self._relay_protocol or "default".
+        String msgContext = context;
+        if (msgContext == null || msgContext.isEmpty()) {
+            msgContext = (protocol != null && !protocol.isEmpty()) ? protocol : "default";
+        }
+
         Map<String, Object> params = new LinkedHashMap<>();
-        params.put("context", context);
+        params.put("context", msgContext);
         params.put("from_number", fromNumber);
         params.put("to_number", toNumber);
         if (body != null) {
@@ -279,6 +369,9 @@ public class RelayClient {
         }
         if (mediaUrls != null && !mediaUrls.isEmpty()) {
             params.put("media", mediaUrls);
+        }
+        if (tags != null && !tags.isEmpty()) {
+            params.put("tags", tags);
         }
 
         Map<String, Object> result = execute(Constants.METHOD_MESSAGING_SEND, params);
@@ -289,12 +382,16 @@ public class RelayClient {
         }
 
         Message message = new Message(messageId);
-        message.setContext(context);
+        message.setContext(msgContext);
         message.setDirection("outbound");
         message.setFromNumber(fromNumber);
         message.setToNumber(toNumber);
         message.setBody(body);
         message.setMedia(mediaUrls);
+        message.setState("queued");
+        if (tags != null) {
+            message.setTags(tags);
+        }
 
         // Track by message_id for state routing
         messages.put(messageId, message);
@@ -360,7 +457,7 @@ public class RelayClient {
 
     // ── Connection management ────────────────────────────────────────
 
-    private void connect() {
+    private void connectInternal() {
         try {
             // Permit tests and audit fixtures to point the client at a
             // plain-ws loopback by passing space="ws://127.0.0.1:NNNN" (or
@@ -374,6 +471,9 @@ public class RelayClient {
             webSocket.connect();
         } catch (Exception e) {
             log.error("Connection failed", e);
+            if (connectFuture != null && !connectFuture.isDone()) {
+                connectFuture.completeExceptionally(e);
+            }
             scheduleReconnect();
         }
     }
@@ -390,10 +490,14 @@ public class RelayClient {
         params.put("agent", Constants.SDK_AGENT);
         params.put("event_acks", true);
 
-        // Authentication
+        // Authentication: JWT-only path replaces project+token.
         Map<String, Object> auth = new LinkedHashMap<>();
-        auth.put("project", project);
-        auth.put("token", token);
+        if (jwtToken != null && !jwtToken.isEmpty()) {
+            auth.put("jwt_token", jwtToken);
+        } else {
+            auth.put("project", project);
+            auth.put("token", token);
+        }
         params.put("authentication", auth);
 
         // Contexts
@@ -437,8 +541,14 @@ public class RelayClient {
             connected = true;
             reconnectDelay = Constants.RECONNECT_INITIAL_DELAY_MS;
             log.info("Connected to %s (protocol: %s)", space, protocol);
+            if (connectFuture != null && !connectFuture.isDone()) {
+                connectFuture.complete(null);
+            }
         }).exceptionally(e -> {
             log.error("Authentication failed", (Exception) e);
+            if (connectFuture != null && !connectFuture.isDone()) {
+                connectFuture.completeExceptionally(e);
+            }
             return null;
         });
     }
@@ -462,7 +572,7 @@ public class RelayClient {
             );
 
             if (running) {
-                connect();
+                connectInternal();
             }
         });
     }

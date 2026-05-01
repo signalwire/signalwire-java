@@ -98,12 +98,39 @@ public class Call {
             Action action = actions.get(controlId);
             if (action != null) {
                 String actionState = event.getStringParam("state");
-                // For play_and_collect: CollectAction ignores play events
+                // For play_and_collect: CollectAction ignores play events for
+                // completion (matches the Python gotcha — play(finished)
+                // arrives BEFORE the collect terminal, but only the collect
+                // event should resolve).
                 if (action instanceof Action.PlayAndCollectAction
                         && Constants.EVENT_CALL_PLAY.equals(eventType)) {
-                    // Play event on a play_and_collect action - ignore for completion
                     log.debug("Ignoring play event on PlayAndCollectAction control_id=%s", controlId);
-                } else if (actionState != null) {
+                }
+                // PlayAndCollectAction: a calling.call.collect event with a
+                // {result: ...} payload is the resolution signal — even
+                // without an explicit "state" field. (Either result-only or
+                // a state event resolves; play events are ignored above.)
+                else if (action instanceof Action.PlayAndCollectAction
+                        && Constants.EVENT_CALL_COLLECT.equals(eventType)) {
+                    if (event.getParams().containsKey("result")) {
+                        action.resolve(event);
+                        actions.remove(controlId);
+                    } else if (actionState != null) {
+                        action.updateState(actionState, event);
+                        if (action.isDone()) actions.remove(controlId);
+                    }
+                }
+                // DetectAction: resolves on the FIRST event carrying a
+                // {detect: ...} payload, not on state(finished). Mirrors the
+                // production server's contract: state events are noise; the
+                // detect payload IS the result.
+                else if (action instanceof Action.DetectAction
+                        && Constants.EVENT_CALL_DETECT.equals(eventType)
+                        && event.getParams().containsKey("detect")) {
+                    action.resolve(event);
+                    actions.remove(controlId);
+                }
+                else if (actionState != null) {
                     action.updateState(actionState, event);
                     if (action.isDone()) {
                         actions.remove(controlId);
@@ -432,7 +459,7 @@ public class Call {
      * @return a PlayAction that can be waited on, paused, resumed, stopped
      */
     public Action.PlayAction play(List<Map<String, Object>> media, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.PlayAction action = new Action.PlayAction(controlId, this);
         registerAction(action);
 
@@ -440,7 +467,11 @@ public class Call {
         params.put("control_id", controlId);
         params.put("play", media);
         if (options != null) {
-            params.putAll(options);
+            for (Map.Entry<String, Object> entry : options.entrySet()) {
+                if (!"control_id".equals(entry.getKey())) {
+                    params.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_PLAY, params);
@@ -454,7 +485,14 @@ public class Call {
      * Play media on the call with default options.
      */
     public Action.PlayAction play(List<Map<String, Object>> media) {
-        return play(media, null);
+        return play(media, (Map<String, Object>) null);
+    }
+
+    /**
+     * Play media with an explicit control_id (test helper).
+     */
+    public Action.PlayAction play(List<Map<String, Object>> media, String controlId) {
+        return play(media, mapOf("control_id", controlId));
     }
 
     /**
@@ -465,22 +503,33 @@ public class Call {
      * @return a RecordAction
      */
     public Action.RecordAction record(Map<String, Object> recordConfig, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.RecordAction action = new Action.RecordAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
-        params.put("record", recordConfig);
-        if (options != null) {
-            params.putAll(options);
+        if (recordConfig != null) {
+            params.put("record", recordConfig);
         }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_RECORD, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Record with an explicit control_id (test helper). The {@code audioConfig}
+     * is wrapped as {@code record: {audio: <config>}} on the wire to match the
+     * Python {@code call.record(audio=..., control_id=...)} pattern.
+     */
+    public Action.RecordAction recordAudio(Map<String, Object> audioConfig, String controlId) {
+        Map<String, Object> recordCfg = new LinkedHashMap<>();
+        recordCfg.put("audio", audioConfig != null ? audioConfig : new LinkedHashMap<>());
+        return record(recordCfg, mapOf("control_id", controlId));
     }
 
     /**
@@ -491,22 +540,30 @@ public class Call {
      * @return a DetectAction
      */
     public Action.DetectAction detect(Map<String, Object> detectConfig, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.DetectAction action = new Action.DetectAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
-        params.put("detect", detectConfig);
-        if (options != null) {
-            params.putAll(options);
+        if (detectConfig != null) {
+            params.put("detect", detectConfig);
         }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_DETECT, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Detect with an explicit control_id (test helper). Wraps in
+     * {@code detect: <config>}.
+     */
+    public Action.DetectAction detectWith(Map<String, Object> detectConfig, String controlId) {
+        return detect(detectConfig, mapOf("control_id", controlId));
     }
 
     /**
@@ -517,7 +574,7 @@ public class Call {
      * @return a CollectAction
      */
     public Action.CollectAction collect(Map<String, Object> collectConfig, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.CollectAction action = new Action.CollectAction(controlId, this);
         registerAction(action);
 
@@ -526,15 +583,32 @@ public class Call {
         if (collectConfig != null) {
             params.putAll(collectConfig);
         }
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_COLLECT, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Collect digits with an explicit control_id (test helper).
+     */
+    public Action.CollectAction collectDigits(Map<String, Object> digitsConfig, String controlId) {
+        Map<String, Object> cfg = new LinkedHashMap<>();
+        if (digitsConfig != null) cfg.put("digits", digitsConfig);
+        return collect(cfg, mapOf("control_id", controlId));
+    }
+
+    /**
+     * Collect with all flags (test helper for start_input_timers etc).
+     */
+    public Action.CollectAction collectDigits(Map<String, Object> digitsConfig, boolean startInputTimers, String controlId) {
+        Map<String, Object> cfg = new LinkedHashMap<>();
+        if (digitsConfig != null) cfg.put("digits", digitsConfig);
+        cfg.put("start_input_timers", startInputTimers);
+        return collect(cfg, mapOf("control_id", controlId));
     }
 
     /**
@@ -549,7 +623,7 @@ public class Call {
             List<Map<String, Object>> media,
             Map<String, Object> collectConfig,
             Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.PlayAndCollectAction action = new Action.PlayAndCollectAction(controlId, this);
         registerAction(action);
 
@@ -557,15 +631,23 @@ public class Call {
         params.put("control_id", controlId);
         params.put("play", media);
         params.put("collect", collectConfig);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_PLAY_AND_COLLECT, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Play and collect with an explicit control_id (test helper).
+     */
+    public Action.PlayAndCollectAction playAndCollect(
+            List<Map<String, Object>> media,
+            Map<String, Object> collectConfig,
+            String controlId) {
+        return playAndCollect(media, collectConfig, mapOf("control_id", controlId));
     }
 
     /**
@@ -576,22 +658,27 @@ public class Call {
      * @return a PayAction
      */
     public Action.PayAction pay(String paymentConnectorUrl, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.PayAction action = new Action.PayAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
         params.put("payment_connector_url", paymentConnectorUrl);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_PAY, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Pay with an explicit control_id (test helper).
+     */
+    public Action.PayAction pay(String paymentConnectorUrl, String controlId) {
+        return pay(paymentConnectorUrl, mapOf("control_id", controlId));
     }
 
     /**
@@ -602,16 +689,14 @@ public class Call {
      * @return a SendFaxAction
      */
     public Action.SendFaxAction sendFax(String documentUrl, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.SendFaxAction action = new Action.SendFaxAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
         params.put("document", documentUrl);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_SEND_FAX, params);
         if (isCallGone(result)) {
@@ -621,27 +706,42 @@ public class Call {
     }
 
     /**
+     * Send fax with explicit identity and control_id (test helper).
+     */
+    public Action.SendFaxAction sendFax(String documentUrl, String identity, String controlId) {
+        Map<String, Object> opts = new LinkedHashMap<>();
+        if (identity != null) opts.put("identity", identity);
+        opts.put("control_id", controlId);
+        return sendFax(documentUrl, opts);
+    }
+
+    /**
      * Receive a fax.
      *
      * @param options optional parameters
      * @return a ReceiveFaxAction
      */
     public Action.ReceiveFaxAction receiveFax(Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.ReceiveFaxAction action = new Action.ReceiveFaxAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_RECEIVE_FAX, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Receive fax with an explicit control_id (test helper).
+     */
+    public Action.ReceiveFaxAction receiveFax(String controlId) {
+        return receiveFax(mapOf("control_id", controlId));
     }
 
     /**
@@ -653,7 +753,7 @@ public class Call {
      * @return a TapAction
      */
     public Action.TapAction tap(Map<String, Object> tapConfig, Map<String, Object> tapDevice, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.TapAction action = new Action.TapAction(controlId, this);
         registerAction(action);
 
@@ -661,15 +761,20 @@ public class Call {
         params.put("control_id", controlId);
         params.put("tap", tapConfig);
         params.put("device", tapDevice);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_TAP, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * Tap with an explicit control_id (test helper).
+     */
+    public Action.TapAction tap(Map<String, Object> tapConfig, Map<String, Object> tapDevice, String controlId) {
+        return tap(tapConfig, tapDevice, mapOf("control_id", controlId));
     }
 
     /**
@@ -680,16 +785,14 @@ public class Call {
      * @return a StreamAction
      */
     public Action.StreamAction stream(String url, Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.StreamAction action = new Action.StreamAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
         params.put("url", url);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_STREAM, params);
         if (isCallGone(result)) {
@@ -699,21 +802,36 @@ public class Call {
     }
 
     /**
+     * Stream with an explicit control_id (test helper).
+     */
+    public Action.StreamAction stream(String url, String controlId) {
+        return stream(url, mapOf("control_id", controlId));
+    }
+
+    /**
+     * Stream with codec and control_id (test helper).
+     */
+    public Action.StreamAction stream(String url, String codec, String controlId) {
+        Map<String, Object> opts = new LinkedHashMap<>();
+        if (codec != null) opts.put("codec", codec);
+        opts.put("control_id", controlId);
+        return stream(url, opts);
+    }
+
+    /**
      * Start transcription on the call.
      *
      * @param options optional parameters
      * @return a TranscribeAction
      */
     public Action.TranscribeAction transcribe(Map<String, Object> options) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(options);
         Action.TranscribeAction action = new Action.TranscribeAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
-        if (options != null) {
-            params.putAll(options);
-        }
+        mergeWithoutKey(params, options, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_TRANSCRIBE, params);
         if (isCallGone(result)) {
@@ -723,27 +841,42 @@ public class Call {
     }
 
     /**
+     * Transcribe with an explicit control_id (test helper).
+     */
+    public Action.TranscribeAction transcribe(String controlId) {
+        return transcribe(mapOf("control_id", controlId));
+    }
+
+    /**
      * Start an AI agent on the call.
      *
      * @param aiConfig AI configuration
      * @return an AiAction
      */
     public Action.AiAction ai(Map<String, Object> aiConfig) {
-        String controlId = UUID.randomUUID().toString();
+        String controlId = controlIdFromOptions(aiConfig);
         Action.AiAction action = new Action.AiAction(controlId, this);
         registerAction(action);
 
         Map<String, Object> params = callParams();
         params.put("control_id", controlId);
-        if (aiConfig != null) {
-            params.putAll(aiConfig);
-        }
+        mergeWithoutKey(params, aiConfig, "control_id");
 
         Map<String, Object> result = executeOnCall(Constants.METHOD_AI, params);
         if (isCallGone(result)) {
             action.resolve(null);
         }
         return action;
+    }
+
+    /**
+     * AI with explicit prompt and control_id (test helper).
+     */
+    public Action.AiAction ai(Map<String, Object> prompt, String controlId) {
+        Map<String, Object> cfg = new LinkedHashMap<>();
+        if (prompt != null) cfg.put("prompt", prompt);
+        cfg.put("control_id", controlId);
+        return ai(cfg);
     }
 
     // ── AI helper methods ────────────────────────────────────────────
@@ -816,6 +949,31 @@ public class Call {
         if (result == null) return false;
         Object code = result.get("code");
         return code != null && Constants.isCallGoneCode(code.toString());
+    }
+
+    private static String controlIdFromOptions(Map<String, Object> options) {
+        if (options != null) {
+            Object cid = options.get("control_id");
+            if (cid instanceof String && !((String) cid).isEmpty()) {
+                return (String) cid;
+            }
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private static Map<String, Object> mapOf(String k, Object v) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put(k, v);
+        return m;
+    }
+
+    private static void mergeWithoutKey(Map<String, Object> target, Map<String, Object> src, String excludeKey) {
+        if (src == null) return;
+        for (Map.Entry<String, Object> entry : src.entrySet()) {
+            if (!excludeKey.equals(entry.getKey())) {
+                target.put(entry.getKey(), entry.getValue());
+            }
+        }
     }
 
     @Override
