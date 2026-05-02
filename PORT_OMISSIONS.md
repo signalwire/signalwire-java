@@ -471,26 +471,6 @@ signalwire.mcp_gateway.session_manager.SessionManager.get_service_session_count:
 signalwire.mcp_gateway.session_manager.SessionManager.get_session: MCP gateway service is not ported; Java AgentBase exposes MCP client-side integration only
 signalwire.mcp_gateway.session_manager.SessionManager.list_sessions: MCP gateway service is not ported; Java AgentBase exposes MCP client-side integration only
 signalwire.mcp_gateway.session_manager.SessionManager.shutdown: MCP gateway service is not ported; Java AgentBase exposes MCP client-side integration only
-signalwire.pom.pom.PromptObjectModel: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.__init__: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.add_pom_as_subsection: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.add_section: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.find_section: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.from_json: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.from_yaml: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.render_markdown: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.render_xml: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.to_dict: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.to_json: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.PromptObjectModel.to_yaml: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.__init__: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.add_body: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.add_bullets: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.add_subsection: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.render_markdown: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.render_xml: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
-signalwire.pom.pom.Section.to_dict: POM (Prompt Object Model) is embedded directly in Java's AgentBase.setPromptPom / addPomSection helpers; no separate class
 signalwire.pom.pom_tool.detect_file_format: Python CLI for rendering POM files; Java embeds POM rendering directly in AgentBase's prompt builder with no separate CLI
 signalwire.pom.pom_tool.load_pom: Python CLI for rendering POM files; Java embeds POM rendering directly in AgentBase's prompt builder with no separate CLI
 signalwire.pom.pom_tool.main: Python CLI for rendering POM files; Java embeds POM rendering directly in AgentBase's prompt builder with no separate CLI

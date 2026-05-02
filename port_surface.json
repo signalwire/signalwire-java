@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 4f5e39560adcd79fed0e10829e6fcdb4028f230a",
+  "generated_from": "signalwire-java @ 8ea0169b0b1ac72c63e86e4b73a48baebcf6cd72",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -390,6 +390,43 @@
       "classes": {
         "LoggerLevel": [
           "get_value"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.pom.pom": {
+      "classes": {
+        "PromptObjectModel": [
+          "__init__",
+          "add_pom_as_subsection",
+          "add_section",
+          "find_section",
+          "from_json",
+          "from_json_map",
+          "from_yaml",
+          "from_yaml_map",
+          "get_sections",
+          "is_debug",
+          "render_markdown",
+          "render_xml",
+          "to_dict",
+          "to_json",
+          "to_yaml"
+        ],
+        "Section": [
+          "__init__",
+          "add_body",
+          "add_bullets",
+          "add_subsection",
+          "get_body",
+          "get_bullets",
+          "get_numbered",
+          "get_subsections",
+          "get_title",
+          "is_numbered_bullets",
+          "render_markdown",
+          "render_xml",
+          "to_dict"
         ]
       },
       "functions": []

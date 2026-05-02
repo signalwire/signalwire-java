@@ -166,6 +166,16 @@ signalwire.logging.logging_level.LoggingLevel.off: Java LoggingLevel.off is an e
 signalwire.logging.logging_level.LoggingLevel.value_of: Java LoggingLevel.valueOf is the standard Java enum-value-by-name lookup; Python represents log levels as integer constants and uses the logging.getLevelName() free function
 signalwire.logging.logging_level.LoggingLevel.values: Java LoggingLevel.values() is the standard Java enum iterator; Python iterates log levels via logging._nameToLevel
 signalwire.logging.logging_level.LoggingLevel.warn: Java LoggingLevel.warn is an enum constant projecting as a zero-arg accessor in the surface dump; Python represents log levels as integer constants in the logging module
+signalwire.pom.pom.PromptObjectModel.from_json_map: Java overload accepting a parsed list-of-maps so callers can avoid re-serialising to JSON; Python's from_json accepts both (str|dict) at one signature
+signalwire.pom.pom.PromptObjectModel.from_yaml_map: Java overload accepting a parsed list-of-maps so callers can avoid re-serialising to YAML; Python's from_yaml accepts both (str|dict) at one signature
+signalwire.pom.pom.PromptObjectModel.get_sections: Java explicit accessor for the section list; Python exposes the equivalent state via the public sections attribute
+signalwire.pom.pom.PromptObjectModel.is_debug: Java explicit accessor for the debug flag; Python exposes the equivalent state via the public debug attribute
+signalwire.pom.pom.Section.get_body: Java explicit accessor for the body field; Python exposes the equivalent state via the public body attribute
+signalwire.pom.pom.Section.get_bullets: Java explicit accessor for the bullets list; Python exposes the equivalent state via the public bullets attribute
+signalwire.pom.pom.Section.get_numbered: Java explicit accessor for the tri-state numbered flag; Python exposes the equivalent state via the public numbered attribute
+signalwire.pom.pom.Section.get_subsections: Java explicit accessor for the subsection list; Python exposes the equivalent state via the public subsections attribute
+signalwire.pom.pom.Section.get_title: Java explicit accessor for the title field; Python exposes the equivalent state via the public title attribute
+signalwire.pom.pom.Section.is_numbered_bullets: Java explicit accessor for the numberedBullets flag; Python exposes the equivalent state via the public numberedBullets attribute
 signalwire.prefabs.concierge.ConciergeAgent.amenity: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.prefabs.concierge.ConciergeAgent.get_agent: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.prefabs.concierge.ConciergeAgent.run: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python

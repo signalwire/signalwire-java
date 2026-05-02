@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.contexts.ContextBuilder;
 import com.signalwire.sdk.logging.Logger;
+import com.signalwire.sdk.pom.PromptObjectModel;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.ExecutionMode;
 import com.signalwire.sdk.runtime.LambdaUrlResolver;
@@ -389,21 +390,22 @@ public class AgentBase extends Service {
     }
 
     /**
-     * Read-only snapshot of the agent's POM section list.
+     * Read-only snapshot of the agent's POM as a typed
+     * {@link PromptObjectModel}. Wraps the internal map-based section list so
+     * callers get the rich Section / render API without mutating internal
+     * state.
      *
      * <p>Python parity: {@code agent.pom} instance attribute
      * (agent_base.py line 209). Returns {@code null} when {@code usePom} is
-     * false (mirroring Python's {@code self.pom = None}); otherwise returns
-     * an unmodifiable view of the section list. Callers cannot mutate the
-     * agent's internal state through this accessor.
+     * false (mirroring Python's {@code self.pom = None}).
      *
-     * @return Unmodifiable list of POM section maps, or {@code null} when POM mode is off.
+     * @return typed POM wrapper, or {@code null} when POM mode is off.
      */
-    public List<Map<String, Object>> getPom() {
+    public PromptObjectModel getPom() {
         if (!usePom) {
             return null;
         }
-        return Collections.unmodifiableList(pomSections);
+        return new PromptObjectModel(pomSections);
     }
 
     /**

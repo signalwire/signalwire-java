@@ -442,6 +442,9 @@ class AgentBaseTest {
     //
     // Mirrors signalwire-python tests/unit/core/test_agent_base.py::
     //   TestAgentBasePromptMethods::test_set_prompt_pom_succeeds_when_use_pom_true
+    //
+    // Java now wraps the internal section list in a typed
+    // PromptObjectModel (see com.signalwire.sdk.pom.PromptObjectModel).
 
     @Test
     void testGetPomReturnsAssignedSections() {
@@ -450,30 +453,32 @@ class AgentBaseTest {
         section.put("body", "Hello");
         agent.setPromptPom(List.of(section));
 
-        List<Map<String, Object>> pom = agent.getPom();
+        com.signalwire.sdk.pom.PromptObjectModel pom = agent.getPom();
         assertNotNull(pom);
-        assertEquals(1, pom.size());
-        assertEquals("Greeting", pom.get(0).get("title"));
-        assertEquals("Hello", pom.get(0).get("body"));
+        assertEquals(1, pom.getSections().size());
+        assertEquals("Greeting", pom.getSections().get(0).getTitle());
+        assertEquals("Hello", pom.getSections().get(0).getBody());
     }
 
     @Test
     void testGetPomReturnsSectionsAfterPromptAddSection() {
         agent.promptAddSection("Topic", "Body text", null);
 
-        List<Map<String, Object>> pom = agent.getPom();
+        com.signalwire.sdk.pom.PromptObjectModel pom = agent.getPom();
         assertNotNull(pom);
-        assertEquals(1, pom.size());
-        assertEquals("Topic", pom.get(0).get("title"));
-        assertEquals("Body text", pom.get(0).get("body"));
+        assertEquals(1, pom.getSections().size());
+        assertEquals("Topic", pom.getSections().get(0).getTitle());
+        assertEquals("Body text", pom.getSections().get(0).getBody());
     }
 
     @Test
-    void testGetPomReturnsUnmodifiableList() {
+    void testGetPomFindSection() {
+        // The typed POM exposes findSection — convenience over the raw list.
         agent.promptAddSection("X", "y", null);
-        List<Map<String, Object>> pom = agent.getPom();
+        com.signalwire.sdk.pom.PromptObjectModel pom = agent.getPom();
         assertNotNull(pom);
-        assertThrows(UnsupportedOperationException.class, () -> pom.add(new LinkedHashMap<>()));
+        assertTrue(pom.findSection("X").isPresent());
+        assertFalse(pom.findSection("Missing").isPresent());
     }
 
     @Test
