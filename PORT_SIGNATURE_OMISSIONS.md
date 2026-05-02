@@ -298,3 +298,14 @@ signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.__init__: J
 signalwire.skills.registry.SkillRegistry.logger: Python's reference exposes a logger attribute on the class for runtime introspection; Java threads logging through SLF4J without exposing a typed logger field
 signalwire.skills.spider.skill.SpiderSkill.__init__: Java built-in skill constructor is parameterless (params arrive at setup() time per Java's skill lifecycle); Python takes (agent, params) on construction
 signalwire.skills.weather_api.skill.WeatherApiSkill.__init__: Java built-in skill constructor is parameterless (params arrive at setup() time per Java's skill lifecycle); Python takes (agent, params) on construction
+
+## POM (signalwire.pom.pom) — Java idiom
+
+signalwire.pom.pom.PromptObjectModel.__init__: java-builder-ctors — Java exposes overloaded ctors (default, copy-from-list, copy-from-PromptObjectModel) where Python has a single __init__ with default arg
+signalwire.pom.pom.PromptObjectModel.add_section: java-builder-overload — Java exposes 3 overloads (title-only, title+kwargs, full builder pattern) where Python has a single positional+kwargs signature
+signalwire.pom.pom.PromptObjectModel.from_json: java-overload-pair — Java pair of static factories (from_json(String), from_json_map(List)) where Python's from_json takes Union[str, dict] at one signature
+signalwire.pom.pom.PromptObjectModel.from_yaml: java-overload-pair — Java pair of static factories (from_yaml(String), from_yaml_map(List)) where Python's from_yaml takes Union[str, dict] at one signature
+signalwire.pom.pom.Section.__init__: java-builder-ctors — Java exposes overloaded ctors (default, builder, copy) where Python has a single __init__ with positional+kwargs
+signalwire.pom.pom.Section.add_subsection: java-builder-overload — Java exposes 2 overloads (title-only, title+kwargs) where Python has single positional+kwargs
+signalwire.pom.pom.Section.render_markdown: java-overload — Java has overloads with/without sectionNumber list parameter; Python uses optional default
+signalwire.pom.pom.Section.render_xml: java-overload — Java has overloads with/without indent + sectionNumber parameters; Python uses optional defaults

@@ -1015,3 +1015,8 @@ signalwire.web.web_service.WebService.add_directory: Python's WebService abstrac
 signalwire.web.web_service.WebService.remove_directory: Python's WebService abstraction is not a Java idiom — Java uses AgentBase's built-in HTTP server or the user's chosen framework
 signalwire.web.web_service.WebService.start: Python's WebService abstraction is not a Java idiom — Java uses AgentBase's built-in HTTP server or the user's chosen framework
 signalwire.web.web_service.WebService.stop: Python's WebService abstraction is not a Java idiom — Java uses AgentBase's built-in HTTP server or the user's chosen framework
+
+## POM internal collections
+
+signalwire.pom.pom.PromptObjectModel.sections: java-bean-accessor — Java exposes the section list via getSections() (a public accessor in PORT_ADDITIONS) rather than direct attribute access; Python exposes public `sections` attribute
+signalwire.pom.pom.Section.subsections: java-bean-accessor — Java exposes the subsection list via getSubsections() (a public accessor in PORT_ADDITIONS) rather than direct attribute access; Python exposes public `subsections` attribute
