@@ -25,11 +25,11 @@ public class RestFabricConferencesAndRouting {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create a conference Fabric resource via the generic handle.
+        // 1. Create a conference room via the typed sub-namespace
+        //    (Python parity: client.fabric.conference_rooms.create(...)).
         System.out.println("Creating conference resource...");
         try {
-            var conference = client.fabric().resources().create(Map.of(
-                    "type", "conference_room",
+            var conference = client.fabric().conferenceRooms().create(Map.of(
                     "name", "team-standup",
                     "max_members", 25,
                     "record", true
@@ -48,11 +48,11 @@ public class RestFabricConferencesAndRouting {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. Create a call-flow resource for routing.
+        // 3. Create a call-flow resource via the typed sub-namespace
+        //    (Python parity: client.fabric.call_flows.create(...)).
         System.out.println("\nCreating call flow...");
         try {
-            var callFlow = client.fabric().resources().create(Map.of(
-                    "type", "call_flow",
+            var callFlow = client.fabric().callFlows().create(Map.of(
                     "name", "main-ivr",
                     "description", "Main IVR routing"
             ));

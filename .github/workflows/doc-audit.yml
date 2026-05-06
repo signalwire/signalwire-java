@@ -61,16 +61,22 @@ jobs:
         # compile cleanly against the freshly built JAR. A broken example
         # is a phantom-API signal. Output goes to /tmp so the repo stays
         # clean.
+        #
+        # Pull the runtime classpath from gradle so example sources can use
+        # any dep the SDK already depends on (Gson, snakeyaml, etc.) without
+        # re-pinning versions in CI. Audit harnesses (RestAuditHarness,
+        # SkillsAuditHarness) need this for Gson.
         run: |
           JAR="$(ls build/libs/signalwire-sdk-*.jar | head -1)"
           if [ -z "$JAR" ]; then
             echo "error: no signalwire-sdk jar found under build/libs/" >&2
             exit 1
           fi
+          RUNTIME_CP="$(./gradlew --no-daemon -q --console=plain printRuntimeClasspath | tr '\n' ':')"
           mkdir -p /tmp/example-compile
           find examples rest/examples relay/examples -name '*.java' \
             -print0 \
-            | xargs -0 javac -d /tmp/example-compile -cp "$JAR"
+            | xargs -0 javac -d /tmp/example-compile -cp "$JAR:$RUNTIME_CP"
 
       - name: Regenerate Java-native surface for doc audit
         working-directory: signalwire-java

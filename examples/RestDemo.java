@@ -18,17 +18,17 @@ public class RestDemo {
         // Build REST client (reads env vars automatically)
         var client = RestClient.builder().build();
 
-        // 1. Create a Fabric resource
+        // 1. Create an AI agent via the typed sub-namespace
+        //    (Python parity: client.fabric.ai_agents.create(...))
         System.out.println("Creating Fabric resource...");
         try {
-            var resource = client.fabric().resources().create(Map.of(
-                    "name", "Demo Bot",
-                    "type", "ai_agent"
+            var resource = client.fabric().aiAgents().create(Map.of(
+                    "name", "Demo Bot"
             ));
             System.out.println("  Resource created: " + resource.get("id"));
 
             // Clean up
-            client.fabric().resources().delete((String) resource.get("id"));
+            client.fabric().aiAgents().delete((String) resource.get("id"));
             System.out.println("  Resource deleted.");
         } catch (RestError e) {
             System.out.println("  Failed (expected in demo): " + e.getMessage());

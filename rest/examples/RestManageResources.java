@@ -26,20 +26,19 @@ public class RestManageResources {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create an AI agent via the generic Fabric resources handle.
+        // 1. Create an AI agent via the typed sub-namespace
+        //    (Python parity: client.fabric.ai_agents.create(...)).
         System.out.println("Creating AI agent...");
-        var agent = client.fabric().resources().create(Map.of(
-                "type", "ai_agent",
+        var agent = client.fabric().aiAgents().create(Map.of(
                 "name", "Demo Support Bot",
                 "prompt", Map.of("text", "You are a friendly support agent for Acme Corp.")
         ));
         String agentId = (String) agent.get("id");
         System.out.println("  Created agent: " + agentId);
 
-        // 2. List Fabric resources (filter client-side by type="ai_agent"
-        //    on the returned list if needed).
-        System.out.println("\nListing Fabric resources...");
-        var resources = client.fabric().resources().list();
+        // 2. List AI agents via the typed sub-namespace.
+        System.out.println("\nListing AI agents...");
+        var resources = client.fabric().aiAgents().list();
         System.out.println("  Found: " + resources);
 
         // 3. Search for a phone number. search() takes Map<String,String>.
@@ -63,9 +62,9 @@ public class RestManageResources {
             System.out.println("  Call failed (expected in demo): " + e.getStatusCode());
         }
 
-        // 5. Clean up: delete the agent resource.
+        // 5. Clean up: delete the agent.
         System.out.println("\nDeleting agent " + agentId + "...");
-        client.fabric().resources().delete(agentId);
+        client.fabric().aiAgents().delete(agentId);
         System.out.println("  Deleted.");
     }
 }

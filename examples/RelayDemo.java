@@ -45,7 +45,7 @@ public class RelayDemo {
                             "digits", Map.of("max", 1, "digit_timeout", 5.0),
                             "initial_timeout", 10.0
                     ),
-                    null
+                    (Map<String, Object>) null
             );
 
             var result = collectAction.waitForCompletion();
