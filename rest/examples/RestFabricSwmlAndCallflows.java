@@ -1,13 +1,10 @@
 /**
  * Example: SWML scripts and call flow management via the REST API.
  *
- * Java routes SWML scripts through {@code client.swml().scripts()} (the
- * top-level SWML namespace) and call-flow resources through the generic
- * {@code client.fabric().resources()} handle — filtered by resource type.
- * The Python SDK's per-subresource accessors on {@code fabric.swml_scripts}
- * and {@code fabric.call_flows} are folded into these two entry points;
- * see {@code PORT_OMISSIONS.md} and {@code rest/docs/fabric.md} for the
- * full mapping.
+ * Two paths exist for SWML scripts: the top-level {@code client.swml()}
+ * namespace (used here for create/list) and {@code client.fabric().swmlScripts()}
+ * under Fabric. Call flows live under {@code client.fabric().callFlows()} —
+ * the typed sub-namespace that mirrors Python's {@code fabric.call_flows}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -54,14 +51,11 @@ public class RestFabricSwmlAndCallflows {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. Create a call flow via the generic Fabric resources handle
-        //    with type="call_flow". Java funnels every Fabric subresource
-        //    through this one CrudResource rather than exposing a bespoke
-        //    accessor per type.
+        // 3. Create a call flow via the typed sub-namespace
+        //    (Python parity: client.fabric.call_flows.create(...)).
         System.out.println("\nCreating call flow...");
         try {
-            var callFlow = client.fabric().resources().create(Map.of(
-                    "type", "call_flow",
+            var callFlow = client.fabric().callFlows().create(Map.of(
                     "name", "main-routing",
                     "description", "Main IVR with AI fallback"
             ));
