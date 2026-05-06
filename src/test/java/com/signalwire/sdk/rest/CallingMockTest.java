@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -108,6 +109,31 @@ class CallingMockTest {
             assertTrue(body.containsKey("id"));
             Map<String, Object> p = commandAssert(mock.last(), "calling.disconnect", "call-456");
             assertEquals("busy", p.get("reason"));
+        }
+
+        @Test
+        void dial_forwards_codecs_array() {
+            List<String> codecs = List.of("OPUS", "G729", "VP8", "PCMA");
+            Map<String, Object> body = client.calling().dial(kw(
+                    "url", "https://example.com/swml",
+                    "to", "+15551234567",
+                    "codecs", codecs));
+            assertNotNull(body);
+            assertTrue(body.containsKey("id"), "response missing 'id'");
+            Map<String, Object> p = commandAssert(mock.last(), "dial", null);
+            assertEquals(codecs, p.get("codecs"));
+            assertEquals("+15551234567", p.get("to"));
+        }
+
+        @Test
+        void dial_forwards_codecs_string() {
+            Map<String, Object> body = client.calling().dial(kw(
+                    "url", "https://example.com/swml",
+                    "to", "+15551234567",
+                    "codecs", "OPUS,G729,VP8,PCMA"));
+            assertNotNull(body);
+            Map<String, Object> p = commandAssert(mock.last(), "dial", null);
+            assertEquals("OPUS,G729,VP8,PCMA", p.get("codecs"));
         }
     }
 
