@@ -88,8 +88,19 @@ class SignalwireTopLevelTest {
     void registerSkillRegistersClass() {
         // Use the existing SkillBase implementation classes — registering a
         // builtin skill that's already in the registry is a valid no-op.
-        Signalwire.registerSkill(TopLevelDummySkill.class);
-        assertTrue(SkillRegistry.list().contains("top_level_dummy_skill_java"));
+        try {
+            Signalwire.registerSkill(TopLevelDummySkill.class);
+            assertTrue(SkillRegistry.list().contains("top_level_dummy_skill_java"));
+        } finally {
+            // SkillRegistry.register() mutates a static map; clean up so we
+            // don't leak this test-only skill into other test classes' count
+            // assertions (e.g. RegistryTest.testRegistryHas18Skills,
+            // SkillsTest.testRegistryHasAllSkills). Python's parity tests
+            // construct fresh per-test SkillRegistry() instances and never
+            // touch global state — Java's static registry forces explicit
+            // cleanup here.
+            SkillRegistry.unregister("top_level_dummy_skill_java");
+        }
     }
 
     /**
