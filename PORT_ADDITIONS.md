@@ -978,3 +978,13 @@ signalwire.utils.schema_utils.SchemaValidationError.get_errors: Java SchemaValid
 signalwire.utils.schema_utils.SchemaValidationError.get_verb_name: Java SchemaValidationError exposes structured error data via typed getters; Python's reference uses public attribute access on the exception
 signalwire.utils.url_validator.UrlValidator: Java exposes URL validation via a UrlValidator class for namespace cohesion; Python uses a free function. The free-function form is projected into the same module via FREE_FUNCTION_PROJECTIONS
 signalwire.utils.url_validator.UrlValidator.validate_url: Java's UrlValidator.validateUrl is the static class form; the canonical free function is also projected via FREE_FUNCTION_PROJECTIONS, so the dual exposure is intentional
+signalwire.agent.agent_base_builder.AgentBaseBuilder.signing_key: java_idiom: builder option mirroring AgentBase.signingKey constructor arg
+signalwire.agent.agent_base_builder.AgentBaseBuilder.trust_proxy_for_signature: java_idiom: builder option for proxy header trust on signature URL reconstruction
+signalwire.core.agent_base.AgentBase.get_signing_key: java_bean_accessor: getter for signing_key (Python keeps it private; Java exposes for testability)
+signalwire.core.agent_base.AgentBase.is_trust_proxy_for_signature: java_bean_accessor: getter for trust_proxy_for_signature flag
+signalwire.security.webhook_filter.WebhookFilter: java_idiom: Servlet Filter implementation; Python uses FastAPI dependency factory
+signalwire.security.webhook_filter.WebhookFilter.destroy: java_idiom: Servlet Filter lifecycle method (no-op)
+signalwire.security.webhook_filter.WebhookFilter.get_reader: java_idiom: ContentCachingRequestWrapper reader accessor for raw-body-replay
+signalwire.security.webhook_validator.WebhookValidator: java_idiom_class_wrapper: static class containing the validator free functions (Python keeps them at module level)
+signalwire.security.webhook_validator.WebhookValidator.validate_request: java_idiom_class_wrapper: see WebhookValidator class entry
+signalwire.security.webhook_validator.WebhookValidator.validate_webhook_signature: java_idiom_class_wrapper: see WebhookValidator class entry

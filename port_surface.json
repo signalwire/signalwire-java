@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 8ea0169b0b1ac72c63e86e4b73a48baebcf6cd72",
+  "generated_from": "signalwire-java @ 546fbacc861d1a850db836bb9a7f79eeda8bf50f",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -26,7 +26,9 @@
           "record_call",
           "record_format",
           "record_stereo",
-          "route"
+          "route",
+          "signing_key",
+          "trust_proxy_for_signature"
         ]
       },
       "functions": []
@@ -130,6 +132,7 @@
           "get_prompt",
           "get_raw_prompt",
           "get_route",
+          "get_signing_key",
           "get_sip_usernames",
           "get_skill_manager",
           "get_tools",
@@ -138,6 +141,7 @@
           "has_tool",
           "is_mcp_server_enabled",
           "is_sip_routing_enabled",
+          "is_trust_proxy_for_signature",
           "list_skills",
           "manual_set_proxy_url",
           "on_debug_event",
@@ -173,7 +177,8 @@
           "set_pronunciations",
           "set_web_hook_url",
           "update_global_data",
-          "validate_tool_token"
+          "validate_tool_token",
+          "validate_webhook"
         ]
       },
       "functions": []
@@ -1721,6 +1726,27 @@
         "LambdaUrlResolver": [
           "__init__",
           "resolve_base_url"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.security.webhook_filter": {
+      "classes": {
+        "WebhookFilter": [
+          "__init__",
+          "destroy",
+          "do_filter",
+          "get_reader",
+          "init"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.security.webhook_validator": {
+      "classes": {
+        "WebhookValidator": [
+          "validate_request",
+          "validate_webhook_signature"
         ]
       },
       "functions": []
