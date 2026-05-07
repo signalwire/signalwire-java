@@ -280,6 +280,23 @@ public class AgentServer {
     }
 
     private void handleSwml(HttpExchange exchange, AgentBase agent, String baseUrl) throws IOException {
+        // POST root requires signature validation when the agent has a
+        // signing key set (porting-sdk/webhooks.md). For GET we just render.
+        if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            String body;
+            try {
+                body = readBody(exchange);
+            } catch (IOException e) {
+                exchange.sendResponseHeaders(413, -1);
+                exchange.close();
+                return;
+            }
+            if (!agent.validateWebhook(exchange, body)) {
+                exchange.sendResponseHeaders(403, -1);
+                exchange.close();
+                return;
+            }
+        }
         sendJson(exchange, 200, agent.renderSwml(baseUrl));
     }
 
@@ -296,6 +313,14 @@ public class AgentServer {
             body = readBody(exchange);
         } catch (IOException e) {
             exchange.sendResponseHeaders(413, -1);
+            exchange.close();
+            return;
+        }
+
+        // Webhook signature validation when the agent has a signing key set.
+        // No body detail (per porting-sdk/webhooks.md).
+        if (!agent.validateWebhook(exchange, body)) {
+            exchange.sendResponseHeaders(403, -1);
             exchange.close();
             return;
         }
@@ -346,6 +371,13 @@ public class AgentServer {
             body = readBody(exchange);
         } catch (IOException e) {
             exchange.sendResponseHeaders(413, -1);
+            exchange.close();
+            return;
+        }
+
+        // Webhook signature validation when the agent has a signing key set.
+        if (!agent.validateWebhook(exchange, body)) {
+            exchange.sendResponseHeaders(403, -1);
             exchange.close();
             return;
         }

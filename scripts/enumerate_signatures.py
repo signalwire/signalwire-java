@@ -438,6 +438,15 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire", "add_skill_directory"),
     ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"):
         ("signalwire", "list_skills_with_params"),
+    # WebhookValidator static methods → Python module-level free functions
+    # in signalwire.core.security.webhook_validator. Java collapses both
+    # entry points onto a static-only utility class for namespacing; the
+    # projection lifts them back to the canonical Python locations so the
+    # cross-port audit sees the same symbols.
+    ("com.signalwire.sdk.security.WebhookValidator", "validateWebhookSignature"):
+        ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
+    ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"):
+        ("signalwire.core.security.webhook_validator", "validate_request"),
 }
 
 

@@ -54,6 +54,15 @@ public class Service {
     private static final java.util.regex.Pattern SWAIG_FN_NAME =
             java.util.regex.Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
 
+    /**
+     * HttpExchange attribute key under which the raw POST body is stashed by
+     * {@link #serve()} when reading it up-front for signature validation.
+     * Subclasses (notably {@link com.signalwire.sdk.agent.AgentBase}) check
+     * this attribute in {@code renderMainSwml} so they can re-use the cached
+     * body without re-reading the (already-consumed) request stream.
+     */
+    public static final String REQUEST_BODY_ATTR = "com.signalwire.sdk.requestBody";
+
     // Auth — protected so AgentBase (extends Service) can read them in subclass
     // helpers. Don't expose via getters that mutate; use the constructor.
     protected String authUser;
@@ -372,6 +381,28 @@ public class Service {
             java.util.Map<String, Object> requestData,
             String callbackPath) {
         return null;
+    }
+
+    /**
+     * Extension hook invoked between raw-body capture and JSON parsing on
+     * signed POST routes ({@code /}, {@code /swaig}, {@code /post_prompt}).
+     * Subclasses (AgentBase) override to enforce SignalWire webhook signature
+     * validation when a signing key is configured. Default returns
+     * {@code true} (no validation).
+     *
+     * <p>Returning {@code false} signals "signature invalid"; the caller
+     * sends {@code 403 Forbidden} and stops dispatch. Per
+     * porting-sdk/webhooks.md the response body must NOT disclose which
+     * branch failed.
+     *
+     * @param exchange the HTTP exchange.
+     * @param rawBody the raw UTF-8 body string already read from the
+     *                exchange. Pass through to {@link com.signalwire.sdk.security.WebhookValidator}.
+     * @return {@code true} when validation passes (or is disabled);
+     *         {@code false} to short-circuit with a 403.
+     */
+    protected boolean validateSignedWebhook(HttpExchange exchange, String rawBody) {
+        return true;
     }
 
     /**
@@ -714,6 +745,31 @@ public class Service {
                     return;
                 }
                 addSecurityHeaders(exchange);
+
+                // For POST requests, capture the body BEFORE rendering so
+                // (a) the signature validator sees the raw bytes, and
+                // (b) downstream renderMainSwml can re-use it without
+                // re-reading the stream. We stash the body on the exchange
+                // attributes so renderMainSwml(exchange) — which already
+                // wants the body for dynamic-config dispatch on AgentBase —
+                // can pull it instead of calling readBody again.
+                if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    String body;
+                    try {
+                        body = readBody(exchange);
+                    } catch (IOException e) {
+                        sendPayloadTooLarge(exchange);
+                        return;
+                    }
+                    exchange.setAttribute(REQUEST_BODY_ATTR, body);
+                    if (!validateSignedWebhook(exchange, body)) {
+                        // No body detail per webhooks.md.
+                        exchange.sendResponseHeaders(403, -1);
+                        exchange.close();
+                        return;
+                    }
+                }
+
                 sendJson(exchange, 200, renderMainSwml(exchange));
             } catch (Exception e) {
                 log.error("SWML handler error", e);
@@ -750,6 +806,17 @@ public class Service {
             body = readBody(exchange);
         } catch (IOException e) {
             exchange.sendResponseHeaders(413, -1);
+            exchange.close();
+            return;
+        }
+
+        // Webhook signature validation (porting-sdk/webhooks.md). Default
+        // hook returns true; AgentBase overrides to enforce when signingKey
+        // is set. Validation runs AFTER auth and AFTER raw-body read so the
+        // signed digest sees the exact bytes the platform sent.
+        if (!validateSignedWebhook(exchange, body)) {
+            // No body detail — must not disclose which branch failed.
+            exchange.sendResponseHeaders(403, -1);
             exchange.close();
             return;
         }

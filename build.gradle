@@ -36,9 +36,20 @@ dependencies {
     // WebSocket for RELAY
     implementation 'org.java-websocket:Java-WebSocket:1.5.6'
 
+    // Servlet API — compileOnly so the Servlet WebhookFilter compiles for
+    // users running on Tomcat / Jetty / similar containers, but doesn't drag
+    // any servlet runtime into apps that use the JDK HttpServer-based
+    // AgentServer. Per porting-sdk/webhooks.md the Java port MUST ship a
+    // servlet-style filter.
+    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Servlet API on the test classpath so the WebhookFilter tests can
+    // compile against javax.servlet.* without forcing it into the SDK
+    // runtime.
+    testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
 }
 
 test {

@@ -126,6 +126,14 @@ public class AgentBase extends Service {
     // --- Security ---
     private final SessionManager sessionManager = new SessionManager();
 
+    // Webhook signature validation (porting-sdk/webhooks.md). When non-null,
+    // signed-webhook routes (POST /, /swaig, /post_prompt) reject any request
+    // whose X-SignalWire-Signature header doesn't validate. Resolution order
+    // at build time: explicit builder.signingKey(...) → SIGNALWIRE_SIGNING_KEY
+    // env var → null (disabled).
+    private String signingKey;
+    private boolean trustProxyForSignature;
+
     // --- HTTP Server ---
     // httpServer is now inherited from Service.
 
@@ -183,6 +191,48 @@ public class AgentBase extends Service {
         public Builder recordStereo(boolean stereo) { this.recordStereo = stereo; return this; }
         public Builder authUser(String user) { this.authUser = user; return this; }
         public Builder authPassword(String password) { this.authPassword = password; return this; }
+
+        // -- Webhook signature validation (porting-sdk/webhooks.md) --
+        private String signingKey;
+        private boolean trustProxyForSignature;
+
+        /**
+         * Configure the customer's SignalWire Signing Key from the Dashboard
+         * (API Credentials → Signing Key). When set, the agent enforces
+         * webhook signature validation on POST {@code /}, {@code /swaig},
+         * and {@code /post_prompt} — unsigned or invalidly-signed requests
+         * are rejected with HTTP 403.
+         *
+         * <p>Resolution order at {@link #build()} time:
+         * <ol>
+         *   <li>Explicit {@code signingKey(...)} on the builder.</li>
+         *   <li>{@code SIGNALWIRE_SIGNING_KEY} environment variable.</li>
+         *   <li>Unset → validation disabled, with a startup warning.</li>
+         * </ol>
+         *
+         * @param key the Signing Key. Pass {@code null} to fall through to
+         *            env-var resolution.
+         * @return this builder.
+         */
+        public Builder signingKey(String key) {
+            this.signingKey = key;
+            return this;
+        }
+
+        /**
+         * When set to {@code true}, the webhook URL reconstruction honors
+         * {@code X-Forwarded-Proto} / {@code X-Forwarded-Host} headers
+         * during signature validation. Default {@code false} — proxy
+         * headers are spoofable, so opt in only when you control the
+         * proxy chain.
+         *
+         * @param trust whether to trust proxy headers.
+         * @return this builder.
+         */
+        public Builder trustProxyForSignature(boolean trust) {
+            this.trustProxyForSignature = trust;
+            return this;
+        }
 
         /**
          * Supply an alternative {@link EnvProvider} for the build-time env
@@ -243,8 +293,29 @@ public class AgentBase extends Service {
                 agent.proxyUrlBase = envProxy;
             }
 
+            // Resolve webhook signing key (porting-sdk/webhooks.md).
+            // Order: explicit builder arg → SIGNALWIRE_SIGNING_KEY env →
+            // null. When unset we log a prominent warning so production
+            // deployments don't silently accept unsigned webhooks.
+            String resolvedKey = this.signingKey;
+            if (resolvedKey == null || resolvedKey.isEmpty()) {
+                String envKey = env.get("SIGNALWIRE_SIGNING_KEY");
+                if (envKey != null && !envKey.isEmpty()) {
+                    resolvedKey = envKey;
+                }
+            }
+            agent.signingKey = (resolvedKey != null && !resolvedKey.isEmpty()) ? resolvedKey : null;
+            agent.trustProxyForSignature = this.trustProxyForSignature;
+
             log.info("Agent '%s' initialized at route '%s', auth user: %s",
                     agent.name, agent.route, agent.authUser);
+
+            if (agent.signingKey != null) {
+                log.info("webhook_signature_validation_enabled");
+            } else {
+                log.warn("[signalwire] webhook signature validation is disabled "
+                        + "— set signingKey or SIGNALWIRE_SIGNING_KEY to enable");
+            }
 
             // Warn loudly if the password was auto-generated. This is the
             // silent cause of every external caller hitting HTTP 401 when
@@ -1223,6 +1294,129 @@ public class AgentBase extends Service {
     public String getAuthPassword() { return authPassword; }
 
     /**
+     * @return the configured Signing Key for SignalWire webhook signature
+     *         validation (resolved from the builder or
+     *         {@code SIGNALWIRE_SIGNING_KEY} env), or {@code null} when
+     *         validation is disabled.
+     */
+    public String getSigningKey() { return signingKey; }
+
+    /**
+     * @return whether webhook URL reconstruction trusts
+     *         {@code X-Forwarded-Proto} / {@code X-Forwarded-Host} headers
+     *         during signature validation.
+     */
+    public boolean isTrustProxyForSignature() { return trustProxyForSignature; }
+
+    /**
+     * Public delegate around {@link #validateSignedWebhook} so external
+     * front-doors (e.g. {@link com.signalwire.sdk.server.AgentServer}, a
+     * Lambda adapter, etc.) can run the same logic the in-process HTTP
+     * server does. Mirrors the no-op-when-unset behavior described in
+     * porting-sdk/webhooks.md.
+     *
+     * @param exchange the inbound HttpExchange.
+     * @param rawBody raw UTF-8 body string.
+     * @return {@code true} when validation passes (or no key is configured).
+     */
+    public boolean validateWebhook(com.sun.net.httpserver.HttpExchange exchange, String rawBody) {
+        return validateSignedWebhook(exchange, rawBody);
+    }
+
+    /**
+     * Override the {@link Service} hook to enforce SignalWire webhook
+     * signature validation when a {@link #signingKey} is configured. Returns
+     * {@code true} (no-op) when {@code signingKey} is unset; per
+     * porting-sdk/webhooks.md, the AgentBase MUST NOT silently reject
+     * unsigned requests when no key is configured (a prominent startup
+     * warning is the documented behavior instead — emitted in
+     * {@link Builder#build()}).
+     *
+     * <p>The signature header is read from {@code X-SignalWire-Signature}
+     * (or its {@code X-Twilio-Signature} legacy alias). The URL is
+     * reconstructed from proxy headers / {@code SWML_PROXY_URL_BASE} /
+     * the request itself, and the validator is called with the raw body
+     * bytes the caller already captured.
+     *
+     * @param exchange the inbound HttpExchange.
+     * @param rawBody  the raw UTF-8 body string that was already read from
+     *                 the exchange.
+     * @return {@code true} when validation passes (or no key is configured).
+     */
+    @Override
+    protected boolean validateSignedWebhook(com.sun.net.httpserver.HttpExchange exchange,
+                                            String rawBody) {
+        if (signingKey == null || signingKey.isEmpty()) {
+            return true; // No key configured — caller passes through.
+        }
+        String signature = exchange.getRequestHeaders()
+                .getFirst(com.signalwire.sdk.security.WebhookValidator.SIGNALWIRE_SIGNATURE_HEADER);
+        if (signature == null || signature.isEmpty()) {
+            signature = exchange.getRequestHeaders()
+                    .getFirst(com.signalwire.sdk.security.WebhookValidator.TWILIO_COMPAT_SIGNATURE_HEADER);
+        }
+        if (signature == null || signature.isEmpty()) {
+            return false;
+        }
+        String url = reconstructWebhookUrl(exchange);
+        try {
+            return com.signalwire.sdk.security.WebhookValidator
+                    .validateWebhookSignature(signingKey, signature, url, rawBody == null ? "" : rawBody);
+        } catch (IllegalArgumentException ex) {
+            // Empty key, null body — treat as invalid rather than 500'ing.
+            return false;
+        }
+    }
+
+    /**
+     * Rebuild the public URL the platform POSTed to, used as input to the
+     * webhook signature digest. Resolution order mirrors the Python
+     * reference implementation:
+     *
+     * <ol>
+     *   <li>{@code SWML_PROXY_URL_BASE} (when set) joined with the request
+     *       path + query.</li>
+     *   <li>{@code X-Forwarded-Proto} / {@code X-Forwarded-Host} when
+     *       {@link #isTrustProxyForSignature()} is true.</li>
+     *   <li>{@code scheme://host[:port]/path?query} reconstructed from
+     *       the request itself.</li>
+     * </ol>
+     */
+    private String reconstructWebhookUrl(com.sun.net.httpserver.HttpExchange exchange) {
+        String pathAndQuery = exchange.getRequestURI().getRawPath();
+        if (pathAndQuery == null) pathAndQuery = "";
+        String rawQuery = exchange.getRequestURI().getRawQuery();
+        if (rawQuery != null && !rawQuery.isEmpty()) {
+            pathAndQuery = pathAndQuery + "?" + rawQuery;
+        }
+
+        if (proxyUrlBase != null && !proxyUrlBase.isEmpty()) {
+            String base = proxyUrlBase.endsWith("/")
+                    ? proxyUrlBase.substring(0, proxyUrlBase.length() - 1)
+                    : proxyUrlBase;
+            return base + pathAndQuery;
+        }
+
+        if (trustProxyForSignature) {
+            String fwdHost = exchange.getRequestHeaders().getFirst("X-Forwarded-Host");
+            String fwdProto = exchange.getRequestHeaders().getFirst("X-Forwarded-Proto");
+            if (fwdHost != null && !fwdHost.isEmpty()) {
+                String proto = (fwdProto != null && !fwdProto.isEmpty()) ? fwdProto : "https";
+                return proto + "://" + fwdHost + pathAndQuery;
+            }
+        }
+
+        // Fallback: pull host header + assume http (the JDK HttpExchange has
+        // no built-in scheme detection because com.sun.net.httpserver doesn't
+        // do TLS — apps run TLS at a fronting proxy).
+        String hostHdr = exchange.getRequestHeaders().getFirst("Host");
+        String hostHeader = (hostHdr != null && !hostHdr.isEmpty())
+                ? hostHdr
+                : (host + ":" + port);
+        return "http://" + hostHeader + pathAndQuery;
+    }
+
+    /**
      * @return the dynamic config callback, or {@code null} if none set.
      *     Exposed primarily so alternative transports (e.g. the Lambda
      *     adapter) can invoke it outside the HTTP server path.
@@ -1665,8 +1859,12 @@ public class AgentBase extends Service {
             Map<String, Object> bodyParams = new LinkedHashMap<>();
             if ("POST".equalsIgnoreCase(method)) {
                 try {
-                    String body = readBody(exchange);
-                    if (!body.isEmpty()) {
+                    // Prefer the body that Service.serve() cached during
+                    // signature validation — the request stream is already
+                    // consumed at this point.
+                    Object cached = exchange.getAttribute(Service.REQUEST_BODY_ATTR);
+                    String body = (cached instanceof String) ? (String) cached : readBody(exchange);
+                    if (body != null && !body.isEmpty()) {
                         Type type = new TypeToken<Map<String, Object>>() {}.getType();
                         bodyParams = gson.fromJson(body, type);
                     }
@@ -1728,6 +1926,15 @@ public class AgentBase extends Service {
             body = readBody(exchange);
         } catch (IOException e) {
             exchange.sendResponseHeaders(413, -1);
+            exchange.close();
+            return;
+        }
+
+        // Webhook signature validation — see porting-sdk/webhooks.md and the
+        // validateSignedWebhook hook in Service.java. When signingKey is set
+        // this enforces the signature; otherwise it's a no-op.
+        if (!validateSignedWebhook(exchange, body)) {
+            exchange.sendResponseHeaders(403, -1);
             exchange.close();
             return;
         }

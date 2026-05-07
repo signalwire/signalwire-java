@@ -294,6 +294,7 @@ signalwire.core.security.session_manager.SessionManager.generate_token: Sub-pack
 signalwire.core.security.session_manager.SessionManager.get_session_metadata: Sub-package alias for signalwire.core.security_config in Python; Java exposes SessionManager at signalwire.security.SessionManager
 signalwire.core.security.session_manager.SessionManager.set_session_metadata: Sub-package alias for signalwire.core.security_config in Python; Java exposes SessionManager at signalwire.security.SessionManager
 signalwire.core.security.session_manager.SessionManager.validate_tool_token: Sub-package alias for signalwire.core.security_config in Python; Java exposes SessionManager at signalwire.security.SessionManager
+signalwire.core.security.webhook_middleware.make_webhook_validation_dependency: Python's FastAPI-specific dependency factory; Java ships an idiomatic Servlet Filter (signalwire.security.WebhookFilter) and an HttpExchange-based hook on AgentBase that cover the same flow per porting-sdk/webhooks.md
 signalwire.core.security_config.SecurityConfig: Python security-config dataclass; Java exposes equivalent configuration via AgentBase builder methods
 signalwire.core.security_config.SecurityConfig.__init__: Python security-config dataclass; Java exposes equivalent configuration via AgentBase builder methods
 signalwire.core.security_config.SecurityConfig.get_basic_auth: Python security-config dataclass; Java exposes equivalent configuration via AgentBase builder methods

@@ -234,6 +234,34 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "signing_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "key",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "trust_proxy_for_signature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "trust",
+                  "type": "bool",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
             }
           }
         }
@@ -1162,6 +1190,15 @@
               ],
               "returns": "string"
             },
+            "get_signing_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_sip_usernames": {
               "params": [
                 {
@@ -1227,6 +1264,15 @@
               "returns": "bool"
             },
             "is_sip_routing_enabled": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "is_trust_proxy_for_signature": {
               "params": [
                 {
                   "name": "self",
@@ -1355,6 +1401,25 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "validate_webhook": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "exchange",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "raw_body",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
             }
           }
         }
@@ -2797,8 +2862,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "summary",
-                  "type": "bool",
+                  "name": "text",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -4171,6 +4236,60 @@
               "returns": "bool"
             }
           }
+        }
+      }
+    },
+    "signalwire.core.security.webhook_validator": {
+      "functions": {
+        "validate_request": {
+          "params": [
+            {
+              "name": "signing_key",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "signature",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "url",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "params_or_raw_body",
+              "type": "any",
+              "required": true
+            }
+          ],
+          "returns": "bool"
+        },
+        "validate_webhook_signature": {
+          "params": [
+            {
+              "name": "signing_key",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "signature",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "url",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "raw_body",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "returns": "bool"
         }
       }
     },
@@ -16884,6 +17003,133 @@
                 }
               ],
               "returns": "string"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.security.cached_body_http_servlet_request": {
+      "classes": {
+        "CachedBodyHttpServletRequest": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "get_cached_body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<int>"
+            },
+            "get_cached_body_as_string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_input_stream": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            },
+            "get_reader": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.security.webhook_filter": {
+      "classes": {
+        "WebhookFilter": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "signing_key",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "destroy": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "do_filter": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "response",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "chain",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "init": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "filter_config",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
             }
           }
         }
