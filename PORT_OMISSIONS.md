@@ -1021,3 +1021,5 @@ signalwire.web.web_service.WebService.stop: Python's WebService abstraction is n
 
 signalwire.pom.pom.PromptObjectModel.sections: java-bean-accessor — Java exposes the section list via getSections() (a public accessor in PORT_ADDITIONS) rather than direct attribute access; Python exposes public `sections` attribute
 signalwire.pom.pom.Section.subsections: java-bean-accessor — Java exposes the subsection list via getSubsections() (a public accessor in PORT_ADDITIONS) rather than direct attribute access; Python exposes public `subsections` attribute
+signalwire.core.security.webhook_validator.validate_webhook_signature: idiomatic_divergence: implemented as static method on the WebhookValidator class (language idiom); see PORT_ADDITIONS.md
+signalwire.core.security.webhook_validator.validate_request: idiomatic_divergence: implemented as static method on the WebhookValidator class (language idiom); see PORT_ADDITIONS.md
