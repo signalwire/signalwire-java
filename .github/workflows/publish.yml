@@ -10,21 +10,52 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v4
+      - name: Checkout signalwire-java
+        uses: actions/checkout@v5
         with:
+          path: signalwire-java
+
+      - name: Checkout porting-sdk (mock_relay + mock_signalwire test harnesses + audit scripts)
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/porting-sdk
+          path: porting-sdk
+          token: ${{ secrets.PORTING_SDK_TOKEN }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
           java-version: '21'
-          distribution: 'temurin'
-      - name: Setup Gradle
+
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew test
+
+      - name: Set up Python (porting-sdk audit scripts + mock servers)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python test harnesses (mock_relay + mock_signalwire)
+        run: |
+          pip install -e porting-sdk/test_harness/mock_relay
+          pip install -e porting-sdk/test_harness/mock_signalwire
+
+      - name: Run CI gate script (TEST -> SIGNATURES -> DRIFT -> NO-CHEAT)
+        working-directory: signalwire-java
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
+        run: bash scripts/run-ci.sh
+
       - name: Publish to Maven Central
+        working-directory: signalwire-java
         run: ./gradlew publishAndReleaseToMavenCentral
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

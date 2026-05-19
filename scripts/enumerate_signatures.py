@@ -716,7 +716,14 @@ def run_dump() -> dict:
         if cp.returncode != 0:
             raise RuntimeError(f"javac failed:\n{cp.stderr}")
 
-    jar = PORT_ROOT / "build" / "libs" / "signalwire-sdk-2.0.0.jar"
+    _version_match = re.search(
+        r"^version\s*=\s*['\"]([^'\"]+)['\"]",
+        (PORT_ROOT / "build.gradle").read_text(),
+        re.MULTILINE,
+    )
+    if not _version_match:
+        raise RuntimeError("Could not parse version from build.gradle")
+    jar = PORT_ROOT / "build" / "libs" / f"signalwire-sdk-{_version_match.group(1)}.jar"
     if not jar.exists():
         raise RuntimeError(f"SDK jar not found at {jar}; run ./gradlew build first")
 
