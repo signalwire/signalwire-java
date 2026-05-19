@@ -7,6 +7,10 @@ name: Surface Audit
 # Python reference. Any drift not excused by PORT_OMISSIONS.md or
 # PORT_ADDITIONS.md fails the job.
 
+env:
+  # Opt into Node.js 24 ahead of GitHub's 2026-06-02 default switch.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   pull_request:
     branches: [main]
