@@ -24,6 +24,12 @@ public class WebSearchSkill implements SkillBase {
     private int numResults = 3;
     private String toolName = "web_search";
     private String noResultsMessage = "No results found for the query.";
+    // Optional prefix/postfix wrapped around every non-empty search result.
+    // Mirrors Python's response_prefix / response_postfix params; left as
+    // empty strings when omitted so the wrapping no-ops without an extra
+    // null check on the hot path.
+    private String responsePrefix = "";
+    private String responsePostfix = "";
 
     @Override public String getName() { return "web_search"; }
     @Override public String getDescription() { return "Search the web for information using Google Custom Search API"; }
@@ -40,6 +46,14 @@ public class WebSearchSkill implements SkillBase {
         }
         if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
         if (params.containsKey("no_results_message")) this.noResultsMessage = (String) params.get("no_results_message");
+        if (params.containsKey("response_prefix")) {
+            Object v = params.get("response_prefix");
+            this.responsePrefix = v == null ? "" : v.toString();
+        }
+        if (params.containsKey("response_postfix")) {
+            Object v = params.get("response_postfix");
+            this.responsePostfix = v == null ? "" : v.toString();
+        }
         return apiKey != null && !apiKey.isEmpty() && searchEngineId != null && !searchEngineId.isEmpty();
     }
 
@@ -72,8 +86,13 @@ public class WebSearchSkill implements SkillBase {
             // Allow tests / audit fixtures to redirect the upstream host by
             // setting WEB_SEARCH_BASE_URL (e.g. http://127.0.0.1:NNNN). The
             // path segment "/customsearch/v1" is preserved so the audit can
-            // assert the documented Google CSE path on the wire.
-            String base = System.getenv("WEB_SEARCH_BASE_URL");
+            // assert the documented Google CSE path on the wire. The system
+            // property of the same name wins over the env var so JUnit tests
+            // can set it inline without spawning a subprocess.
+            String base = System.getProperty("WEB_SEARCH_BASE_URL");
+            if (base == null || base.isEmpty()) {
+                base = System.getenv("WEB_SEARCH_BASE_URL");
+            }
             if (base == null || base.isEmpty()) {
                 base = "https://www.googleapis.com";
             }
@@ -112,7 +131,16 @@ public class WebSearchSkill implements SkillBase {
                 sb.append("   URL: ").append(item.get("link")).append("\n\n");
             }
 
-            return new FunctionResult(sb.toString());
+            String body = sb.toString();
+            // Wrap successful responses with optional prefix/postfix. Error
+            // and no-results paths return earlier untouched, matching Python.
+            if (!responsePrefix.isEmpty()) {
+                body = responsePrefix + "\n\n" + body;
+            }
+            if (!responsePostfix.isEmpty()) {
+                body = body + "\n\n" + responsePostfix;
+            }
+            return new FunctionResult(body);
         } catch (Exception e) {
             log.error("Web search error", e);
             return new FunctionResult("Error performing web search: " + e.getMessage());

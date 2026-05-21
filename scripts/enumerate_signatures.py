@@ -454,8 +454,9 @@ MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
         "add_function_include", "add_hint", "add_hints", "add_internal_filler",
         "add_language", "add_pattern_hint", "add_pronunciation",
-        "enable_debug_events", "set_function_includes", "set_global_data",
-        "set_internal_fillers", "set_languages", "set_native_functions",
+        "enable_debug_events", "get_language_params", "set_function_includes",
+        "set_global_data", "set_internal_fillers", "set_language_params",
+        "set_languages", "set_native_functions",
         "set_param", "set_params", "set_post_prompt_llm_params",
         "set_prompt_llm_params", "set_pronunciations", "update_global_data",
     ],

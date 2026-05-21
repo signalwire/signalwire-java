@@ -110,6 +110,104 @@ class AiConfigTest {
         assertFalse(ai.containsKey("languages"));
     }
 
+    // ======== Per-language params ========
+    // Mirrors Python tests.unit.core.mixins.test_ai_config_mixin.TestPerLanguageParams
+    // (11 cases) — add_language(params), set_language_params, get_language_params.
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testAddLanguageWithParamsAttachesParams() {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("stability", 0.5);
+        p.put("similarity_boost", 0.75);
+        agent.addLanguage("English", "en-US", "josh", null, null, "elevenlabs", p);
+        Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+        List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+        Map<String, Object> emitted = (Map<String, Object>) langs.get(0).get("params");
+        assertEquals(0.5, emitted.get("stability"));
+        assertEquals(0.75, emitted.get("similarity_boost"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testAddLanguageWithoutParamsOmitsKey() {
+        agent.addLanguage("French", "fr-FR", "fr-FR-Neural2-A");
+        Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+        List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+        assertFalse(langs.get(0).containsKey("params"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testAddLanguageWithEmptyParamsOmitsKey() {
+        agent.addLanguage("French", "fr-FR", "v", null, null, null, new LinkedHashMap<>());
+        Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+        List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+        assertFalse(langs.get(0).containsKey("params"));
+    }
+
+    @Test
+    void testGetLanguageParamsReturnsSetDict() {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("a", 1);
+        agent.addLanguage("English", "en-US", "v", null, null, null, p);
+        assertEquals(Map.of("a", 1), agent.getLanguageParams("en-US"));
+    }
+
+    @Test
+    void testGetLanguageParamsReturnsNullWhenUnset() {
+        agent.addLanguage("English", "en-US", "v");
+        assertNull(agent.getLanguageParams("en-US"));
+    }
+
+    @Test
+    void testGetLanguageParamsReturnsNullForUnknownCode() {
+        assertNull(agent.getLanguageParams("zh-CN"));
+    }
+
+    @Test
+    void testSetLanguageParamsReplacesExisting() {
+        Map<String, Object> p1 = new LinkedHashMap<>();
+        p1.put("a", 1);
+        agent.addLanguage("English", "en-US", "v", null, null, null, p1);
+        agent.setLanguageParams("en-US", Map.of("b", 2));
+        assertEquals(Map.of("b", 2), agent.getLanguageParams("en-US"));
+    }
+
+    @Test
+    void testSetLanguageParamsAddsWhenUnset() {
+        agent.addLanguage("English", "en-US", "v");
+        agent.setLanguageParams("en-US", Map.of("c", 3));
+        assertEquals(Map.of("c", 3), agent.getLanguageParams("en-US"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testSetLanguageParamsEmptyDictRemovesKey() {
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("a", 1);
+        agent.addLanguage("English", "en-US", "v", null, null, null, p);
+        agent.setLanguageParams("en-US", new LinkedHashMap<>());
+        assertNull(agent.getLanguageParams("en-US"));
+        Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+        List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+        assertFalse(langs.get(0).containsKey("params"));
+    }
+
+    @Test
+    void testSetLanguageParamsUnknownCodeIsNoop() {
+        agent.addLanguage("English", "en-US", "v");
+        agent.setLanguageParams("zh-CN", Map.of("a", 1));
+        // The known language remains untouched.
+        assertNull(agent.getLanguageParams("en-US"));
+    }
+
+    @Test
+    void testSetLanguageParamsReturnsSelfForChaining() {
+        agent.addLanguage("English", "en-US", "v");
+        assertSame(agent, agent.setLanguageParams("en-US", Map.of("a", 1)));
+    }
+
     // ======== Pronunciations ========
 
     @Test

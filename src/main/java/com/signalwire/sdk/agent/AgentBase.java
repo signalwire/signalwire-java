@@ -675,11 +675,24 @@ public class AgentBase extends Service {
     }
 
     public AgentBase addLanguage(String name, String code, String voice) {
-        return addLanguage(name, code, voice, null, null, null);
+        return addLanguage(name, code, voice, null, null, null, null);
     }
 
     public AgentBase addLanguage(String name, String code, String voice,
                                   String speechModel, String fillerWord, String engine) {
+        return addLanguage(name, code, voice, speechModel, fillerWord, engine, null);
+    }
+
+    /**
+     * Add a language configuration with an optional per-language ``params``
+     * dict (engine-specific tuning, voice settings, etc.). The ``params``
+     * key is only emitted into SWML when non-empty so existing language
+     * entries stay byte-identical when no params are passed.
+     * Mirrors Python's add_language(params=...) addition.
+     */
+    public AgentBase addLanguage(String name, String code, String voice,
+                                  String speechModel, String fillerWord, String engine,
+                                  Map<String, Object> params) {
         Map<String, Object> lang = new LinkedHashMap<>();
         lang.put("name", name);
         lang.put("code", code);
@@ -687,8 +700,46 @@ public class AgentBase extends Service {
         if (speechModel != null) lang.put("speech_model", speechModel);
         if (fillerWord != null) lang.put("filler_word", fillerWord);
         if (engine != null) lang.put("engine", engine);
+        if (params != null && !params.isEmpty()) {
+            lang.put("params", new LinkedHashMap<>(params));
+        }
         languages.add(lang);
         return this;
+    }
+
+    /**
+     * Set (or replace) the per-language ``params`` dict on an already-added
+     * language. Empty/null params removes the key. Unknown code is a no-op.
+     * Returns self for chaining. Mirrors Python's set_language_params.
+     */
+    public AgentBase setLanguageParams(String code, Map<String, Object> params) {
+        for (Map<String, Object> lang : languages) {
+            if (code != null && code.equals(lang.get("code"))) {
+                if (params != null && !params.isEmpty()) {
+                    lang.put("params", new LinkedHashMap<>(params));
+                } else {
+                    lang.remove("params");
+                }
+                break;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Read the per-language ``params`` dict for a previously-added language.
+     * Returns null when the code is unknown or params were never set.
+     * Mirrors Python's get_language_params.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getLanguageParams(String code) {
+        for (Map<String, Object> lang : languages) {
+            if (code != null && code.equals(lang.get("code"))) {
+                Object p = lang.get("params");
+                return p == null ? null : (Map<String, Object>) p;
+            }
+        }
+        return null;
     }
 
     public AgentBase setLanguages(List<Map<String, Object>> langs) {
