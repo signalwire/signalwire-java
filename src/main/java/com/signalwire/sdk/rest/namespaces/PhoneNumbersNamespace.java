@@ -31,7 +31,7 @@ public class PhoneNumbersNamespace {
 
     public PhoneNumbersNamespace(HttpClient httpClient) {
         this.httpClient = httpClient;
-        this.numbers = new CrudResource(httpClient, "/phone_numbers");
+        this.numbers = new CrudResource(httpClient, "/relay/rest/phone_numbers");
     }
 
     /** List all phone numbers. */
