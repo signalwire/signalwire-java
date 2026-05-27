@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 546fbacc861d1a850db836bb9a7f79eeda8bf50f",
+  "generated_from": "signalwire-java @ 1c32c31eddb4fd877b620e01ae16d688afac351f",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -345,6 +345,15 @@
       "functions": [
         "get_execution_mode"
       ]
+    },
+    "signalwire.core.mixins.ai_config_mixin": {
+      "classes": {
+        "AIConfigMixin": [
+          "get_language_params",
+          "set_language_params"
+        ]
+      },
+      "functions": []
     },
     "signalwire.core.security.session_manager": {
       "classes": {

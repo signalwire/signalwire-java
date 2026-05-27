@@ -180,6 +180,34 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
 }
 
 
+# Mixin projection at surface level (mirrors MIXIN_PROJECTIONS in
+# enumerate_signatures.py). Python composes AgentBase from several mixin
+# classes (AIConfigMixin, PromptMixin, ...); Java collapses them into a
+# flat AgentBase. The signatures adapter projects each mixin's method set
+# onto its canonical Python mixin path so the cross-port signature audit
+# sees the same symbol locations. This table is the surface-level analog,
+# applied after class collection in ``enumerate_sdk``.
+#
+# Scope: only methods whose mixin-path entry is NOT already documented in
+# PORT_OMISSIONS.md / PORT_ADDITIONS.md need a projection here. Most legacy
+# mixin methods (``add_hint`` etc.) are exposed on AgentBase and documented
+# as omissions; their AgentBase home is documented in PORT_ADDITIONS.md.
+# Methods newly added to Python (``set_language_params`` /
+# ``get_language_params`` from python 029ca6f) are projected so their
+# AIConfigMixin path matches Python's reference without expanding the
+# omissions/additions ledger.
+#
+# Each entry: (target_python_module, target_python_class) → [snake_case
+# method names already present on Java's AgentBase]. The projection emits
+# the method at the mixin path and removes it from AgentBase so the diff
+# does not flag a port-side extra.
+_MIXIN_SURFACE_PROJECTIONS: dict[tuple[str, str], list[str]] = {
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
+        "get_language_params", "set_language_params",
+    ],
+}
+
+
 def camel_to_snake(name: str) -> str:
     """``setPromptText`` → ``set_prompt_text``; ``URL`` stays ``url``."""
     s1 = _CAMEL_RE_1.sub(r"\1_\2", name)
@@ -555,6 +583,32 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
             dest["functions"] = sorted(
                 set(dest["functions"]) | set(entry["functions"])
             )
+
+    # Mixin projection (skipped in native mode — Java docs reference the
+    # AgentBase home of these methods, not the Python mixin path).
+    # Mirrors the post-collection projection in enumerate_signatures.py:
+    # for each (target_mod, target_cls) → method list, move any matching
+    # methods from AgentBase onto the mixin path. Class-level entries on
+    # the mixin path are created on demand.
+    if not native:
+        ab_entry = merged.get("signalwire.core.agent_base", {})
+        ab_methods = ab_entry.get("classes", {}).get("AgentBase", [])
+        for (target_mod, target_cls), expected in _MIXIN_SURFACE_PROJECTIONS.items():
+            present = [m for m in expected if m in ab_methods]
+            if not present:
+                continue
+            target = merged.setdefault(target_mod, {"classes": {}, "functions": []})
+            existing = target["classes"].get(target_cls, [])
+            target["classes"][target_cls] = sorted(set(existing) | set(present))
+            ab_methods = [m for m in ab_methods if m not in present]
+        if ab_entry:
+            if ab_methods:
+                ab_entry["classes"]["AgentBase"] = sorted(set(ab_methods))
+            else:
+                ab_entry.get("classes", {}).pop("AgentBase", None)
+                if not ab_entry.get("classes") and not ab_entry.get("functions"):
+                    merged.pop("signalwire.core.agent_base", None)
+
     return merged
 
 
