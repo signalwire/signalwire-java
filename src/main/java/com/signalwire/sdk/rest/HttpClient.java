@@ -49,6 +49,7 @@ public class HttpClient {
         this.authHeader = "Basic " + Base64.getEncoder().encodeToString(
                 credentials.getBytes(StandardCharsets.UTF_8));
         this.httpClient = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .connectTimeout(DEFAULT_TIMEOUT)
                 .build();
     }
@@ -74,6 +75,7 @@ public class HttpClient {
         this.authHeader = "Basic " + Base64.getEncoder().encodeToString(
                 credentials.getBytes(StandardCharsets.UTF_8));
         this.httpClient = java.net.http.HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .connectTimeout(DEFAULT_TIMEOUT)
                 .build();
     }

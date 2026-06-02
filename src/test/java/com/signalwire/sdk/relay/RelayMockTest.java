@@ -100,6 +100,7 @@ public final class RelayMockTest {
             this.wsPort = wsPort;
             this.httpPort = httpPort;
             this.http = java.net.http.HttpClient.newBuilder()
+                    .version(java.net.http.HttpClient.Version.HTTP_1_1)
                     .connectTimeout(HTTP_TIMEOUT)
                     .build();
         }
@@ -494,6 +495,7 @@ public final class RelayMockTest {
             String httpBase = "http://127.0.0.1:" + httpPort;
             String wsBase = "ws://127.0.0.1:" + wsPort;
             java.net.http.HttpClient probeClient = java.net.http.HttpClient.newBuilder()
+                    .version(java.net.http.HttpClient.Version.HTTP_1_1)
                     .connectTimeout(Duration.ofSeconds(2))
                     .build();
             if (probeHealth(probeClient, httpBase)) {

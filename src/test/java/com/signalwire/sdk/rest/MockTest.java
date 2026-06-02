@@ -104,6 +104,7 @@ public final class MockTest {
             this.url = url;
             this.port = port;
             this.http = java.net.http.HttpClient.newBuilder()
+                    .version(java.net.http.HttpClient.Version.HTTP_1_1)
                     .connectTimeout(HTTP_TIMEOUT)
                     .build();
         }
@@ -308,6 +309,7 @@ public final class MockTest {
             int port = resolvePort();
             String base = "http://127.0.0.1:" + port;
             java.net.http.HttpClient probeClient = java.net.http.HttpClient.newBuilder()
+                    .version(java.net.http.HttpClient.Version.HTTP_1_1)
                     .connectTimeout(Duration.ofSeconds(2))
                     .build();
             if (probeHealth(probeClient, base)) {
