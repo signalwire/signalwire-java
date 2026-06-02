@@ -961,7 +961,6 @@ signalwire.skills.web_search.skill.GoogleSearchScraper.search_and_scrape_best: J
 signalwire.skills.web_search.skill.GoogleSearchScraper.search_google: Java ships a lighter web-search skill; Python's scraper variant classes are Python-specific
 signalwire.skills.web_search.skill.WebSearchSkill.get_hints: Java ships a lighter web-search skill; Python's scraper variant classes are Python-specific
 signalwire.skills.web_search.skill.WebSearchSkill.get_instance_key: Java ships a lighter web-search skill; Python's scraper variant classes are Python-specific
-signalwire.skills.web_search.skill.WebSearchSkill.get_parameter_schema: Java ships a lighter web-search skill; Python's scraper variant classes are Python-specific
 signalwire.skills.web_search.skill_improved.GoogleSearchScraper: Python internal experiment; not a public API
 signalwire.skills.web_search.skill_improved.GoogleSearchScraper.__init__: Python internal experiment; not a public API
 signalwire.skills.web_search.skill_improved.GoogleSearchScraper.extract_text_from_url: Python internal experiment; not a public API

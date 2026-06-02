@@ -18581,6 +18581,15 @@
               ],
               "returns": "string"
             },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_prompt_sections": {
               "params": [
                 {
