@@ -650,6 +650,302 @@ public class Call {
         return playAndCollect(media, collectConfig, mapOf("control_id", controlId));
     }
 
+    // ── Typed play convenience (thin wrappers over play) ──────────────
+    //
+    // These mirror Python's call.play_tts(...) / play_audio(...) etc.: they
+    // build the RELAY media shape ({type, params}) so callers don't hand-roll
+    // it, then delegate to play(). Media-level options (language/gender/voice
+    // for TTS, duration for ringtone) and the play-level "volume" both ride in
+    // the trailing options map — the Java convention for Python kwargs.
+
+    /**
+     * Play text-to-speech. Typed convenience over {@link #play}.
+     * <p>
+     * Builds {@code [{type:"tts", params:{text, language?, gender?, voice?}}]}.
+     * Recognised option keys: {@code language}, {@code gender}, {@code voice}
+     * (folded into the tts params) and {@code volume} (passed to play).
+     *
+     * @param text the text to speak
+     * @param options optional language/gender/voice/volume
+     * @return a PlayAction
+     */
+    public Action.PlayAction playTts(String text, Map<String, Object> options) {
+        Map<String, Object> ttsParams = new LinkedHashMap<>();
+        ttsParams.put("text", text);
+        copyIfPresent(options, ttsParams, "language");
+        copyIfPresent(options, ttsParams, "gender");
+        copyIfPresent(options, ttsParams, "voice");
+        return play(ttsMedia(ttsParams), playOptionsFrom(options));
+    }
+
+    /**
+     * Play text-to-speech with default options.
+     */
+    public Action.PlayAction playTts(String text) {
+        return playTts(text, null);
+    }
+
+    /**
+     * Play an audio file from a URL. Typed convenience over {@link #play}.
+     * <p>
+     * Builds {@code [{type:"audio", params:{url}}]}. Recognised option key:
+     * {@code volume} (passed to play).
+     *
+     * @param url the audio file URL
+     * @param options optional volume
+     * @return a PlayAction
+     */
+    public Action.PlayAction playAudio(String url, Map<String, Object> options) {
+        List<Map<String, Object>> media = mediaOf("audio", mapOf("url", url));
+        return play(media, playOptionsFrom(options));
+    }
+
+    /**
+     * Play an audio file from a URL with default options.
+     */
+    public Action.PlayAction playAudio(String url) {
+        return playAudio(url, null);
+    }
+
+    /**
+     * Play silence for {@code duration} seconds. Typed convenience over
+     * {@link #play}.
+     * <p>
+     * Builds {@code [{type:"silence", params:{duration}}]}.
+     *
+     * @param duration silence duration in seconds
+     * @return a PlayAction
+     */
+    public Action.PlayAction playSilence(double duration) {
+        List<Map<String, Object>> media = mediaOf("silence", mapOf("duration", duration));
+        return play(media);
+    }
+
+    /**
+     * Play a named ringtone by country code. Typed convenience over
+     * {@link #play}.
+     * <p>
+     * Builds {@code [{type:"ringtone", params:{name, duration?}}]}. Recognised
+     * option keys: {@code duration} (folded into the ringtone params) and
+     * {@code volume} (passed to play).
+     *
+     * @param name the ringtone country-code name
+     * @param options optional duration/volume
+     * @return a PlayAction
+     */
+    public Action.PlayAction playRingtone(String name, Map<String, Object> options) {
+        Map<String, Object> rtParams = new LinkedHashMap<>();
+        rtParams.put("name", name);
+        copyIfPresent(options, rtParams, "duration");
+        return play(mediaOf("ringtone", rtParams), playOptionsFrom(options));
+    }
+
+    /**
+     * Play a named ringtone with default options.
+     */
+    public Action.PlayAction playRingtone(String name) {
+        return playRingtone(name, null);
+    }
+
+    // ── Typed detect convenience (thin wrappers over detect) ──────────
+    //
+    // These mirror Python's call.detect_digit(...) / detect_answering_machine
+    // (...) / detect_fax(...): they build the RELAY detect shape
+    // ({type, params}) and delegate to detect(). Detect-payload options are
+    // folded into params; "timeout" rides as a detect-level option.
+
+    /**
+     * Detect DTMF digits. Typed convenience over {@link #detect}.
+     * <p>
+     * Builds {@code {type:"digit", params:{digits?}}}. Recognised option keys:
+     * {@code digits} (folded into the detect params) and {@code timeout}
+     * (passed to detect).
+     *
+     * @param options optional digits/timeout
+     * @return a DetectAction
+     */
+    public Action.DetectAction detectDigit(Map<String, Object> options) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        copyIfPresent(options, params, "digits");
+        return detect(detectConfig("digit", params), detectOptionsFrom(options));
+    }
+
+    /**
+     * Detect DTMF digits with default options.
+     */
+    public Action.DetectAction detectDigit() {
+        return detectDigit(null);
+    }
+
+    /**
+     * Detect human vs answering machine (AMD). Typed convenience over
+     * {@link #detect}.
+     * <p>
+     * Builds {@code {type:"machine", params:{...only-provided...}}}. Recognised
+     * option keys (all folded into the machine params): {@code initial_timeout},
+     * {@code end_silence_timeout}, {@code machine_voice_threshold},
+     * {@code machine_words_threshold}, {@code detect_interruptions},
+     * {@code detect_message_end}; plus {@code timeout} (passed to detect).
+     *
+     * @param options optional AMD tuning + timeout
+     * @return a DetectAction
+     */
+    public Action.DetectAction detectAnsweringMachine(Map<String, Object> options) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        copyIfPresent(options, params, "initial_timeout");
+        copyIfPresent(options, params, "end_silence_timeout");
+        copyIfPresent(options, params, "machine_voice_threshold");
+        copyIfPresent(options, params, "machine_words_threshold");
+        copyIfPresent(options, params, "detect_interruptions");
+        copyIfPresent(options, params, "detect_message_end");
+        return detect(detectConfig("machine", params), detectOptionsFrom(options));
+    }
+
+    /**
+     * Detect answering machine with default options.
+     */
+    public Action.DetectAction detectAnsweringMachine() {
+        return detectAnsweringMachine(null);
+    }
+
+    /**
+     * Detect a fax tone (CED/CNG). Typed convenience over {@link #detect}.
+     * <p>
+     * Builds {@code {type:"fax", params:{tone?}}}. Recognised option keys:
+     * {@code tone} (folded into the detect params) and {@code timeout}
+     * (passed to detect).
+     *
+     * @param options optional tone/timeout
+     * @return a DetectAction
+     */
+    public Action.DetectAction detectFax(Map<String, Object> options) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        copyIfPresent(options, params, "tone");
+        return detect(detectConfig("fax", params), detectOptionsFrom(options));
+    }
+
+    /**
+     * Detect a fax tone with default options.
+     */
+    public Action.DetectAction detectFax() {
+        return detectFax(null);
+    }
+
+    // ── Typed prompt convenience (thin wrappers over playAndCollect) ──
+    //
+    // These mirror Python's call.prompt_tts(...) / prompt_audio(...): they
+    // build the play-media shape and delegate to playAndCollect() with the
+    // caller-supplied collect config. "volume" rides as a play-level option.
+
+    /**
+     * Play TTS then collect input. Typed media over {@link #playAndCollect}.
+     * <p>
+     * Builds {@code [{type:"tts", params:{text, language?, gender?, voice?}}]}
+     * as the play media. Recognised option keys: {@code language},
+     * {@code gender}, {@code voice} (folded into the tts params) and
+     * {@code volume} (passed to playAndCollect).
+     *
+     * @param text the text to speak
+     * @param collectConfig the collect configuration
+     * @param options optional language/gender/voice/volume
+     * @return a PlayAndCollectAction
+     */
+    public Action.PlayAndCollectAction promptTts(
+            String text, Map<String, Object> collectConfig, Map<String, Object> options) {
+        Map<String, Object> ttsParams = new LinkedHashMap<>();
+        ttsParams.put("text", text);
+        copyIfPresent(options, ttsParams, "language");
+        copyIfPresent(options, ttsParams, "gender");
+        copyIfPresent(options, ttsParams, "voice");
+        return playAndCollect(ttsMedia(ttsParams), collectConfig, playOptionsFrom(options));
+    }
+
+    /**
+     * Play TTS then collect input, with default options.
+     */
+    public Action.PlayAndCollectAction promptTts(String text, Map<String, Object> collectConfig) {
+        return promptTts(text, collectConfig, null);
+    }
+
+    /**
+     * Play an audio file then collect input. Typed media over
+     * {@link #playAndCollect}.
+     * <p>
+     * Builds {@code [{type:"audio", params:{url}}]} as the play media.
+     * Recognised option key: {@code volume} (passed to playAndCollect).
+     *
+     * @param url the audio file URL
+     * @param collectConfig the collect configuration
+     * @param options optional volume
+     * @return a PlayAndCollectAction
+     */
+    public Action.PlayAndCollectAction promptAudio(
+            String url, Map<String, Object> collectConfig, Map<String, Object> options) {
+        List<Map<String, Object>> media = mediaOf("audio", mapOf("url", url));
+        return playAndCollect(media, collectConfig, playOptionsFrom(options));
+    }
+
+    /**
+     * Play an audio file then collect input, with default options.
+     */
+    public Action.PlayAndCollectAction promptAudio(String url, Map<String, Object> collectConfig) {
+        return promptAudio(url, collectConfig, null);
+    }
+
+    // ── Typed-convenience helpers ─────────────────────────────────────
+
+    /** Build a single-element play-media list of the given type+params. */
+    private static List<Map<String, Object>> mediaOf(String type, Map<String, Object> params) {
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("type", type);
+        entry.put("params", params);
+        List<Map<String, Object>> media = new ArrayList<>();
+        media.add(entry);
+        return media;
+    }
+
+    /** Build a single-element TTS play-media list from pre-built tts params. */
+    private static List<Map<String, Object>> ttsMedia(Map<String, Object> ttsParams) {
+        return mediaOf("tts", ttsParams);
+    }
+
+    /** Build a detect config object {type, params}. */
+    private static Map<String, Object> detectConfig(String type, Map<String, Object> params) {
+        Map<String, Object> cfg = new LinkedHashMap<>();
+        cfg.put("type", type);
+        cfg.put("params", params);
+        return cfg;
+    }
+
+    /** Copy {@code key} from src to dst iff present and non-null. */
+    private static void copyIfPresent(Map<String, Object> src, Map<String, Object> dst, String key) {
+        if (src != null && src.get(key) != null) {
+            dst.put(key, src.get(key));
+        }
+    }
+
+    /**
+     * Extract the play-level options (just {@code volume}) from a convenience
+     * options map, returning null when there is nothing to pass.
+     */
+    private static Map<String, Object> playOptionsFrom(Map<String, Object> options) {
+        if (options == null || options.get("volume") == null) {
+            return null;
+        }
+        return mapOf("volume", options.get("volume"));
+    }
+
+    /**
+     * Extract the detect-level options (just {@code timeout}) from a
+     * convenience options map, returning null when there is nothing to pass.
+     */
+    private static Map<String, Object> detectOptionsFrom(Map<String, Object> options) {
+        if (options == null || options.get("timeout") == null) {
+            return null;
+        }
+        return mapOf("timeout", options.get("timeout"));
+    }
+
     /**
      * Process payment via DTMF.
      *

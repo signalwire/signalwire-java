@@ -6731,6 +6731,33 @@
               ],
               "returns": "class:signalwire.relay.call.Action"
             },
+            "detect_answering_machine": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "detect_digit": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "detect_fax": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
             "detect_with": {
               "params": [
                 {
@@ -7049,7 +7076,101 @@
                   "required": true
                 },
                 {
-                  "name": "options",
+                  "name": "control_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "play_audio": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "play_ringtone": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "play_silence": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "duration",
+                  "type": "float",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "play_tts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "prompt_audio": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "collect_config",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.call.Action"
+            },
+            "prompt_tts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "collect_config",
                   "type": "dict<string,any>",
                   "required": true
                 }
@@ -7101,8 +7222,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7336,8 +7457,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
