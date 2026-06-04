@@ -27,6 +27,7 @@ signalwire.agent.agent_base_builder.AgentBaseBuilder.record_format: Java builder
 signalwire.agent.agent_base_builder.AgentBaseBuilder.record_stereo: Java builder pattern — public constructor is package-private, initialization goes through AgentBase.builder()
 signalwire.agent.agent_base_builder.AgentBaseBuilder.route: Java builder pattern — public constructor is package-private, initialization goes through AgentBase.builder()
 signalwire.agent.agent_base_dynamic_config_callback.AgentBaseDynamicConfigCallback: Java functional interface for AgentBase.setDynamicConfigCallback (Python uses bare callables)
+signalwire.agent_server.AgentServer.enable_tls: Java explicit-cert HTTPS option (cert/key PEM paths) for serving over the JDK HttpsServer; parallels Python's SWMLService.serve(ssl_cert=, ssl_key=) and takes precedence over the SWML_SSL_* env vars that Python's AgentServer.run() reads
 signalwire.agent_server.AgentServer.get_routes: Java accessor exposing the registered-agent route list for diagnostics
 signalwire.agent_server.AgentServer.get_sip_route: Java accessor exposing the registered SIP route for diagnostics
 signalwire.agent_server.AgentServer.register_sip_route: Java's split of Python's setup_sip_routing into explicit per-username registration

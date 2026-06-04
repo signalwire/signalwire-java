@@ -317,6 +317,25 @@
               ],
               "returns": "void"
             },
+            "enable_tls": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "cert_path",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "key_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agent_server.AgentServer"
+            },
             "get_agent": {
               "params": [
                 {
@@ -353,6 +372,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "is_tls_enabled": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
             },
             "register": {
               "params": [

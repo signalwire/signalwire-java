@@ -7,7 +7,11 @@ import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,7 +21,13 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyFactory;
+import java.security.KeyStore;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -39,6 +49,14 @@ public class AgentServer {
     private String staticFilesDir;
     private String staticFilesRoute;
     private HttpServer httpServer;
+
+    // HTTPS configuration. Mirrors Python's AgentServer.run(): SSL is driven by
+    // the SWML_SSL_ENABLED / SWML_SSL_CERT_PATH / SWML_SSL_KEY_PATH environment
+    // variables, with an explicit cert/key option (enableTls) taking
+    // precedence. When a cert+key resolve, run() serves over the JDK's
+    // com.sun.net.httpserver.HttpsServer instead of the plain HttpServer.
+    private String sslCertPath;
+    private String sslKeyPath;
 
     public AgentServer() {
         this("0.0.0.0", resolvePort());
@@ -141,6 +159,134 @@ public class AgentServer {
     }
 
     // ============================================================
+    // HTTPS / TLS
+    // ============================================================
+
+    /**
+     * Serve over HTTPS using an explicit PEM certificate chain and PKCS#8
+     * private key. This is the explicit-cert option that parallels Python's
+     * {@code SWMLService.serve(ssl_cert=..., ssl_key=...)}; it takes
+     * precedence over the {@code SWML_SSL_*} environment variables.
+     *
+     * <p>{@code certPath} must be a PEM file containing the leaf (and any
+     * intermediate) certificates; {@code keyPath} must be the matching
+     * unencrypted PKCS#8 private key in PEM form. When both resolve at
+     * {@link #run()} time the server binds a
+     * {@link com.sun.net.httpserver.HttpsServer}.
+     *
+     * @param certPath filesystem path to the PEM certificate file
+     * @param keyPath  filesystem path to the PEM PKCS#8 private-key file
+     */
+    public AgentServer enableTls(String certPath, String keyPath) {
+        this.sslCertPath = certPath;
+        this.sslKeyPath = keyPath;
+        return this;
+    }
+
+    /**
+     * Reports whether the server will serve HTTPS, resolving the explicit
+     * cert/key option and then the {@code SWML_SSL_*} environment variables
+     * the same way {@link #run()} does. A configured cert/key must both point
+     * at existing files for TLS to be considered enabled.
+     */
+    public boolean isTlsEnabled() {
+        String[] resolved = resolveTls();
+        return resolved != null;
+    }
+
+    /**
+     * Resolves the effective cert/key pair from the explicit option first,
+     * then the SWML_SSL_* environment variables, returning {@code [cert, key]}
+     * when both exist on disk, or {@code null} when TLS is not configured.
+     * Mirrors the validation Python's AgentServer.run() performs (a configured
+     * path that doesn't exist disables SSL rather than crashing the server).
+     */
+    private String[] resolveTls() {
+        String cert = sslCertPath;
+        String key = sslKeyPath;
+        if (cert == null || key == null) {
+            String enabledEnv = System.getenv("SWML_SSL_ENABLED");
+            boolean envEnabled = enabledEnv != null
+                    && switch (enabledEnv.toLowerCase(Locale.ROOT)) {
+                        case "true", "1", "yes" -> true;
+                        default -> false;
+                    };
+            if (envEnabled) {
+                cert = System.getenv("SWML_SSL_CERT_PATH");
+                key = System.getenv("SWML_SSL_KEY_PATH");
+            }
+        }
+        if (cert == null || key == null) {
+            return null;
+        }
+        if (!Files.exists(Path.of(cert))) {
+            log.warn("SSL cert not found: %s", cert);
+            return null;
+        }
+        if (!Files.exists(Path.of(key))) {
+            log.warn("SSL key not found: %s", key);
+            return null;
+        }
+        return new String[] {cert, key};
+    }
+
+    /**
+     * Builds an {@link SSLContext} from a PEM certificate chain and an
+     * unencrypted PKCS#8 PEM private key, loading them into an in-memory
+     * keystore so the JDK HttpsServer can present the leaf cert. Kept package
+     * self-contained: no third-party crypto, only {@code javax.net.ssl} +
+     * {@code java.security}.
+     */
+    private static SSLContext sslContextFromPem(String certPath, String keyPath) throws IOException {
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            List<Certificate> chain;
+            try (InputStream in = Files.newInputStream(Path.of(certPath))) {
+                chain = new ArrayList<>(cf.generateCertificates(in));
+            }
+            if (chain.isEmpty()) {
+                throw new IOException("no certificates found in " + certPath);
+            }
+
+            PrivateKey privateKey = parsePkcs8(Files.readString(Path.of(keyPath)));
+
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, null);
+            char[] pw = new char[0];
+            ks.setKeyEntry("server", privateKey, pw, chain.toArray(new Certificate[0]));
+
+            KeyManagerFactory kmf =
+                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, pw);
+
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(kmf.getKeyManagers(), null, null);
+            return ctx;
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException("failed to build SSLContext from " + certPath + " / " + keyPath, e);
+        }
+    }
+
+    /** Decode a PEM PKCS#8 private key ("-----BEGIN PRIVATE KEY-----"). */
+    private static PrivateKey parsePkcs8(String pem) throws Exception {
+        String base64 = pem
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replace("-----END PRIVATE KEY-----", "")
+                .replaceAll("\\s", "");
+        byte[] der = Base64.getDecoder().decode(base64);
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
+        // gen_certs.sh emits RSA keys; PKCS#8 carries the algorithm OID so we
+        // try RSA first and fall back to EC for forward-compatibility.
+        try {
+            return KeyFactory.getInstance("RSA").generatePrivate(spec);
+        } catch (Exception rsaFailure) {
+            return KeyFactory.getInstance("EC").generatePrivate(spec);
+        }
+    }
+
+    // ============================================================
     // SIP Routing
     // ============================================================
 
@@ -167,7 +313,21 @@ public class AgentServer {
      * Start the multi-agent server.
      */
     public void run() throws IOException {
-        httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
+        InetSocketAddress address = new InetSocketAddress(host, port);
+        String[] tls = resolveTls();
+        if (tls != null) {
+            // HTTPS: bind the JDK's HttpsServer and hand it an SSLContext built
+            // from the configured cert/key (mirrors Python passing
+            // ssl_certfile/ssl_keyfile to uvicorn). Same routing/handlers as
+            // the plain path — only the listener's transport changes.
+            HttpsServer httpsServer = HttpsServer.create(address, 0);
+            httpsServer.setHttpsConfigurator(
+                    new HttpsConfigurator(sslContextFromPem(tls[0], tls[1])));
+            httpServer = httpsServer;
+            log.info("AgentServer TLS enabled (cert: %s)", tls[0]);
+        } else {
+            httpServer = HttpServer.create(address, 0);
+        }
         httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 
         // Health endpoint
@@ -202,7 +362,8 @@ public class AgentServer {
         httpServer.createContext("/", this::handleRequest);
 
         httpServer.start();
-        log.info("AgentServer listening on %s:%d with %d agent(s)", host, port, agents.size());
+        String scheme = (tls != null) ? "https" : "http";
+        log.info("AgentServer listening on %s://%s:%d with %d agent(s)", scheme, host, port, agents.size());
         for (Map.Entry<String, AgentBase> entry : agents.entrySet()) {
             log.info("  Route: %s -> Agent: %s", entry.getKey(), entry.getValue().getName());
         }
