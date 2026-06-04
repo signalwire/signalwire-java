@@ -7,6 +7,7 @@
 package com.signalwire.sdk.swaig;
 
 import com.google.gson.Gson;
+import com.signalwire.sdk.swml.RecordFormat;
 
 import java.util.*;
 
@@ -287,6 +288,17 @@ public class FunctionResult {
                 "version", "1.0.0",
                 "sections", Map.of("main", List.of(Map.of("record_call", recordParams)))
         ), false);
+    }
+
+    /**
+     * Typed overload of {@link #recordCall(String, boolean, String, String)}.
+     * Accepts a {@link RecordFormat} so a misspelled container format fails at
+     * compile time instead of being rejected by the server. Delegates to the
+     * string path via {@link RecordFormat#getValue()}, so the SWML
+     * {@code record_call} payload is identical.
+     */
+    public FunctionResult recordCall(String controlId, boolean stereo, RecordFormat format, String direction) {
+        return recordCall(controlId, stereo, format != null ? format.getValue() : null, direction);
     }
 
     public FunctionResult recordCall() {

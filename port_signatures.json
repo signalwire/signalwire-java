@@ -2890,8 +2890,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "text",
-                  "type": "string",
+                  "name": "summary",
+                  "type": "bool",
                   "required": true
                 }
               ],
@@ -19132,6 +19132,49 @@
                 }
               ],
               "returns": "class:signalwire.core.function_result.FunctionResult"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swml.record_format": {
+      "classes": {
+        "RecordFormat": {
+          "methods": {
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "mp3": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordFormat"
+            },
+            "mp4": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordFormat"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.RecordFormat"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.swml.RecordFormat>"
+            },
+            "wav": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordFormat"
             }
           }
         }

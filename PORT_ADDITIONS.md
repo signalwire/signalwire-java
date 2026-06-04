@@ -926,6 +926,13 @@ signalwire.swml.document.Document.render: idiomatic Java surface extension (buil
 signalwire.swml.document.Document.render_pretty: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.document.Document.reset: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.document.Document.to_dict: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.swml.record_format.RecordFormat: java_enum_idiom: typed closed-set enum of the call-recording container formats (mp3/wav/mp4); FunctionResult.recordCall and the AgentBase builder's recordFormat have a RecordFormat overload alongside the String one so a misspelled format is typo-checked at compile time. Python has no such class (uses bare str); String is kept for parity.
+signalwire.swml.record_format.RecordFormat.get_value: java_enum_idiom: accessor returning the constant's canonical wire string (Java analog of PHP backed-enum ->value); the overloads delegate through it so enum and String emit the identical record_call payload.
+signalwire.swml.record_format.RecordFormat.mp3: java_enum_idiom: RecordFormat closed-set enum constant; the recordCall/recordFormat overloads take RecordFormat alongside String so a built-in format is typo-checked at compile time, with String kept for parity (Python uses bare str). Constant value is the canonical wire string, so behavior is identical.
+signalwire.swml.record_format.RecordFormat.mp4: java_enum_idiom: RecordFormat closed-set enum constant (see RecordFormat.mp3).
+signalwire.swml.record_format.RecordFormat.value_of: java_enum_idiom: Java enum auto-method (valueOf) on the RecordFormat closed-set enum (see RecordFormat.mp3).
+signalwire.swml.record_format.RecordFormat.values: java_enum_idiom: Java enum auto-method (values) on the RecordFormat closed-set enum (see RecordFormat.mp3).
+signalwire.swml.record_format.RecordFormat.wav: java_enum_idiom: RecordFormat closed-set enum constant (see RecordFormat.mp3).
 signalwire.swml.schema.Schema: Java's swml.Schema is a singleton sidecar with verb-introspection helpers (getInstance/getVerb/etc.); Python's reference puts the equivalent surface under utils.schema_utils.SchemaUtils
 signalwire.swml.schema.Schema.get_instance: Java's swml.Schema is a singleton sidecar with verb-introspection helpers (getInstance/getVerb/etc.); Python's reference puts the equivalent surface under utils.schema_utils.SchemaUtils
 signalwire.swml.schema.Schema.get_verb: Java's swml.Schema is a singleton sidecar with verb-introspection helpers (getInstance/getVerb/etc.); Python's reference puts the equivalent surface under utils.schema_utils.SchemaUtils

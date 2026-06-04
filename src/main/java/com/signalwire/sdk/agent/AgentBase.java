@@ -17,6 +17,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import com.signalwire.sdk.swaig.ToolHandler;
 import com.signalwire.sdk.swml.Document;
+import com.signalwire.sdk.swml.RecordFormat;
 import com.signalwire.sdk.swml.Service;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -189,6 +190,13 @@ public class AgentBase extends Service {
         public Builder maxDuration(int maxDuration) { this.maxDuration = maxDuration; return this; }
         public Builder recordCall(boolean recordCall) { this.recordCall = recordCall; return this; }
         public Builder recordFormat(String format) { this.recordFormat = format; return this; }
+        /**
+         * Typed overload of {@link #recordFormat(String)}. Accepts a
+         * {@link RecordFormat} so a misspelled container format fails at compile
+         * time instead of being rejected by the server. Delegates to the string
+         * path via {@link RecordFormat#getValue()}, so wire behavior is identical.
+         */
+        public Builder recordFormat(RecordFormat format) { return recordFormat(format.getValue()); }
         public Builder recordStereo(boolean stereo) { this.recordStereo = stereo; return this; }
         public Builder authUser(String user) { this.authUser = user; return this; }
         public Builder authPassword(String password) { this.authPassword = password; return this; }
