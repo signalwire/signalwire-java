@@ -3,6 +3,7 @@ package com.signalwire.sdk;
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.skills.SkillManager;
+import com.signalwire.sdk.skills.SkillName;
 import com.signalwire.sdk.skills.SkillRegistry;
 import com.signalwire.sdk.skills.builtin.*;
 import com.signalwire.sdk.swaig.ToolDefinition;
@@ -243,6 +244,35 @@ class SkillsTest {
         // Should not throw, just log error
         agent.addSkill("nonexistent_skill", Map.of());
         assertFalse(agent.hasSkill("nonexistent_skill"));
+    }
+
+    @Test
+    void testAddSkillAcceptsSkillNameEnumOrString() {
+        // The enum constant's value is the canonical wire string.
+        assertEquals("datetime", SkillName.DATETIME.getValue());
+
+        // addSkill() via the typed enum loads the IDENTICAL skill as the bare
+        // string: the real datetime tools register, and hasSkill()/removeSkill()
+        // accept the enum too (no mocks — real SkillManager + SkillRegistry).
+        agent.addSkill(SkillName.DATETIME, Map.of());
+        assertTrue(agent.hasSkill("datetime"));            // string lookup
+        assertTrue(agent.hasSkill(SkillName.DATETIME));    // enum lookup — same skill
+        assertTrue(agent.hasTool("get_current_time"));     // real skill actually loaded
+        assertTrue(agent.hasTool("get_current_date"));
+
+        agent.removeSkill(SkillName.DATETIME);             // remove via the enum
+        assertFalse(agent.hasSkill("datetime"));
+        assertFalse(agent.hasSkill(SkillName.DATETIME));
+
+        // Parity: the bare string still works identically (Python uses str).
+        AgentBase stringAgent = AgentBase.builder()
+                .name("skillname-string-agent")
+                .authUser("user")
+                .authPassword("pass")
+                .build();
+        stringAgent.addSkill("datetime", Map.of());
+        assertTrue(stringAgent.hasSkill(SkillName.DATETIME));
+        assertTrue(stringAgent.hasTool("get_current_time"));
     }
 
     // ======== Info Gatherer Skill Tests ========

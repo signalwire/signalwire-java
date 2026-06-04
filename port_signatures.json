@@ -3995,7 +3995,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 },
                 {
@@ -4037,7 +4037,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 }
               ],
@@ -18448,6 +18448,109 @@
                 }
               ],
               "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.skills.skill_name": {
+      "classes": {
+        "SkillName": {
+          "methods": {
+            "api_ninjas_trivia": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "claude_skills": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "custom_skills": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "datasphere": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "datasphere_serverless": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "datetime": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "google_maps": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "info_gatherer": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "joke": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "math": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "mcp_gateway": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "native_vector_search": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "play_background_file": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "spider": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "swml_transfer": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.skills.SkillName>"
+            },
+            "weather_api": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "web_search": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "wikipedia_search": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
             }
           }
         }

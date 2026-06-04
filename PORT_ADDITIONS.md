@@ -852,6 +852,28 @@ signalwire.skills.registry.SkillRegistry.has: idiomatic Java surface extension (
 signalwire.skills.registry.SkillRegistry.list: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.skills.registry.SkillRegistry.register: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.skills.registry.SkillRegistry.unregister: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.skills.skill_name.SkillName: java_enum_idiom: typed closed-set enum of the 18 built-in skill names; addSkill/removeSkill/hasSkill have a SkillName overload alongside the String one so a built-in name is typo-checked at compile time. Python has no such class (uses bare str); String is kept for parity + custom skills.
+signalwire.skills.skill_name.SkillName.api_ninjas_trivia: java_enum_idiom: SkillName closed-set enum constant; addSkill/removeSkill/hasSkill have a SkillName overload alongside the String one so a built-in skill name is typo-checked at compile time, with String kept for parity (Python uses bare str) and custom skills. Constant value is the canonical wire string, so behavior is identical.
+signalwire.skills.skill_name.SkillName.claude_skills: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.custom_skills: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.datasphere: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.datasphere_serverless: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.datetime: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.get_value: java_enum_idiom: accessor returning the constant's canonical wire string (Java analog of PHP backed-enum ->value); the overloads delegate through it so enum and String load the identical skill.
+signalwire.skills.skill_name.SkillName.google_maps: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.info_gatherer: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.joke: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.math: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.mcp_gateway: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.native_vector_search: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.play_background_file: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.spider: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.swml_transfer: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.value_of: java_enum_idiom: Java enum auto-method (valueOf) on the SkillName closed-set enum (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.values: java_enum_idiom: Java enum auto-method (values) on the SkillName closed-set enum (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.weather_api: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.web_search: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
+signalwire.skills.skill_name.SkillName.wikipedia_search: java_enum_idiom: SkillName closed-set enum constant (see SkillName.api_ninjas_trivia).
 signalwire.skills.spider.skill.SpiderSkill.get_description: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.skills.spider.skill.SpiderSkill.get_name: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.skills.spider.skill.SpiderSkill.register_tools: Java skill exposes registerTools() as the typed entry point its SkillBase parent invokes; Python's SkillBase delegates this through a callable hook with a different name in the reference

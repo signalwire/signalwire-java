@@ -12,6 +12,7 @@ import com.signalwire.sdk.runtime.LambdaUrlResolver;
 import com.signalwire.sdk.security.SessionManager;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.skills.SkillManager;
+import com.signalwire.sdk.skills.SkillName;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import com.signalwire.sdk.swaig.ToolHandler;
@@ -1033,9 +1034,24 @@ public class AgentBase extends Service {
         return this;
     }
 
+    /**
+     * Typed overload of {@link #addSkill(String, Map)}. Accepts a built-in
+     * {@link SkillName} so a misspelled skill fails at compile time instead of
+     * silently no-op-ing on the server. Delegates to the string path via
+     * {@link SkillName#getValue()}, so wire behavior is identical.
+     */
+    public AgentBase addSkill(SkillName skillName, Map<String, Object> params) {
+        return addSkill(skillName.getValue(), params);
+    }
+
     public AgentBase removeSkill(String skillName) {
         skillManager.removeSkill(skillName);
         return this;
+    }
+
+    /** Typed overload of {@link #removeSkill(String)} (see {@link #addSkill(SkillName, Map)}). */
+    public AgentBase removeSkill(SkillName skillName) {
+        return removeSkill(skillName.getValue());
     }
 
     public List<String> listSkills() {
@@ -1044,6 +1060,11 @@ public class AgentBase extends Service {
 
     public boolean hasSkill(String skillName) {
         return skillManager.hasSkill(skillName);
+    }
+
+    /** Typed overload of {@link #hasSkill(String)} (see {@link #addSkill(SkillName, Map)}). */
+    public boolean hasSkill(SkillName skillName) {
+        return hasSkill(skillName.getValue());
     }
 
     // ============================================================
