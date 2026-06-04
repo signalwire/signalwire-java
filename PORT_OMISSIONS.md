@@ -819,7 +819,6 @@ signalwire.rest.namespaces.video.VideoStreams: Java exposes the Video API throug
 signalwire.rest.namespaces.video.VideoStreams.delete: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource
 signalwire.rest.namespaces.video.VideoStreams.get: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource
 signalwire.rest.namespaces.video.VideoStreams.update: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource
-signalwire.run_agent: Python top-level helper; Java users call AgentBase.run() on their built agent
 signalwire.search.document_processor.DocumentProcessor: search subsystem (local/pgvector document search) not ported — Java apps delegate search to managed services or an external Elasticsearch/Postgres setup
 signalwire.search.document_processor.DocumentProcessor.__init__: search subsystem (local/pgvector document search) not ported — Java apps delegate search to managed services or an external Elasticsearch/Postgres setup
 signalwire.search.document_processor.DocumentProcessor.create_chunks: search subsystem (local/pgvector document search) not ported — Java apps delegate search to managed services or an external Elasticsearch/Postgres setup
@@ -992,7 +991,6 @@ signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_hints: Java sh
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_parameter_schema: Java ships a leaner skill class with the same public surface; helper methods from Python's skill modules are inlined
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.get_prompt_sections: Java ships a leaner skill class with the same public surface; helper methods from Python's skill modules are inlined
 signalwire.skills.wikipedia_search.skill.WikipediaSearchSkill.search_wiki: Java ships a leaner skill class with the same public surface; helper methods from Python's skill modules are inlined
-signalwire.start_agent: Python top-level helper; Java users call AgentBase.run() or AgentServer.register() + run()
 signalwire.utils.is_serverless_mode: Python helper; Java uses ExecutionMode.isServerless() on the injected ExecutionMode instance
 signalwire.utils.schema_utils.SchemaUtils: Python's schema utils include load/validate helpers used by the SWMLService; Java does schema loading inline in Document/Schema
 signalwire.utils.schema_utils.SchemaUtils.__init__: Python's schema utils include load/validate helpers used by the SWMLService; Java does schema loading inline in Document/Schema
