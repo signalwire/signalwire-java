@@ -274,20 +274,74 @@ public class FunctionResult {
     }
 
     /**
-     * Start background call recording via SWML.
+     * Start background call recording via SWML — full parity with the Python
+     * reference {@code signalwire.core.function_result.FunctionResult.record_call}.
+     * <p>
+     * Validates {@code format} ∈ {wav, mp3, mp4} and {@code direction} ∈
+     * {speak, listen, both} with byte-exact Python {@code ValueError} messages.
+     * The reference ALWAYS emits {@code stereo}, {@code format}, {@code direction},
+     * {@code beep} and {@code input_sensitivity}; {@code control_id},
+     * {@code terminators}, {@code initial_timeout}, {@code end_silence_timeout},
+     * {@code max_length} and {@code status_url} are emitted only when supplied.
+     *
+     * @param controlId          recording identifier (pairs with stopRecordCall; {@code null} to omit)
+     * @param stereo             record in stereo (default {@code false})
+     * @param format             "wav", "mp3" or "mp4" (default "wav")
+     * @param direction          "speak", "listen" or "both" (default "both")
+     * @param terminators        digits that stop recording ({@code null} to omit)
+     * @param beep               play a beep before recording (default {@code false}; ALWAYS emitted)
+     * @param inputSensitivity   input sensitivity (default 44.0; ALWAYS emitted)
+     * @param initialTimeout     seconds to wait for speech start ({@code null} to omit)
+     * @param endSilenceTimeout  seconds of trailing silence before ending ({@code null} to omit)
+     * @param maxLength          maximum recording length in seconds ({@code null} to omit)
+     * @param statusUrl          URL for recording status events ({@code null} to omit)
+     * @return this, for chaining
+     * @throws IllegalArgumentException if format or direction is invalid
      */
-    public FunctionResult recordCall(String controlId, boolean stereo, String format, String direction) {
+    public FunctionResult recordCall(String controlId, boolean stereo, String format, String direction,
+                                     String terminators, boolean beep, double inputSensitivity,
+                                     Double initialTimeout, Double endSilenceTimeout, Double maxLength,
+                                     String statusUrl) {
+        String fmt = format != null ? format : "wav";
+        String dir = direction != null ? direction : "both";
+        // Validate format. Matches the SWML record_call verb schema
+        // ($defs/RecordCall.format = {wav, mp3, mp4}).
+        if (!List.of("wav", "mp3", "mp4").contains(fmt)) {
+            throw new IllegalArgumentException("format must be 'wav', 'mp3', or 'mp4'");
+        }
+        // Validate direction.
+        if (!List.of("speak", "listen", "both").contains(dir)) {
+            throw new IllegalArgumentException("direction must be 'speak', 'listen', or 'both'");
+        }
+
         Map<String, Object> recordParams = new LinkedHashMap<>();
         recordParams.put("stereo", stereo);
-        recordParams.put("format", format != null ? format : "wav");
-        recordParams.put("direction", direction != null ? direction : "both");
-        if (controlId != null && !controlId.isEmpty()) {
-            recordParams.put("control_id", controlId);
-        }
+        recordParams.put("format", fmt);
+        recordParams.put("direction", dir);
+        recordParams.put("beep", beep);
+        recordParams.put("input_sensitivity", inputSensitivity);
+        if (controlId != null && !controlId.isEmpty()) recordParams.put("control_id", controlId);
+        if (terminators != null && !terminators.isEmpty()) recordParams.put("terminators", terminators);
+        if (initialTimeout != null) recordParams.put("initial_timeout", initialTimeout);
+        if (endSilenceTimeout != null) recordParams.put("end_silence_timeout", endSilenceTimeout);
+        if (maxLength != null) recordParams.put("max_length", maxLength);
+        if (statusUrl != null && !statusUrl.isEmpty()) recordParams.put("status_url", statusUrl);
         return executeSwml(Map.of(
                 "version", "1.0.0",
                 "sections", Map.of("main", List.of(Map.of("record_call", recordParams)))
         ), false);
+    }
+
+    /**
+     * Start background call recording (convenience form). Delegates to the
+     * full-arity
+     * {@link #recordCall(String, boolean, String, String, String, boolean, double, Double, Double, Double, String)}
+     * with {@code beep}=false, {@code input_sensitivity}=44.0 and the trailing
+     * options at their reference defaults — so the emitted SWML always carries
+     * the always-on {@code beep}/{@code input_sensitivity} keys.
+     */
+    public FunctionResult recordCall(String controlId, boolean stereo, String format, String direction) {
+        return recordCall(controlId, stereo, format, direction, null, false, 44.0, null, null, null, null);
     }
 
     /**
@@ -565,18 +619,65 @@ public class FunctionResult {
     }
 
     /**
-     * Start call tap.
+     * Start a background call tap via SWML — full parity with the Python
+     * reference {@code signalwire.core.function_result.FunctionResult.tap}.
+     * <p>
+     * Validates {@code direction} ∈ {speak, hear, both}, {@code codec} ∈
+     * {PCMU, PCMA}, and {@code rtp_ptime > 0} with byte-exact Python
+     * {@code ValueError} messages (rendered through
+     * {@link IllegalArgumentException}). Only {@code uri} is always emitted;
+     * each other key is emitted only when it differs from its reference
+     * default ({@code direction != "both"}, {@code codec != "PCMU"},
+     * {@code rtp_ptime != 20}), plus {@code control_id} and {@code status_url}
+     * when supplied.
+     *
+     * @param uri        tap media-stream destination (required; rtp://, ws://, wss://)
+     * @param controlId  tap identifier ({@code null} for an auto-generated one)
+     * @param direction  "speak", "hear" or "both" (default "both")
+     * @param codec      "PCMU" or "PCMA" (default "PCMU")
+     * @param rtpPtime   RTP packetization time in ms, &gt; 0 (default 20)
+     * @param statusUrl  URL for status-change requests ({@code null} to omit)
+     * @return this, for chaining
+     * @throws IllegalArgumentException if direction, codec or rtp_ptime is invalid
      */
-    public FunctionResult tap(String uri, String controlId, String direction, String codec) {
+    public FunctionResult tap(String uri, String controlId, String direction, String codec,
+                              int rtpPtime, String statusUrl) {
+        // Validate direction. Error strings mirror Python's f-string list
+        // rendering (single-quoted members) so a ported substring match passes.
+        List<String> validDirections = List.of("speak", "hear", "both");
+        if (!validDirections.contains(direction)) {
+            throw new IllegalArgumentException("direction must be one of ['speak', 'hear', 'both']");
+        }
+        // Validate codec.
+        List<String> validCodecs = List.of("PCMU", "PCMA");
+        if (!validCodecs.contains(codec)) {
+            throw new IllegalArgumentException("codec must be one of ['PCMU', 'PCMA']");
+        }
+        // Validate rtp_ptime.
+        if (rtpPtime <= 0) {
+            throw new IllegalArgumentException("rtp_ptime must be a positive integer");
+        }
+
         Map<String, Object> tapParams = new LinkedHashMap<>();
         tapParams.put("uri", uri);
         if (controlId != null && !controlId.isEmpty()) tapParams.put("control_id", controlId);
-        if (direction != null && !direction.equals("both")) tapParams.put("direction", direction);
-        if (codec != null && !codec.equals("PCMU")) tapParams.put("codec", codec);
+        if (!"both".equals(direction)) tapParams.put("direction", direction);
+        if (!"PCMU".equals(codec)) tapParams.put("codec", codec);
+        if (rtpPtime != 20) tapParams.put("rtp_ptime", rtpPtime);
+        if (statusUrl != null && !statusUrl.isEmpty()) tapParams.put("status_url", statusUrl);
         return executeSwml(Map.of(
                 "version", "1.0.0",
                 "sections", Map.of("main", List.of(Map.of("tap", tapParams)))
         ), false);
+    }
+
+    /**
+     * Start a call tap (convenience form). Delegates to the full-arity
+     * {@link #tap(String, String, String, String, int, String)} with
+     * {@code rtp_ptime} at its reference default (20) and no {@code status_url}.
+     */
+    public FunctionResult tap(String uri, String controlId, String direction, String codec) {
+        return tap(uri, controlId, direction, codec, 20, null);
     }
 
     /**
@@ -598,10 +699,23 @@ public class FunctionResult {
     }
 
     /**
-     * Send SMS via SWML.
+     * Send SMS via SWML — full parity with the Python reference
+     * {@code signalwire.core.function_result.FunctionResult.send_sms}.
+     * Either {@code body} or {@code media} must be supplied. {@code to_number}
+     * and {@code from_number} are always emitted; {@code body}, {@code media},
+     * {@code tags} and {@code region} are emitted only when supplied.
+     *
+     * @param toNumber   E.164 destination (required)
+     * @param fromNumber E.164 origin (required)
+     * @param body       message body ({@code null} if media supplied)
+     * @param media      media URLs ({@code null} if body supplied)
+     * @param tags       tags for UI search ({@code null} to omit)
+     * @param region     region to originate the message from ({@code null} to omit)
+     * @return this, for chaining
+     * @throws IllegalArgumentException if neither body nor media is provided
      */
     public FunctionResult sendSms(String toNumber, String fromNumber, String body,
-                                  List<String> media, List<String> tags) {
+                                  List<String> media, List<String> tags, String region) {
         if ((body == null || body.isEmpty()) && (media == null || media.isEmpty())) {
             throw new IllegalArgumentException("Either body or media must be provided");
         }
@@ -611,6 +725,7 @@ public class FunctionResult {
         if (body != null && !body.isEmpty()) smsParams.put("body", body);
         if (media != null && !media.isEmpty()) smsParams.put("media", media);
         if (tags != null && !tags.isEmpty()) smsParams.put("tags", tags);
+        if (region != null && !region.isEmpty()) smsParams.put("region", region);
         return executeSwml(Map.of(
                 "version", "1.0.0",
                 "sections", Map.of("main", List.of(Map.of("send_sms", smsParams)))
@@ -618,26 +733,120 @@ public class FunctionResult {
     }
 
     /**
-     * Process payment via SWML pay action.
+     * Send SMS (convenience form). Delegates to the full-arity
+     * {@link #sendSms(String, String, String, List, List, String)} with no
+     * {@code region}.
+     */
+    public FunctionResult sendSms(String toNumber, String fromNumber, String body,
+                                  List<String> media, List<String> tags) {
+        return sendSms(toNumber, fromNumber, body, media, tags, null);
+    }
+
+    /**
+     * Default {@code ai_response} for {@link #pay}. Set as a {@code set}
+     * verb ahead of the {@code pay} verb so the AI relays the payment
+     * outcome via the {@code ${pay_result}} variable. Caller-overridable
+     * through the full-arity {@code pay(...)} overload.
+     */
+    public static final String DEFAULT_PAY_AI_RESPONSE =
+            "The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.";
+
+    /**
+     * Process payment via SWML pay action — full parity with the Python
+     * reference {@code signalwire.core.function_result.FunctionResult.pay}.
+     * <p>
+     * Every optional parameter the reference exposes is a positional argument
+     * here, in the same order, with the same default and the same emitted
+     * wire key. The reference ALWAYS emits {@code payment_connector_url},
+     * {@code input}, {@code payment_method}, {@code timeout}, {@code max_attempts},
+     * {@code security_code}, {@code min_postal_code_length}, {@code token_type},
+     * {@code currency}, {@code language}, {@code voice}, {@code valid_card_types}
+     * and {@code postal_code}; {@code status_url}, {@code charge_amount},
+     * {@code description}, {@code parameters} and {@code prompts} are emitted
+     * only when supplied. Numeric values are stringified to match Python's
+     * {@code str(...)}. A {@code set} verb carrying {@code ai_response} is
+     * emitted before the {@code pay} verb.
+     *
+     * @param connectorUrl        payment connector URL (required)
+     * @param inputMethod         "dtmf" (the SWML schema is {@code const:"dtmf"}; default "dtmf")
+     * @param statusUrl           URL for status-change notifications ({@code null} to omit)
+     * @param paymentMethod       payment method (default "credit-card")
+     * @param timeout             seconds to wait for next digit (default 5)
+     * @param maxAttempts         retry attempts (default 1)
+     * @param securityCode        prompt for the security code (default {@code true})
+     * @param postalCode          prompt for postal code ({@link Boolean}) or the literal postcode ({@link String}); default {@code Boolean.TRUE}
+     * @param minPostalCodeLength minimum postal-code digits (default 0)
+     * @param tokenType           "one-time" or "reusable" (default "reusable")
+     * @param chargeAmount        amount to charge, decimal string ({@code null} to omit)
+     * @param currency            currency code (default "usd")
+     * @param language            prompt language (default "en-US")
+     * @param voice               TTS voice (default "woman")
+     * @param description         custom payment description ({@code null} to omit)
+     * @param validCardTypes      space-separated card types (default "visa mastercard amex")
+     * @param parameters          name/value pairs for the connector ({@code null} to omit)
+     * @param prompts             custom prompt configurations ({@code null} to omit)
+     * @param aiResponse          {@code ai_response} text for the leading {@code set} verb (default {@link #DEFAULT_PAY_AI_RESPONSE})
+     * @return this, for chaining
      */
     public FunctionResult pay(String connectorUrl, String inputMethod, String statusUrl,
-                              int timeout, int maxAttempts) {
+                              String paymentMethod, int timeout, int maxAttempts,
+                              boolean securityCode, Object postalCode, int minPostalCodeLength,
+                              String tokenType, String chargeAmount, String currency,
+                              String language, String voice, String description,
+                              String validCardTypes, List<Map<String, String>> parameters,
+                              List<Map<String, Object>> prompts, String aiResponse) {
         Map<String, Object> payParams = new LinkedHashMap<>();
         payParams.put("payment_connector_url", connectorUrl);
         payParams.put("input", inputMethod != null ? inputMethod : "dtmf");
+        payParams.put("payment_method", paymentMethod != null ? paymentMethod : "credit-card");
         payParams.put("timeout", String.valueOf(timeout));
         payParams.put("max_attempts", String.valueOf(maxAttempts));
-        if (statusUrl != null && !statusUrl.isEmpty()) {
-            payParams.put("status_url", statusUrl);
+        payParams.put("security_code", String.valueOf(securityCode).toLowerCase());
+        payParams.put("min_postal_code_length", String.valueOf(minPostalCodeLength));
+        payParams.put("token_type", tokenType != null ? tokenType : "reusable");
+        payParams.put("currency", currency != null ? currency : "usd");
+        payParams.put("language", language != null ? language : "en-US");
+        payParams.put("voice", voice != null ? voice : "woman");
+        payParams.put("valid_card_types", validCardTypes != null ? validCardTypes : "visa mastercard amex");
+
+        // postal_code: boolean -> "true"/"false"; otherwise the literal postcode string.
+        if (postalCode instanceof Boolean b) {
+            payParams.put("postal_code", String.valueOf(b).toLowerCase());
+        } else if (postalCode != null) {
+            payParams.put("postal_code", postalCode);
+        } else {
+            // Reference default is True.
+            payParams.put("postal_code", "true");
         }
-        return executeSwml(Map.of(
-                "version", "1.0.0",
-                "sections", Map.of("main", List.of(
-                        Map.of("set", Map.of("ai_response",
-                                "The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.")),
-                        Map.of("pay", payParams)
-                ))
-        ), false);
+
+        // Optional params — emitted only when supplied (truthy in Python).
+        if (statusUrl != null && !statusUrl.isEmpty()) payParams.put("status_url", statusUrl);
+        if (chargeAmount != null && !chargeAmount.isEmpty()) payParams.put("charge_amount", chargeAmount);
+        if (description != null && !description.isEmpty()) payParams.put("description", description);
+        if (parameters != null && !parameters.isEmpty()) payParams.put("parameters", parameters);
+        if (prompts != null && !prompts.isEmpty()) payParams.put("prompts", prompts);
+
+        String aiResp = aiResponse != null ? aiResponse : DEFAULT_PAY_AI_RESPONSE;
+        Map<String, Object> swmlDoc = new LinkedHashMap<>();
+        swmlDoc.put("version", "1.0.0");
+        swmlDoc.put("sections", Map.of("main", List.of(
+                Collections.singletonMap("set", Collections.singletonMap("ai_response", aiResp)),
+                Collections.singletonMap("pay", payParams)
+        )));
+        return executeSwml(swmlDoc, false);
+    }
+
+    /**
+     * Process payment (convenience form). Delegates to the full-arity
+     * {@link #pay(String, String, String, String, int, int, boolean, Object, int, String, String, String, String, String, String, String, List, List, String)}
+     * with every other option at its reference default, so the emitted SWML
+     * is identical to the reference with those defaults.
+     */
+    public FunctionResult pay(String connectorUrl, String inputMethod, String statusUrl,
+                              int timeout, int maxAttempts) {
+        return pay(connectorUrl, inputMethod, statusUrl, "credit-card", timeout, maxAttempts,
+                true, Boolean.TRUE, 0, "reusable", null, "usd", "en-US", "woman", null,
+                "visa mastercard amex", null, null, DEFAULT_PAY_AI_RESPONSE);
     }
 
     // ======== RPC Actions ========
@@ -663,12 +872,22 @@ public class FunctionResult {
     }
 
     /**
-     * Dial out to a number with a destination SWML URL.
+     * Dial out to a number with a destination SWML URL — full parity with the
+     * Python reference {@code FunctionResult.rpc_dial}. {@code deviceType}
+     * flows through to {@code params.devices.type} (Python defaults "phone")
+     * instead of being hard-coded.
+     *
+     * @param toNumber   E.164 number to dial (required)
+     * @param fromNumber E.164 caller ID (required)
+     * @param destSwml   URL to the SWML handling the outbound leg (required)
+     * @param deviceType device type for the dial (default "phone")
+     * @return this, for chaining
      */
-    public FunctionResult rpcDial(String toNumber, String fromNumber, String destSwml) {
+    public FunctionResult rpcDial(String toNumber, String fromNumber, String destSwml,
+                                  String deviceType) {
         return executeRpc("dial", Map.of(
                 "devices", Map.of(
-                        "type", "phone",
+                        "type", deviceType != null ? deviceType : "phone",
                         "params", Map.of("to_number", toNumber, "from_number", fromNumber)
                 ),
                 "dest_swml", destSwml
@@ -676,12 +895,38 @@ public class FunctionResult {
     }
 
     /**
-     * Inject a message into an AI agent on another call.
+     * Dial out (convenience form). Delegates to the full-arity
+     * {@link #rpcDial(String, String, String, String)} with
+     * {@code device_type} at its reference default ("phone").
+     */
+    public FunctionResult rpcDial(String toNumber, String fromNumber, String destSwml) {
+        return rpcDial(toNumber, fromNumber, destSwml, "phone");
+    }
+
+    /**
+     * Inject a message into an AI agent on another call — full parity with the
+     * Python reference {@code FunctionResult.rpc_ai_message}. {@code role}
+     * flows through to {@code params.role} (Python defaults "system") instead
+     * of being hard-coded.
+     *
+     * @param callId      target call ID (required)
+     * @param messageText message text to inject (required)
+     * @param role        message role (default "system")
+     * @return this, for chaining
+     */
+    public FunctionResult rpcAiMessage(String callId, String messageText, String role) {
+        return executeRpc("ai_message",
+                Map.of("role", role != null ? role : "system", "message_text", messageText),
+                callId, null);
+    }
+
+    /**
+     * Inject a message (convenience form). Delegates to the full-arity
+     * {@link #rpcAiMessage(String, String, String)} with {@code role} at its
+     * reference default ("system").
      */
     public FunctionResult rpcAiMessage(String callId, String messageText) {
-        return executeRpc("ai_message",
-                Map.of("role", "system", "message_text", messageText),
-                callId, null);
+        return rpcAiMessage(callId, messageText, "system");
     }
 
     /**

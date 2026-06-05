@@ -8,6 +8,7 @@ package com.signalwire.sdk;
 
 import com.google.gson.Gson;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swml.RecordFormat;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -322,14 +323,121 @@ class FunctionResultTest {
         assertEquals(true, result.getActions().get(0).get("stop_playback_bg"));
     }
 
-    @Test
-    void testRecordCall() {
-        var result = new FunctionResult("Recording")
-                .recordCall("ctrl-1", true, "mp3", "both");
+    // ---- record_call: parity with Python tests/unit/core TestRecordCall ----
+    // Each test pairs the behavioral call with an assertion on the emitted
+    // SWML record_call verb (no mocks). The reference ALWAYS emits stereo /
+    // format / direction / beep / input_sensitivity, validates format and
+    // direction, and emits the 6 optional keys only when supplied.
 
-        var actions = result.getActions();
-        assertEquals(1, actions.size());
-        assertTrue(actions.get(0).containsKey("SWML"));
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> swmlVerb(FunctionResult result, String verbName) {
+        var action = result.getActions().get(0);
+        var swml = (Map<String, Object>) action.get("SWML");
+        var sections = (Map<String, Object>) swml.get("sections");
+        var main = (List<Map<String, Object>>) sections.get("main");
+        for (var item : main) {
+            if (item.containsKey(verbName)) {
+                return (Map<String, Object>) item.get(verbName);
+            }
+        }
+        throw new AssertionError("verb '" + verbName + "' not found in SWML main");
+    }
+
+    @Test
+    void testRecordCallDefaultParams() {
+        // Parity: test_record_call_default_params. All-default call still emits
+        // stereo/format/direction/beep/input_sensitivity; no control_id.
+        var rec = swmlVerb(new FunctionResult().recordCall(), "record_call");
+        assertEquals(false, rec.get("stereo"));
+        assertEquals("wav", rec.get("format"));
+        assertEquals("both", rec.get("direction"));
+        assertEquals(false, rec.get("beep"));
+        assertEquals(44.0, rec.get("input_sensitivity"));
+        assertFalse(rec.containsKey("control_id"));
+    }
+
+    @Test
+    void testRecordCallCustomParams() {
+        // Parity: test_record_call_custom_params. Every param surfaces with its
+        // snake_case wire key.
+        var rec = swmlVerb(new FunctionResult().recordCall(
+                "rec-1", true, "mp3", "speak", "#", true, 50.0,
+                10.0, 5.0, 600.0, "https://example.com/rec-status"), "record_call");
+        assertEquals("rec-1", rec.get("control_id"));
+        assertEquals(true, rec.get("stereo"));
+        assertEquals("mp3", rec.get("format"));
+        assertEquals("speak", rec.get("direction"));
+        assertEquals("#", rec.get("terminators"));
+        assertEquals(true, rec.get("beep"));
+        assertEquals(50.0, rec.get("input_sensitivity"));
+        assertEquals(10.0, rec.get("initial_timeout"));
+        assertEquals(5.0, rec.get("end_silence_timeout"));
+        assertEquals(600.0, rec.get("max_length"));
+        assertEquals("https://example.com/rec-status", rec.get("status_url"));
+    }
+
+    @Test
+    void testRecordCallOptionalsOmittedByDefault() {
+        // The 6 optional keys must be absent when not supplied (beep /
+        // input_sensitivity are NOT optional — they are always emitted).
+        var rec = swmlVerb(new FunctionResult().recordCall(), "record_call");
+        assertFalse(rec.containsKey("control_id"));
+        assertFalse(rec.containsKey("terminators"));
+        assertFalse(rec.containsKey("initial_timeout"));
+        assertFalse(rec.containsKey("end_silence_timeout"));
+        assertFalse(rec.containsKey("max_length"));
+        assertFalse(rec.containsKey("status_url"));
+    }
+
+    @Test
+    void testRecordCallInvalidFormat() {
+        // Parity: test_record_call_invalid_format. Byte-exact Python message.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().recordCall(null, false, "ogg", "both"));
+        assertTrue(ex.getMessage().contains("format must be 'wav', 'mp3', or 'mp4'"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testRecordCallFormatMp4() {
+        // Parity: test_record_call_format_mp4. mp4 is accepted.
+        var rec = swmlVerb(new FunctionResult().recordCall(null, false, "mp4", "both"),
+                "record_call");
+        assertEquals("mp4", rec.get("format"));
+    }
+
+    @Test
+    void testRecordCallInvalidDirection() {
+        // Parity: test_record_call_invalid_direction. Byte-exact Python message.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().recordCall(null, false, "wav", "left"));
+        assertTrue(ex.getMessage().contains("direction must be 'speak', 'listen', or 'both'"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testRecordCallDirectionListen() {
+        // Parity: test_record_call_direction_listen.
+        var rec = swmlVerb(new FunctionResult().recordCall(null, false, "wav", "listen"),
+                "record_call");
+        assertEquals("listen", rec.get("direction"));
+    }
+
+    @Test
+    void testRecordCallChaining() {
+        // Parity: test_record_call_chaining.
+        var result = new FunctionResult();
+        assertSame(result, result.recordCall());
+    }
+
+    @Test
+    void testRecordCallTypedFormatOverload() {
+        // The RecordFormat-typed overload emits the identical wire format.
+        var rec = swmlVerb(new FunctionResult().recordCall("c", true, RecordFormat.MP3, "both"),
+                "record_call");
+        assertEquals("mp3", rec.get("format"));
+        assertEquals(false, rec.get("beep"));
+        assertEquals(44.0, rec.get("input_sensitivity"));
     }
 
     @Test
@@ -337,9 +445,14 @@ class FunctionResultTest {
         var result = new FunctionResult("Stopped")
                 .stopRecordCall("ctrl-1");
 
-        var actions = result.getActions();
-        assertEquals(1, actions.size());
-        assertTrue(actions.get(0).containsKey("SWML"));
+        var stop = swmlVerb(result, "stop_record_call");
+        assertEquals("ctrl-1", stop.get("control_id"));
+    }
+
+    @Test
+    void testStopRecordCallWithoutControlId() {
+        var stop = swmlVerb(new FunctionResult().stopRecordCall(), "stop_record_call");
+        assertTrue(stop.isEmpty());
     }
 
     // ======== Speech & AI Configuration ========
@@ -674,76 +787,332 @@ class FunctionResultTest {
         assertTrue(result.getActions().get(0).containsKey("SWML"));
     }
 
-    @Test
-    void testTap() {
-        var result = new FunctionResult("test")
-                .tap("wss://example.com", "ctrl-1", "both", "PCMU");
+    // ---- tap: parity with Python tests/unit/core TestTap ----
+    // Only uri is always emitted; direction/codec/rtp_ptime are emitted only
+    // when non-default; direction/codec/rtp_ptime are validated.
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+    @Test
+    void testTapDefaultParams() {
+        // Parity: test_tap_default_params. Default params are absent.
+        var tap = swmlVerb(new FunctionResult().tap("rtp://192.168.1.1:5000", null, "both", "PCMU"),
+                "tap");
+        assertEquals("rtp://192.168.1.1:5000", tap.get("uri"));
+        assertFalse(tap.containsKey("direction"));
+        assertFalse(tap.containsKey("codec"));
+        assertFalse(tap.containsKey("rtp_ptime"));
+    }
+
+    @Test
+    void testTapCustomParams() {
+        // Parity: test_tap_custom_params. All custom params surface.
+        var tap = swmlVerb(new FunctionResult().tap(
+                "ws://example.com/tap", "my-tap-1", "speak", "PCMA", 30,
+                "https://example.com/status"), "tap");
+        assertEquals("ws://example.com/tap", tap.get("uri"));
+        assertEquals("my-tap-1", tap.get("control_id"));
+        assertEquals("speak", tap.get("direction"));
+        assertEquals("PCMA", tap.get("codec"));
+        assertEquals(30, tap.get("rtp_ptime"));
+        assertEquals("https://example.com/status", tap.get("status_url"));
+    }
+
+    @Test
+    void testTapInvalidDirection() {
+        // Parity: test_tap_invalid_direction.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().tap("rtp://1.2.3.4:5000", null, "invalid", "PCMU"));
+        assertTrue(ex.getMessage().contains("direction must be one of"), ex.getMessage());
+    }
+
+    @Test
+    void testTapInvalidCodec() {
+        // Parity: test_tap_invalid_codec. G729 is a RELAY codec, not a SWAIG tap codec.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().tap("rtp://1.2.3.4:5000", null, "both", "G729"));
+        assertTrue(ex.getMessage().contains("codec must be one of"), ex.getMessage());
+    }
+
+    @Test
+    void testTapInvalidRtpPtime() {
+        // Parity: test_tap_invalid_rtp_ptime (rtp_ptime=0).
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().tap("rtp://1.2.3.4:5000", null, "both", "PCMU", 0, null));
+        assertTrue(ex.getMessage().contains("rtp_ptime must be a positive integer"), ex.getMessage());
+    }
+
+    @Test
+    void testTapNegativeRtpPtime() {
+        // Parity: test_tap_negative_rtp_ptime (rtp_ptime=-10).
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().tap("rtp://1.2.3.4:5000", null, "both", "PCMU", -10, null));
+        assertTrue(ex.getMessage().contains("rtp_ptime must be a positive integer"), ex.getMessage());
+    }
+
+    @Test
+    void testTapDirectionHear() {
+        // Parity: test_tap_direction_hear.
+        var tap = swmlVerb(new FunctionResult().tap("rtp://1.2.3.4:5000", null, "hear", "PCMU"),
+                "tap");
+        assertEquals("hear", tap.get("direction"));
+    }
+
+    @Test
+    void testTapChaining() {
+        // Parity: test_tap_chaining.
+        var result = new FunctionResult();
+        assertSame(result, result.tap("rtp://1.2.3.4:5000", null, "both", "PCMU"));
     }
 
     @Test
     void testStopTap() {
-        var result = new FunctionResult("test")
-                .stopTap("ctrl-1");
-
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var stop = swmlVerb(new FunctionResult().stopTap("ctrl-1"), "stop_tap");
+        assertEquals("ctrl-1", stop.get("control_id"));
     }
 
     @Test
-    void testSendSms() {
-        var result = new FunctionResult("SMS sent")
-                .sendSms("+15551234567", "+15559876543", "Hello!", null, null);
+    void testStopTapWithoutControlId() {
+        var stop = swmlVerb(new FunctionResult().stopTap(), "stop_tap");
+        assertTrue(stop.isEmpty());
+    }
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+    // ---- send_sms: parity with Python tests/unit/core TestSendSms ----
+
+    @Test
+    void testSendSmsWithBody() {
+        // Parity: test_send_sms_with_body.
+        var sms = swmlVerb(new FunctionResult().sendSms(
+                "+15551234567", "+15559876543", "Hello from AI", null, null), "send_sms");
+        assertEquals("+15551234567", sms.get("to_number"));
+        assertEquals("+15559876543", sms.get("from_number"));
+        assertEquals("Hello from AI", sms.get("body"));
+        assertFalse(sms.containsKey("media"));
+    }
+
+    @Test
+    void testSendSmsWithMedia() {
+        // Parity: test_send_sms_with_media.
+        var sms = swmlVerb(new FunctionResult().sendSms(
+                "+15551234567", "+15559876543", null, List.of("https://example.com/image.png"), null),
+                "send_sms");
+        assertFalse(sms.containsKey("body"));
+        assertEquals(List.of("https://example.com/image.png"), sms.get("media"));
     }
 
     @Test
     void testSendSmsRequiresBodyOrMedia() {
-        assertThrows(IllegalArgumentException.class, () ->
-                new FunctionResult("test").sendSms("+15551234567", "+15559876543", null, null, null));
+        // Parity: test_send_sms_missing_both_raises_value_error.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult().sendSms("+15551234567", "+15559876543", null, null, null));
+        assertTrue(ex.getMessage().contains("Either body or media must be provided"), ex.getMessage());
     }
 
     @Test
-    void testPay() {
-        var result = new FunctionResult("Processing payment")
-                .pay("https://connector.example.com", "dtmf", null, 600, 3);
+    void testSendSmsWithTagsAndRegion() {
+        // Parity: test_send_sms_with_tags_and_region. region is the restored param.
+        var sms = swmlVerb(new FunctionResult().sendSms(
+                "+15551234567", "+15559876543", "Tagged message",
+                null, List.of("support", "urgent"), "us-east"), "send_sms");
+        assertEquals(List.of("support", "urgent"), sms.get("tags"));
+        assertEquals("us-east", sms.get("region"));
+    }
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+    @Test
+    void testSendSmsChaining() {
+        // Parity: test_send_sms_chaining.
+        var result = new FunctionResult();
+        assertSame(result, result.sendSms("+1555", "+1556", "hi", null, null));
+    }
+
+    // ---- pay: parity with Python tests/unit/core TestPay ----
+    // The leading set{ai_response} verb plus the always-emitted pay keys; the
+    // 16 restored params; postal_code bool->string; caller-overridable ai_response.
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> paySetVerb(FunctionResult result) {
+        var action = result.getActions().get(0);
+        var swml = (Map<String, Object>) action.get("SWML");
+        var sections = (Map<String, Object>) swml.get("sections");
+        var main = (List<Map<String, Object>>) sections.get("main");
+        return (Map<String, Object>) main.get(0).get("set");
+    }
+
+    @Test
+    void testPayDefaultParams() {
+        // Parity: test_pay_default_params. The convenience 5-arg form leaves
+        // the 14 other params at their reference defaults.
+        var result = new FunctionResult().pay("https://pay.example.com/connector", "dtmf", null, 5, 1);
+        // First main item is set{ai_response}.
+        assertTrue(paySetVerb(result).containsKey("ai_response"));
+        var pay = swmlVerb(result, "pay");
+        assertEquals("https://pay.example.com/connector", pay.get("payment_connector_url"));
+        assertEquals("dtmf", pay.get("input"));
+        assertEquals("credit-card", pay.get("payment_method"));
+        assertEquals("5", pay.get("timeout"));
+        assertEquals("1", pay.get("max_attempts"));
+        assertEquals("true", pay.get("security_code"));
+        assertEquals("true", pay.get("postal_code"));
+        assertEquals("0", pay.get("min_postal_code_length"));
+        assertEquals("reusable", pay.get("token_type"));
+        assertEquals("usd", pay.get("currency"));
+        assertEquals("en-US", pay.get("language"));
+        assertEquals("woman", pay.get("voice"));
+        assertEquals("visa mastercard amex", pay.get("valid_card_types"));
+        // Default ai_response is the reference string.
+        assertEquals(FunctionResult.DEFAULT_PAY_AI_RESPONSE, paySetVerb(result).get("ai_response"));
+    }
+
+    @Test
+    void testPayAllCustomParams() {
+        // Parity: test_pay_all_custom_params. Every restored param round-trips,
+        // numbers stringified, security_code=false, postal_code as a literal
+        // postcode string, ai_response caller-overridden.
+        var result = new FunctionResult().pay(
+                "https://pay.example.com", "voice", "https://status.example.com",
+                "credit-card", 10, 3, false, "90210", 5, "one-time", "49.99",
+                "eur", "fr-FR", "man", "Monthly subscription", "visa amex",
+                null, null, "Payment processed.");
+        var pay = swmlVerb(result, "pay");
+        assertEquals("voice", pay.get("input"));
+        assertEquals("https://status.example.com", pay.get("status_url"));
+        assertEquals("10", pay.get("timeout"));
+        assertEquals("3", pay.get("max_attempts"));
+        assertEquals("false", pay.get("security_code"));
+        assertEquals("90210", pay.get("postal_code"));
+        assertEquals("5", pay.get("min_postal_code_length"));
+        assertEquals("one-time", pay.get("token_type"));
+        assertEquals("49.99", pay.get("charge_amount"));
+        assertEquals("eur", pay.get("currency"));
+        assertEquals("fr-FR", pay.get("language"));
+        assertEquals("man", pay.get("voice"));
+        assertEquals("Monthly subscription", pay.get("description"));
+        assertEquals("visa amex", pay.get("valid_card_types"));
+        assertEquals("Payment processed.", paySetVerb(result).get("ai_response"));
+    }
+
+    @Test
+    void testPayWithPromptsAndParameters() {
+        // Parity: test_pay_with_prompts_and_parameters.
+        var prompts = List.<Map<String, Object>>of(Map.of(
+                "for", "payment-card-number",
+                "actions", List.of(Map.of("type", "Say", "phrase", "Enter card"))));
+        var parameters = List.<Map<String, String>>of(Map.of("name", "store_id", "value", "123"));
+        var result = new FunctionResult().pay(
+                "https://pay.example.com", "dtmf", null, "credit-card", 5, 1, true,
+                Boolean.TRUE, 0, "reusable", null, "usd", "en-US", "woman", null,
+                "visa mastercard amex", parameters, prompts, FunctionResult.DEFAULT_PAY_AI_RESPONSE);
+        var pay = swmlVerb(result, "pay");
+        assertEquals(prompts, pay.get("prompts"));
+        assertEquals(parameters, pay.get("parameters"));
+    }
+
+    @Test
+    void testPayPostalCodeBooleanFalse() {
+        // Parity: test_pay_postal_code_boolean_false. Boolean.FALSE -> "false".
+        var result = new FunctionResult().pay(
+                "https://pay.example.com", "dtmf", null, "credit-card", 5, 1, true,
+                Boolean.FALSE, 0, "reusable", null, "usd", "en-US", "woman", null,
+                "visa mastercard amex", null, null, FunctionResult.DEFAULT_PAY_AI_RESPONSE);
+        assertEquals("false", swmlVerb(result, "pay").get("postal_code"));
+    }
+
+    @Test
+    void testPayOptionalsOmittedByDefault() {
+        // status_url/charge_amount/description/parameters/prompts absent by default.
+        var pay = swmlVerb(new FunctionResult().pay("https://pay.example.com", "dtmf", null, 5, 1),
+                "pay");
+        assertFalse(pay.containsKey("status_url"));
+        assertFalse(pay.containsKey("charge_amount"));
+        assertFalse(pay.containsKey("description"));
+        assertFalse(pay.containsKey("parameters"));
+        assertFalse(pay.containsKey("prompts"));
+    }
+
+    @Test
+    void testPayChaining() {
+        // Parity: test_pay_chaining.
+        var result = new FunctionResult();
+        assertSame(result, result.pay("https://pay.example.com", "dtmf", null, 5, 1));
     }
 
     // ======== RPC Actions ========
 
     @Test
+    @SuppressWarnings("unchecked")
     void testExecuteRpc() {
         var result = new FunctionResult("test")
                 .executeRpc("ai_message", Map.of("role", "system", "message_text", "Hello"));
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var rpc = swmlVerb(result, "execute_rpc");
+        assertEquals("ai_message", rpc.get("method"));
+        var params = (Map<String, Object>) rpc.get("params");
+        assertEquals("system", params.get("role"));
+        assertEquals("Hello", params.get("message_text"));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testRpcDial() {
+        // Parity: test_rpc_dial_basic. device_type defaults to "phone".
         var result = new FunctionResult("Dialing")
-                .rpcDial("+15551234567", "+15559876543", "https://example.com/swml");
+                .rpcDial("+15551234567", "+15559876543", "https://example.com/call-agent");
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var rpc = swmlVerb(result, "execute_rpc");
+        assertEquals("dial", rpc.get("method"));
+        var params = (Map<String, Object>) rpc.get("params");
+        assertEquals("https://example.com/call-agent", params.get("dest_swml"));
+        var devices = (Map<String, Object>) params.get("devices");
+        assertEquals("phone", devices.get("type"));
+        var devParams = (Map<String, Object>) devices.get("params");
+        assertEquals("+15551234567", devParams.get("to_number"));
+        assertEquals("+15559876543", devParams.get("from_number"));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void testRpcDialCustomDeviceType() {
+        // Parity: test_rpc_dial_custom_device_type. device_type is no longer
+        // hard-coded "phone".
+        var result = new FunctionResult().rpcDial(
+                "+15551234567", "+15559876543", "https://example.com/swml", "sip");
+        var params = (Map<String, Object>) swmlVerb(result, "execute_rpc").get("params");
+        var devices = (Map<String, Object>) params.get("devices");
+        assertEquals("sip", devices.get("type"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void testRpcAiMessage() {
+        // Parity: test_rpc_ai_message_basic. role defaults to "system",
+        // call_id is a top-level sibling of params.
         var result = new FunctionResult("Messaging")
-                .rpcAiMessage("call-123", "Please take a message");
+                .rpcAiMessage("call-abc", "Please take a message.");
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var rpc = swmlVerb(result, "execute_rpc");
+        assertEquals("ai_message", rpc.get("method"));
+        assertEquals("call-abc", rpc.get("call_id"));
+        var params = (Map<String, Object>) rpc.get("params");
+        assertEquals("system", params.get("role"));
+        assertEquals("Please take a message.", params.get("message_text"));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void testRpcAiMessageCustomRole() {
+        // Parity: test_rpc_ai_message_custom_role. role is no longer hard-coded.
+        var result = new FunctionResult().rpcAiMessage("call-xyz", "User said hello", "user");
+        var params = (Map<String, Object>) swmlVerb(result, "execute_rpc").get("params");
+        assertEquals("user", params.get("role"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     void testRpcAiUnhold() {
         var result = new FunctionResult("Unholding")
                 .rpcAiUnhold("call-123");
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var rpc = swmlVerb(result, "execute_rpc");
+        assertEquals("ai_unhold", rpc.get("method"));
+        assertEquals("call-123", rpc.get("call_id"));
     }
 
     @Test

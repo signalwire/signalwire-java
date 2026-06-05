@@ -2905,6 +2905,11 @@
                   "required": true
                 },
                 {
+                  "name": "payment_method",
+                  "type": "string",
+                  "required": true
+                },
+                {
                   "name": "timeout",
                   "type": "int",
                   "required": true
@@ -2912,6 +2917,71 @@
                 {
                   "name": "max_attempts",
                   "type": "int",
+                  "required": true
+                },
+                {
+                  "name": "security_code",
+                  "type": "bool",
+                  "required": true
+                },
+                {
+                  "name": "postal_code",
+                  "type": "any",
+                  "required": true
+                },
+                {
+                  "name": "min_postal_code_length",
+                  "type": "int",
+                  "required": true
+                },
+                {
+                  "name": "token_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "charge_amount",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "currency",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "language",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "voice",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "valid_card_types",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "parameters",
+                  "type": "list<dict<string,string>>",
+                  "required": true
+                },
+                {
+                  "name": "prompts",
+                  "type": "list<dict<string,any>>",
+                  "required": true
+                },
+                {
+                  "name": "ai_response",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -2936,6 +3006,61 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "control_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "stereo",
+                  "type": "bool",
+                  "required": true
+                },
+                {
+                  "name": "format",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "direction",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "terminators",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "beep",
+                  "type": "bool",
+                  "required": true
+                },
+                {
+                  "name": "input_sensitivity",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "initial_timeout",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "end_silence_timeout",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "max_length",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "status_url",
+                  "type": "string",
+                  "required": true
                 }
               ],
               "returns": "class:signalwire.core.function_result.FunctionResult"
@@ -2975,8 +3100,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "text",
-                  "type": "string",
+                  "name": "summary",
+                  "type": "bool",
                   "required": true
                 }
               ],
@@ -2995,6 +3120,11 @@
                 },
                 {
                   "name": "message_text",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "role",
                   "type": "string",
                   "required": true
                 }
@@ -3033,6 +3163,11 @@
                 },
                 {
                   "name": "dest_swml",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "device_type",
                   "type": "string",
                   "required": true
                 }
@@ -3082,6 +3217,11 @@
                 {
                   "name": "tags",
                   "type": "list<string>",
+                  "required": true
+                },
+                {
+                  "name": "region",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -3324,6 +3464,16 @@
                 },
                 {
                   "name": "codec",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "rtp_ptime",
+                  "type": "int",
+                  "required": true
+                },
+                {
+                  "name": "status_url",
                   "type": "string",
                   "required": true
                 }

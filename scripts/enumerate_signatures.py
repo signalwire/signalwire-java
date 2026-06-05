@@ -369,6 +369,20 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # the 7 validations. The 1-arg joinConference(name) is only an ergonomic
     # shortcut; the full overload is the parity surface, so emit it.
     ("FunctionResult", "join_conference"),
+    # The remaining FunctionResult SWAIG helpers below each now expose EVERY
+    # Python optional positionally (the behavioral-parity sweep restored the
+    # dropped params + the skipped validations so each emitted action is
+    # byte-identical to Python). The fewer-arg form is just an ergonomic
+    # convenience delegating to the full one; the full overload is the parity
+    # surface, so emit it (and the PORT_SIGNATURE_OMISSIONS entries that
+    # excused the old collapsed shape are removed — these are now drift-0
+    # parity, like join_conference).
+    ("FunctionResult", "pay"),            # +16 params, caller-overridable ai_response
+    ("FunctionResult", "tap"),            # +rtp_ptime/status_url, +direction/codec/rtp_ptime validation
+    ("FunctionResult", "record_call"),    # +5 params, always-emit beep/input_sensitivity, +format/direction validation
+    ("FunctionResult", "send_sms"),       # +region
+    ("FunctionResult", "rpc_dial"),       # +device_type (was hard-coded "phone")
+    ("FunctionResult", "rpc_ai_message"), # +role (was hard-coded "system")
 }
 
 # Java skill class renames to match Python casing
