@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 3266f1725cd23cd5b5c4a369a37e3cd8be06ea05",
+  "generated_from": "signalwire-java @ 3425b4d21240ac62fa521e7cd4c546b942af45fe",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -2290,6 +2290,14 @@
     "signalwire.swml.wire_enum": {
       "classes": {
         "WireEnum": []
+      },
+      "functions": []
+    },
+    "signalwire.tools.emit_corpus": {
+      "classes": {
+        "EmitCorpus": [
+          "main"
+        ]
       },
       "functions": []
     },

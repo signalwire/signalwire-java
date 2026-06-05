@@ -8,8 +8,19 @@
 #   1. ./gradlew --no-daemon test         — language test runner
 #   2. signature regen                    — gradlew build (no test) + python adapter
 #   3. drift gate                         — porting-sdk diff_port_signatures.py
-#   4. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
-#   5. emission gate                      — porting-sdk diff_port_emission.py
+#   4. surface-fresh gate                 — porting-sdk check_surface_freshness.py
+#   5. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
+#   6. emission gate                      — porting-sdk diff_port_emission.py
+#
+# The SURFACE-FRESH gate closes the Layer-B-not-gated hole: the drift gate
+# only polices Layer A (port_signatures.json), so port_surface.json can
+# silently rot when a public symbol is added but only the signature surface
+# is regenerated. It regenerates port_surface.json in place via the Java
+# surface enumerator (reusing the JAR built in gate 2 — though the surface
+# enumerator parses source, not the JAR) and byte-compares it against the
+# committed copy MODULO the volatile generated_from git-sha. Any real
+# symbol/shape divergence fails loudly; the committed working copy is
+# restored afterward so the gate is side-effect free.
 #
 # The Java adapter requires the SDK jar to be rebuilt before reflection
 # can see new methods (per AUDIT_DISCIPLINE.md "Adapter rename tables").
@@ -89,11 +100,41 @@ run_gate "DRIFT" "diff_port_signatures vs python reference" \
         --surface-additions "$PORT_ROOT/PORT_ADDITIONS.md" \
         --omissions "$PORT_ROOT/PORT_SIGNATURE_OMISSIONS.md"
 
-# Gate 4: no-cheat
+# Gate 4: surface-fresh — regenerate port_surface.json in place and confirm it
+# still matches the committed copy (modulo the volatile generated_from sha).
+# Closes the Layer-B-rot hole the signature/drift gates can't see. The surface
+# enumerator writes to stdout, so we redirect it back over the file in place.
+# We snapshot the committed copy (HEAD, falling back to a working-tree cp),
+# regenerate, diff, then restore the working tree unconditionally so the gate
+# leaves no residue regardless of pass/fail.
+surface_fresh_gate() {
+    local committed="/tmp/committed_surface_${PORT_NAME}.$$"
+    git show HEAD:port_surface.json >"$committed" 2>/dev/null \
+        || cp port_surface.json "$committed"
+    # Regenerate in place (JAR already built in gate 2; enumerator parses src).
+    python3 scripts/enumerate_surface.py >port_surface.json
+    local regen_rc=$?
+    if [ "$regen_rc" -ne 0 ]; then
+        git checkout -- port_surface.json 2>/dev/null || true
+        rm -f "$committed"
+        echo "surface regen failed (exit $regen_rc)" >&2
+        return "$regen_rc"
+    fi
+    python3 "$PORTING_SDK_DIR/scripts/check_surface_freshness.py" \
+        --committed "$committed" --fresh port_surface.json
+    local rc=$?
+    git checkout -- port_surface.json 2>/dev/null || true
+    rm -f "$committed"
+    return $rc
+}
+run_gate "SURFACE-FRESH" "check_surface_freshness vs committed port_surface.json" \
+    surface_fresh_gate
+
+# Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
 
-# Gate 5: emission — byte-compare FunctionResult.toMap() vs Python's to_dict()
+# Gate 6: emission — byte-compare FunctionResult.toMap() vs Python's to_dict()
 # across the shared 81-entry corpus (pure serialisation; no mocks/network).
 # --port-repo keeps the gate self-contained regardless of the invoking cwd.
 run_gate "EMISSION" "diff_port_emission vs python oracle" \
