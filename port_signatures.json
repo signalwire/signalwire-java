@@ -3028,12 +3028,12 @@
                 },
                 {
                   "name": "format",
-                  "type": "string",
+                  "type": "class:signalwire.swml.RecordFormat",
                   "required": true
                 },
                 {
                   "name": "direction",
-                  "type": "string",
+                  "type": "class:signalwire.swml.RecordDirection",
                   "required": true
                 },
                 {
@@ -3468,12 +3468,12 @@
                 },
                 {
                   "name": "direction",
-                  "type": "string",
+                  "type": "class:signalwire.swml.TapDirection",
                   "required": true
                 },
                 {
                   "name": "codec",
-                  "type": "string",
+                  "type": "class:signalwire.swml.Codec",
                   "required": true
                 },
                 {

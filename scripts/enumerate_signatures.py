@@ -643,8 +643,23 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             if method_canonical in methods_out:
                 existing = methods_out[method_canonical]
                 if (canonical_name, method_canonical) in PREFER_FULL_OVERLOAD:
-                    if len(sig["params"]) <= len(existing["params"]):
+                    n_new, n_old = len(sig["params"]), len(existing["params"])
+                    if n_new < n_old:
                         continue
+                    if n_new == n_old:
+                        # Same arity (e.g. the all-String full-arity overload vs
+                        # the SAME-arity fully-typed overload that swaps a couple
+                        # closed-set params to enums — record_call format/direction,
+                        # tap direction/codec). Both reach full reference parity;
+                        # break the tie toward the overload that types MORE params
+                        # (more ``class:`` refs) so the knowable closed sets surface
+                        # as the wave-1 ``enum<...>`` contract instead of bare
+                        # ``string``. The String full-arity overload is then just a
+                        # forward-compat escape hatch the Java overload-collapse
+                        # drops (no separate surface entry — same collapse model as
+                        # every other Java overload).
+                        if _typed_param_count(sig) <= _typed_param_count(existing):
+                            continue
                 elif len(sig["params"]) >= len(existing["params"]):
                     continue
             methods_out[method_canonical] = sig
@@ -714,6 +729,19 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
         "generated_from": "signalwire-java JAR via SignatureDump (java.lang.reflect)",
         "modules": sorted_modules,
     }, failures
+
+
+def _typed_param_count(sig: dict) -> int:
+    """Count params whose canonical type names an SDK class/enum (``class:``
+    head), used only as the PREFER_FULL_OVERLOAD same-arity tiebreak so the
+    fully-typed overload (more closed-set enums) wins over the all-String one.
+    Looks inside ``optional<…>`` / ``union<…>`` wrappers too."""
+    n = 0
+    for p in sig.get("params", []):
+        t = p.get("type") or ""
+        if "class:" in t:
+            n += 1
+    return n
 
 
 def build_signature(method: dict, aliases: dict, context: str, mod: str, class_name: str) -> dict:

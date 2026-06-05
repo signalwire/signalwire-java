@@ -336,6 +336,34 @@ public class FunctionResult {
     }
 
     /**
+     * Fully-typed, full-arity overload of
+     * {@link #recordCall(String, boolean, String, String, String, boolean, double, Double, Double, Double, String)}:
+     * the closed-set {@code format} ({@link RecordFormat}) and {@code direction}
+     * ({@link RecordDirection}) are typed so a misspelled container format or
+     * direction fails at compile time instead of being rejected by the server's
+     * {@code ValueError}, while every Python {@code record_call} optional
+     * (terminators / beep / input_sensitivity / initial_timeout /
+     * end_silence_timeout / max_length / status_url) is still exposed
+     * positionally. Delegates to the string path via
+     * {@link RecordFormat#getValue()} / {@link RecordDirection#getValue()}, so
+     * the emitted SWML {@code record_call} payload is byte-identical to the
+     * bare-string call. This is the canonical reference-parity surface; the
+     * all-{@link String} full-arity overload above is the forward-compatible
+     * escape hatch (and the convenience/typed lower-arity overloads below just
+     * delegate here).
+     */
+    public FunctionResult recordCall(String controlId, boolean stereo, RecordFormat format, RecordDirection direction,
+                                     String terminators, boolean beep, double inputSensitivity,
+                                     Double initialTimeout, Double endSilenceTimeout, Double maxLength,
+                                     String statusUrl) {
+        return recordCall(controlId, stereo,
+                format != null ? format.getValue() : null,
+                direction != null ? direction.getValue() : null,
+                terminators, beep, inputSensitivity,
+                initialTimeout, endSilenceTimeout, maxLength, statusUrl);
+    }
+
+    /**
      * Start background call recording (convenience form). Delegates to the
      * full-arity
      * {@link #recordCall(String, boolean, String, String, String, boolean, double, Double, Double, Double, String)}
@@ -698,6 +726,28 @@ public class FunctionResult {
                 "version", "1.0.0",
                 "sections", Map.of("main", List.of(Map.of("tap", tapParams)))
         ), false);
+    }
+
+    /**
+     * Fully-typed, full-arity overload of
+     * {@link #tap(String, String, String, String, int, String)}: the closed-set
+     * {@code direction} ({@link TapDirection}) and {@code codec} ({@link Codec})
+     * are typed so a misspelled direction or codec fails at compile time instead
+     * of being rejected by the server's {@code ValueError}, while the remaining
+     * Python {@code tap} params ({@code rtp_ptime} / {@code status_url}) are
+     * still exposed positionally. Delegates to the string path via
+     * {@link TapDirection#getValue()} / {@link Codec#getValue()}, so the emitted
+     * SWML {@code tap} payload is byte-identical to the bare-string call. This is
+     * the canonical reference-parity surface; the all-{@link String} full-arity
+     * overload above is the forward-compatible escape hatch (and the
+     * convenience/typed lower-arity overloads below just delegate here).
+     */
+    public FunctionResult tap(String uri, String controlId, TapDirection direction, Codec codec,
+                              int rtpPtime, String statusUrl) {
+        return tap(uri, controlId,
+                direction != null ? direction.getValue() : null,
+                codec != null ? codec.getValue() : null,
+                rtpPtime, statusUrl);
     }
 
     /**
