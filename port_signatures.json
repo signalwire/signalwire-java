@@ -20284,6 +20284,24 @@
         }
       }
     },
+    "signalwire.tools.emit_corpus": {
+      "classes": {
+        "EmitCorpus": {
+          "methods": {
+            "main": {
+              "params": [
+                {
+                  "name": "args",
+                  "type": "list<string>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
     "signalwire.utils": {
       "functions": {
         "is_serverless_mode": {

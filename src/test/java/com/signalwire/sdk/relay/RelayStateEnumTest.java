@@ -363,9 +363,16 @@ class RelayStateEnumTest {
         handWritten.put("type", "phone");
         handWritten.put("params", handParams);
 
-        Device device = Device.of("phone", Map.of(
-                "to_number", "+15551112222",
-                "from_number", "+15553334444"));
+        // Feed Device.of an INSERTION-ORDERED map: this test asserts (l.379)
+        // that Device.of/toMap preserves params key order, so the input must
+        // itself have a defined order. Map.of(...) is an unordered immutable
+        // map (hash iteration order), which made device.toMap() come out
+        // [from_number, to_number] and the order assertion fail spuriously —
+        // a test bug, not a Device defect (Device.phone() copies in order).
+        Map<String, Object> inputParams = new LinkedHashMap<>();
+        inputParams.put("to_number", "+15551112222");
+        inputParams.put("from_number", "+15553334444");
+        Device device = Device.of("phone", inputParams);
         Map<String, Object> fromDevice = device.toMap();
 
         // value-equal as maps...

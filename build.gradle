@@ -65,6 +65,21 @@ tasks.register('printRuntimeClasspath') {
     }
 }
 
+// emitCorpus — the Java port's EMISSION-DUMP entry point for the cross-port
+// emission differ (porting-sdk/scripts/diff_port_emission.py). Runs
+// com.signalwire.sdk.tools.EmitCorpus, which builds the shared 81-entry
+// FunctionResult corpus natively and prints one JSON object {id -> emission}
+// to stdout (logs to stderr). Invoke quietly so only that JSON reaches stdout:
+//   ./gradlew --no-daemon -q emitCorpus
+// The differ runs `./gradlew --no-daemon -q emitCorpus` and byte-compares each
+// entry against Python's to_dict(). Mirrors Go's cmd/emit-corpus.
+tasks.register('emitCorpus', JavaExec) {
+    group = 'verification'
+    description = 'Dump the shared FunctionResult emission corpus as JSON (cross-port emission differ).'
+    mainClass = 'com.signalwire.sdk.tools.EmitCorpus'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

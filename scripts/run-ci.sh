@@ -9,9 +9,15 @@
 #   2. signature regen                    — gradlew build (no test) + python adapter
 #   3. drift gate                         — porting-sdk diff_port_signatures.py
 #   4. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
+#   5. emission gate                      — porting-sdk diff_port_emission.py
 #
 # The Java adapter requires the SDK jar to be rebuilt before reflection
 # can see new methods (per AUDIT_DISCIPLINE.md "Adapter rename tables").
+# The emission gate runs the `emitCorpus` Gradle task (com.signalwire.sdk.tools.
+# EmitCorpus) and byte-compares its FunctionResult serialisation against
+# Python's to_dict() over the shared 81-entry corpus — closing the drift-0
+# emission hole the signature/surface gates can't see (IDIOM_PASS_JOURNAL §4
+# Tier-0). It rebuilds in gate 2, so the JAR/classes are current here.
 #
 # Each gate prints `[GATE-NAME] ... PASS` or `[GATE-NAME] ... FAIL: <reason>`
 # Final line: `==> CI PASS` or `==> CI FAIL (gates: <list>)`.
@@ -86,6 +92,13 @@ run_gate "DRIFT" "diff_port_signatures vs python reference" \
 # Gate 4: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
+
+# Gate 5: emission — byte-compare FunctionResult.toMap() vs Python's to_dict()
+# across the shared 81-entry corpus (pure serialisation; no mocks/network).
+# --port-repo keeps the gate self-contained regardless of the invoking cwd.
+run_gate "EMISSION" "diff_port_emission vs python oracle" \
+    python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
+        --port java --port-repo "$PORT_ROOT"
 
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"
