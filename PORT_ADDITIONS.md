@@ -32,6 +32,7 @@ signalwire.agent_server.AgentServer.get_routes: Java accessor exposing the regis
 signalwire.agent_server.AgentServer.get_sip_route: Java accessor exposing the registered SIP route for diagnostics
 signalwire.agent_server.AgentServer.register_sip_route: Java's split of Python's setup_sip_routing into explicit per-username registration
 signalwire.agent_server.AgentServer.set_static_files_dir: Java setter for the static-files directory; Python configures this through AgentServer constructor arguments
+signalwire.agent_server.AgentServer.close: Java AutoCloseable.close() so AgentServer works in try-with-resources; delegates to stop(). Python has no context-manager equivalent on AgentServer (the process is signalled)
 signalwire.agent_server.AgentServer.stop: Java explicit server-stop method; Python's AgentServer stops when its process is signalled
 signalwire.cli.simulation.mock_env.ServerlessSimulator.__init__: Java ServerlessSimulator requires an explicit public constructor for serverless-platform mock setup; Python inlines the construction in argparse-driven CLI entry points
 signalwire.cli.simulation.mock_env.ServerlessSimulator.build_env_provider: Java ServerlessSimulator exposes buildEnvProvider() as a typed factory for the mock env-var provider; Python wires the same behaviour via dict-keyed os.environ patches
@@ -250,6 +251,7 @@ signalwire.relay.call_play_and_collect_action.CallPlayAndCollectAction.volume: J
 signalwire.relay.call_receive_fax_action.CallReceiveFaxAction.__init__: Java exposes a typed Action subclass for the corresponding relay verb; Python represents the same action as a generic class:Action returned from Call.<method>()
 signalwire.relay.call_send_fax_action.CallSendFaxAction.__init__: Java exposes a typed Action subclass for the corresponding relay verb; Python represents the same action as a generic class:Action returned from Call.<method>()
 signalwire.relay.client.RelayClient.builder: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.relay.client.RelayClient.close: Java AutoCloseable.close() so RelayClient works in try-with-resources; delegates to disconnect() (closes the WS + releases the worker pool). Python's parallel is the async-context-manager form; the reference exposes disconnect(), not close()
 signalwire.relay.client.RelayClient.get_authorization_state: Java accessor for the SDK's stored authorization_state blob (used by reconnect-with-protocol tests); Python reads ._authorization_state directly
 signalwire.relay.client.RelayClient.get_contexts: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.client.RelayClient.get_project: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -1007,6 +1009,7 @@ signalwire.swml.service.Service.serve: idiomatic Java surface extension (builder
 signalwire.swml.service.Service.set: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.sip_refer: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.sleep: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.core.swml_service.SWMLService.close: Java AutoCloseable.close() on Service (renamed to SWMLService) so it and every subclass (incl. AgentBase) work in try-with-resources; delegates to stop(). Python's SWMLService exposes stop()/serve() but no close()
 signalwire.swml.service.Service.stop: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.stop_denoise: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.stop_record_call: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python

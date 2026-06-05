@@ -58,12 +58,28 @@ public class Call {
     // ── Getters ──────────────────────────────────────────────────────
 
     public String getCallId() { return callId; }
-    public String getNodeId() { return nodeId; }
     public String getState() { return state; }
-    public String getEndReason() { return endReason; }
-    public String getDirection() { return direction; }
-    public String getTag() { return tag; }
     public Map<String, Object> getDevice() { return device; }
+
+    // ── Optional accessors for nullable scalar state ─────────────────
+    //
+    // node_id / end_reason / direction / tag are only populated once the
+    // server pushes the relevant event (a freshly-created or dial-pending
+    // Call has them null). Exposing them as Optional<String> makes the
+    // "may be absent" contract explicit at the type level — the Java idiom
+    // for a nullable value — instead of leaking a bare null the caller has
+    // to remember to guard. getCallId()/getState() stay non-Optional: the
+    // call id is supplied at construction and state defaults to
+    // CALL_STATE_CREATED, so neither is ever absent.
+
+    /** Node id once the call is bound to a RELAY node; empty until then. */
+    public Optional<String> getNodeId() { return Optional.ofNullable(nodeId); }
+    /** End reason once the call has ended; empty while the call is live. */
+    public Optional<String> getEndReason() { return Optional.ofNullable(endReason); }
+    /** Call direction (inbound/outbound) once known; empty until set. */
+    public Optional<String> getDirection() { return Optional.ofNullable(direction); }
+    /** Dial-correlation tag for outbound calls; empty for inbound. */
+    public Optional<String> getTag() { return Optional.ofNullable(tag); }
 
     public void setNodeId(String nodeId) { this.nodeId = nodeId; }
     public void setState(String state) { this.state = state; }

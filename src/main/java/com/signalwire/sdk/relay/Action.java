@@ -180,7 +180,7 @@ public class Action {
 
         private Map<String, Object> baseParams() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             return params;
@@ -216,7 +216,7 @@ public class Action {
 
         private Map<String, Object> baseParams() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             return params;
@@ -234,7 +234,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_DETECT_STOP, params);
@@ -252,7 +252,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_COLLECT_STOP, params);
@@ -260,7 +260,7 @@ public class Action {
 
         public void startInputTimers() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_COLLECT_START_INPUT_TIMERS, params);
@@ -282,7 +282,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_STOP, params);
@@ -290,7 +290,7 @@ public class Action {
 
         public void volume(double volumeDb) {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             params.put("volume", volumeDb);
@@ -309,7 +309,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_PAY_STOP, params);
@@ -327,7 +327,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_SEND_FAX_STOP, params);
@@ -345,7 +345,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_RECEIVE_FAX_STOP, params);
@@ -368,7 +368,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_TAP_STOP, params);
@@ -391,7 +391,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_STREAM_STOP, params);
@@ -414,7 +414,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_TRANSCRIBE_STOP, params);
@@ -438,7 +438,7 @@ public class Action {
         @Override
         public void stop() {
             Map<String, Object> params = new LinkedHashMap<>();
-            params.put("node_id", getCall().getNodeId());
+            params.put("node_id", getCall().getNodeId().orElse(null));
             params.put("call_id", getCall().getCallId());
             params.put("control_id", getControlId());
             getCall().executeOnCall(Constants.METHOD_AI_STOP, params);

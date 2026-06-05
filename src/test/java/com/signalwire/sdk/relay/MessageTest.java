@@ -58,11 +58,11 @@ class MessageTest {
         msg.setMedia(List.of("https://example.com/image.jpg"));
         msg.setTags(List.of("tag1", "tag2"));
 
-        assertEquals("+15551234567", msg.getFromNumber());
-        assertEquals("+15559876543", msg.getToNumber());
-        assertEquals("Hello", msg.getBody());
-        assertEquals("outbound", msg.getDirection());
-        assertEquals("default", msg.getContext());
+        assertEquals("+15551234567", msg.getFromNumber().orElseThrow());
+        assertEquals("+15559876543", msg.getToNumber().orElseThrow());
+        assertEquals("Hello", msg.getBody().orElseThrow());
+        assertEquals("outbound", msg.getDirection().orElseThrow());
+        assertEquals("default", msg.getContext().orElseThrow());
         assertEquals(2, msg.getSegments());
         assertEquals(1, msg.getMedia().size());
         assertEquals(2, msg.getTags().size());
@@ -111,7 +111,7 @@ class MessageTest {
         msg.updateFromEvent(event);
 
         assertTrue(msg.isDone());
-        assertEquals("Invalid number", msg.getReason());
+        assertEquals("Invalid number", msg.getReason().orElseThrow());
     }
 
     @Test

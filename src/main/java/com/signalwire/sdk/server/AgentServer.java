@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  * Multi-agent hosting server.
  * Registers multiple agents on different routes and dispatches requests accordingly.
  */
-public class AgentServer {
+public class AgentServer implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(AgentServer.class);
     private static final int MAX_REQUEST_BODY_SIZE = 1_048_576;
@@ -709,5 +709,26 @@ public class AgentServer {
             httpServer.stop(0);
             log.info("AgentServer stopped");
         }
+    }
+
+    /**
+     * {@link AutoCloseable} entry point so the multi-agent server can be
+     * run inside a try-with-resources block:
+     *
+     * <pre>{@code
+     * try (var server = new AgentServer(host, port)) {
+     *     server.register(agent);
+     *     server.run();
+     *     // ... serve ...
+     * } // close() runs here: the HTTP listener is shut down
+     * }</pre>
+     *
+     * Delegates to {@link #stop()}, releasing the bound HTTP(S) listener and
+     * its socket. Idempotent: harmless if the server was never started or is
+     * already stopped.
+     */
+    @Override
+    public void close() {
+        stop();
     }
 }

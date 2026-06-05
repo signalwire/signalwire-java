@@ -59,7 +59,7 @@ import java.util.function.Consumer;
  * client.run();
  * }</pre>
  */
-public class RelayClient {
+public class RelayClient implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(RelayClient.class);
     private static final Gson gson = new Gson();
@@ -259,6 +259,29 @@ public class RelayClient {
         }
         runLatch.countDown();
         executor.shutdown();
+    }
+
+    /**
+     * {@link AutoCloseable} entry point so the client can be used in a
+     * try-with-resources block:
+     *
+     * <pre>{@code
+     * try (var client = RelayClient.builder()...build()) {
+     *     client.connect();
+     *     // ... use the client ...
+     * } // close() runs here: WebSocket shut down, worker pool released
+     * }</pre>
+     *
+     * Releases the same resources as {@link #disconnect()} — closes the
+     * RELAY WebSocket, releases the {@link #run()} latch, and shuts the
+     * worker {@link java.util.concurrent.ExecutorService} down — so the
+     * client is the rough Java parallel of Python's
+     * {@code async with RelayClient(...)} context manager. Idempotent: a
+     * second call is a harmless no-op.
+     */
+    @Override
+    public void close() {
+        disconnect();
     }
 
     /**

@@ -76,7 +76,7 @@ class MessagingMockTest {
                 "+15551112222", "hello", null, List.of("t1", "t2"));
         assertNotNull(msg);
         assertNotNull(msg.getMessageId(), "mock generates a message_id");
-        assertEquals("hello", msg.getBody());
+        assertEquals("hello", msg.getBody().orElseThrow());
 
         List<RelayMockTest.JournalEntry> entries =
                 mock.journalRecv(Constants.METHOD_MESSAGING_SEND);
@@ -155,7 +155,7 @@ class MessagingMockTest {
 
         msg.waitForCompletion(5_000);
         assertEquals("undelivered", msg.getState());
-        assertEquals("carrier_blocked", msg.getReason());
+        assertEquals("carrier_blocked", msg.getReason().orElseThrow());
     }
 
     @Test
@@ -229,10 +229,10 @@ class MessagingMockTest {
         Message m = seen.get();
         assertNotNull(m);
         assertEquals("in-msg-1", m.getMessageId());
-        assertEquals("inbound", m.getDirection());
-        assertEquals("+15551110000", m.getFromNumber());
-        assertEquals("+15552220000", m.getToNumber());
-        assertEquals("hello back", m.getBody());
+        assertEquals("inbound", m.getDirection().orElseThrow());
+        assertEquals("+15551110000", m.getFromNumber().orElseThrow());
+        assertEquals("+15552220000", m.getToNumber().orElseThrow());
+        assertEquals("hello back", m.getBody().orElseThrow());
         assertEquals(List.of("incoming"), m.getTags());
     }
 

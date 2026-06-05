@@ -59,18 +59,39 @@ public class Message {
     // ── Getters ──────────────────────────────────────────────────────
 
     public String getMessageId() { return messageId; }
-    public String getContext() { return context; }
-    public String getDirection() { return direction; }
-    public String getFromNumber() { return fromNumber; }
-    public String getToNumber() { return toNumber; }
-    public String getBody() { return body; }
     public List<String> getMedia() { return media; }
     public int getSegments() { return segments; }
     public String getState() { return state; }
-    public String getReason() { return reason; }
     public List<String> getTags() { return tags; }
     public boolean isDone() { return done; }
-    public RelayEvent getResult() { return result; }
+
+    // ── Optional accessors for nullable scalar state ─────────────────
+    //
+    // context / direction / from_number / to_number / body / reason are
+    // only set as the message is built (outbound) or as inbound/state
+    // events arrive — a bare Message has them null. reason in particular
+    // is only populated on a failed/undelivered terminal event, and result
+    // only once the message completes. Exposing them as Optional<T> states
+    // the "may be absent" contract in the type (the Java idiom for nullable)
+    // rather than handing back a bare null. getMessageId()/getState() stay
+    // non-Optional: the id is supplied at construction and state always
+    // carries a lifecycle value (queued/…); getSegments()/isDone() are
+    // primitives.
+
+    /** Messaging context (the RELAY protocol/context the message rode on). */
+    public Optional<String> getContext() { return Optional.ofNullable(context); }
+    /** Direction (inbound/outbound) once known; empty until set. */
+    public Optional<String> getDirection() { return Optional.ofNullable(direction); }
+    /** Sender E.164 number; empty until set. */
+    public Optional<String> getFromNumber() { return Optional.ofNullable(fromNumber); }
+    /** Recipient E.164 number; empty until set. */
+    public Optional<String> getToNumber() { return Optional.ofNullable(toNumber); }
+    /** Message body; empty for media-only messages or before set. */
+    public Optional<String> getBody() { return Optional.ofNullable(body); }
+    /** Failure reason; present only on a failed/undelivered terminal state. */
+    public Optional<String> getReason() { return Optional.ofNullable(reason); }
+    /** Terminal completion event; empty until the message reaches a terminal state. */
+    public Optional<RelayEvent> getResult() { return Optional.ofNullable(result); }
 
     // ── Setters ──────────────────────────────────────────────────────
 

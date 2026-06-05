@@ -102,7 +102,7 @@ class OutboundCallMockTest {
         Call call = client.dial(devices, dialOptions("t-happy"), 5_000);
         assertNotNull(call);
         assertEquals("winner-1", call.getCallId());
-        assertEquals("t-happy", call.getTag());
+        assertEquals("t-happy", call.getTag().orElseThrow());
         assertEquals("answered", call.getState());
     }
 
@@ -200,7 +200,7 @@ class OutboundCallMockTest {
         assertNotNull(seenTag.get());
         assertTrue(UUID_RE.matcher(seenTag.get()).matches(),
                 "expected UUID-shaped tag, got: " + seenTag.get());
-        assertEquals(seenTag.get(), call.getTag());
+        assertEquals(seenTag.get(), call.getTag().orElseThrow());
     }
 
     // ── Failure paths ──────────────────────────────────────────────
@@ -452,7 +452,7 @@ class OutboundCallMockTest {
 
         List<List<Map<String, Object>>> devices = List.of(List.of(phoneDevice()));
         Call call = client.dial(devices, dialOptions("my-very-explicit-tag-99"), 5_000);
-        assertEquals("my-very-explicit-tag-99", call.getTag());
+        assertEquals("my-very-explicit-tag-99", call.getTag().orElseThrow());
     }
 
     // ── JSON-RPC envelope ─────────────────────────────────────────

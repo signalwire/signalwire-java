@@ -317,6 +317,15 @@
               ],
               "returns": "void"
             },
+            "close": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "enable_tls": {
               "params": [
                 {
@@ -5040,6 +5049,15 @@
               ],
               "returns": "class:signalwire.swml.Service"
             },
+            "close": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "cond": {
               "params": [
                 {
@@ -7116,7 +7134,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_end_reason": {
               "params": [
@@ -7125,7 +7143,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_node_id": {
               "params": [
@@ -7134,7 +7152,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_state": {
               "params": [
@@ -7152,7 +7170,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "hangup": {
               "params": [
@@ -7301,8 +7319,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7339,8 +7357,8 @@
                   "required": true
                 },
                 {
-                  "name": "control_id",
-                  "type": "string",
+                  "name": "options",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -7744,8 +7762,8 @@
                   "required": true
                 },
                 {
-                  "name": "control_id",
-                  "type": "string",
+                  "name": "options",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -8273,6 +8291,15 @@
             "builder": {
               "params": [],
               "returns": "class:signalwire.relay.client.RelayClient"
+            },
+            "close": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
             },
             "connect": {
               "params": [
@@ -9921,7 +9948,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_context": {
               "params": [
@@ -9930,7 +9957,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_direction": {
               "params": [
@@ -9939,7 +9966,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_from_number": {
               "params": [
@@ -9948,7 +9975,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_media": {
               "params": [
@@ -9975,7 +10002,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "get_result": {
               "params": [
@@ -9984,7 +10011,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.relay.event.RelayEvent"
+              "returns": "optional<class:signalwire.relay.event.RelayEvent>"
             },
             "get_segments": {
               "params": [
@@ -10020,7 +10047,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "optional<string>"
             },
             "is_done": {
               "params": [

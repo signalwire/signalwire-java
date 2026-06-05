@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
  * <p>
  * Uses JDK built-in com.sun.net.httpserver.HttpServer with virtual threads.
  */
-public class Service {
+public class Service implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(Service.class);
     private static final int MAX_REQUEST_BODY_SIZE = 1_048_576; // 1 MB
@@ -889,5 +889,27 @@ public class Service {
             httpServer.stop(0);
             log.info("Service '%s' stopped", name);
         }
+    }
+
+    /**
+     * {@link AutoCloseable} entry point so a service — and every subclass,
+     * including {@code AgentBase} — can be served inside a try-with-resources
+     * block:
+     *
+     * <pre>{@code
+     * try (var agent = MyAgent.builder()...build()) {
+     *     agent.run();
+     *     // ... serve ...
+     * } // close() runs here: the HTTP listener is shut down
+     * }</pre>
+     *
+     * Delegates to {@link #stop()}, releasing the bound HTTP(S) listener and
+     * its socket — the rough Java parallel of using a Python SWMLService /
+     * AgentBase under a context manager. Idempotent: harmless if the service
+     * was never served or is already stopped.
+     */
+    @Override
+    public void close() {
+        stop();
     }
 }

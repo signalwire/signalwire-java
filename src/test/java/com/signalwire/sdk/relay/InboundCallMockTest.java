@@ -116,7 +116,7 @@ class InboundCallMockTest {
         CompletableFuture<Void> done = new CompletableFuture<>();
         client.onCall(call -> {
             callId.set(call.getCallId());
-            direction.set(call.getDirection());
+            direction.set(call.getDirection().orElse(null));
             done.complete(null);
         });
 

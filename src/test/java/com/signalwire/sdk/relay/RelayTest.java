@@ -750,7 +750,7 @@ class RelayTest {
         void callBasics() {
             Call call = new Call("call-123", "node-456");
             assertEquals("call-123", call.getCallId());
-            assertEquals("node-456", call.getNodeId());
+            assertEquals("node-456", call.getNodeId().orElseThrow());
             assertEquals(Constants.CALL_STATE_CREATED, call.getState());
             assertFalse(call.isEnded());
         }
@@ -766,9 +766,9 @@ class RelayTest {
             call.setDevice(Map.of("type", "phone"));
 
             assertEquals("answered", call.getState());
-            assertEquals("inbound", call.getDirection());
-            assertEquals("my-tag", call.getTag());
-            assertEquals("hangup", call.getEndReason());
+            assertEquals("inbound", call.getDirection().orElseThrow());
+            assertEquals("my-tag", call.getTag().orElseThrow());
+            assertEquals("hangup", call.getEndReason().orElseThrow());
             assertEquals("phone", call.getDevice().get("type"));
         }
 
@@ -805,7 +805,7 @@ class RelayTest {
             call.dispatchEvent(event);
 
             assertEquals("ended", call.getState());
-            assertEquals("hangup", call.getEndReason());
+            assertEquals("hangup", call.getEndReason().orElseThrow());
             assertTrue(call.isEnded());
         }
 
@@ -937,7 +937,7 @@ class RelayTest {
             Message msg = new Message("msg-123");
             assertEquals("msg-123", msg.getMessageId());
             assertFalse(msg.isDone());
-            assertNull(msg.getResult());
+            assertTrue(msg.getResult().isEmpty());
         }
 
         @Test
@@ -953,11 +953,11 @@ class RelayTest {
             msg.setSegments(1);
             msg.setTags(List.of("vip"));
 
-            assertEquals("ctx", msg.getContext());
-            assertEquals("outbound", msg.getDirection());
-            assertEquals("+15551111111", msg.getFromNumber());
-            assertEquals("+15552222222", msg.getToNumber());
-            assertEquals("Hello", msg.getBody());
+            assertEquals("ctx", msg.getContext().orElseThrow());
+            assertEquals("outbound", msg.getDirection().orElseThrow());
+            assertEquals("+15551111111", msg.getFromNumber().orElseThrow());
+            assertEquals("+15552222222", msg.getToNumber().orElseThrow());
+            assertEquals("Hello", msg.getBody().orElseThrow());
             assertEquals(1, msg.getMedia().size());
             assertEquals(1, msg.getSegments());
             assertEquals(List.of("vip"), msg.getTags());
@@ -997,7 +997,7 @@ class RelayTest {
 
             assertTrue(fired.get());
             assertEquals("failed", msg.getState());
-            assertEquals("Invalid", msg.getReason());
+            assertEquals("Invalid", msg.getReason().orElseThrow());
         }
 
         @Test
@@ -1043,11 +1043,11 @@ class RelayTest {
 
             Message msg = Message.fromReceiveEvent(event);
             assertEquals("msg-recv", msg.getMessageId());
-            assertEquals("default", msg.getContext());
-            assertEquals("inbound", msg.getDirection());
-            assertEquals("+15551234567", msg.getFromNumber());
-            assertEquals("+15559876543", msg.getToNumber());
-            assertEquals("Hi there", msg.getBody());
+            assertEquals("default", msg.getContext().orElseThrow());
+            assertEquals("inbound", msg.getDirection().orElseThrow());
+            assertEquals("+15551234567", msg.getFromNumber().orElseThrow());
+            assertEquals("+15559876543", msg.getToNumber().orElseThrow());
+            assertEquals("Hi there", msg.getBody().orElseThrow());
             assertEquals(1, msg.getMedia().size());
             assertEquals("received", msg.getState());
         }

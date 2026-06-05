@@ -25,7 +25,7 @@ class CallTest {
     void testCallCreation() {
         Call call = new Call("call-123", "node-1");
         assertEquals("call-123", call.getCallId());
-        assertEquals("node-1", call.getNodeId());
+        assertEquals("node-1", call.getNodeId().orElseThrow());
         assertEquals(Constants.CALL_STATE_CREATED, call.getState());
         assertFalse(call.isEnded());
     }
@@ -40,10 +40,10 @@ class CallTest {
         call.setEndReason(Constants.END_REASON_HANGUP);
 
         assertEquals(Constants.CALL_STATE_ANSWERED, call.getState());
-        assertEquals("inbound", call.getDirection());
-        assertEquals("my-tag", call.getTag());
+        assertEquals("inbound", call.getDirection().orElseThrow());
+        assertEquals("my-tag", call.getTag().orElseThrow());
         assertEquals("phone", call.getDevice().get("type"));
-        assertEquals(Constants.END_REASON_HANGUP, call.getEndReason());
+        assertEquals(Constants.END_REASON_HANGUP, call.getEndReason().orElseThrow());
     }
 
     @Test
@@ -76,7 +76,7 @@ class CallTest {
         Call call = new Call("call-123", "node-1");
         call.dispatchEvent(makeStateEvent("call-123", "node-1", Constants.CALL_STATE_ENDED, Constants.END_REASON_HANGUP));
         assertEquals(Constants.CALL_STATE_ENDED, call.getState());
-        assertEquals(Constants.END_REASON_HANGUP, call.getEndReason());
+        assertEquals(Constants.END_REASON_HANGUP, call.getEndReason().orElseThrow());
     }
 
     @Test
@@ -119,7 +119,7 @@ class CallTest {
     void testSetNodeId() {
         Call call = new Call("call-123", "node-1");
         call.setNodeId("node-2");
-        assertEquals("node-2", call.getNodeId());
+        assertEquals("node-2", call.getNodeId().orElseThrow());
     }
 
     @Test
