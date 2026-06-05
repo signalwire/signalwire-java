@@ -355,6 +355,22 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
         ("TranscriptionNamespace", "signalwire.rest.namespaces.transcription"),
 }
 
+# Overloaded methods where the canonical projection must surface the
+# FULL-arity overload, not the fewest-param one. The default overload-collapse
+# rule (prefer fewest params) is right for action methods whose optional
+# kwargs are intentionally moved onto a typed Builder/Config (record_call,
+# tap, ...; those carry a PORT_SIGNATURE_OMISSIONS rationale). It is WRONG for
+# methods that deliberately expose every Python optional positionally to reach
+# full reference parity — there the convenience overload would hide the real
+# capability from the diff. Keyed by (canonical_class_name, method_canonical).
+PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
+    # FunctionResult.joinConference exposes all 18 of Python join_conference's
+    # optional params (muted/beep/record/trim/wait_url/callback-method/...) plus
+    # the 7 validations. The 1-arg joinConference(name) is only an ergonomic
+    # shortcut; the full overload is the parity surface, so emit it.
+    ("FunctionResult", "join_conference"),
+}
+
 # Java skill class renames to match Python casing
 JAVA_SKILL_RENAMES = {
     "DatasphereSkill": "DataSphereSkill",
@@ -599,10 +615,17 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
                 )
                 if not is_sdk:
                     continue
-            # Java overloads collapse to one entry; prefer fewer-param overload
+            # Java overloads collapse to one entry. Default: prefer the
+            # fewer-param overload so the projection lines up with Python's
+            # single signature. Exception (PREFER_FULL_OVERLOAD): a few methods
+            # expose every Python optional positionally for full parity — keep
+            # the MOST-param overload there instead.
             if method_canonical in methods_out:
                 existing = methods_out[method_canonical]
-                if len(sig["params"]) >= len(existing["params"]):
+                if (canonical_name, method_canonical) in PREFER_FULL_OVERLOAD:
+                    if len(sig["params"]) <= len(existing["params"]):
+                        continue
+                elif len(sig["params"]) >= len(existing["params"]):
                     continue
             methods_out[method_canonical] = sig
 

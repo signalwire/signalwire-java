@@ -441,12 +441,221 @@ class FunctionResultTest {
         assertEquals("true", swmlData.get("transfer"));
     }
 
+    // ======== Join Conference ========
+    // Parity with signalwire-python core/function_result.py join_conference:
+    //   tests/unit/core/test_function_result.py::TestJoinConference.
+    // The Java surface exposes all 18 optional params + the 7 validations the
+    // Python reference has (record / trim / callback-method / max_participants /
+    // beep / name). Each test pairs the behavioral call with an assertion on the
+    // emitted SWML join_conference verb (no mocks).
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> joinConferenceVerb(FunctionResult result) {
+        var action = result.getActions().get(0);
+        var swml = (Map<String, Object>) action.get("SWML");
+        var sections = (Map<String, Object>) swml.get("sections");
+        var main = (List<Map<String, Object>>) sections.get("main");
+        return main.get(0);
+    }
+
     @Test
     void testJoinConferenceSimple() {
+        // Parity: test_join_conference_simple_name_all_defaults.
+        // All-defaults call emits the bare conference NAME string.
         var result = new FunctionResult("test")
                 .joinConference("my-conference");
 
-        assertTrue(result.getActions().get(0).containsKey("SWML"));
+        var verb = joinConferenceVerb(result);
+        assertEquals("my-conference", verb.get("join_conference"),
+                "all-defaults form must emit the bare conference name string");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testJoinConferenceComplexParams() {
+        // Parity: test_join_conference_complex_params. Non-default params emit
+        // the full object form with each non-default key under snake_case.
+        var result = new FunctionResult("test").joinConference(
+                "team-meeting",
+                /* muted */ true,
+                /* beep */ "onEnter",
+                /* startOnEnter */ false,
+                /* endOnExit */ true,
+                /* waitUrl */ "https://example.com/hold-music",
+                /* maxParticipants */ 50,
+                /* record */ "record-from-start",
+                /* region */ "us-east",
+                /* trim */ "do-not-trim",
+                /* coach */ "call-id-123",
+                /* statusCallbackEvent */ "start end",
+                /* statusCallback */ "https://example.com/callback",
+                /* statusCallbackMethod */ "GET",
+                /* recordingStatusCallback */ "https://example.com/rec-callback",
+                /* recordingStatusCallbackMethod */ "GET",
+                /* recordingStatusCallbackEvent */ "in-progress",
+                /* result */ Map.of("key", "value"));
+
+        var verb = joinConferenceVerb(result);
+        var join = (Map<String, Object>) verb.get("join_conference");
+        assertEquals("team-meeting", join.get("name"));
+        assertEquals(true, join.get("muted"));
+        assertEquals("onEnter", join.get("beep"));
+        assertEquals(false, join.get("start_on_enter"));
+        assertEquals(true, join.get("end_on_exit"));
+        assertEquals("https://example.com/hold-music", join.get("wait_url"));
+        assertEquals(50, join.get("max_participants"));
+        assertEquals("record-from-start", join.get("record"));
+        assertEquals("us-east", join.get("region"));
+        assertEquals("do-not-trim", join.get("trim"));
+        assertEquals("call-id-123", join.get("coach"));
+        assertEquals("start end", join.get("status_callback_event"));
+        assertEquals("https://example.com/callback", join.get("status_callback"));
+        assertEquals("GET", join.get("status_callback_method"));
+        assertEquals("https://example.com/rec-callback", join.get("recording_status_callback"));
+        assertEquals("GET", join.get("recording_status_callback_method"));
+        assertEquals("in-progress", join.get("recording_status_callback_event"));
+        assertEquals(Map.of("key", "value"), join.get("result"));
+        // There is NO holdAudio/hold_audio key — Python uses wait_url for hold music.
+        assertFalse(join.containsKey("hold_audio"));
+        assertFalse(join.containsKey("holdAudio"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void testJoinConferenceOnlyNonDefaultsEmitted() {
+        // A param left at its default must NOT appear in the object form, while
+        // a single non-default flips emission to the object form.
+        var result = new FunctionResult("test")
+                .joinConference("conf", true, "true", true, false, null, 250,
+                        "do-not-record", null, "trim-silence", null, null, null,
+                        "POST", null, "POST", "completed", null);
+
+        var verb = joinConferenceVerb(result);
+        var join = (Map<String, Object>) verb.get("join_conference");
+        assertEquals("conf", join.get("name"));
+        assertEquals(true, join.get("muted"));
+        // Defaults must be absent.
+        assertFalse(join.containsKey("beep"));
+        assertFalse(join.containsKey("start_on_enter"));
+        assertFalse(join.containsKey("max_participants"));
+        assertFalse(join.containsKey("record"));
+        assertFalse(join.containsKey("trim"));
+        assertFalse(join.containsKey("status_callback_method"));
+        assertFalse(join.containsKey("recording_status_callback_method"));
+        assertFalse(join.containsKey("recording_status_callback_event"));
+    }
+
+    @Test
+    void testJoinConferenceInvalidBeep() {
+        // Parity: test_join_conference_invalid_beep.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "invalid",
+                        true, false, null, 250, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("beep must be one of"), ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceMaxParticipantsTooHigh() {
+        // Parity: test_join_conference_max_participants_too_high.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 300, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("max_participants must be a positive integer <= 250"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceMaxParticipantsZero() {
+        // Parity: test_join_conference_max_participants_zero.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 0, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("max_participants must be a positive integer <= 250"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceMaxParticipantsNegative() {
+        // Parity: test_join_conference_max_participants_negative.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, -5, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("max_participants must be a positive integer <= 250"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceInvalidRecord() {
+        // Parity: test_join_conference_invalid_record.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 250, "always", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("record must be one of"), ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceInvalidTrim() {
+        // Parity: test_join_conference_invalid_trim.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 250, "do-not-record", null, "bad-value",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("trim must be one of"), ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceEmptyName() {
+        // Parity: test_join_conference_empty_name.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("", true, "true",
+                        true, false, null, 250, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("name cannot be empty"), ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceWhitespaceName() {
+        // Parity: test_join_conference_whitespace_name.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("   ", true, "true",
+                        true, false, null, 250, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("name cannot be empty"), ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceInvalidStatusCallbackMethod() {
+        // Parity: test_join_conference_invalid_status_callback_method.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 250, "do-not-record", null, "trim-silence",
+                        null, null, null, "PUT", null, "POST", "completed", null));
+        assertTrue(ex.getMessage().contains("status_callback_method must be one of"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceInvalidRecordingStatusCallbackMethod() {
+        // Parity: test_join_conference_invalid_recording_status_callback_method.
+        var ex = assertThrows(IllegalArgumentException.class, () ->
+                new FunctionResult("test").joinConference("conf", false, "true",
+                        true, false, null, 250, "do-not-record", null, "trim-silence",
+                        null, null, null, "POST", null, "DELETE", "completed", null));
+        assertTrue(ex.getMessage().contains("recording_status_callback_method must be one of"),
+                ex.getMessage());
+    }
+
+    @Test
+    void testJoinConferenceChaining() {
+        // Parity: test_join_conference_chaining. Returns self for chaining.
+        var result = new FunctionResult("test");
+        var ret = result.joinConference("conf");
+        assertSame(result, ret);
     }
 
     @Test

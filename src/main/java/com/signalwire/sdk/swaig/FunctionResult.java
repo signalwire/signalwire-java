@@ -397,28 +397,151 @@ public class FunctionResult {
     }
 
     /**
-     * Join a conference via SWML.
+     * Join an ad-hoc audio conference with RELAY and CXML calls using SWML.
+     * <p>
+     * Functional parity with the Python reference
+     * {@code signalwire.core.function_result.FunctionResult.join_conference}.
+     * Every optional parameter the reference exposes is a positional argument
+     * here, with the same default and the same validation. Hold music is
+     * {@code waitUrl} (snake_case wire key {@code wait_url}) — there is no
+     * separate "hold audio" parameter; the reference uses {@code wait_url}.
+     *
+     * @param name                            conference name (required, must be non-blank)
+     * @param muted                           join muted (default {@code false})
+     * @param beep                            "true", "false", "onEnter", "onExit" (default "true")
+     * @param startOnEnter                    conference starts when this participant enters (default {@code true})
+     * @param endOnExit                       conference ends when this participant exits (default {@code false})
+     * @param waitUrl                         SWML URL for hold music ({@code null} for default)
+     * @param maxParticipants                 maximum participants, 1..250 (default 250)
+     * @param record                          "do-not-record" or "record-from-start" (default "do-not-record")
+     * @param region                          conference region ({@code null} for default)
+     * @param trim                            "trim-silence" or "do-not-trim" (default "trim-silence")
+     * @param coach                           SWML Call ID / CXML CallSid for coaching ({@code null} for none)
+     * @param statusCallbackEvent             space-separated status events ({@code null} for none)
+     * @param statusCallback                  URL for status callbacks ({@code null} for none)
+     * @param statusCallbackMethod            "GET" or "POST" (default "POST")
+     * @param recordingStatusCallback         URL for recording status callbacks ({@code null} for none)
+     * @param recordingStatusCallbackMethod   "GET" or "POST" (default "POST")
+     * @param recordingStatusCallbackEvent    recording events (default "completed")
+     * @param result                          switch-on-return value/cond ({@code null} for none)
+     * @return this, for chaining
+     * @throws IllegalArgumentException if any validated value is invalid
      */
-    public FunctionResult joinConference(String name, boolean muted, String beep, String holdAudio) {
-        Map<String, Object> params = new LinkedHashMap<>();
-        params.put("name", name);
-        if (muted) params.put("muted", true);
-        if (beep != null && !beep.equals("true")) params.put("beep", beep);
-        if (holdAudio != null) params.put("wait_url", holdAudio);
-        return executeSwml(Map.of(
-                "version", "1.0.0",
-                "sections", Map.of("main", List.of(Map.of("join_conference", params)))
-        ), false);
+    public FunctionResult joinConference(
+            String name,
+            boolean muted,
+            String beep,
+            boolean startOnEnter,
+            boolean endOnExit,
+            String waitUrl,
+            int maxParticipants,
+            String record,
+            String region,
+            String trim,
+            String coach,
+            String statusCallbackEvent,
+            String statusCallback,
+            String statusCallbackMethod,
+            String recordingStatusCallback,
+            String recordingStatusCallbackMethod,
+            String recordingStatusCallbackEvent,
+            Object result) {
+
+        // Validate beep. Error strings mirror Python's f-string list rendering
+        // (single-quoted members) so a ported substring match passes.
+        List<String> validBeepValues = List.of("true", "false", "onEnter", "onExit");
+        if (!validBeepValues.contains(beep)) {
+            throw new IllegalArgumentException("beep must be one of ['true', 'false', 'onEnter', 'onExit']");
+        }
+
+        // Validate max_participants.
+        if (maxParticipants <= 0 || maxParticipants > 250) {
+            throw new IllegalArgumentException("max_participants must be a positive integer <= 250");
+        }
+
+        // Validate record.
+        List<String> validRecordValues = List.of("do-not-record", "record-from-start");
+        if (!validRecordValues.contains(record)) {
+            throw new IllegalArgumentException("record must be one of ['do-not-record', 'record-from-start']");
+        }
+
+        // Validate trim.
+        List<String> validTrimValues = List.of("trim-silence", "do-not-trim");
+        if (!validTrimValues.contains(trim)) {
+            throw new IllegalArgumentException("trim must be one of ['trim-silence', 'do-not-trim']");
+        }
+
+        // Validate callback methods.
+        List<String> validMethods = List.of("GET", "POST");
+        if (!validMethods.contains(statusCallbackMethod)) {
+            throw new IllegalArgumentException("status_callback_method must be one of ['GET', 'POST']");
+        }
+        if (!validMethods.contains(recordingStatusCallbackMethod)) {
+            throw new IllegalArgumentException("recording_status_callback_method must be one of ['GET', 'POST']");
+        }
+
+        // Validate name (non-blank).
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("name cannot be empty");
+        }
+
+        // Build the join_conference payload. Simple form when everything is at
+        // its default: emit the bare conference name string. Otherwise the
+        // object form with each non-default param under its snake_case wire key.
+        boolean allDefaults = !muted && "true".equals(beep) && startOnEnter && !endOnExit
+                && waitUrl == null && maxParticipants == 250 && "do-not-record".equals(record)
+                && region == null && "trim-silence".equals(trim) && coach == null
+                && statusCallbackEvent == null && statusCallback == null
+                && "POST".equals(statusCallbackMethod) && recordingStatusCallback == null
+                && "POST".equals(recordingStatusCallbackMethod)
+                && "completed".equals(recordingStatusCallbackEvent) && result == null;
+
+        Object joinParams;
+        if (allDefaults) {
+            joinParams = name;
+        } else {
+            Map<String, Object> params = new LinkedHashMap<>();
+            params.put("name", name);
+            if (muted) params.put("muted", true);
+            if (!"true".equals(beep)) params.put("beep", beep);
+            if (!startOnEnter) params.put("start_on_enter", false);
+            if (endOnExit) params.put("end_on_exit", true);
+            if (waitUrl != null) params.put("wait_url", waitUrl);
+            if (maxParticipants != 250) params.put("max_participants", maxParticipants);
+            if (!"do-not-record".equals(record)) params.put("record", record);
+            if (region != null) params.put("region", region);
+            if (!"trim-silence".equals(trim)) params.put("trim", trim);
+            if (coach != null) params.put("coach", coach);
+            if (statusCallbackEvent != null) params.put("status_callback_event", statusCallbackEvent);
+            if (statusCallback != null) params.put("status_callback", statusCallback);
+            if (!"POST".equals(statusCallbackMethod)) params.put("status_callback_method", statusCallbackMethod);
+            if (recordingStatusCallback != null) params.put("recording_status_callback", recordingStatusCallback);
+            if (!"POST".equals(recordingStatusCallbackMethod)) {
+                params.put("recording_status_callback_method", recordingStatusCallbackMethod);
+            }
+            if (!"completed".equals(recordingStatusCallbackEvent)) {
+                params.put("recording_status_callback_event", recordingStatusCallbackEvent);
+            }
+            if (result != null) params.put("result", result);
+            joinParams = params;
+        }
+
+        Map<String, Object> swmlDoc = new LinkedHashMap<>();
+        swmlDoc.put("version", "1.0.0");
+        swmlDoc.put("sections", Map.of("main", List.of(
+                Collections.singletonMap("join_conference", joinParams))));
+        return executeSwml(swmlDoc, false);
     }
 
     /**
-     * Join a conference (simple form, name only).
+     * Join a conference (simple form, name only). Delegates to the full-arity
+     * overload with every option at its reference default, so an all-defaults
+     * call emits the bare conference name string.
      */
     public FunctionResult joinConference(String name) {
-        return executeSwml(Map.of(
-                "version", "1.0.0",
-                "sections", Map.of("main", List.of(Map.of("join_conference", name)))
-        ), false);
+        return joinConference(name, false, "true", true, false, null, 250,
+                "do-not-record", null, "trim-silence", null, null, null, "POST",
+                null, "POST", "completed", null);
     }
 
     /**
