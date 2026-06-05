@@ -19372,6 +19372,108 @@
         }
       }
     },
+    "signalwire.swml.codec": {
+      "classes": {
+        "Codec": {
+          "methods": {
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.Codec"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "pcma": {
+              "params": [],
+              "returns": "class:signalwire.swml.Codec"
+            },
+            "pcmu": {
+              "params": [],
+              "returns": "class:signalwire.swml.Codec"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.Codec"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.swml.Codec>"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swml.record_direction": {
+      "classes": {
+        "RecordDirection": {
+          "methods": {
+            "both": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordDirection"
+            },
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.RecordDirection"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "listen": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordDirection"
+            },
+            "speak": {
+              "params": [],
+              "returns": "class:signalwire.swml.RecordDirection"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.RecordDirection"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.swml.RecordDirection>"
+            }
+          }
+        }
+      }
+    },
     "signalwire.swml.record_format": {
       "classes": {
         "RecordFormat": {
@@ -19468,6 +19570,59 @@
                 }
               ],
               "returns": "int"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swml.tap_direction": {
+      "classes": {
+        "TapDirection": {
+          "methods": {
+            "both": {
+              "params": [],
+              "returns": "class:signalwire.swml.TapDirection"
+            },
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.TapDirection"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "hear": {
+              "params": [],
+              "returns": "class:signalwire.swml.TapDirection"
+            },
+            "speak": {
+              "params": [],
+              "returns": "class:signalwire.swml.TapDirection"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swml.TapDirection"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.swml.TapDirection>"
             }
           }
         }

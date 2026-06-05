@@ -7,7 +7,10 @@
 package com.signalwire.sdk.swaig;
 
 import com.google.gson.Gson;
+import com.signalwire.sdk.swml.Codec;
+import com.signalwire.sdk.swml.RecordDirection;
 import com.signalwire.sdk.swml.RecordFormat;
+import com.signalwire.sdk.swml.TapDirection;
 
 import java.util.*;
 
@@ -355,6 +358,32 @@ public class FunctionResult {
         return recordCall(controlId, stereo, format != null ? format.getValue() : null, direction);
     }
 
+    /**
+     * Typed-direction overload of {@link #recordCall(String, boolean, String, String)}.
+     * Accepts a {@link RecordDirection} ({@code speak}/{@code listen}/{@code both})
+     * so a misspelled direction fails at compile time instead of being rejected
+     * by the server's {@code ValueError}. Delegates to the string path via
+     * {@link RecordDirection#getValue()}, so the SWML {@code record_call} payload
+     * is byte-identical. Note this set differs from {@link TapDirection}
+     * ({@code listen} here vs {@code hear} for {@code tap}).
+     */
+    public FunctionResult recordCall(String controlId, boolean stereo, String format, RecordDirection direction) {
+        return recordCall(controlId, stereo, format, direction != null ? direction.getValue() : null);
+    }
+
+    /**
+     * Fully-typed overload of {@link #recordCall(String, boolean, String, String)}:
+     * both the container format ({@link RecordFormat}) and the audio direction
+     * ({@link RecordDirection}) are typed closed sets. Delegates to the string
+     * path via {@link RecordFormat#getValue()} / {@link RecordDirection#getValue()},
+     * so the emitted SWML is identical to the bare-string call.
+     */
+    public FunctionResult recordCall(String controlId, boolean stereo, RecordFormat format, RecordDirection direction) {
+        return recordCall(controlId, stereo,
+                format != null ? format.getValue() : null,
+                direction != null ? direction.getValue() : null);
+    }
+
     public FunctionResult recordCall() {
         return recordCall(null, false, "wav", "both");
     }
@@ -678,6 +707,42 @@ public class FunctionResult {
      */
     public FunctionResult tap(String uri, String controlId, String direction, String codec) {
         return tap(uri, controlId, direction, codec, 20, null);
+    }
+
+    /**
+     * Typed-direction overload of {@link #tap(String, String, String, String)}.
+     * Accepts a {@link TapDirection} ({@code speak}/{@code hear}/{@code both})
+     * so a misspelled direction fails at compile time instead of being rejected
+     * by the server's {@code ValueError}. Delegates via
+     * {@link TapDirection#getValue()}, so the SWML {@code tap} payload is
+     * byte-identical. Note this set differs from {@link RecordDirection}
+     * ({@code hear} here vs {@code listen} for {@code record_call}).
+     */
+    public FunctionResult tap(String uri, String controlId, TapDirection direction, String codec) {
+        return tap(uri, controlId, direction != null ? direction.getValue() : null, codec);
+    }
+
+    /**
+     * Typed-codec overload of {@link #tap(String, String, String, String)}.
+     * Accepts a {@link Codec} ({@code PCMU}/{@code PCMA}) so a misspelled codec
+     * fails at compile time. Delegates via {@link Codec#getValue()}, so the SWML
+     * {@code tap} payload is byte-identical. This is the SWAIG tap codec set
+     * only — RELAY {@code stream}/{@code connect} use a larger superset.
+     */
+    public FunctionResult tap(String uri, String controlId, String direction, Codec codec) {
+        return tap(uri, controlId, direction, codec != null ? codec.getValue() : null);
+    }
+
+    /**
+     * Fully-typed overload of {@link #tap(String, String, String, String)}: both
+     * the audio direction ({@link TapDirection}) and the media codec
+     * ({@link Codec}) are typed closed sets. Delegates via the per-enum
+     * {@code getValue()}, so the emitted SWML is identical to the bare-string call.
+     */
+    public FunctionResult tap(String uri, String controlId, TapDirection direction, Codec codec) {
+        return tap(uri, controlId,
+                direction != null ? direction.getValue() : null,
+                codec != null ? codec.getValue() : null);
     }
 
     /**
