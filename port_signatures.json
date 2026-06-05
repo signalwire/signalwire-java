@@ -7118,6 +7118,15 @@
               ],
               "returns": "string"
             },
+            "get_call_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<class:signalwire.relay.CallState>"
+            },
             "get_device": {
               "params": [
                 {
@@ -7319,8 +7328,8 @@
                   "required": true
                 },
                 {
-                  "name": "control_id",
-                  "type": "string",
+                  "name": "options",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -7357,8 +7366,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7785,8 +7794,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -8284,6 +8293,76 @@
         }
       }
     },
+    "signalwire.relay.call_state": {
+      "classes": {
+        "CallState": {
+          "methods": {
+            "answered": {
+              "params": [],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "created": {
+              "params": [],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "ended": {
+              "params": [],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "ending": {
+              "params": [],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "is_terminal": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "ringing": {
+              "params": [],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.CallState"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.relay.CallState>"
+            }
+          }
+        }
+      }
+    },
     "signalwire.relay.client": {
       "classes": {
         "RelayClient": {
@@ -8564,6 +8643,199 @@
                 }
               ],
               "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.relay.device": {
+      "classes": {
+        "Device": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "equals": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "o",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "get_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "hash_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "of": {
+              "params": [
+                {
+                  "name": "type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.Device"
+            },
+            "phone": {
+              "params": [
+                {
+                  "name": "to_number",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "from_number",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.Device"
+            },
+            "sip": {
+              "params": [
+                {
+                  "name": "to",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "from",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.Device"
+            },
+            "to_dict": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "to_string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.relay.dial_state": {
+      "classes": {
+        "DialState": {
+          "methods": {
+            "answered": {
+              "params": [],
+              "returns": "class:signalwire.relay.DialState"
+            },
+            "dialing": {
+              "params": [],
+              "returns": "class:signalwire.relay.DialState"
+            },
+            "failed": {
+              "params": [],
+              "returns": "class:signalwire.relay.DialState"
+            },
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.DialState"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "is_terminal": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.DialState"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.relay.DialState>"
             }
           }
         }
@@ -9007,6 +9279,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_dial_state_enum": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<class:signalwire.relay.DialState>"
             },
             "get_node_id": {
               "params": [
@@ -9995,6 +10276,15 @@
               ],
               "returns": "string"
             },
+            "get_message_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<class:signalwire.relay.MessageState>"
+            },
             "get_reason": {
               "params": [
                 {
@@ -10243,6 +10533,84 @@
                 }
               ],
               "returns": "class:signalwire.relay.event.RelayEvent"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.relay.message_state": {
+      "classes": {
+        "MessageState": {
+          "methods": {
+            "delivered": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "failed": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "from_wire": {
+              "params": [
+                {
+                  "name": "wire",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "initiated": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "is_terminal": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "queued": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "received": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "sent": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "undelivered": {
+              "params": [],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "value_of": {
+              "params": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.MessageState"
+            },
+            "values": {
+              "params": [],
+              "returns": "list<class:signalwire.relay.MessageState>"
             }
           }
         }

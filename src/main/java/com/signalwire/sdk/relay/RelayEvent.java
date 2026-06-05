@@ -211,6 +211,20 @@ public class RelayEvent {
         public String getNodeId() { return getStringParam("node_id"); }
         public String getDialState() { return getStringParam("dial_state"); }
 
+        /**
+         * The dial outcome as a typed {@link DialState}, <em>alongside</em> the
+         * raw string {@link #getDialState()} (which stays canonical for parity
+         * and forward-compat). Returns {@code Optional.empty()} when the wire
+         * {@code dial_state} is not one of the three known {@link DialState}
+         * values — the set mirrors server-emitted values that can grow, so an
+         * unrecognised state is tolerated here rather than crashing dispatch.
+         *
+         * @return the typed dial state, or empty if unknown/unset.
+         */
+        public Optional<DialState> getDialStateEnum() {
+            return Optional.ofNullable(DialState.fromWire(getDialState()));
+        }
+
         public Map<String, Object> getCallInfo() {
             return getMap(getParams(), "call");
         }

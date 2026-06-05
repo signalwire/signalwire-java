@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 4d2f10caafccfc660ea8bd25ecdda5b903bc2439",
+  "generated_from": "signalwire-java @ 3266f1725cd23cd5b5c4a369a37e3cd8be06ea05",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -873,6 +873,7 @@
           "echo",
           "getAction",
           "getCallId",
+          "getCallState",
           "getDevice",
           "getDirection",
           "getEndReason",
@@ -881,6 +882,7 @@
           "getTag",
           "get_action",
           "get_call_id",
+          "get_call_state",
           "get_device",
           "get_direction",
           "get_end_reason",
@@ -1016,6 +1018,19 @@
       },
       "functions": []
     },
+    "signalwire.relay.call_state": {
+      "classes": {
+        "CallState": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value",
+          "isTerminal",
+          "is_terminal"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.relay.client": {
       "classes": {
         "RelayClient": [
@@ -1079,6 +1094,42 @@
           "is_terminal_action_state",
           "is_terminal_call_state",
           "is_terminal_message_state"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.device": {
+      "classes": {
+        "Device": [
+          "Device",
+          "device",
+          "equals",
+          "getParams",
+          "getType",
+          "get_params",
+          "get_type",
+          "hashCode",
+          "hash_code",
+          "of",
+          "phone",
+          "sip",
+          "toMap",
+          "toString",
+          "to_dict",
+          "to_string"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.dial_state": {
+      "classes": {
+        "DialState": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value",
+          "isTerminal",
+          "is_terminal"
         ]
       },
       "functions": []
@@ -1163,11 +1214,13 @@
           "getCallId",
           "getCallInfo",
           "getDialState",
+          "getDialStateEnum",
           "getNodeId",
           "getTag",
           "get_call_id",
           "get_call_info",
           "get_dial_state",
+          "get_dial_state_enum",
           "get_node_id",
           "get_tag"
         ],
@@ -1352,6 +1405,7 @@
           "getFromNumber",
           "getMedia",
           "getMessageId",
+          "getMessageState",
           "getReason",
           "getResult",
           "getSegments",
@@ -1364,6 +1418,7 @@
           "get_from_number",
           "get_media",
           "get_message_id",
+          "get_message_state",
           "get_reason",
           "get_result",
           "get_segments",
@@ -1400,6 +1455,19 @@
           "update_from_event",
           "waitForCompletion",
           "wait_for_completion"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.message_state": {
+      "classes": {
+        "MessageState": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value",
+          "isTerminal",
+          "is_terminal"
         ]
       },
       "functions": []

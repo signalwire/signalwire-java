@@ -30,6 +30,7 @@ signalwire.agent.agent_base_dynamic_config_callback.AgentBaseDynamicConfigCallba
 signalwire.agent_server.AgentServer.enable_tls: Java explicit-cert HTTPS option (cert/key PEM paths) for serving over the JDK HttpsServer; parallels Python's SWMLService.serve(ssl_cert=, ssl_key=) and takes precedence over the SWML_SSL_* env vars that Python's AgentServer.run() reads
 signalwire.agent_server.AgentServer.get_routes: Java accessor exposing the registered-agent route list for diagnostics
 signalwire.agent_server.AgentServer.get_sip_route: Java accessor exposing the registered SIP route for diagnostics
+signalwire.agent_server.AgentServer.is_tls_enabled: Java boolean accessor reporting whether the server is serving HTTPS (companion to enableTls()); Python configures TLS via serve(ssl_cert=, ssl_key=)/env and has no such getter
 signalwire.agent_server.AgentServer.register_sip_route: Java's split of Python's setup_sip_routing into explicit per-username registration
 signalwire.agent_server.AgentServer.set_static_files_dir: Java setter for the static-files directory; Python configures this through AgentServer constructor arguments
 signalwire.agent_server.AgentServer.close: Java AutoCloseable.close() so AgentServer works in try-with-resources; delegates to stop(). Python has no context-manager equivalent on AgentServer (the process is signalled)
@@ -232,6 +233,7 @@ signalwire.relay.call.Call.get_device: idiomatic Java surface extension (builder
 signalwire.relay.call.Call.get_direction: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.call.Call.get_end_reason: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.call.Call.get_node_id: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.relay.call.Call.get_call_state: java_tier3_state_enum: typed Optional<CallState> accessor ALONGSIDE the string get_state() (kept for parity); decodes the live wire call_state into the CallState closed-set enum, Optional.empty() for an unknown/unset value. Python uses bare str; this is the typed handle + isTerminal() predicate the journal's Tier-3 pick asks for.
 signalwire.relay.call.Call.get_state: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.call.Call.get_tag: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.call.Call.is_ended: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -250,6 +252,16 @@ signalwire.relay.call_play_and_collect_action.CallPlayAndCollectAction.__init__:
 signalwire.relay.call_play_and_collect_action.CallPlayAndCollectAction.volume: Java CallPlayAndCollectAction exposes volume() as a typed method on the play sub-action; Python returns the same control via the Action.result attribute
 signalwire.relay.call_receive_fax_action.CallReceiveFaxAction.__init__: Java exposes a typed Action subclass for the corresponding relay verb; Python represents the same action as a generic class:Action returned from Call.<method>()
 signalwire.relay.call_send_fax_action.CallSendFaxAction.__init__: Java exposes a typed Action subclass for the corresponding relay verb; Python represents the same action as a generic class:Action returned from Call.<method>()
+signalwire.relay.call_state.CallState: java_tier3_state_enum: typed closed-set enum of the RELAY call lifecycle states ({created,ringing,answered,ending,ended}), grounded in Python relay/constants.py CALL_STATE_*. Exposed via Call.getCallState() ALONGSIDE the bare-string getState() (parity). Python uses bare str; the enum adds isTerminal() + compile-time exhaustiveness. Server-emitted/growable: fromWire() tolerates unknowns (null), never throws. DISTINCT from DialState/MessageState — never conflated.
+signalwire.relay.call_state.CallState.answered: java_tier3_state_enum: CallState constant; value is the canonical wire string ("answered"), so routing through the enum is byte-identical to the string (see CallState).
+signalwire.relay.call_state.CallState.created: java_tier3_state_enum: CallState constant (see CallState.answered).
+signalwire.relay.call_state.CallState.ended: java_tier3_state_enum: CallState constant; the sole terminal call state (isTerminal()==true), matching the reference's CALL_STATE_ENDED check (see CallState).
+signalwire.relay.call_state.CallState.ending: java_tier3_state_enum: CallState constant; NOT terminal — an 'ended' event still follows (see CallState).
+signalwire.relay.call_state.CallState.from_wire: java_tier3_state_enum: case-sensitive wire-string parser (Java analog of Rust from_str) returning the matching CallState or null for an unknown/null value — these mirror server-emitted values that can grow, so it tolerates rather than throws. Rejects DialState/MessageState-only values.
+signalwire.relay.call_state.CallState.get_value: java_tier3_state_enum: accessor returning the constant's canonical wire string (Java analog of PHP backed-enum ->value); Call.getCallState() agrees with the bare-string getState() via this. Python uses bare str (see CallState).
+signalwire.relay.call_state.CallState.is_terminal: java_tier3_state_enum: predicate — true only for ENDED, matching the reference's CALL_STATE_ENDED terminal check and Constants.isTerminalCallState(); the typed handle the journal's Tier-3 pick asks for. Python has no enum predicate (see CallState).
+signalwire.relay.call_state.CallState.value_of: java_tier3_state_enum: Java enum auto-method (valueOf) on the CallState closed-set enum (see CallState.answered).
+signalwire.relay.call_state.CallState.values: java_tier3_state_enum: Java enum auto-method (values) on the CallState closed-set enum (see CallState.answered).
 signalwire.relay.client.RelayClient.builder: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.client.RelayClient.close: Java AutoCloseable.close() so RelayClient works in try-with-resources; delegates to disconnect() (closes the WS + releases the worker pool). Python's parallel is the async-context-manager form; the reference exposes disconnect(), not close()
 signalwire.relay.client.RelayClient.get_authorization_state: Java accessor for the SDK's stored authorization_state blob (used by reconnect-with-protocol tests); Python reads ._authorization_state directly
@@ -270,6 +282,26 @@ signalwire.relay.constants.Constants.is_call_gone_code: Java constants class gro
 signalwire.relay.constants.Constants.is_terminal_action_state: Java constants class grouping RELAY protocol constants used by RelayClient; Python uses module-level attributes
 signalwire.relay.constants.Constants.is_terminal_call_state: Java constants class grouping RELAY protocol constants used by RelayClient; Python uses module-level attributes
 signalwire.relay.constants.Constants.is_terminal_message_state: Java constants class grouping RELAY protocol constants used by RelayClient; Python uses module-level attributes
+signalwire.relay.device.Device: java_tier3_device_struct: typed view of the RELAY {type, params} device object that recurs as a raw Map across connect/refer/dial/tap, grounded in porting-sdk/relay-protocol/calling.{connect,dial,refer,tap}.params.json. Types the SHAPE; type stays a String (discriminant, NOT schema-enumerated). toMap() yields the identical wire shape (type-before-params order) so it is byte-identical to the hand-written map. Additive — the raw-map path stays. Python uses a bare dict.
+signalwire.relay.device.Device.__init__: java_tier3_device_struct: Device(type, params) constructor — rejects null type, treats null params as empty, defensively copies params (see Device).
+signalwire.relay.device.Device.__repr__: java_tier3_device_struct: Java toString() rendering Device{type=…, params=…} (mapped to __repr__ by the adapter); Python uses dict repr (see Device).
+signalwire.relay.device.Device.get_type: java_tier3_device_struct: accessor for the type discriminant String (see Device).
+signalwire.relay.device.Device.get_params: java_tier3_device_struct: accessor returning an unmodifiable view of the params sub-object (see Device).
+signalwire.relay.device.Device.to_dict: java_tier3_device_struct: Java toMap() serialising to the {type, params} wire shape (mapped to to_dict by the adapter), byte-identical to the hand-written map (see Device).
+signalwire.relay.device.Device.hash_code: java_tier3_device_struct: Java hashCode() consistent with equals() over (type, params) — the Java idiom for a value object; Python hashes dicts/objects differently (see Device).
+signalwire.relay.device.Device.equals: java_tier3_device_struct: value equality on (type, params) — the Java idiom for a data object; Python compares dicts structurally (see Device).
+signalwire.relay.device.Device.of: java_tier3_device_struct: static factory mirroring the constructor for fluent call sites Device.of(type, params) (see Device).
+signalwire.relay.device.Device.phone: java_tier3_device_struct: convenience factory building {type:"phone", params:{to_number, from_number}} — the most common device shape (see Device).
+signalwire.relay.device.Device.sip: java_tier3_device_struct: convenience factory building {type:"sip", params:{to, from?}}, omitting a null from (see Device).
+signalwire.relay.dial_state.DialState: java_tier3_state_enum: typed closed-set enum of the outbound dial outcome ({dialing,answered,failed}), grounded in the calling.dial event dial_state field + the port's Constants.DIAL_STATE_*. Exposed via CallDialEvent.getDialStateEnum() ALONGSIDE the bare-string getDialState() (parity). Python uses bare str; the enum adds isTerminal() (terminal = answered|failed, both resolve the dial). Server-emitted/growable: fromWire() tolerates unknowns (null). DISTINCT from CallState/MessageState — 'answered' overlaps CallState but means a different thing; never shared.
+signalwire.relay.dial_state.DialState.answered: java_tier3_state_enum: DialState constant; terminal (the dial won, resolving to a Call); value is the canonical wire string (see DialState).
+signalwire.relay.dial_state.DialState.dialing: java_tier3_state_enum: DialState constant; the sole non-terminal dial state (see DialState).
+signalwire.relay.dial_state.DialState.failed: java_tier3_state_enum: DialState constant; terminal (every leg failed) (see DialState).
+signalwire.relay.dial_state.DialState.from_wire: java_tier3_state_enum: case-sensitive wire-string parser returning the matching DialState or null for an unknown value (Java analog of Rust from_str); tolerates server growth rather than throwing.
+signalwire.relay.dial_state.DialState.get_value: java_tier3_state_enum: accessor returning the constant's canonical wire string (Java analog of PHP backed-enum ->value); CallDialEvent.getDialStateEnum() agrees with getDialState() via this. Python uses bare str (see DialState).
+signalwire.relay.dial_state.DialState.is_terminal: java_tier3_state_enum: predicate — true for ANSWERED and FAILED (both resolve the pending dial), false for DIALING. Python has no enum predicate (see DialState).
+signalwire.relay.dial_state.DialState.value_of: java_tier3_state_enum: Java enum auto-method (valueOf) on the DialState closed-set enum (see DialState.answered).
+signalwire.relay.dial_state.DialState.values: java_tier3_state_enum: Java enum auto-method (values) on the DialState closed-set enum (see DialState.answered).
 signalwire.relay.event.CallReceiveEvent.__init__: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.CallReceiveEvent.get_call_id: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.CallReceiveEvent.get_call_state: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -304,6 +336,7 @@ signalwire.relay.event.DialEvent.__init__: idiomatic Java surface extension (bui
 signalwire.relay.event.DialEvent.get_call_id: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.DialEvent.get_call_info: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.DialEvent.get_dial_state: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.relay.event.DialEvent.get_dial_state_enum: java_tier3_state_enum: typed Optional<DialState> accessor ALONGSIDE the string get_dial_state() (kept for parity); decodes the wire dial_state into the DialState closed-set enum, Optional.empty() for an unknown value. Python uses bare str; this is the typed handle + isTerminal() predicate (DialState terminal = answered|failed).
 signalwire.relay.event.DialEvent.get_node_id: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.DialEvent.get_tag: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.event.FaxEvent.__init__: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -386,6 +419,7 @@ signalwire.relay.message.Message.get_message_id: idiomatic Java surface extensio
 signalwire.relay.message.Message.get_reason: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.get_result: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.get_segments: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.relay.message.Message.get_message_state: java_tier3_state_enum: typed Optional<MessageState> accessor ALONGSIDE the string get_state() (kept for parity); decodes the live wire message_state into the MessageState closed-set enum, Optional.empty() for an unknown/unset value. Python uses bare str; this is the typed handle + isTerminal() predicate (MessageState terminal = delivered|undelivered|failed, NOT received).
 signalwire.relay.message.Message.get_state: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.get_tags: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.get_to_number: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -401,6 +435,19 @@ signalwire.relay.message.Message.set_tags: idiomatic Java surface extension (bui
 signalwire.relay.message.Message.set_to_number: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.update_from_event: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.relay.message.Message.wait_for_completion: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.relay.message_state.MessageState: java_tier3_state_enum: typed closed-set enum of the message delivery states ({queued,initiated,sent,delivered,undelivered,failed,received}), grounded in Python relay/constants.py MESSAGE_STATE_* + the messaging.state wire-schema enum (received is the inbound-only 7th). Exposed via Message.getMessageState() ALONGSIDE the bare-string getState() (parity). Python uses bare str; the enum adds isTerminal() (terminal = delivered|undelivered|failed = the reference's MESSAGE_TERMINAL_STATES; received is NOT terminal). Server-emitted/growable: fromWire() tolerates unknowns (null). DISTINCT from CallState/DialState — never conflated.
+signalwire.relay.message_state.MessageState.delivered: java_tier3_state_enum: MessageState constant; terminal (see MessageState).
+signalwire.relay.message_state.MessageState.failed: java_tier3_state_enum: MessageState constant; terminal (see MessageState).
+signalwire.relay.message_state.MessageState.initiated: java_tier3_state_enum: MessageState constant; non-terminal (see MessageState).
+signalwire.relay.message_state.MessageState.queued: java_tier3_state_enum: MessageState constant; non-terminal, the initial state of an outbound message (see MessageState).
+signalwire.relay.message_state.MessageState.received: java_tier3_state_enum: MessageState constant; inbound-only arrival, NOT a terminal delivery state (see MessageState).
+signalwire.relay.message_state.MessageState.sent: java_tier3_state_enum: MessageState constant; non-terminal (see MessageState).
+signalwire.relay.message_state.MessageState.undelivered: java_tier3_state_enum: MessageState constant; terminal (see MessageState).
+signalwire.relay.message_state.MessageState.from_wire: java_tier3_state_enum: case-sensitive wire-string parser returning the matching MessageState or null for an unknown value (Java analog of Rust from_str); tolerates server growth rather than throwing.
+signalwire.relay.message_state.MessageState.get_value: java_tier3_state_enum: accessor returning the constant's canonical wire string (Java analog of PHP backed-enum ->value); Message.getMessageState() agrees with getState() via this. Python uses bare str (see MessageState).
+signalwire.relay.message_state.MessageState.is_terminal: java_tier3_state_enum: predicate — true for DELIVERED/UNDELIVERED/FAILED (the reference's MESSAGE_TERMINAL_STATES, matching Constants.isTerminalMessageState()), false for RECEIVED. Python has no enum predicate (see MessageState).
+signalwire.relay.message_state.MessageState.value_of: java_tier3_state_enum: Java enum auto-method (valueOf) on the MessageState closed-set enum (see MessageState.delivered).
+signalwire.relay.message_state.MessageState.values: java_tier3_state_enum: Java enum auto-method (values) on the MessageState closed-set enum (see MessageState.delivered).
 signalwire.relay.relay_client_builder.RelayClientBuilder: Java builder pattern — RelayClient.builder() is the idiomatic constructor
 signalwire.relay.relay_client_builder.RelayClientBuilder.build: Java builder pattern — RelayClient.builder() is the idiomatic constructor
 signalwire.relay.relay_client_builder.RelayClientBuilder.contexts: Java builder pattern — RelayClient.builder() is the idiomatic constructor
@@ -977,6 +1024,7 @@ signalwire.swml.service.Service.__init__: idiomatic Java surface extension (buil
 signalwire.swml.service.Service.ai: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.amazon_bedrock: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.answer: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.swml.service.Service.close: Java AutoCloseable.close() so Service works in try-with-resources (added in the Tier-2 idiom pass); Python has no context-manager equivalent on the service
 signalwire.swml.service.Service.cond: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.connect: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.swml.service.Service.define_tool: Java exposes define_tool on Service (the SWAIG host) plus on AgentBase for chained returns; Python only defines it on AgentBase

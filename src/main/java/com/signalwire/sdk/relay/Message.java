@@ -65,6 +65,22 @@ public class Message {
     public List<String> getTags() { return tags; }
     public boolean isDone() { return done; }
 
+    /**
+     * The current message state as a typed {@link MessageState},
+     * <em>alongside</em> the raw string {@link #getState()} (which stays
+     * canonical for parity and forward-compat). Returns {@code Optional.empty()}
+     * when the live wire state is not one of the seven known
+     * {@link MessageState} values — the set mirrors server-emitted values that
+     * can grow, so an unrecognised state is tolerated here rather than crashing
+     * the caller. The present value always agrees with {@code getState()}:
+     * {@code getMessageState().get().getValue().equals(getState())}.
+     *
+     * @return the typed state, or empty if the raw state is unknown/unset.
+     */
+    public Optional<MessageState> getMessageState() {
+        return Optional.ofNullable(MessageState.fromWire(state));
+    }
+
     // ── Optional accessors for nullable scalar state ─────────────────
     //
     // context / direction / from_number / to_number / body / reason are

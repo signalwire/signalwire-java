@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 4d2f10caafccfc660ea8bd25ecdda5b903bc2439",
+  "generated_from": "signalwire-java @ 3266f1725cd23cd5b5c4a369a37e3cd8be06ea05",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -586,6 +586,7 @@
           "echo",
           "get_action",
           "get_call_id",
+          "get_call_state",
           "get_device",
           "get_direction",
           "get_end_reason",
@@ -678,6 +679,16 @@
       },
       "functions": []
     },
+    "signalwire.relay.call_state": {
+      "classes": {
+        "CallState": [
+          "from_wire",
+          "get_value",
+          "is_terminal"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.relay.client": {
       "classes": {
         "RelayClient": [
@@ -720,6 +731,33 @@
           "is_terminal_action_state",
           "is_terminal_call_state",
           "is_terminal_message_state"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.device": {
+      "classes": {
+        "Device": [
+          "__init__",
+          "__repr__",
+          "equals",
+          "get_params",
+          "get_type",
+          "hash_code",
+          "of",
+          "phone",
+          "sip",
+          "to_dict"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.dial_state": {
+      "classes": {
+        "DialState": [
+          "from_wire",
+          "get_value",
+          "is_terminal"
         ]
       },
       "functions": []
@@ -773,6 +811,7 @@
           "get_call_id",
           "get_call_info",
           "get_dial_state",
+          "get_dial_state_enum",
           "get_node_id",
           "get_tag"
         ],
@@ -887,6 +926,7 @@
           "get_from_number",
           "get_media",
           "get_message_id",
+          "get_message_state",
           "get_reason",
           "get_result",
           "get_segments",
@@ -907,6 +947,16 @@
           "set_to_number",
           "update_from_event",
           "wait_for_completion"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.relay.message_state": {
+      "classes": {
+        "MessageState": [
+          "from_wire",
+          "get_value",
+          "is_terminal"
         ]
       },
       "functions": []

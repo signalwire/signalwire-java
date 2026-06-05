@@ -61,6 +61,21 @@ public class Call {
     public String getState() { return state; }
     public Map<String, Object> getDevice() { return device; }
 
+    /**
+     * The current call state as a typed {@link CallState}, <em>alongside</em>
+     * the raw string {@link #getState()} (which stays canonical for parity and
+     * forward-compat). Returns {@code Optional.empty()} when the live wire state
+     * is not one of the five known {@link CallState} values — the set mirrors
+     * server-emitted values that can grow, so an unrecognised state is tolerated
+     * here rather than crashing the caller. The present value always agrees with
+     * {@code getState()}: {@code getCallState().get().getValue().equals(getState())}.
+     *
+     * @return the typed state, or empty if the raw state is unknown/unset.
+     */
+    public Optional<CallState> getCallState() {
+        return Optional.ofNullable(CallState.fromWire(state));
+    }
+
     // ── Optional accessors for nullable scalar state ─────────────────
     //
     // node_id / end_reason / direction / tag are only populated once the
