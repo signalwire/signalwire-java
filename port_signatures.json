@@ -19225,6 +19225,250 @@
         }
       }
     },
+    "signalwire.swaig.parameter_schema": {
+      "classes": {
+        "ParameterSchema": {
+          "methods": {
+            "builder": {
+              "params": [],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swaig.parameter_schema_builder": {
+      "classes": {
+        "ParameterSchemaBuilder": {
+          "methods": {
+            "array": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "item_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "array_of_objects": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "item_schema",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "bool": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "build": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "default_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "value",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "enum_of": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "values",
+                  "type": "list<string>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "format": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "format",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "integer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "object": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "object_schema",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "required": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "names",
+                  "type": "list<string>",
+                  "required": true,
+                  "kind": "var_positional"
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            }
+          }
+        }
+      }
+    },
     "signalwire.swaig.tool_definition": {
       "classes": {
         "ToolDefinition": {
@@ -19650,6 +19894,23 @@
             "values": {
               "params": [],
               "returns": "list<class:signalwire.swml.TapDirection>"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swml.wire_enum": {
+      "classes": {
+        "WireEnum": {
+          "methods": {
+            "get_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             }
           }
         }

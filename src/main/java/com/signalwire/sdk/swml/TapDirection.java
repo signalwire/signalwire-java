@@ -29,7 +29,7 @@ package com.signalwire.sdk.swml;
  * routing a tap through the enum is byte-for-byte identical to passing that
  * string.
  */
-public enum TapDirection {
+public enum TapDirection implements WireEnum {
 
     SPEAK("speak"),
     HEAR("hear"),

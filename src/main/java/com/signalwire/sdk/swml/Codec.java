@@ -28,7 +28,7 @@ package com.signalwire.sdk.swml;
  * is the canonical wire string, so routing a tap through the enum is
  * byte-for-byte identical to passing that string.
  */
-public enum Codec {
+public enum Codec implements WireEnum {
 
     PCMU("PCMU"),
     PCMA("PCMA");

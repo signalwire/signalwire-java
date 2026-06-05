@@ -30,7 +30,7 @@ package com.signalwire.sdk.swml;
  * routing a recording through the enum is byte-for-byte identical to passing
  * that string.
  */
-public enum RecordDirection {
+public enum RecordDirection implements WireEnum {
 
     SPEAK("speak"),
     LISTEN("listen"),

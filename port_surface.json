@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 1c32c31eddb4fd877b620e01ae16d688afac351f",
+  "generated_from": "signalwire-java @ 4d2f10caafccfc660ea8bd25ecdda5b903bc2439",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -43,9 +43,12 @@
       "classes": {
         "AgentServer": [
           "__init__",
+          "close",
+          "enable_tls",
           "get_agent",
           "get_routes",
           "get_sip_route",
+          "is_tls_enabled",
           "register",
           "register_sip_route",
           "run",
@@ -574,6 +577,9 @@
           "denoise",
           "denoise_stop",
           "detect",
+          "detect_answering_machine",
+          "detect_digit",
+          "detect_fax",
           "detect_with",
           "disconnect",
           "dispatch_event",
@@ -600,6 +606,12 @@
           "pay",
           "play",
           "play_and_collect",
+          "play_audio",
+          "play_ringtone",
+          "play_silence",
+          "play_tts",
+          "prompt_audio",
+          "prompt_tts",
           "queue_enter",
           "queue_leave",
           "receive_fax",
@@ -670,6 +682,7 @@
       "classes": {
         "RelayClient": [
           "builder",
+          "close",
           "connect",
           "dial",
           "disconnect",
@@ -1973,6 +1986,14 @@
       },
       "functions": []
     },
+    "signalwire.skills.skill_name": {
+      "classes": {
+        "SkillName": [
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.skills.spider.skill": {
       "classes": {
         "SpiderSkill": [
@@ -2004,6 +2025,7 @@
           "get_description",
           "get_global_data",
           "get_name",
+          "get_parameter_schema",
           "get_prompt_sections",
           "get_version",
           "register_tools",
@@ -2020,6 +2042,33 @@
           "get_name",
           "register_tools",
           "setup"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swaig.parameter_schema": {
+      "classes": {
+        "ParameterSchema": [
+          "builder"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swaig.parameter_schema_builder": {
+      "classes": {
+        "ParameterSchemaBuilder": [
+          "array",
+          "array_of_objects",
+          "bool",
+          "build",
+          "default_value",
+          "enum_of",
+          "format",
+          "integer",
+          "number",
+          "object",
+          "required",
+          "string"
         ]
       },
       "functions": []
@@ -2048,6 +2097,15 @@
       },
       "functions": []
     },
+    "signalwire.swml.codec": {
+      "classes": {
+        "Codec": [
+          "from_wire",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.swml.document": {
       "classes": {
         "Document": [
@@ -2062,6 +2120,23 @@
           "render_pretty",
           "reset",
           "to_dict"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.record_direction": {
+      "classes": {
+        "RecordDirection": [
+          "from_wire",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.record_format": {
+      "classes": {
+        "RecordFormat": [
+          "get_value"
         ]
       },
       "functions": []
@@ -2091,6 +2166,7 @@
           "ai",
           "amazon_bedrock",
           "answer",
+          "close",
           "cond",
           "connect",
           "define_tool",
@@ -2149,6 +2225,21 @@
           "user_event",
           "validate_basic_auth"
         ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.tap_direction": {
+      "classes": {
+        "TapDirection": [
+          "from_wire",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.wire_enum": {
+      "classes": {
+        "WireEnum": []
       },
       "functions": []
     },

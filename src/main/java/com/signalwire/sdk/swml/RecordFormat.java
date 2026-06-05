@@ -25,7 +25,7 @@ package com.signalwire.sdk.swml;
  * routing a recording through the enum is byte-for-byte identical to passing
  * that string.
  */
-public enum RecordFormat {
+public enum RecordFormat implements WireEnum {
 
     MP3("mp3"),
     WAV("wav"),

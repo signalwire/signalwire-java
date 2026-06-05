@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 8ea0169b0b1ac72c63e86e4b73a48baebcf6cd72",
+  "generated_from": "signalwire-java @ 4d2f10caafccfc660ea8bd25ecdda5b903bc2439",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -25,7 +25,11 @@
           "record_call",
           "record_format",
           "record_stereo",
-          "route"
+          "route",
+          "signingKey",
+          "signing_key",
+          "trustProxyForSignature",
+          "trust_proxy_for_signature"
         ]
       },
       "functions": []
@@ -41,12 +45,17 @@
         "AgentServer": [
           "AgentServer",
           "agent_server",
+          "close",
+          "enableTls",
+          "enable_tls",
           "getAgent",
           "getRoutes",
           "getSipRoute",
           "get_agent",
           "get_routes",
           "get_sip_route",
+          "isTlsEnabled",
+          "is_tls_enabled",
           "register",
           "registerSipRoute",
           "register_sip_route",
@@ -159,6 +168,7 @@
           "getDynamicConfigCallback",
           "getGlobalData",
           "getHost",
+          "getLanguageParams",
           "getMcpServers",
           "getName",
           "getNormalisedRoute",
@@ -169,6 +179,7 @@
           "getPrompt",
           "getRawPrompt",
           "getRoute",
+          "getSigningKey",
           "getSipUsernames",
           "getSkillManager",
           "getTools",
@@ -178,6 +189,7 @@
           "get_dynamic_config_callback",
           "get_global_data",
           "get_host",
+          "get_language_params",
           "get_mcp_servers",
           "get_name",
           "get_normalised_route",
@@ -187,6 +199,7 @@
           "get_prompt",
           "get_raw_prompt",
           "get_route",
+          "get_signing_key",
           "get_sip_usernames",
           "get_skill_manager",
           "get_tools",
@@ -198,8 +211,10 @@
           "has_tool",
           "isMcpServerEnabled",
           "isSipRoutingEnabled",
+          "isTrustProxyForSignature",
           "is_mcp_server_enabled",
           "is_sip_routing_enabled",
+          "is_trust_proxy_for_signature",
           "listSkills",
           "list_skills",
           "manualSetProxyUrl",
@@ -237,6 +252,7 @@
           "setGlobalData",
           "setInternalFillers",
           "setInternalFillersMap",
+          "setLanguageParams",
           "setLanguages",
           "setNativeFunctions",
           "setParam",
@@ -254,6 +270,7 @@
           "set_global_data",
           "set_internal_fillers",
           "set_internal_fillers_map",
+          "set_language_params",
           "set_languages",
           "set_native_functions",
           "set_param",
@@ -269,7 +286,9 @@
           "updateGlobalData",
           "update_global_data",
           "validateToolToken",
-          "validate_tool_token"
+          "validateWebhook",
+          "validate_tool_token",
+          "validate_webhook"
         ]
       },
       "functions": []
@@ -840,7 +859,13 @@
           "denoiseStop",
           "denoise_stop",
           "detect",
+          "detectAnsweringMachine",
+          "detectDigit",
+          "detectFax",
           "detectWith",
+          "detect_answering_machine",
+          "detect_digit",
+          "detect_fax",
           "detect_with",
           "disconnect",
           "dispatchEvent",
@@ -884,7 +909,19 @@
           "pay",
           "play",
           "playAndCollect",
+          "playAudio",
+          "playRingtone",
+          "playSilence",
+          "playTts",
           "play_and_collect",
+          "play_audio",
+          "play_ringtone",
+          "play_silence",
+          "play_tts",
+          "promptAudio",
+          "promptTts",
+          "prompt_audio",
+          "prompt_tts",
           "queueEnter",
           "queueLeave",
           "queue_enter",
@@ -984,6 +1021,7 @@
         "RelayClient": [
           "InternalWebSocket",
           "builder",
+          "close",
           "connect",
           "dial",
           "disconnect",
@@ -2473,6 +2511,32 @@
       },
       "functions": []
     },
+    "signalwire.security.webhook_filter": {
+      "classes": {
+        "WebhookFilter": [
+          "WebhookFilter",
+          "destroy",
+          "doFilter",
+          "do_filter",
+          "getReader",
+          "get_reader",
+          "init",
+          "webhook_filter"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.security.webhook_validator": {
+      "classes": {
+        "WebhookValidator": [
+          "validateRequest",
+          "validateWebhookSignature",
+          "validate_request",
+          "validate_webhook_signature"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.signalwire": {
       "classes": {
         "Signalwire": [
@@ -2768,6 +2832,15 @@
       },
       "functions": []
     },
+    "signalwire.skills.skill_name": {
+      "classes": {
+        "SkillName": [
+          "getValue",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.skills.spider.skill": {
       "classes": {
         "SpiderSkill": [
@@ -2808,11 +2881,13 @@
           "getDescription",
           "getGlobalData",
           "getName",
+          "getParameterSchema",
           "getPromptSections",
           "getVersion",
           "get_description",
           "get_global_data",
           "get_name",
+          "get_parameter_schema",
           "get_prompt_sections",
           "get_version",
           "registerTools",
@@ -2834,6 +2909,36 @@
           "registerTools",
           "register_tools",
           "setup"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swaig.parameter_schema": {
+      "classes": {
+        "ParameterSchema": [
+          "builder"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swaig.parameter_schema_builder": {
+      "classes": {
+        "ParameterSchemaBuilder": [
+          "array",
+          "arrayOfObjects",
+          "array_of_objects",
+          "bool",
+          "build",
+          "defaultValue",
+          "default_value",
+          "enumOf",
+          "enum_of",
+          "format",
+          "integer",
+          "number",
+          "object",
+          "required",
+          "string"
         ]
       },
       "functions": []
@@ -2873,6 +2978,17 @@
       },
       "functions": []
     },
+    "signalwire.swml.codec": {
+      "classes": {
+        "Codec": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.swml.document": {
       "classes": {
         "Document": [
@@ -2896,6 +3012,26 @@
           "reset",
           "toMap",
           "to_dict"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.record_direction": {
+      "classes": {
+        "RecordDirection": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.record_format": {
+      "classes": {
+        "RecordFormat": [
+          "getValue",
+          "get_value"
         ]
       },
       "functions": []
@@ -2931,6 +3067,7 @@
           "amazonBedrock",
           "amazon_bedrock",
           "answer",
+          "close",
           "cond",
           "connect",
           "defineTool",
@@ -3029,6 +3166,23 @@
           "validateBasicAuth",
           "validate_basic_auth"
         ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.tap_direction": {
+      "classes": {
+        "TapDirection": [
+          "fromWire",
+          "from_wire",
+          "getValue",
+          "get_value"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.swml.wire_enum": {
+      "classes": {
+        "WireEnum": []
       },
       "functions": []
     },

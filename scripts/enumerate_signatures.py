@@ -298,6 +298,12 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
         ("ToolDefinition", "signalwire.swaig.tool_definition"),
     ("com.signalwire.sdk.swaig", "ToolHandler"):
         ("ToolHandler", "signalwire.swaig.tool_handler"),
+    # ParameterSchema.Builder (nested in ParameterSchema.java) — like
+    # AgentBase.Builder, the bare ``Builder`` is qualified with its outer
+    # class to avoid collision, mirroring the surface enumerator's
+    # ``effective_name = outer_name + renamed`` → ``ParameterSchemaBuilder``.
+    ("com.signalwire.sdk.swaig", "Builder"):
+        ("ParameterSchemaBuilder", "signalwire.swaig.parameter_schema_builder"),
     # Document — Java's swml.Document (note: there's also a JAVA_MODULE_OVERRIDES entry
     # routing it to signalwire.core.swml_builder; the projection here keeps the class
     # name aligned with the surface emission for the audit walker).
