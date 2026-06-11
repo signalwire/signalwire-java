@@ -57,7 +57,12 @@ import java.util.function.Supplier;
  *   ./gradlew --no-daemon -q emitCorpus
  * </pre>
  */
-public final class EmitCorpus {
+// Package-private: this is the emission-dump tool the EMISSION gate runs via
+// the `emitCorpus` Gradle task (a main() entry point — no `public` needed to
+// launch it), NOT a public SDK API. Keeping it non-public excludes it from the
+// enumerated public surface, matching how every other port keeps its
+// emit-corpus tool out of the surface (separate tools/ / cmd/ / examples/ dir).
+final class EmitCorpus {
 
     private EmitCorpus() {
     }
