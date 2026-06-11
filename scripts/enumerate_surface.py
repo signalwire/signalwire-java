@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -638,6 +639,27 @@ def build_snapshot(repo_root: Path, reference_json: Path,
     }
 
 
+def _default_reference() -> Path:
+    """Locate porting-sdk/python_surface.json without a ~/src hardcode.
+
+    Order: $PORTING_SDK → adjacency (porting-sdk as a sibling of this repo, the
+    CLAUDE.md §7 layout used in CI's workspace checkout) → legacy ~/src. The old
+    hardcoded ~/src/porting-sdk default failed the SURFACE-FRESH gate in CI,
+    where porting-sdk is checked out beside the port repo, not under $HOME/src.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    candidates = [
+        Path(os.environ["PORTING_SDK"]) if os.environ.get("PORTING_SDK") else None,
+        repo_root.parent / "porting-sdk",          # adjacency (CI + local)
+        Path.home() / "src" / "porting-sdk",        # legacy local fallback
+    ]
+    for base in candidates:
+        if base is not None and (base / "python_surface.json").is_file():
+            return base / "python_surface.json"
+    # Fall back to the adjacency path for the error message if none exist.
+    return repo_root.parent / "porting-sdk" / "python_surface.json"
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -646,8 +668,9 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument(
         "--reference", type=Path,
-        default=Path.home() / "src" / "porting-sdk" / "python_surface.json",
-        help="Path to porting-sdk/python_surface.json for class→module lookup",
+        default=_default_reference(),
+        help="Path to porting-sdk/python_surface.json for class→module lookup "
+             "(default: $PORTING_SDK or porting-sdk adjacent to this repo)",
     )
     parser.add_argument(
         "--output", type=Path, default=None,

@@ -36,6 +36,18 @@ jobs:
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
+      # The EMISSION gate compares this port's to_dict() output against the
+      # signalwire-python oracle (FunctionResult), which pulls fastapi via
+      # signalwire/__init__. Check it out only if it isn't already present as a
+      # sibling (it is in the cross-port matrix checkout; it is NOT in this
+      # per-port workflow), so the EMISSION gate has its reference.
+      - name: Checkout signalwire-python (EMISSION oracle) if not already present
+        uses: actions/checkout@v5
+        with:
+          repository: signalwire/signalwire-python
+          path: signalwire-python
+          ref: main
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -54,6 +66,17 @@ jobs:
         run: |
           pip install -e porting-sdk/test_harness/mock_relay
           pip install -e porting-sdk/test_harness/mock_signalwire
+
+      # The EMISSION gate needs `import signalwire` (the oracle). Install it from
+      # the adjacent checkout only if it isn't already importable — so a runner
+      # that already has it (or a future shared setup) isn't reinstalled.
+      - name: Install signalwire-python (EMISSION oracle) if not importable
+        run: |
+          if python -c "import signalwire.core.function_result" 2>/dev/null; then
+            echo "signalwire-python already importable; skipping install"
+          else
+            pip install ./signalwire-python
+          fi
 
       - name: Run CI gate script (TEST -> SIGNATURES -> DRIFT -> NO-CHEAT)
         working-directory: signalwire-java
