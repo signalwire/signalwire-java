@@ -44,7 +44,7 @@ dependencies {
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
 
     // Testing
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     // Servlet API on the test classpath so the WebhookFilter tests can
     // compile against javax.servlet.* without forcing it into the SDK
