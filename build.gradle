@@ -27,14 +27,14 @@ repositories {
 
 dependencies {
     // JSON
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.code.gson:gson:2.14.0'
 
     // YAML — used by PromptObjectModel.fromYaml/toYaml for byte-identical
     // round-trip parity with Python's pyyaml-based pom.py.
-    implementation 'org.yaml:snakeyaml:2.2'
+    implementation 'org.yaml:snakeyaml:2.6'
 
     // WebSocket for RELAY
-    implementation 'org.java-websocket:Java-WebSocket:1.5.6'
+    implementation 'org.java-websocket:Java-WebSocket:1.6.0'
 
     // Servlet API — compileOnly so the Servlet WebhookFilter compiles for
     // users running on Tomcat / Jetty / similar containers, but doesn't drag
