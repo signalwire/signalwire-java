@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompatConferencesMockTest {
 
-    private static final String CONF_BASE = "/api/laml/2010-04-01/Accounts/test_proj/Conferences";
+    private String CONF_BASE;
 
     private RestClient client;
     private MockTest.Harness mock;
@@ -36,6 +36,7 @@ class CompatConferencesMockTest {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.CONF_BASE = "/api/laml/2010-04-01/Accounts/" + bound.project + "/Conferences";
     }
 
     private static Map<String, Object> kw(Object... entries) {

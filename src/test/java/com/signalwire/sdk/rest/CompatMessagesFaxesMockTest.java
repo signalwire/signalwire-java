@@ -26,12 +26,14 @@ class CompatMessagesFaxesMockTest {
 
     private RestClient client;
     private MockTest.Harness mock;
+    private String acctBase;
 
     @BeforeEach
     void setUp() {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.acctBase = "/api/laml/2010-04-01/Accounts/" + bound.project;
     }
 
     // ── Messages ────────────────────────────────────────────────────
@@ -63,7 +65,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_U1",
+                    acctBase + "/Messages/MM_U1",
                     j.path);
             Map<String, Object> jb = j.bodyMap();
             assertNotNull(jb);
@@ -94,7 +96,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_X/Media/ME_X",
+                    acctBase + "/Messages/MM_X/Media/ME_X",
                     j.path);
         }
     }
@@ -120,7 +122,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("DELETE", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Messages/MM_D/Media/ME_D",
+                    acctBase + "/Messages/MM_D/Media/ME_D",
                     j.path);
         }
     }
@@ -153,7 +155,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_U2",
+                    acctBase + "/Faxes/FX_U2",
                     j.path);
             Map<String, Object> jb = j.bodyMap();
             assertNotNull(jb);
@@ -183,7 +185,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_LM_X/Media",
+                    acctBase + "/Faxes/FX_LM_X/Media",
                     j.path);
         }
     }
@@ -210,7 +212,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_G/Media/ME_G",
+                    acctBase + "/Faxes/FX_G/Media/ME_G",
                     j.path);
         }
     }
@@ -234,7 +236,7 @@ class CompatMessagesFaxesMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("DELETE", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Faxes/FX_D/Media/ME_D",
+                    acctBase + "/Faxes/FX_D/Media/ME_D",
                     j.path);
         }
     }

@@ -27,12 +27,14 @@ class CompatPhoneNumbersMockTest {
 
     private RestClient client;
     private MockTest.Harness mock;
+    private String acctBase;
 
     @BeforeEach
     void setUp() {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.acctBase = "/api/laml/2010-04-01/Accounts/" + bound.project;
     }
 
     @Nested
@@ -57,7 +59,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers",
+                    acctBase + "/IncomingPhoneNumbers",
                     j.path);
         }
     }
@@ -83,7 +85,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_GET",
+                    acctBase + "/IncomingPhoneNumbers/PN_GET",
                     j.path);
         }
     }
@@ -114,7 +116,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_UU",
+                    acctBase + "/IncomingPhoneNumbers/PN_UU",
                     j.path);
             Map<String, Object> jb = j.bodyMap();
             assertNotNull(jb);
@@ -141,7 +143,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("DELETE", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers/PN_DEL",
+                    acctBase + "/IncomingPhoneNumbers/PN_DEL",
                     j.path);
         }
     }
@@ -173,7 +175,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/IncomingPhoneNumbers",
+                    acctBase + "/IncomingPhoneNumbers",
                     j.path);
             Map<String, Object> jb = j.bodyMap();
             assertNotNull(jb);
@@ -210,7 +212,7 @@ class CompatPhoneNumbersMockTest {
             assertEquals("POST", j.method);
             // Note the path is ImportedPhoneNumbers, not IncomingPhoneNumbers.
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/ImportedPhoneNumbers",
+                    acctBase + "/ImportedPhoneNumbers",
                     j.path);
             Map<String, Object> jb = j.bodyMap();
             assertNotNull(jb);
@@ -240,7 +242,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/AvailablePhoneNumbers",
+                    acctBase + "/AvailablePhoneNumbers",
                     j.path);
         }
     }
@@ -271,7 +273,7 @@ class CompatPhoneNumbersMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/AvailablePhoneNumbers/US/TollFree",
+                    acctBase + "/AvailablePhoneNumbers/US/TollFree",
                     j.path);
             // The AreaCode should be on the query string, not body.
             Map<String, List<String>> qp = j.getQueryParams();

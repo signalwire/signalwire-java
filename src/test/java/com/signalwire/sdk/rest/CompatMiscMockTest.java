@@ -25,8 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompatMiscMockTest {
 
-    private static final String ACCT_BASE =
-            "/api/laml/2010-04-01/Accounts/test_proj";
+    private String ACCT_BASE;
 
     private RestClient client;
     private MockTest.Harness mock;
@@ -36,6 +35,7 @@ class CompatMiscMockTest {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.ACCT_BASE = "/api/laml/2010-04-01/Accounts/" + bound.project;
     }
 
     private static Map<String, Object> kw(Object... entries) {

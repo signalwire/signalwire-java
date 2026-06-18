@@ -74,6 +74,15 @@ public class RelayClient implements AutoCloseable {
     // ── Connection state ─────────────────────────────────────────────
     private volatile InternalWebSocket webSocket;
     private volatile String protocol;
+    /**
+     * Server-assigned session id captured from the {@code signalwire.connect}
+     * handshake result ({@code result.sessionid}). Kept OFF the public surface
+     * — the Python reference does not expose it either. Tests read it through
+     * the package-private {@link #sessionIdForTesting()} accessor to scope a
+     * mock-relay harness view to this client's own frames (parallel-test
+     * isolation). Production code never needs it.
+     */
+    private volatile String sessionId;
     private volatile String authorizationState;
     private volatile boolean connected;
     private volatile boolean running;
@@ -183,6 +192,19 @@ public class RelayClient implements AutoCloseable {
      */
     public void setRelayProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    /**
+     * Package-private, test-only accessor for the server-assigned session id
+     * captured at the {@code signalwire.connect} handshake. NOT part of the
+     * public API surface (the Python reference keeps {@code sessionid}
+     * internal too) — it exists so the in-package {@code RelayMockTest}
+     * harness can scope its journal reads / resets / pushes to this client's
+     * own session, making mock-backed tests parallel-safe. Returns
+     * {@code null} until the handshake completes.
+     */
+    String sessionIdForTesting() {
+        return sessionId;
     }
 
     /**
@@ -560,6 +582,10 @@ public class RelayClient implements AutoCloseable {
             String proto = Objects.toString(result.get("protocol"), null);
             if (proto != null) {
                 protocol = proto;
+            }
+            String sid = Objects.toString(result.get("sessionid"), null);
+            if (sid != null) {
+                sessionId = sid;
             }
             connected = true;
             reconnectDelay = Constants.RECONNECT_INITIAL_DELAY_MS;

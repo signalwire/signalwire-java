@@ -77,6 +77,9 @@ class ConnectMockTest {
         c.connect(10_000);
         // Wait briefly for the SDK to register protocol after the response.
         try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        // Scope the harness view to THIS client's session so journal reads see
+        // only its own frames — parallel-safe against the shared mock.
+        this.mock = mock.scopedTo(c);
         return c;
     }
 
@@ -178,10 +181,9 @@ class ConnectMockTest {
         c1.disconnect();
         try { Thread.sleep(100); } catch (InterruptedException ignored) {}
 
-        // Reset journal so we only see the resume connect frame.
-        mock.reset();
-
-        // Second client uses the issued protocol.
+        // Second client uses the issued protocol. Its session journal is a
+        // fresh, distinct scope, so we naturally see only its resume connect
+        // frame — no global reset needed (which would race a concurrent test).
         RelayClient c2 = RelayClient.builder()
                 .project("p").token("t").space(mock.wsUrl()).contexts(List.of("c1"))
                 .build();
@@ -189,9 +191,10 @@ class ConnectMockTest {
         try {
             c2.connect(10_000);
             try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+            RelayMockTest.Harness m2 = mock.scopedTo(c2);
             // The resume connect frame must carry the protocol field.
             List<RelayMockTest.JournalEntry> resumeFrames =
-                    mock.journalRecv(Constants.METHOD_CONNECT);
+                    m2.journalRecv(Constants.METHOD_CONNECT);
             assertFalse(resumeFrames.isEmpty(),
                     "no signalwire.connect frame after reconnect");
             boolean foundProto = false;
@@ -309,6 +312,7 @@ class ConnectMockTest {
         client = c;
         c.connect(10_000);
         try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        this.mock = mock.scopedTo(c);
 
         List<RelayMockTest.JournalEntry> entries =
                 mock.journalRecv(Constants.METHOD_CONNECT);

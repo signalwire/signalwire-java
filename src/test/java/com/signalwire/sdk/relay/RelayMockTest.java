@@ -94,6 +94,15 @@ public final class RelayMockTest {
         private final int httpPort;
         private final java.net.http.HttpClient http;
 
+        /**
+         * When set, journal reads, {@link #reset()}, scenario arming, pushes,
+         * and {@code scenario_play} ops are scoped to this session id (the
+         * server-assigned {@code sessionid} from the connect handshake), so a
+         * test only ever sees / disturbs its own frames. Empty => global
+         * (legacy, single-threaded view). Set via {@link #scopedTo(RelayClient)}.
+         */
+        private String sessionId = "";
+
         private Harness(String httpUrl, String wsUrl, int wsPort, int httpPort) {
             this.httpUrl = httpUrl;
             this.wsUrl = wsUrl;
@@ -103,6 +112,37 @@ public final class RelayMockTest {
                     .version(java.net.http.HttpClient.Version.HTTP_1_1)
                     .connectTimeout(HTTP_TIMEOUT)
                     .build();
+        }
+
+        /**
+         * Returns a sibling {@code Harness} view (same server, shared HTTP
+         * client config) scoped to {@code client}'s handshake session id, so
+         * its journal reads / resets / scenario arming / pushes target only
+         * that client's own frames — making the shared mock safe under
+         * parallel test execution. Mirrors the frozen TypeScript design's
+         * {@code mock.sessionId = sessionIdOf(client)}.
+         *
+         * <p>The client MUST already be connected (so the {@code sessionid} is
+         * captured); otherwise the scope is empty and the view stays global.
+         */
+        public Harness scopedTo(RelayClient client) {
+            Harness h = new Harness(httpUrl, wsUrl, wsPort, httpPort);
+            String sid = client == null ? null : client.sessionIdForTesting();
+            h.sessionId = sid != null ? sid : "";
+            return h;
+        }
+
+        /** The session id this view is scoped to, or empty when unscoped. */
+        public String sessionId() {
+            return sessionId;
+        }
+
+        /** {@code ?session_id=<id>} suffix for control-plane calls when scoped, else "". */
+        private String sessionQuery() {
+            if (sessionId == null || sessionId.isEmpty()) {
+                return "";
+            }
+            return "?session_id=" + java.net.URLEncoder.encode(sessionId, StandardCharsets.UTF_8);
         }
 
         public String httpUrl() {
@@ -132,7 +172,7 @@ public final class RelayMockTest {
          */
         public List<JournalEntry> journal() {
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(httpUrl + "/__mock__/journal"))
+                    .uri(URI.create(httpUrl + "/__mock__/journal" + sessionQuery()))
                     .timeout(HTTP_TIMEOUT)
                     .GET()
                     .build();
@@ -207,11 +247,25 @@ public final class RelayMockTest {
         }
 
         /**
-         * Clears journal + scenarios on the mock server.
+         * Clears journal + scenarios for this session (both scoped when
+         * {@link #sessionId} is set, global otherwise). Tests typically call
+         * this from setup. A scoped view clears only its own session's entries
+         * and armed scenarios, so it is safe to call under parallel execution
+         * without racing a concurrent test.
          */
         public void reset() {
-            postNoBody("/__mock__/journal/reset");
-            postNoBody("/__mock__/scenarios/reset");
+            String q = sessionQuery();
+            postNoBody("/__mock__/journal/reset" + q);
+            postNoBody("/__mock__/scenarios/reset" + q);
+        }
+
+        /**
+         * Resets only this session's armed scenario queues (or all of them when
+         * unscoped). Tests that arm scenarios call this in setup so a prior run
+         * of the same test cannot leak a scenario.
+         */
+        public void resetScenarios() {
+            postNoBody("/__mock__/scenarios/reset" + sessionQuery());
         }
 
         // ── Scenario plumbing ──────────────────────────────────────
@@ -220,14 +274,14 @@ public final class RelayMockTest {
          * Queue scripted post-RPC events for {@code method} (FIFO consume-once).
          */
         public void armMethod(String method, List<Map<String, Object>> events) {
-            postJson("/__mock__/scenarios/" + method, events);
+            postJson("/__mock__/scenarios/" + method + sessionQuery(), events);
         }
 
         /**
          * Queue a dial-dance scenario (winner state events + final dial event).
          */
         public void armDial(Map<String, Object> body) {
-            postJson("/__mock__/scenarios/dial", body);
+            postJson("/__mock__/scenarios/dial" + sessionQuery(), body);
         }
 
         // ── Server-initiated pushes ─────────────────────────────────
@@ -241,12 +295,18 @@ public final class RelayMockTest {
         }
 
         /**
-         * Push a frame to a specific session (or all sessions if sessionId is null).
+         * Push a frame to a specific session. When {@code sessionId} is null,
+         * targets this harness's scoped session (so a parallel test's client
+         * never receives it); an unscoped harness with a null arg broadcasts
+         * to every session (legacy single-threaded behavior).
          */
         public Map<String, Object> push(Map<String, Object> frame, String sessionId) {
+            String target = (sessionId != null && !sessionId.isEmpty())
+                    ? sessionId
+                    : this.sessionId;
             String url = "/__mock__/push";
-            if (sessionId != null && !sessionId.isEmpty()) {
-                url = url + "?session_id=" + sessionId;
+            if (target != null && !target.isEmpty()) {
+                url = url + "?session_id=" + java.net.URLEncoder.encode(target, StandardCharsets.UTF_8);
             }
             Map<String, Object> body = new HashMap<>();
             body.put("frame", frame);
@@ -264,7 +324,12 @@ public final class RelayMockTest {
             body.put("auto_states", spec.autoStates);
             body.put("delay_ms", spec.delayMs);
             if (spec.callId != null) body.put("call_id", spec.callId);
-            if (spec.sessionId != null) body.put("session_id", spec.sessionId);
+            // Target this harness's scoped session by default so the inbound-call
+            // sequence reaches only this test's client (an unscoped harness
+            // broadcasts, as before). An explicit spec.sessionId overrides.
+            String sid = spec.sessionId != null ? spec.sessionId
+                    : (this.sessionId != null && !this.sessionId.isEmpty() ? this.sessionId : null);
+            if (sid != null) body.put("session_id", sid);
             return postJson("/__mock__/inbound_call", body);
         }
 
@@ -272,7 +337,37 @@ public final class RelayMockTest {
          * Run a scripted timeline of pushes/sleeps/expect_recv on the server.
          */
         public Map<String, Object> scenarioPlay(List<Map<String, Object>> ops) {
-            return postJson("/__mock__/scenario_play", ops);
+            List<Map<String, Object>> scoped =
+                    (sessionId != null && !sessionId.isEmpty()) ? scopeOps(ops) : ops;
+            return postJson("/__mock__/scenario_play", scoped);
+        }
+
+        /**
+         * Inject this view's session id into each timeline op's push /
+         * expect_recv spec when the op does not already specify a session_id,
+         * so the timeline targets only this test's client and {@code
+         * expect_recv} matches only this session's frames — parallel-safe.
+         * Sleep ops are left untouched.
+         */
+        @SuppressWarnings("unchecked")
+        private List<Map<String, Object>> scopeOps(List<Map<String, Object>> ops) {
+            List<Map<String, Object>> out = new ArrayList<>(ops.size());
+            for (Map<String, Object> op : ops) {
+                Map<String, Object> copy = new LinkedHashMap<>(op);
+                for (String key : new String[] {"push", "expect_recv"}) {
+                    Object spec = copy.get(key);
+                    if (spec instanceof Map) {
+                        Map<String, Object> specMap = (Map<String, Object>) spec;
+                        if (!specMap.containsKey("session_id")) {
+                            Map<String, Object> specCopy = new LinkedHashMap<>(specMap);
+                            specCopy.put("session_id", sessionId);
+                            copy.put(key, specCopy);
+                        }
+                    }
+                }
+                out.add(copy);
+            }
+            return out;
         }
 
         /**
@@ -431,25 +526,47 @@ public final class RelayMockTest {
      * reset before every newClient() call.
      */
     public static Bound newClient(String project, String token, List<String> contexts) {
-        Harness h = ensureServer();
-        h.reset();
+        Harness shared = ensureServer();
         RelayClient client = RelayClient.builder()
                 .project(project)
                 .token(token)
-                .space(h.wsUrl())
+                .space(shared.wsUrl())
                 .contexts(contexts != null ? contexts : List.of())
                 .build();
-        return new Bound(client, h);
+        client.connect(10_000);
+        // Wait briefly for the SDK to capture the handshake sessionid.
+        for (int i = 0; i < 100 && client.sessionIdForTesting() == null; i++) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        // Return a harness view scoped to THIS client's session, so the test's
+        // journal reads / resets see only its own frames — making the shared
+        // mock safe under parallel test execution. A brand-new session starts
+        // with an empty (scoped) journal, so no global reset is needed.
+        Harness mock = shared.scopedTo(client);
+        return new Bound(client, mock);
     }
 
     /**
-     * Returns just the harness (no client), useful for tests that want to
-     * construct multiple clients themselves.
+     * Returns a fresh, UNSCOPED harness view onto the shared mock server, for
+     * tests that construct (and connect) their own clients. The returned view
+     * is independent of the singleton — mutating its scope via
+     * {@link Harness#scopedTo(RelayClient)} cannot disturb another test's view.
+     *
+     * <p>Unlike the legacy helper, this does NOT perform a global journal /
+     * scenario reset (which would race a concurrent test on the shared mock).
+     * Tests scope the view to their connected client with
+     * {@code mock = mock.scopedTo(client)} after {@code connect()}; the scoped
+     * view starts empty because the session is brand new.
      */
     public static Harness harness() {
-        Harness h = ensureServer();
-        h.reset();
-        return h;
+        Harness shared = ensureServer();
+        // Hand back an independent (unscoped) sibling view, never the singleton.
+        return shared.scopedTo(null);
     }
 
     /**

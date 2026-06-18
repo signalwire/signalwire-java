@@ -100,6 +100,27 @@ public final class MockTest {
         private final int port;
         private final java.net.http.HttpClient http;
 
+        /**
+         * The unique random project this harness's client authenticates with
+         * ({@code test_proj_<hex>}). Tests that assert on the AccountSid
+         * embedded in a LAML path read it from {@link #project()} instead of
+         * hard-coding {@code test_proj}. Empty on an unscoped/raw harness.
+         */
+        private String project = "";
+
+        /**
+         * When set, {@link #journal()}/{@link #last()} return only the requests
+         * THIS test's client made — identified by its {@code Authorization}
+         * header (Basic {@code project:token}, with a per-test random project).
+         * REST is pure request/response, so the mock needs no session
+         * handshake: each request is self-identifying via its auth header, and
+         * filtering the shared global journal by that header makes the suite
+         * safe under parallelism with no SDK change and no mock-server change.
+         * Empty => unscoped (legacy view, returns every entry — only correct
+         * under serial execution).
+         */
+        private String authHeader = "";
+
         private Harness(String url, int port) {
             this.url = url;
             this.port = port;
@@ -117,10 +138,13 @@ public final class MockTest {
             return port;
         }
 
-        /**
-         * Returns every entry recorded since the last reset, in arrival order.
-         */
-        public List<JournalEntry> journal() {
+        /** The per-test random project this harness's client authenticates as. */
+        public String project() {
+            return project;
+        }
+
+        /** Fetch the raw global journal (all clients' requests, arrival order). */
+        private List<JournalEntry> rawJournal() {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(url + "/__mock__/journal"))
                     .timeout(HTTP_TIMEOUT)
@@ -144,6 +168,26 @@ public final class MockTest {
         }
 
         /**
+         * Returns this client's recorded requests in arrival order. Scoped to
+         * this harness's {@code authHeader} when set (so a parallel test never
+         * sees another test's requests); an unscoped harness sees the whole
+         * journal.
+         */
+        public List<JournalEntry> journal() {
+            List<JournalEntry> entries = rawJournal();
+            if (authHeader == null || authHeader.isEmpty()) {
+                return entries;
+            }
+            java.util.List<JournalEntry> mine = new java.util.ArrayList<>();
+            for (JournalEntry e : entries) {
+                if (e.headers != null && authHeader.equals(e.headers.get("authorization"))) {
+                    mine.add(e);
+                }
+            }
+            return mine;
+        }
+
+        /**
          * Returns the most recent journal entry. Throws if the journal is
          * empty — every test that exercises the SDK should produce at least
          * one entry.
@@ -158,9 +202,16 @@ public final class MockTest {
         }
 
         /**
-         * Clears journal + scenarios on the mock server.
+         * Clears journal + scenarios on the mock server. A scoped harness
+         * leaves the shared journal alone (it only ever reads its own entries,
+         * identified by auth header, so there is nothing to clear and a global
+         * wipe would race a concurrent test). Unscoped harnesses do the legacy
+         * global reset.
          */
         public void reset() {
+            if (authHeader != null && !authHeader.isEmpty()) {
+                return;
+            }
             postNoBody("/__mock__/journal/reset");
             postNoBody("/__mock__/scenarios/reset");
         }
@@ -169,14 +220,22 @@ public final class MockTest {
          * Stages a one-shot response override for the named operation. The
          * status + body returned here will be served the next time the route
          * is hit; subsequent hits fall back to spec synthesis.
+         *
+         * <p>The override is scoped to THIS client's auth header (REST's
+         * session key) via {@code ?session_id=<auth-header>} so a concurrent
+         * test can't consume it and a stale one can't bleed across tests. An
+         * unscoped harness arms a shared override (legacy serial behavior).
          */
         public void scenarioSet(String operationId, int status, Map<String, Object> body) {
             Map<String, Object> payload = new HashMap<>();
             payload.put("status", status);
             payload.put("response", body);
             String json = GSON.toJson(payload);
+            String q = (authHeader != null && !authHeader.isEmpty())
+                    ? "?session_id=" + java.net.URLEncoder.encode(authHeader, StandardCharsets.UTF_8)
+                    : "";
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url + "/__mock__/scenarios/" + operationId))
+                    .uri(URI.create(url + "/__mock__/scenarios/" + operationId + q))
                     .timeout(HTTP_TIMEOUT)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
@@ -265,16 +324,48 @@ public final class MockTest {
         }
     }
 
+    private static final String REST_TOKEN = "test_tok";
+
     /**
      * Returns (RestClient, Harness) for a single test. The client is a real
-     * RestClient pointed at the local mock server with project=test_proj and
-     * token=test_tok — matching the Python signalwire_client fixture.
+     * RestClient pointed at the local mock server.
+     *
+     * <p>Isolation key: each client gets a UNIQUE RANDOM project
+     * ({@code test_proj_<12 hex>}), so its {@code Authorization: Basic
+     * base64(project:token)} header is unique. The random suffix (not a
+     * counter) keeps it collision-free across parallel test workers AND
+     * separate processes/machines hitting one shared mock. The returned harness
+     * view filters the global journal by that header (client-side) and scopes
+     * scenario overrides by it (server-side), so a test only ever sees /
+     * consumes its own requests and scenarios — making the shared mock safe
+     * under parallelism with NO SDK change and NO mock-server change.
+     *
+     * <p>Tests that assert on the AccountSid embedded in a LAML path must read
+     * it from {@link Harness#project()} (or {@link Bound#project}) rather than
+     * hard-coding {@code test_proj}.
      */
     public static Bound newClient() {
-        Harness h = ensureServer();
-        h.reset();
-        RestClient client = RestClient.withBaseUrl(h.url(), "test_proj", "test_tok");
-        return new Bound(client, h);
+        Harness shared = ensureServer();
+
+        // Unique per-test project => unique Basic-Auth header => journal
+        // filterable per client. Random (not a counter) so concurrent workers
+        // and processes can't collide on the same project name.
+        String project = "test_proj_"
+                + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        String credentials = project + ":" + REST_TOKEN;
+        String authHeader = "Basic " + java.util.Base64.getEncoder()
+                .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+
+        RestClient client = RestClient.withBaseUrl(shared.url(), project, REST_TOKEN);
+
+        // Per-call harness view scoped to this client's auth header. No reset is
+        // needed: this client starts with zero entries in the (auth-filtered)
+        // view.
+        Harness mock = new Harness(shared.url(), shared.port());
+        mock.authHeader = authHeader;
+        mock.project = project;
+
+        return new Bound(client, mock, project);
     }
 
     /**
@@ -283,10 +374,13 @@ public final class MockTest {
     public static final class Bound {
         public final RestClient client;
         public final Harness harness;
+        /** The per-test random project this client authenticates with. */
+        public final String project;
 
-        Bound(RestClient client, Harness harness) {
+        Bound(RestClient client, Harness harness, String project) {
             this.client = Objects.requireNonNull(client);
             this.harness = Objects.requireNonNull(harness);
+            this.project = Objects.requireNonNull(project);
         }
     }
 

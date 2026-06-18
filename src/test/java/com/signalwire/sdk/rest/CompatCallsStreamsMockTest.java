@@ -27,12 +27,14 @@ class CompatCallsStreamsMockTest {
 
     private RestClient client;
     private MockTest.Harness mock;
+    private String acctBase;
 
     @BeforeEach
     void setUp() {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.acctBase = "/api/laml/2010-04-01/Accounts/" + bound.project;
     }
 
     @Nested
@@ -63,7 +65,7 @@ class CompatCallsStreamsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method, "method");
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_JX1/Streams",
+                    acctBase + "/Calls/CA_JX1/Streams",
                     j.path,
                     "path");
             Map<String, Object> jb = j.bodyMap();
@@ -100,7 +102,7 @@ class CompatCallsStreamsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method, "method");
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_S1/Streams/ST_S1",
+                    acctBase + "/Calls/CA_S1/Streams/ST_S1",
                     j.path,
                     "path");
             Map<String, Object> jb = j.bodyMap();
@@ -135,7 +137,7 @@ class CompatCallsStreamsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("POST", j.method, "method");
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Calls/CA_R1/Recordings/RE_R1",
+                    acctBase + "/Calls/CA_R1/Recordings/RE_R1",
                     j.path,
                     "path");
             Map<String, Object> jb = j.bodyMap();

@@ -10,9 +10,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -22,8 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>This drives the REAL client against the shared {@code mock_relay}
  * WebSocket server (no Mockito, no transport stub). The strong assertion is
  * server-side: the mock {@code unregister}s a session when its socket closes,
- * so {@code harness.sessions()} dropping back to zero after the block proves
- * {@code close()} really released the connection — not just that a flag flipped.
+ * so THIS client's own session id disappearing from {@code harness.sessions()}
+ * after the block proves {@code close()} really released the connection — not
+ * just that a flag flipped. We match on the client's own session id rather than
+ * a global session count, so the assertion is deterministic under parallel
+ * execution (other tests' sessions come and go on the shared mock).
  */
 class AutoCloseableMockTest {
 
@@ -32,13 +36,8 @@ class AutoCloseableMockTest {
     void closeTearsDownWebSocket() throws Exception {
         RelayMockTest.Harness mock = RelayMockTest.harness();
 
-        // The mock_relay server is shared per-process; a preceding test's
-        // disconnect may still be settling. Measure the settled baseline and
-        // assert the +1 / back-to-baseline delta our own connect/close causes,
-        // rather than assuming a global zero.
-        int baseline = waitForSettledSessionCount(mock);
-
         RelayClient escaped;
+        String sid;
         try (RelayClient client = RelayClient.builder()
                 .project("test_proj")
                 .token("test_tok")
@@ -49,10 +48,13 @@ class AutoCloseableMockTest {
             escaped = client;
             client.connect(10_000);
 
-            // Inside the block: the WS is up and the mock sees one MORE session.
+            // Inside the block: the WS is up and the mock registers THIS
+            // client's session id among its live sessions.
             assertTrue(client.isConnected(), "client should be connected inside the block");
-            assertEquals(baseline + 1, waitForSessionCount(mock, baseline + 1),
-                    "mock should register one more live session while connected");
+            sid = waitForSessionId(client);
+            assertNotNull(sid, "client should have captured a handshake session id");
+            assertTrue(waitForSessionPresence(mock, sid, true),
+                    "mock should register this client's session while connected");
         } // close() runs here
 
         // After the block: close() must tear the socket down. Both signals are
@@ -60,8 +62,8 @@ class AutoCloseableMockTest {
         // wait for each. The server-side session teardown is the definitive
         // proof the socket actually closed; isConnected() flipping off is the
         // client-side mirror.
-        assertEquals(baseline, waitForSessionCount(mock, baseline),
-                "the session opened by this client must be unregistered after close()");
+        assertFalse(waitForSessionPresence(mock, sid, false),
+                "this client's session must be unregistered after close()");
         assertFalse(waitForConnected(escaped, false),
                 "close() should have disconnected the client");
     }
@@ -70,7 +72,6 @@ class AutoCloseableMockTest {
     @DisplayName("RelayClient.close() is idempotent (double-close is a harmless no-op)")
     void closeIsIdempotent() throws Exception {
         RelayMockTest.Harness mock = RelayMockTest.harness();
-        int baseline = waitForSettledSessionCount(mock);
 
         RelayClient client = RelayClient.builder()
                 .project("test_proj")
@@ -80,57 +81,60 @@ class AutoCloseableMockTest {
                 .build();
         client.connect(10_000);
         assertTrue(client.isConnected());
+        String sid = waitForSessionId(client);
+        assertNotNull(sid);
 
         client.close();
         // Second close() must not throw and the client stays closed.
         client.close();
-        assertEquals(baseline, waitForSessionCount(mock, baseline));
+        assertFalse(waitForSessionPresence(mock, sid, false),
+                "this client's session must be unregistered after close()");
         assertFalse(waitForConnected(client, false));
     }
 
-    /**
-     * Poll the mock's live-session count until it reaches {@code want} or the
-     * budget runs out, returning the last observed value. The WS close handshake
-     * is asynchronous, so the post-close session teardown isn't instantaneous.
-     */
-    /**
-     * Wait for the shared mock's live-session count to stop changing (two
-     * identical consecutive reads), returning that settled value. Used to take
-     * a baseline that absorbs any in-flight teardown from a preceding test.
-     */
-    private static int waitForSettledSessionCount(RelayMockTest.Harness mock) {
-        int prev = mock.sessions().size();
-        for (int i = 0; i < 100; i++) {
+    /** Poll for the client's handshake session id, returning it once captured. */
+    private static String waitForSessionId(RelayClient client) {
+        String sid = client.sessionIdForTesting();
+        for (int i = 0; i < 100 && sid == null; i++) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(20);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
-            int now = mock.sessions().size();
-            if (now == prev) {
-                return now;
-            }
-            prev = now;
+            sid = client.sessionIdForTesting();
         }
-        return prev;
+        return sid;
     }
 
-    private static int waitForSessionCount(RelayMockTest.Harness mock, int want) {
-        int last = -1;
-        for (int i = 0; i < 100; i++) {
-            last = mock.sessions().size();
-            if (last == want) {
-                return last;
-            }
+    /**
+     * Poll the mock's live-session list until {@code sid}'s presence matches
+     * {@code want} or the budget runs out, returning the last observed
+     * presence. Scoped to a specific session id so concurrent tests' sessions
+     * on the shared mock don't perturb the result.
+     */
+    private static boolean waitForSessionPresence(
+            RelayMockTest.Harness mock, String sid, boolean want) {
+        boolean present = sessionPresent(mock, sid);
+        for (int i = 0; i < 100 && present != want; i++) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
+            present = sessionPresent(mock, sid);
         }
-        return last;
+        return present;
+    }
+
+    private static boolean sessionPresent(RelayMockTest.Harness mock, String sid) {
+        for (Map<String, Object> s : mock.sessions()) {
+            if (sid.equals(String.valueOf(s.get("id")))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
