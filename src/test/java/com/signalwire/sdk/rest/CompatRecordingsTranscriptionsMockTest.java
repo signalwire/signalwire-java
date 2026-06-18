@@ -27,12 +27,14 @@ class CompatRecordingsTranscriptionsMockTest {
 
     private RestClient client;
     private MockTest.Harness mock;
+    private String acctBase;
 
     @BeforeEach
     void setUp() {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.acctBase = "/api/laml/2010-04-01/Accounts/" + bound.project;
     }
 
     // ── Recordings ──────────────────────────────────────────────────
@@ -58,7 +60,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Recordings",
+                    acctBase + "/Recordings",
                     j.path);
         }
     }
@@ -84,7 +86,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Recordings/RE_GET",
+                    acctBase + "/Recordings/RE_GET",
                     j.path);
         }
     }
@@ -107,7 +109,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("DELETE", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Recordings/RE_DEL",
+                    acctBase + "/Recordings/RE_DEL",
                     j.path);
         }
     }
@@ -135,7 +137,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Transcriptions",
+                    acctBase + "/Transcriptions",
                     j.path);
         }
     }
@@ -161,7 +163,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("GET", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Transcriptions/TR_GET",
+                    acctBase + "/Transcriptions/TR_GET",
                     j.path);
         }
     }
@@ -184,7 +186,7 @@ class CompatRecordingsTranscriptionsMockTest {
             MockTest.JournalEntry j = mock.last();
             assertEquals("DELETE", j.method);
             assertEquals(
-                    "/api/laml/2010-04-01/Accounts/test_proj/Transcriptions/TR_DEL",
+                    acctBase + "/Transcriptions/TR_DEL",
                     j.path);
         }
     }

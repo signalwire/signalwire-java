@@ -44,6 +44,8 @@ class CallConvenienceMockTest {
                 .build();
         client.connect(10_000);
         try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        // Scope the harness view to this client's session (parallel-safe).
+        this.mock = mock.scopedTo(client);
     }
 
     @AfterEach

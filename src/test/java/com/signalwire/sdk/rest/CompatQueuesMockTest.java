@@ -25,8 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompatQueuesMockTest {
 
-    private static final String QUEUES_BASE =
-            "/api/laml/2010-04-01/Accounts/test_proj/Queues";
+    private String QUEUES_BASE;
 
     private RestClient client;
     private MockTest.Harness mock;
@@ -36,6 +35,7 @@ class CompatQueuesMockTest {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.QUEUES_BASE = "/api/laml/2010-04-01/Accounts/" + bound.project + "/Queues";
     }
 
     private static Map<String, Object> kw(Object... entries) {

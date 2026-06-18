@@ -25,8 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompatTokensMockTest {
 
-    private static final String TOKENS_BASE =
-            "/api/laml/2010-04-01/Accounts/test_proj/tokens";
+    private String TOKENS_BASE;
 
     private RestClient client;
     private MockTest.Harness mock;
@@ -36,6 +35,7 @@ class CompatTokensMockTest {
         MockTest.Bound bound = MockTest.newClient();
         this.client = bound.client;
         this.mock = bound.harness;
+        this.TOKENS_BASE = "/api/laml/2010-04-01/Accounts/" + bound.project + "/tokens";
     }
 
     private static Map<String, Object> kw(Object... entries) {

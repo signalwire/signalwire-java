@@ -55,6 +55,9 @@ class ActionsMockTest {
                 .build();
         client.connect(10_000);
         try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+        // Scope the harness view to this client's session so journal reads /
+        // scenario arming / pushes target only its own frames (parallel-safe).
+        this.mock = mock.scopedTo(client);
     }
 
     @AfterEach
