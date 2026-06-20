@@ -105,6 +105,7 @@ public class Service implements AutoCloseable {
       try {
         return Integer.parseInt(envPort);
       } catch (NumberFormatException ignored) {
+        // malformed PORT env var; fall through to the default
       }
     }
     return 3000;
@@ -700,7 +701,7 @@ public class Service implements AutoCloseable {
           }
         });
 
-    String basePath = route.equals("/") ? "" : route;
+    String basePath = "/".equals(route) ? "" : route;
 
     // SWAIG endpoint (with auth) — GET returns SWML, POST dispatches a tool.
     httpServer.createContext(
@@ -714,6 +715,7 @@ public class Service implements AutoCloseable {
               exchange.sendResponseHeaders(500, -1);
               exchange.close();
             } catch (Exception ignored) {
+              // best-effort error response; nothing to do if the exchange is already gone
             }
           }
         });
@@ -729,9 +731,9 @@ public class Service implements AutoCloseable {
           try {
             String path = exchange.getRequestURI().getPath();
             // Don't shadow sub-paths owned by sibling handlers.
-            if (path.equals(basePath + "/swaig")
-                || path.equals(basePath + "/post_prompt")
-                || path.equals(basePath + "/mcp")) {
+            if ((basePath + "/swaig").equals(path)
+                || (basePath + "/post_prompt").equals(path)
+                || (basePath + "/mcp").equals(path)) {
               return;
             }
             if (!validateAuth(exchange)) {

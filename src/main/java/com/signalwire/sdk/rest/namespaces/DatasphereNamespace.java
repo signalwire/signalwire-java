@@ -19,10 +19,8 @@ import java.util.Map;
 public class DatasphereNamespace {
 
   private final DatasphereDocuments documents;
-  private final HttpClient httpClient;
 
   public DatasphereNamespace(HttpClient httpClient) {
-    this.httpClient = httpClient;
     this.documents = new DatasphereDocuments(httpClient, "/datasphere/documents");
   }
 

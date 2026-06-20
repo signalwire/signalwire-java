@@ -192,7 +192,7 @@ class CallingMockTest {
 
   @Nested
   @DisplayName("Record commands")
-  class Record {
+  class RecordCommands {
 
     @Test
     void record() {

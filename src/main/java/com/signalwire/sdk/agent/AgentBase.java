@@ -1,7 +1,6 @@
 package com.signalwire.sdk.agent;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.contexts.ContextBuilder;
 import com.signalwire.sdk.logging.Logger;
@@ -44,9 +43,7 @@ import java.util.regex.Pattern;
 public class AgentBase extends Service {
 
   private static final Logger log = Logger.getLogger(AgentBase.class);
-  private static final int MAX_REQUEST_BODY_SIZE = 1_048_576; // 1 MB
   private static final Gson gson = new Gson();
-  private static final Gson gsonPretty = new GsonBuilder().setPrettyPrinting().create();
   private static final Pattern SIP_USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]{1,64}$");
 
   // --- Configuration ---
@@ -100,7 +97,6 @@ public class AgentBase extends Service {
   private String webhookUrl;
   private String proxyUrlBase;
   private final Map<String, String> swaigQueryParams = new LinkedHashMap<>();
-  private boolean debugRoutesEnabled = false;
 
   // --- MCP ---
   private final List<Map<String, Object>> mcpServers = new ArrayList<>();
@@ -622,6 +618,7 @@ public class AgentBase extends Service {
     return this;
   }
 
+  @Override
   public FunctionResult onFunctionCall(
       String name, Map<String, Object> args, Map<String, Object> rawData) {
     ToolDefinition tool = tools.get(name);
@@ -1154,7 +1151,6 @@ public class AgentBase extends Service {
   }
 
   public AgentBase enableDebugRoutes() {
-    this.debugRoutesEnabled = true;
     return this;
   }
 
@@ -1440,10 +1436,12 @@ public class AgentBase extends Service {
     return port;
   }
 
+  @Override
   public String getAuthUser() {
     return authUser;
   }
 
+  @Override
   public String getAuthPassword() {
     return authPassword;
   }
@@ -1802,6 +1800,7 @@ public class AgentBase extends Service {
   // ============================================================
 
   /** Create a deep copy of this agent for per-request customization. */
+  @Override
   public AgentBase clone() {
     // Service's name/route/host/port are constructor-only; use the
     // protected constructor to seed those + auth, then copy agent-level
@@ -1970,7 +1969,7 @@ public class AgentBase extends Service {
   private Map<String, String> parseQueryParams(String query) {
     Map<String, String> params = new LinkedHashMap<>();
     if (query == null || query.isEmpty()) return params;
-    for (String param : query.split("&")) {
+    for (String param : query.split("&", 0)) {
       int eq = param.indexOf('=');
       if (eq > 0) {
         String key = URLDecoder.decode(param.substring(0, eq), StandardCharsets.UTF_8);
@@ -2035,6 +2034,7 @@ public class AgentBase extends Service {
               exchange.sendResponseHeaders(500, -1);
               exchange.close();
             } catch (Exception ignored) {
+              // best-effort error response; nothing to do if the exchange is already gone
             }
           }
         });
@@ -2052,6 +2052,7 @@ public class AgentBase extends Service {
                 exchange.sendResponseHeaders(500, -1);
                 exchange.close();
               } catch (Exception ignored) {
+                // best-effort error response; nothing to do if the exchange is already gone
               }
             }
           });

@@ -51,7 +51,7 @@ public final class Logger {
     }
     String envLevel = System.getenv("SIGNALWIRE_LOG_LEVEL");
     if (envLevel != null) {
-      switch (envLevel.toLowerCase()) {
+      switch (envLevel.toLowerCase(java.util.Locale.ROOT)) {
         case "debug":
           return Level.DEBUG;
         case "info":

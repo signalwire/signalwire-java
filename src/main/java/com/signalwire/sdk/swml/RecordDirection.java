@@ -43,6 +43,7 @@ public enum RecordDirection implements WireEnum {
    *
    * @return the lower-case direction name as it appears on the wire.
    */
+  @Override
   public String getValue() {
     return value;
   }

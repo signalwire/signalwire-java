@@ -38,6 +38,7 @@ public enum RecordFormat implements WireEnum {
    *
    * @return the lower-case format name as it appears on the wire.
    */
+  @Override
   public String getValue() {
     return value;
   }

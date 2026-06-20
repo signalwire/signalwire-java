@@ -323,7 +323,7 @@ public class WebSearchSkill implements SkillBase {
    * Returns {@code null} on any fetch/parse failure (including the per-page timeout firing) so the
    * caller can skip it. Mirrors Python's {@code _scrape_one} closure.
    */
-  private ScrapedResult scrapeOne(String query, Map<String, Object> item) {
+  private ScrapedResult scrapeOne(String unused, Map<String, Object> item) {
     String title = stringVal(item.get("title"));
     String snippet = stringVal(item.get("snippet"));
     String link = stringVal(item.get("link"));

@@ -174,7 +174,7 @@ class TlsServerHttpsTest {
 
   /** Asks the OS for an unused loopback TCP port. */
   private static int freeTcpPort() throws IOException {
-    try (ServerSocket s = new ServerSocket(0, 0, java.net.InetAddress.getByName("127.0.0.1"))) {
+    try (ServerSocket s = new ServerSocket(0, 0, java.net.InetAddress.getLoopbackAddress())) {
       return s.getLocalPort();
     }
   }

@@ -8,7 +8,6 @@ package com.signalwire.sdk;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.gson.Gson;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swml.RecordFormat;
 import java.util.*;
@@ -16,8 +15,6 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for FunctionResult covering all action categories. */
 class FunctionResultTest {
-
-  private static final Gson gson = new Gson();
 
   // ======== Core Serialization ========
 

@@ -365,7 +365,7 @@ class ActionsMockTest {
   @DisplayName("collect() journals calling.collect")
   void collectJournals() throws Exception {
     Call call = answeredInboundCall("call-col");
-    Action.CollectAction action = call.collectDigits(Map.of("max", 4), "col-ctl");
+    call.collectDigits(Map.of("max", 4), "col-ctl");
     // Note: action class for standalone collect is also CollectAction.
 
     List<RelayMockTest.JournalEntry> entries = mock.journalRecv(Constants.METHOD_COLLECT);

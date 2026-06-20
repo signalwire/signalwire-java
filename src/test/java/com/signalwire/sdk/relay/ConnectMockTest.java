@@ -76,6 +76,7 @@ class ConnectMockTest {
     try {
       Thread.sleep(50);
     } catch (InterruptedException ignored) {
+      // best-effort settle delay; safe to proceed if interrupted
     }
     // Scope the harness view to THIS client's session so journal reads see
     // only its own frames — parallel-safe against the shared mock.

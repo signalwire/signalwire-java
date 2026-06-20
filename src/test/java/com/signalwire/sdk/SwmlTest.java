@@ -8,7 +8,6 @@ package com.signalwire.sdk;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.gson.Gson;
 import com.signalwire.sdk.swml.Document;
 import com.signalwire.sdk.swml.Schema;
 import com.signalwire.sdk.swml.Service;
@@ -17,8 +16,6 @@ import org.junit.jupiter.api.Test;
 
 /** Tests for SWML Document, Schema, and Service. */
 class SwmlTest {
-
-  private static final Gson gson = new Gson();
 
   // ======== Document Tests ========
 

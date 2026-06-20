@@ -150,7 +150,7 @@ public class RelayEvent {
       }
       return result;
     }
-    return Collections.emptyList();
+    return new ArrayList<>();
   }
 
   @SuppressWarnings("unchecked")

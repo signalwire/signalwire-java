@@ -279,7 +279,7 @@ public final class WebhookValidator {
       return List.of();
     }
     List<Map.Entry<String, String>> items = new ArrayList<>();
-    for (String pair : rawBody.split("&")) {
+    for (String pair : rawBody.split("&", 0)) {
       int eq = pair.indexOf('=');
       String k;
       String v;
@@ -386,7 +386,7 @@ public final class WebhookValidator {
       return true;
     }
     String expected = null;
-    for (String pair : query.split("&")) {
+    for (String pair : query.split("&", 0)) {
       int eq = pair.indexOf('=');
       if (eq < 0) continue;
       String k = pair.substring(0, eq);

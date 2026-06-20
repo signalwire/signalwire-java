@@ -4,6 +4,7 @@ import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Minimal test-only agent at route "/" used by the CLI simulation tests.
@@ -17,12 +18,12 @@ public class RootAgentFixture {
   public static volatile EnvProvider lastEnvSeen;
 
   /** How many times a tool's handler was invoked during the last test. */
-  public static volatile int toolInvocations;
+  public static final AtomicInteger toolInvocations = new AtomicInteger();
 
   /** Reset all visible state before a test. */
   public static void reset() {
     lastEnvSeen = null;
-    toolInvocations = 0;
+    toolInvocations.set(0);
   }
 
   /**
@@ -45,7 +46,7 @@ public class RootAgentFixture {
         "Echo back the input",
         Map.of("type", "object", "properties", Map.of("msg", Map.of("type", "string"))),
         (args, raw) -> {
-          toolInvocations++;
+          toolInvocations.incrementAndGet();
           return new FunctionResult("echo: " + args.getOrDefault("msg", ""));
         });
     return agent;

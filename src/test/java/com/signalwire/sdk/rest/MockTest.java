@@ -46,7 +46,6 @@ public final class MockTest {
   private static final Object STATE_LOCK = new Object();
   private static volatile Harness sharedHarness;
   private static volatile Throwable startupFailure;
-  private static volatile Process mockProcess;
 
   private MockTest() {
     // static helper
@@ -399,7 +398,6 @@ public final class MockTest {
       }
       try {
         Process p = spawnMockServer(port);
-        mockProcess = p;
         long deadline = System.currentTimeMillis() + STARTUP_TIMEOUT.toMillis();
         while (System.currentTimeMillis() < deadline) {
           if (probeHealth(probeClient, base)) {
@@ -410,6 +408,7 @@ public final class MockTest {
                           try {
                             p.destroy();
                           } catch (Exception ignored) {
+                            // best-effort cleanup on shutdown; nothing to do on failure
                           }
                         },
                         "MockTestShutdown"));

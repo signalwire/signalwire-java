@@ -168,11 +168,11 @@ class ExecutionModeParityTest {
   void defaultProviderRoundtrips() {
     String mode = ExecutionMode.getExecutionMode();
     assertTrue(
-        mode.equals("server")
-            || mode.equals("cgi")
-            || mode.equals("lambda")
-            || mode.equals("google_cloud_function")
-            || mode.equals("azure_function"),
+        "server".equals(mode)
+            || "cgi".equals(mode)
+            || "lambda".equals(mode)
+            || "google_cloud_function".equals(mode)
+            || "azure_function".equals(mode),
         "Unexpected mode: " + mode);
     // isServerlessMode() must agree with the string accessor.
     assertEquals(!"server".equals(mode), ExecutionMode.isServerlessMode());

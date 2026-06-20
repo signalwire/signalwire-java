@@ -75,6 +75,7 @@ public class AgentServer implements AutoCloseable {
       try {
         return Integer.parseInt(envPort);
       } catch (NumberFormatException ignored) {
+        // malformed PORT env var; fall through to the default
       }
     }
     return 3000;
@@ -384,9 +385,9 @@ public class AgentServer implements AutoCloseable {
 
       String baseUrl = detectBaseUrl(exchange, agent);
 
-      if (subPath.equals("/swaig")) {
+      if ("/swaig".equals(subPath)) {
         handleSwaig(exchange, agent);
-      } else if (subPath.equals("/post_prompt")) {
+      } else if ("/post_prompt".equals(subPath)) {
         handlePostPrompt(exchange, agent);
       } else {
         // Main SWML endpoint
@@ -398,6 +399,7 @@ public class AgentServer implements AutoCloseable {
         exchange.sendResponseHeaders(500, -1);
         exchange.close();
       } catch (Exception ignored) {
+        // best-effort error response; nothing to do if the exchange is already gone
       }
     }
   }
@@ -408,7 +410,7 @@ public class AgentServer implements AutoCloseable {
     for (String route : agents.keySet()) {
       if (path.equals(route)
           || path.startsWith(route + "/")
-          || (route.equals("/") && path.startsWith("/"))) {
+          || ("/".equals(route) && path.startsWith("/"))) {
         if (bestRoute == null || route.length() > bestRoute.length()) {
           bestRoute = route;
         }
@@ -422,7 +424,7 @@ public class AgentServer implements AutoCloseable {
     for (String route : agents.keySet()) {
       if (path.equals(route)
           || path.startsWith(route + "/")
-          || (route.equals("/") && path.startsWith("/"))) {
+          || ("/".equals(route) && path.startsWith("/"))) {
         if (bestRoute == null || route.length() > bestRoute.length()) {
           bestRoute = route;
         }
@@ -679,12 +681,13 @@ public class AgentServer implements AutoCloseable {
         exchange.sendResponseHeaders(500, -1);
         exchange.close();
       } catch (Exception ignored) {
+        // best-effort error response; nothing to do if the exchange is already gone
       }
     }
   }
 
   private String guessContentType(String path) {
-    String lower = path.toLowerCase();
+    String lower = path.toLowerCase(java.util.Locale.ROOT);
     if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
     if (lower.endsWith(".css")) return "text/css";
     if (lower.endsWith(".js")) return "application/javascript";

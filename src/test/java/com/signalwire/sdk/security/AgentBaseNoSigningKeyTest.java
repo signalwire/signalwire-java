@@ -63,7 +63,7 @@ class AgentBaseNoSigningKeyTest {
 
   private String basicAuth() {
     return "Basic "
-        + Base64.getEncoder().encodeToString(("user:pass").getBytes(StandardCharsets.UTF_8));
+        + Base64.getEncoder().encodeToString("user:pass".getBytes(StandardCharsets.UTF_8));
   }
 
   @Test

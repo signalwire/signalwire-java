@@ -164,10 +164,13 @@ public class SurveyAgent {
         }
       }
       case "yes_no" -> {
-        String lower = answer.trim().toLowerCase();
-        if (!lower.equals("yes") && !lower.equals("no")) {
+        String lower = answer.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!"yes".equals(lower) && !"no".equals(lower)) {
           return "Please answer yes or no";
         }
+      }
+      default -> {
+        // open_ended and any unrecognized type need no validation.
       }
     }
     return null;

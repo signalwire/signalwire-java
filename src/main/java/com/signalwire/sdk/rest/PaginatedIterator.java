@@ -153,7 +153,7 @@ public final class PaginatedIterator
       if (query == null || query.isEmpty()) {
         return out;
       }
-      for (String part : query.split("&")) {
+      for (String part : query.split("&", 0)) {
         if (part.isEmpty()) continue;
         int eq = part.indexOf('=');
         String key;

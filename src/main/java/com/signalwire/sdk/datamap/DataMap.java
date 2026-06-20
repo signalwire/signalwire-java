@@ -144,7 +144,7 @@ public class DataMap {
   public DataMap webhook(String method, String url, Map<String, String> headers) {
     Map<String, Object> webhookDef = new LinkedHashMap<>();
     webhookDef.put("url", url);
-    webhookDef.put("method", method.toUpperCase());
+    webhookDef.put("method", method.toUpperCase(java.util.Locale.ROOT));
     if (headers != null && !headers.isEmpty()) {
       webhookDef.put("headers", headers);
     }

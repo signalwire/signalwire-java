@@ -94,8 +94,8 @@ public class SchemaUtils {
 
   private static boolean isEnvBoolish(String v) {
     if (v == null) return false;
-    String s = v.trim().toLowerCase();
-    return s.equals("1") || s.equals("true") || s.equals("yes");
+    String s = v.trim().toLowerCase(java.util.Locale.ROOT);
+    return "1".equals(s) || "true".equals(s) || "yes".equals(s);
   }
 
   /** Read and parse the JSON Schema. Mirrors Python's {@code load_schema()}. */
@@ -192,14 +192,14 @@ public class SchemaUtils {
    */
   public List<String> getVerbRequiredProperties(String verbName) {
     VerbInfo v = verbs.get(verbName);
-    if (v == null) return Collections.emptyList();
-    if (!v.definition.has("properties")) return Collections.emptyList();
+    if (v == null) return new ArrayList<>();
+    if (!v.definition.has("properties")) return new ArrayList<>();
     JsonObject outerProps = v.definition.getAsJsonObject("properties");
-    if (!outerProps.has(verbName)) return Collections.emptyList();
-    if (!outerProps.get(verbName).isJsonObject()) return Collections.emptyList();
+    if (!outerProps.has(verbName)) return new ArrayList<>();
+    if (!outerProps.get(verbName).isJsonObject()) return new ArrayList<>();
     JsonObject inner = outerProps.getAsJsonObject(verbName);
-    if (!inner.has("required")) return Collections.emptyList();
-    if (!inner.get("required").isJsonArray()) return Collections.emptyList();
+    if (!inner.has("required")) return new ArrayList<>();
+    if (!inner.get("required").isJsonArray()) return new ArrayList<>();
     JsonArray req = inner.getAsJsonArray("required");
     List<String> out = new ArrayList<>(req.size());
     for (JsonElement e : req) {

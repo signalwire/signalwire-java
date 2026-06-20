@@ -48,7 +48,6 @@ public final class RelayMockTest {
   private static final Object STATE_LOCK = new Object();
   private static volatile Harness sharedHarness;
   private static volatile Throwable startupFailure;
-  private static volatile Process mockProcess;
 
   private RelayMockTest() {
     // static helper
@@ -616,7 +615,6 @@ public final class RelayMockTest {
       }
       try {
         Process p = spawnMockServer(wsPort, httpPort);
-        mockProcess = p;
         long deadline = System.currentTimeMillis() + STARTUP_TIMEOUT.toMillis();
         while (System.currentTimeMillis() < deadline) {
           if (probeHealth(probeClient, httpBase)) {
@@ -627,6 +625,7 @@ public final class RelayMockTest {
                           try {
                             p.destroy();
                           } catch (Exception ignored) {
+                            // best-effort cleanup on shutdown; nothing to do on failure
                           }
                         },
                         "RelayMockTestShutdown"));

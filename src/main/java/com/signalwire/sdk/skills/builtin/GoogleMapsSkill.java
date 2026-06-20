@@ -2,7 +2,6 @@ package com.signalwire.sdk.skills.builtin;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
@@ -15,8 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class GoogleMapsSkill implements SkillBase {
-
-  private static final Logger log = Logger.getLogger(GoogleMapsSkill.class);
 
   private String apiKey;
   private String lookupToolName = "lookup_address";

@@ -75,7 +75,7 @@ public final class ServerlessSimulator {
     if (s == null) {
       throw new IllegalArgumentException("--simulate-serverless requires a platform name");
     }
-    String normalised = s.trim().toLowerCase();
+    String normalised = s.trim().toLowerCase(java.util.Locale.ROOT);
     if ("lambda".equals(normalised)) {
       return Platform.LAMBDA;
     }

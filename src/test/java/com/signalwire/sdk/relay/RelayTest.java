@@ -555,14 +555,15 @@ class RelayTest {
 
       // Resolve asynchronously
       RelayEvent event = new RelayEvent("test", 0.0, Map.of());
-      CompletableFuture.runAsync(
-          () -> {
-            try {
-              Thread.sleep(50);
-            } catch (InterruptedException ignored) {
-            }
-            action.resolve(event);
-          });
+      var unused =
+          CompletableFuture.runAsync(
+              () -> {
+                try {
+                  Thread.sleep(50);
+                } catch (InterruptedException ignored) {
+                }
+                action.resolve(event);
+              });
 
       RelayEvent result = action.waitForCompletion(5000);
       assertSame(event, result);

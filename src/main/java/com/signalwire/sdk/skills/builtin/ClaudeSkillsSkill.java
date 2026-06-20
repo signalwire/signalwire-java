@@ -67,7 +67,8 @@ public class ClaudeSkillsSkill implements SkillBase {
           String content = Files.readString(mdFile);
           String fileName = mdFile.getFileName().toString();
           String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
-          String sanitized = baseName.toLowerCase().replaceAll("[^a-z0-9]", "_");
+          String sanitized =
+              baseName.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]", "_");
           String toolName = toolPrefix + sanitized;
 
           // Extract description from first line or frontmatter
@@ -101,8 +102,8 @@ public class ClaudeSkillsSkill implements SkillBase {
           discoveredSections.add(section);
 
           // Add hints from name
-          for (String word : baseName.split("[-_]")) {
-            if (!word.isEmpty()) discoveredHints.add(word.toLowerCase());
+          for (String word : baseName.split("[-_]", 0)) {
+            if (!word.isEmpty()) discoveredHints.add(word.toLowerCase(java.util.Locale.ROOT));
           }
 
         } catch (IOException e) {

@@ -530,7 +530,8 @@ class WebSearchSkillTest {
 
     /** CSE returns no items (no-results path). */
     static StubServer startEmptyItems() throws IOException {
-      HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+      HttpServer s =
+          HttpServer.create(new InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
       String prev = System.getProperty("WEB_SEARCH_BASE_URL");
       StubServer stub = new StubServer(s, prev);
       registerCse(s, "{\"items\":[]}");
@@ -552,7 +553,8 @@ class WebSearchSkillTest {
         long sleepMs,
         int contentStatus)
         throws IOException {
-      HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+      HttpServer s =
+          HttpServer.create(new InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
       int port = s.getAddress().getPort();
       String prev = System.getProperty("WEB_SEARCH_BASE_URL");
       StubServer stub = new StubServer(s, prev);

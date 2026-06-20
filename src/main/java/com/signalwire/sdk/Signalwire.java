@@ -142,7 +142,7 @@ public final class Signalwire {
       }
     } catch (Exception e) {
       // Fallback: lower-cased simple name
-      name = skillClass.getSimpleName().toLowerCase();
+      name = skillClass.getSimpleName().toLowerCase(java.util.Locale.ROOT);
     }
     Supplier<SkillBase> factory =
         () -> {

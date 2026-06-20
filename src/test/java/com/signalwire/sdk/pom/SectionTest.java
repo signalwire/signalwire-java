@@ -99,7 +99,7 @@ class SectionTest {
   void toMapKeyOrderMatchesPython() {
     // Python's Section.to_dict emits in this exact order.
     Section s = new Section("X", "b", List.of("a"));
-    Section sub = s.addSubsection("Y", "yb");
+    s.addSubsection("Y", "yb");
     Map<String, Object> map = s.toMap();
     List<String> keys = new ArrayList<>(map.keySet());
     assertEquals(List.of("title", "body", "bullets", "subsections"), keys);

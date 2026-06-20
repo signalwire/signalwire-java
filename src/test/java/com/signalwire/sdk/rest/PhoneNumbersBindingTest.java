@@ -47,7 +47,8 @@ class PhoneNumbersBindingTest {
 
   @BeforeEach
   void startServer() throws IOException {
-    server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server =
+        HttpServer.create(new InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), 0), 0);
     port = server.getAddress().getPort();
     server.createContext("/", new RecordingHandler(recorded));
     server.start();

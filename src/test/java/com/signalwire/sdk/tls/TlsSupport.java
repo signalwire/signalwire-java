@@ -316,6 +316,7 @@ public final class TlsSupport {
                     try {
                       p.destroy();
                     } catch (Exception ignored) {
+                      // best-effort cleanup on shutdown; nothing to do on failure
                     }
                   },
                   "tls-mock-shutdown"));

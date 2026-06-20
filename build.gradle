@@ -9,6 +9,12 @@ plugins {
     // Java formatter — analogous to gofmt/rustfmt — so there is no style to
     // bikeshed and the reformat is provably surface/emission-neutral.
     id 'com.diffplug.spotless' version '6.25.0'
+    // LINT gate (two layers, both blocking, both burned to zero):
+    //   1. Error Prone — Google's compile-time bug-pattern checker, wired via
+    //      the net.ltgt.errorprone plugin with warnings-as-errors.
+    //   2. Checkstyle — the gradle built-in plugin, config in config/checkstyle.
+    id 'net.ltgt.errorprone' version '3.1.0'
+    id 'checkstyle'
 }
 
 group = 'com.signalwire'
@@ -49,6 +55,9 @@ dependencies {
     // servlet-style filter.
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
 
+    // LINT gate — Error Prone bug-pattern checker (runs in the compiler).
+    errorprone 'com.google.errorprone:error_prone_core:2.27.1'
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -76,6 +85,64 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
+
+// LINT gate, layer 1 — Error Prone. Runs inside javac as a bug-pattern
+// checker. Warnings-as-errors so any pattern Error Prone flags fails the
+// build (and thus the LINT gate). MEASURE-ONLY toggle: pass
+// -PerrorproneMeasure to demote everything to a warning so the raw burndown
+// volume can be counted without failing the build.
+import net.ltgt.gradle.errorprone.CheckSeverity
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone {
+        if (project.hasProperty('errorproneMeasure')) {
+            // MEASURE-ONLY: demote everything to a warning so the raw burndown
+            // volume can be counted without failing the build.
+            allErrorsAsWarnings = true
+        } else {
+            // Burndown floor: every Error Prone bug pattern is an ERROR (the
+            // build, and thus the LINT gate, fails on any finding). The whole
+            // default bug-pattern set was burned to zero in the rollout.
+            allErrorsAsWarnings = false
+        }
+        // The three Javadoc-PROSE checks below are turned OFF (not suppressed
+        // per-site). They police documentation completeness/markup quality —
+        // LLM-irrelevant prose, never wire/surface/correctness — so per
+        // porting-sdk RULES.md they are idiom, not a parity floor. Turning them
+        // off keeps the gate focused on real bug patterns rather than forcing
+        // boilerplate "@return the foo" summaries onto self-evident accessors.
+        check('MissingSummary', CheckSeverity.OFF)   // javadoc summary fragment
+        check('InvalidLink', CheckSeverity.OFF)       // javadoc {@link} resolution
+        check('EscapedEntity', CheckSeverity.OFF)     // javadoc HTML-entity prose
+        // The three checks below are OFF with a specific rationale — each would
+        // force an API/contract change, never a wire/surface change, so per
+        // RULES.md they cannot be obeyed without de-idiomatizing the port:
+        //   * AnnotateFormatMethod — adding @FormatMethod to Logger.log()
+        //     cascades FormatStringAnnotation errors onto every debug/info/warn/
+        //     error caller and up the whole logging call chain; annotating the
+        //     entire logging API to satisfy one site is not idiomatic.
+        //   * IterableAndIterator — PaginatedIterator is a public final SDK type
+        //     using the standard self-iterable pattern (implements both); the
+        //     only "fix" is dropping a public interface = a surface change.
+        //   * JdkObsolete — WebhookFilterTest's HttpServletRequest proxy MUST
+        //     return a StringBuffer from getRequestURL() (the servlet contract's
+        //     declared type); a StringBuilder would ClassCastException.
+        check('AnnotateFormatMethod', CheckSeverity.OFF)
+        check('IterableAndIterator', CheckSeverity.OFF)
+        check('JdkObsolete', CheckSeverity.OFF)
+    }
+}
+
+// LINT gate, layer 2 — Checkstyle. Config authored in config/checkstyle/
+// checkstyle.xml; the rule set is a Google/Sun-derived style consistent with
+// what google-java-format produces (it does NOT fight the formatter). Burned
+// to zero; maxWarnings=0 so any violation fails the gate.
+checkstyle {
+    toolVersion = '10.17.0'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    maxWarnings = 0
+    maxErrors = 0
+    ignoreFailures = project.hasProperty('checkstyleMeasure')
 }
 
 // Print the runtime classpath, one entry per line. Used by the doc-audit

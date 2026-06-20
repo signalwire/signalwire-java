@@ -1,6 +1,5 @@
 package com.signalwire.sdk.skills.builtin;
 
-import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
@@ -12,8 +11,6 @@ import java.time.Duration;
 import java.util.*;
 
 public class SpiderSkill implements SkillBase {
-
-  private static final Logger log = Logger.getLogger(SpiderSkill.class);
 
   private int timeout = 30;
   private int maxTextLength = 5000;

@@ -253,7 +253,7 @@ class OutboundCallMockTest {
     RelayError err =
         assertThrows(RelayError.class, () -> client.dial(devices, dialOptions("t-fail"), 5_000));
     assertTrue(
-        err.getMessage().toLowerCase().contains("dial"),
+        err.getMessage().toLowerCase(java.util.Locale.ROOT).contains("dial"),
         "expected dial-related error; got: " + err.getMessage());
     pusher.join(2_000);
   }
@@ -266,8 +266,8 @@ class OutboundCallMockTest {
     RelayError err =
         assertThrows(RelayError.class, () -> client.dial(devices, dialOptions("t-timeout"), 500));
     assertTrue(
-        err.getMessage().toLowerCase().contains("timed out")
-            || err.getMessage().toLowerCase().contains("timeout"),
+        err.getMessage().toLowerCase(java.util.Locale.ROOT).contains("timed out")
+            || err.getMessage().toLowerCase(java.util.Locale.ROOT).contains("timeout"),
         "expected timeout; got: " + err.getMessage());
   }
 

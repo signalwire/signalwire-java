@@ -443,7 +443,7 @@ public class SwaigTest {
           "[warning] SWML_PROXY_URL_BASE is set in the real environment "
               + "but the --simulate-serverless harness is masking it so "
               + "the "
-              + platform.name().toLowerCase()
+              + platform.name().toLowerCase(java.util.Locale.ROOT)
               + " adapter's URL synthesis is actually exercised. "
               + "To use the real proxy base, drop --simulate-serverless.");
     }

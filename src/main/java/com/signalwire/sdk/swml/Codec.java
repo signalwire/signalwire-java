@@ -40,6 +40,7 @@ public enum Codec implements WireEnum {
    *
    * @return the upper-case codec name as it appears on the wire.
    */
+  @Override
   public String getValue() {
     return value;
   }

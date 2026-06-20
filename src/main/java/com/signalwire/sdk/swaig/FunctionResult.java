@@ -93,7 +93,7 @@ public class FunctionResult {
             Map.of("main", List.of(Map.of("connect", connectParams))),
             "version",
             "1.0.0"));
-    swmlAction.put("transfer", String.valueOf(isFinal).toLowerCase());
+    swmlAction.put("transfer", String.valueOf(isFinal).toLowerCase(java.util.Locale.ROOT));
     actions.add(swmlAction);
     return this;
   }
@@ -116,7 +116,7 @@ public class FunctionResult {
                 List.of(
                     Map.of("set", Map.of("ai_response", aiResponse)),
                     Map.of("transfer", Map.of("dest", dest))))));
-    swmlAction.put("transfer", String.valueOf(isFinal).toLowerCase());
+    swmlAction.put("transfer", String.valueOf(isFinal).toLowerCase(java.util.Locale.ROOT));
     actions.add(swmlAction);
     return this;
   }
@@ -970,7 +970,7 @@ public class FunctionResult {
     payParams.put("payment_method", paymentMethod != null ? paymentMethod : "credit-card");
     payParams.put("timeout", String.valueOf(timeout));
     payParams.put("max_attempts", String.valueOf(maxAttempts));
-    payParams.put("security_code", String.valueOf(securityCode).toLowerCase());
+    payParams.put("security_code", String.valueOf(securityCode).toLowerCase(java.util.Locale.ROOT));
     payParams.put("min_postal_code_length", String.valueOf(minPostalCodeLength));
     payParams.put("token_type", tokenType != null ? tokenType : "reusable");
     payParams.put("currency", currency != null ? currency : "usd");
@@ -981,7 +981,7 @@ public class FunctionResult {
 
     // postal_code: boolean -> "true"/"false"; otherwise the literal postcode string.
     if (postalCode instanceof Boolean b) {
-      payParams.put("postal_code", String.valueOf(b).toLowerCase());
+      payParams.put("postal_code", String.valueOf(b).toLowerCase(java.util.Locale.ROOT));
     } else if (postalCode != null) {
       payParams.put("postal_code", postalCode);
     } else {

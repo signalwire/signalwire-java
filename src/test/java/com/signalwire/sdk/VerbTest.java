@@ -196,7 +196,11 @@ class VerbTest {
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
 
-    int prePlayIdx = -1, answerIdx = -1, sleepIdx = -1, aiIdx = -1, hangupIdx = -1;
+    int prePlayIdx = -1;
+    int answerIdx = -1;
+    int sleepIdx = -1;
+    int aiIdx = -1;
+    int hangupIdx = -1;
     for (int i = 0; i < main.size(); i++) {
       if (main.get(i).containsKey("play")) prePlayIdx = i;
       if (main.get(i).containsKey("answer")) answerIdx = i;

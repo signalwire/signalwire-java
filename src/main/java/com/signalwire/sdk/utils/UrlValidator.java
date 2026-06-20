@@ -83,7 +83,7 @@ public final class UrlValidator {
     }
 
     String scheme = parsed.getScheme();
-    if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+    if (scheme == null || (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme))) {
       LOG.warn("URL rejected: invalid scheme %s", scheme);
       return false;
     }
@@ -120,8 +120,8 @@ public final class UrlValidator {
   private static boolean envAllowsPrivate() {
     String v = System.getenv("SWML_ALLOW_PRIVATE_URLS");
     if (v == null) return false;
-    String low = v.toLowerCase();
-    return low.equals("1") || low.equals("true") || low.equals("yes");
+    String low = v.toLowerCase(java.util.Locale.ROOT);
+    return "1".equals(low) || "true".equals(low) || "yes".equals(low);
   }
 
   /**

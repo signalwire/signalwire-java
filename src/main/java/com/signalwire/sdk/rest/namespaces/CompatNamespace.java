@@ -19,8 +19,6 @@ import java.util.Map;
  */
 public class CompatNamespace {
 
-  private final HttpClient httpClient;
-  private final String accountSid;
   private final String accountBase;
 
   private final CompatCalls calls;
@@ -40,8 +38,6 @@ public class CompatNamespace {
   private final CrudResource sipIpAccessControlLists;
 
   public CompatNamespace(HttpClient httpClient, String accountSid) {
-    this.httpClient = httpClient;
-    this.accountSid = accountSid;
     this.accountBase = "/laml/2010-04-01/Accounts/" + accountSid;
 
     this.calls = new CompatCalls(httpClient, accountBase + "/Calls");
@@ -135,6 +131,7 @@ public class CompatNamespace {
       super(httpClient, basePath);
     }
 
+    @Override
     public Map<String, Object> update(String sid, Map<String, Object> body) {
       return getHttpClient().post(getBasePath() + "/" + sid, body);
     }
@@ -166,6 +163,7 @@ public class CompatNamespace {
       super(httpClient, basePath);
     }
 
+    @Override
     public Map<String, Object> update(String sid, Map<String, Object> body) {
       return getHttpClient().post(getBasePath() + "/" + sid, body);
     }
@@ -194,6 +192,7 @@ public class CompatNamespace {
       super(httpClient, basePath);
     }
 
+    @Override
     public Map<String, Object> update(String sid, Map<String, Object> body) {
       return getHttpClient().post(getBasePath() + "/" + sid, body);
     }

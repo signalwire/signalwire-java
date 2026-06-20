@@ -253,7 +253,7 @@ class SwaigTestSimulateServerlessTest {
     assertEquals(0, code, streams);
     assertEquals(
         1,
-        RootAgentFixture.toolInvocations,
+        RootAgentFixture.toolInvocations.get(),
         "fixture tool handler should have been invoked exactly once. " + streams);
     assertTrue(out.contains("echo: hi"), "adapter response should echo 'hi'. out=" + out);
   }

@@ -68,7 +68,7 @@ public class HttpClient {
     return new HttpClient(baseUrl, project, token, null);
   }
 
-  private HttpClient(String baseUrl, String project, String token, Void marker) {
+  private HttpClient(String baseUrl, String project, String token, Void unused) {
     this.baseUrl = baseUrl;
     String credentials = project + ":" + token;
     this.authHeader =

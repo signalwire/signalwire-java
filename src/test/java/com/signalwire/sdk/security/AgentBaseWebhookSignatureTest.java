@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.google.gson.Gson;
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.swaig.FunctionResult;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.Test;
 class AgentBaseWebhookSignatureTest {
 
   private static final String SIGNING_KEY = "PSKtest1234567890abcdef";
-  private static final Gson GSON = new Gson();
 
   private AgentBase agent;
   private int port;
@@ -92,7 +90,7 @@ class AgentBaseWebhookSignatureTest {
 
   private String basicAuth() {
     return "Basic "
-        + Base64.getEncoder().encodeToString(("user:pass").getBytes(StandardCharsets.UTF_8));
+        + Base64.getEncoder().encodeToString("user:pass".getBytes(StandardCharsets.UTF_8));
   }
 
   @Test

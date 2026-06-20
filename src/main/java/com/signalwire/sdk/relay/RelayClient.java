@@ -627,25 +627,26 @@ public class RelayClient implements AutoCloseable {
     if (!running) return;
 
     log.info("Reconnecting in %d ms...", reconnectDelay);
-    executor.submit(
-        () -> {
-          try {
-            Thread.sleep(reconnectDelay);
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
-          }
+    var unused =
+        executor.submit(
+            () -> {
+              try {
+                Thread.sleep(reconnectDelay);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+              }
 
-          // Exponential backoff
-          reconnectDelay =
-              Math.min(
-                  (long) (reconnectDelay * Constants.RECONNECT_BACKOFF_MULTIPLIER),
-                  Constants.RECONNECT_MAX_DELAY_MS);
+              // Exponential backoff
+              reconnectDelay =
+                  Math.min(
+                      (long) (reconnectDelay * Constants.RECONNECT_BACKOFF_MULTIPLIER),
+                      Constants.RECONNECT_MAX_DELAY_MS);
 
-          if (running) {
-            connectInternal();
-          }
-        });
+              if (running) {
+                connectInternal();
+              }
+            });
   }
 
   private void handleDisconnect() {
@@ -743,7 +744,6 @@ public class RelayClient implements AutoCloseable {
         (Map<String, Object>) message.getOrDefault("params", Collections.emptyMap());
 
     RelayEvent event = RelayEvent.fromRawParams(outerParams);
-    String eventType = event.getEventType();
 
     // Notify raw event handler
     if (onEventHandler != null) {
@@ -826,14 +826,15 @@ public class RelayClient implements AutoCloseable {
     calls.put(call.getCallId(), call);
 
     if (onCallHandler != null) {
-      executor.submit(
-          () -> {
-            try {
-              onCallHandler.accept(call);
-            } catch (Exception e) {
-              log.error("Error in onCall handler", e);
-            }
-          });
+      var unused =
+          executor.submit(
+              () -> {
+                try {
+                  onCallHandler.accept(call);
+                } catch (Exception e) {
+                  log.error("Error in onCall handler", e);
+                }
+              });
     }
   }
 
@@ -869,14 +870,15 @@ public class RelayClient implements AutoCloseable {
     messages.put(message.getMessageId(), message);
 
     if (onMessageHandler != null) {
-      executor.submit(
-          () -> {
-            try {
-              onMessageHandler.accept(message);
-            } catch (Exception e) {
-              log.error("Error in onMessage handler", e);
-            }
-          });
+      var unused =
+          executor.submit(
+              () -> {
+                try {
+                  onMessageHandler.accept(message);
+                } catch (Exception e) {
+                  log.error("Error in onMessage handler", e);
+                }
+              });
     }
   }
 

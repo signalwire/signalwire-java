@@ -10,7 +10,6 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -389,7 +388,7 @@ public final class LambdaAgentHandler {
       }
       return out;
     }
-    return Collections.emptyMap();
+    return new LinkedHashMap<>();
   }
 
   @SuppressWarnings("unchecked")

@@ -58,7 +58,7 @@ public class SessionManager {
       return false;
     }
 
-    String[] parts = payload.split(":");
+    String[] parts = payload.split(":", 0);
     if (parts.length != 3) return false;
 
     String tokenFunc = parts[0];

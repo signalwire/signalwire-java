@@ -54,7 +54,7 @@ public class FAQBotAgent {
             "Look up an answer in the FAQ knowledge base",
             toolParams,
             (args, raw) -> {
-              String query = ((String) args.get("query")).toLowerCase();
+              String query = ((String) args.get("query")).toLowerCase(java.util.Locale.ROOT);
 
               // Simple keyword matching
               Map<String, Object> bestMatch = null;
@@ -62,20 +62,20 @@ public class FAQBotAgent {
               List<String> relatedTopics = new ArrayList<>();
 
               for (Map<String, Object> faq : faqs) {
-                String question = ((String) faq.get("question")).toLowerCase();
+                String question = ((String) faq.get("question")).toLowerCase(java.util.Locale.ROOT);
                 @SuppressWarnings("unchecked")
                 List<String> keywords = (List<String>) faq.get("keywords");
                 int score = 0;
 
                 // Check question text overlap
-                for (String word : query.split("\\s+")) {
+                for (String word : query.split("\\s+", 0)) {
                   if (question.contains(word)) score += 2;
                 }
 
                 // Check keywords
                 if (keywords != null) {
                   for (String kw : keywords) {
-                    if (query.contains(kw.toLowerCase())) score += 3;
+                    if (query.contains(kw.toLowerCase(java.util.Locale.ROOT))) score += 3;
                   }
                 }
 
