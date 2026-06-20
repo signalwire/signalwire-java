@@ -778,9 +778,13 @@ def build_signature(method: dict, aliases: dict, context: str, mod: str, class_n
 
 def run_dump() -> dict:
     """Build SDK JAR + run SignatureDump."""
-    # Compile the helper if needed
+    # Compile the helper if needed. Recompile when the .class is missing OR the
+    # source is newer than the compiled class — otherwise an edited
+    # SignatureDump.java is silently ignored (a stale .class kept serving the old
+    # behavior, which once hid a sort-determinism fix).
+    helper_src = HERE / "SignatureDump.java"
     helper_class = PORT_ROOT / "build" / "scripts" / "SignatureDump.class"
-    if not helper_class.exists():
+    if not helper_class.exists() or helper_src.stat().st_mtime > helper_class.stat().st_mtime:
         cp = subprocess.run(
             ["javac", "-parameters", str(HERE / "SignatureDump.java"), "-d", str(PORT_ROOT / "build" / "scripts")],
             capture_output=True, text=True, timeout=120,

@@ -3109,8 +3109,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "text",
-                  "type": "string",
+                  "name": "summary",
+                  "type": "bool",
                   "required": true
                 }
               ],
@@ -4239,7 +4239,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 },
                 {
@@ -4281,7 +4281,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 }
               ],
@@ -7328,8 +7328,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7771,8 +7771,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7794,8 +7794,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -19712,7 +19712,7 @@
                 },
                 {
                   "name": "values",
-                  "type": "list<string>",
+                  "type": "list<class:signalwire.swml.WireEnum>",
                   "required": true
                 },
                 {
