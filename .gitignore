@@ -18,3 +18,6 @@ build/
 .env
 out/
 __pycache__/
+
+# Claude Code local session settings (not part of the SDK)
+.claude/
