@@ -125,7 +125,8 @@ public class WebSearchSkill implements SkillBase {
     parameters.put("type", "object");
     parameters.put(
         "properties", Map.of("query", Map.of("type", "string", "description", "The search query")));
-    parameters.put("required", List.of("query"));
+    // No `required` — Python's web_search passes none (web_search/skill.py:707);
+    // the handler guards an empty query. Matches the reference contract.
 
     return List.of(
         new ToolDefinition(

@@ -50,7 +50,8 @@ public class WikipediaSearchSkill implements SkillBase {
     parameters.put("type", "object");
     parameters.put(
         "properties", Map.of("query", Map.of("type", "string", "description", "The search query")));
-    parameters.put("required", List.of("query"));
+    // No `required` — Python's wikipedia_search passes none (wikipedia_search/
+    // skill.py:87); the handler guards an empty query. Matches the reference.
 
     return List.of(
         new ToolDefinition(

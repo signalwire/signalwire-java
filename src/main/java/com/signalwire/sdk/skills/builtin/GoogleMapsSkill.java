@@ -50,7 +50,8 @@ public class GoogleMapsSkill implements SkillBase {
             "address", Map.of("type", "string", "description", "Address to look up"),
             "bias_lat", Map.of("type", "number", "description", "Latitude for location bias"),
             "bias_lng", Map.of("type", "number", "description", "Longitude for location bias")));
-    lookupParams.put("required", List.of("address"));
+    // No `required` — Python's google_maps passes none (google_maps/skill.py:433);
+    // the handler guards a missing address. Matches the reference contract.
 
     ToolDefinition lookup =
         new ToolDefinition(
@@ -94,7 +95,8 @@ public class GoogleMapsSkill implements SkillBase {
             "origin_lng", Map.of("type", "number", "description", "Origin longitude"),
             "dest_lat", Map.of("type", "number", "description", "Destination latitude"),
             "dest_lng", Map.of("type", "number", "description", "Destination longitude")));
-    routeParams.put("required", List.of("origin_lat", "origin_lng", "dest_lat", "dest_lng"));
+    // No `required` — Python's google_maps passes none (google_maps/skill.py:457);
+    // the handler validates the coordinates. Matches the reference contract.
 
     ToolDefinition route =
         new ToolDefinition(

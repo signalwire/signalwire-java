@@ -169,6 +169,23 @@ tasks.register('emitCorpus', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// emitSkills — the Java port's SKILL-DUMP entry point for the cross-port
+// SKILL-CONTRACT differ (porting-sdk/scripts/diff_skill_contracts.py). Runs
+// com.signalwire.sdk.tools.EmitSkills, which reads the shared skill corpus
+// (porting-sdk/scripts/skill_contract_corpus.py), instantiates each covered
+// skill, and prints one JSON object {id -> [tool-contract]} to stdout (logs to
+// stderr). Invoke quietly so only that JSON reaches stdout:
+//   ./gradlew --no-daemon -q emitSkills
+// The differ runs `./gradlew --no-daemon -q emitSkills` and structurally
+// compares each skill's tool contract against the Python reference. Sibling of
+// emitCorpus; mirrors Go's cmd/emit-skills + Ruby's bin/emit-skills.
+tasks.register('emitSkills', JavaExec) {
+    group = 'verification'
+    description = 'Dump the built-in skill tool contracts as JSON (cross-port skill-contract differ).'
+    mainClass = 'com.signalwire.sdk.tools.EmitSkills'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

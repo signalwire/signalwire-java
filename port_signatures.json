@@ -201,7 +201,7 @@
                 },
                 {
                   "name": "format",
-                  "type": "string",
+                  "type": "class:signalwire.swml.RecordFormat",
                   "required": true
                 }
               ],
@@ -3109,8 +3109,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "summary",
-                  "type": "bool",
+                  "name": "text",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -4239,7 +4239,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "class:signalwire.skills.SkillName",
+                  "type": "string",
                   "required": true
                 },
                 {
@@ -4258,7 +4258,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 }
               ],
@@ -4281,7 +4281,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "class:signalwire.skills.SkillName",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7794,8 +7794,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "control_id",
-                  "type": "string",
+                  "name": "options",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -20279,24 +20279,6 @@
                 }
               ],
               "returns": "string"
-            }
-          }
-        }
-      }
-    },
-    "signalwire.tools.emit_corpus": {
-      "classes": {
-        "EmitCorpus": {
-          "methods": {
-            "main": {
-              "params": [
-                {
-                  "name": "args",
-                  "type": "list<string>",
-                  "required": true
-                }
-              ],
-              "returns": "void"
             }
           }
         }

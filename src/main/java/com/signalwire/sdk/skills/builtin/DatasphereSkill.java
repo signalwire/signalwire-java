@@ -64,7 +64,8 @@ public class DatasphereSkill implements SkillBase {
     parameters.put("type", "object");
     parameters.put(
         "properties", Map.of("query", Map.of("type", "string", "description", "The search query")));
-    parameters.put("required", List.of("query"));
+    // No `required` — Python's datasphere passes none (datasphere/skill.py:162);
+    // the handler guards an empty query. Matches the reference contract.
 
     return List.of(
         new ToolDefinition(

@@ -79,7 +79,8 @@ public class InfoGathererSkill implements SkillBase {
             "confirmed_by_user",
                 Map.of(
                     "type", "boolean", "description", "Whether the user confirmed this answer")));
-    answerParams.put("required", List.of("answer"));
+    // No `required` — Python's info_gatherer passes none (info_gatherer/
+    // skill.py:170); submit_answer advances state regardless. Matches reference.
 
     ToolDefinition submit =
         new ToolDefinition(

@@ -54,12 +54,15 @@ public class SwmlTransferSkill implements SkillBase {
 
   @Override
   public List<Map<String, Object>> getSwaigFunctions() {
-    List<String> enumValues = new ArrayList<>(transfers.keySet());
-
+    // No enum on transfer_type — Python's swml_transfer passes none
+    // (swml_transfer/skill.py:186); the transfer keys drive the DataMap
+    // expression() pattern-matching, not the param's enum. Emitting an enum
+    // here leaked the corpus's test destination ("sales") into the wire
+    // contract and diverged from every other port. required stays true.
     DataMap dm =
         new DataMap(toolName)
             .purpose(description)
-            .parameter(parameterName, "string", parameterDescription, true, enumValues);
+            .parameter(parameterName, "string", parameterDescription, true);
 
     // Add expressions for each transfer pattern
     for (Map.Entry<String, Map<String, Object>> entry : transfers.entrySet()) {

@@ -11,6 +11,11 @@
 #   4. surface-fresh gate                 — porting-sdk check_surface_freshness.py
 #   5. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
 #   6. emission gate                      — porting-sdk diff_port_emission.py
+#   7. fmt gate                           — spotless google-java-format
+#   8. lint gate                          — Error Prone + Checkstyle (zero findings)
+#   9. doc-audit gate                     — porting-sdk audit_docs.py
+#  10. surface-diff gate                  — porting-sdk diff_port_surface.py
+#  11. skill-contract gate                — porting-sdk diff_skill_contracts.py
 #   7. fmt gate                           — spotless (local: apply; CI: check)
 #   8. lint gate                          — errorprone + checkstyle, zero findings
 #   9. doc-audit gate                     — porting-sdk audit_docs.py
@@ -221,6 +226,21 @@ surface_diff_gate() {
 }
 run_gate "SURFACE-DIFF" "diff_port_surface vs python reference" \
     surface_diff_gate
+
+# Gate 11: SKILL-CONTRACT — the surface/drift/emission gates see signatures +
+# symbol names + FunctionResult.toMap(); NONE sees a built-in skill's SWAIG tool
+# contract ({name, parameters, required, enum} each skill registers). This differ
+# closes that gap: it builds the Python oracle by instantiating each covered
+# reference skill, runs the Java skill-dump program (the `emitSkills` Gradle task
+# → com.signalwire.sdk.tools.EmitSkills, which reads the SAME shared corpus), and
+# structurally compares the two. DESCRIPTIONS + implementation (handler vs
+# DataMap) are not compared — only name/param-name/param-type/enum/required.
+# Mirrors the go/ruby SKILL-CONTRACT gate. Same prereqs as EMISSION (signalwire-
+# python adjacent; no network); the JAR built in gate 2 is current here.
+run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
+    python3 "$PORTING_SDK_DIR/scripts/diff_skill_contracts.py" \
+        --dump-cmd "./gradlew --no-daemon -q emitSkills" \
+        --port-repo "$PORT_ROOT"
 
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"

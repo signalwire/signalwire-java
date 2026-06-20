@@ -40,7 +40,9 @@ public class MathSkill implements SkillBase {
                 "string",
                 "description",
                 "Mathematical expression to evaluate (e.g. 2+3, 10*5, 100/4)")));
-    params.put("required", List.of("expression"));
+    // No `required` — Python's math skill passes none (math/skill.py:33); the
+    // handler returns a friendly prompt when expression is empty. Matching the
+    // reference contract keeps SKILL-CONTRACT parity.
 
     ToolDefinition calc =
         new ToolDefinition(
