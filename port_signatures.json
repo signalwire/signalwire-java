@@ -201,7 +201,7 @@
                 },
                 {
                   "name": "format",
-                  "type": "string",
+                  "type": "class:signalwire.swml.RecordFormat",
                   "required": true
                 }
               ],
@@ -4258,7 +4258,7 @@
                 },
                 {
                   "name": "skill_name",
-                  "type": "string",
+                  "type": "class:signalwire.skills.SkillName",
                   "required": true
                 }
               ],
@@ -7328,8 +7328,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -7771,8 +7771,8 @@
                   "required": true
                 },
                 {
-                  "name": "options",
-                  "type": "dict<string,any>",
+                  "name": "control_id",
+                  "type": "string",
                   "required": true
                 }
               ],
@@ -19712,7 +19712,7 @@
                 },
                 {
                   "name": "values",
-                  "type": "list<string>",
+                  "type": "list<class:signalwire.swml.WireEnum>",
                   "required": true
                 },
                 {
@@ -20279,24 +20279,6 @@
                 }
               ],
               "returns": "string"
-            }
-          }
-        }
-      }
-    },
-    "signalwire.tools.emit_corpus": {
-      "classes": {
-        "EmitCorpus": {
-          "methods": {
-            "main": {
-              "params": [
-                {
-                  "name": "args",
-                  "type": "list<string>",
-                  "required": true
-                }
-              ],
-              "returns": "void"
             }
           }
         }

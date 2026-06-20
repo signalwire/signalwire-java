@@ -8,26 +8,25 @@ package com.signalwire.sdk.rest.namespaces;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
-
 import java.util.Map;
 
-/**
- * REST namespace for messaging (SMS/MMS) resources.
- */
+/** REST namespace for messaging (SMS/MMS) resources. */
 public class MessagingNamespace {
 
-    private final CrudResource messages;
-    private final HttpClient httpClient;
+  private final CrudResource messages;
+  private final HttpClient httpClient;
 
-    public MessagingNamespace(HttpClient httpClient) {
-        this.httpClient = httpClient;
-        this.messages = new CrudResource(httpClient, "/messaging/messages");
-    }
+  public MessagingNamespace(HttpClient httpClient) {
+    this.httpClient = httpClient;
+    this.messages = new CrudResource(httpClient, "/messaging/messages");
+  }
 
-    public CrudResource messages() { return messages; }
+  public CrudResource messages() {
+    return messages;
+  }
 
-    /** Send a message via REST. */
-    public Map<String, Object> send(Map<String, Object> body) {
-        return httpClient.post("/messaging/messages", body);
-    }
+  /** Send a message via REST. */
+  public Map<String, Object> send(Map<String, Object> body) {
+    return httpClient.post("/messaging/messages", body);
+  }
 }

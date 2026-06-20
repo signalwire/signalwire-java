@@ -7,22 +7,19 @@
 package com.signalwire.sdk.rest.namespaces;
 
 import com.signalwire.sdk.rest.HttpClient;
-
 import java.util.Map;
 
-/**
- * REST namespace for number lookup (CNAM/carrier lookup) resources.
- */
+/** REST namespace for number lookup (CNAM/carrier lookup) resources. */
 public class NumberLookupNamespace {
 
-    private final HttpClient httpClient;
+  private final HttpClient httpClient;
 
-    public NumberLookupNamespace(HttpClient httpClient) {
-        this.httpClient = httpClient;
-    }
+  public NumberLookupNamespace(HttpClient httpClient) {
+    this.httpClient = httpClient;
+  }
 
-    /** Look up a phone number. */
-    public Map<String, Object> lookup(String phoneNumber) {
-        return httpClient.get("/lookup/phone_number/" + phoneNumber);
-    }
+  /** Look up a phone number. */
+  public Map<String, Object> lookup(String phoneNumber) {
+    return httpClient.get("/lookup/phone_number/" + phoneNumber);
+  }
 }

@@ -9,16 +9,16 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for audio stream resources.
- */
+/** REST namespace for audio stream resources. */
 public class StreamNamespace {
 
-    private final CrudResource streams;
+  private final CrudResource streams;
 
-    public StreamNamespace(HttpClient httpClient) {
-        this.streams = new CrudResource(httpClient, "/streams");
-    }
+  public StreamNamespace(HttpClient httpClient) {
+    this.streams = new CrudResource(httpClient, "/streams");
+  }
 
-    public CrudResource streams() { return streams; }
+  public CrudResource streams() {
+    return streams;
+  }
 }

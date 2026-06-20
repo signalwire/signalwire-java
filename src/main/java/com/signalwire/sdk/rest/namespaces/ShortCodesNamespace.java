@@ -7,7 +7,6 @@
 package com.signalwire.sdk.rest.namespaces;
 
 import com.signalwire.sdk.rest.HttpClient;
-
 import java.util.Map;
 
 /**
@@ -17,28 +16,30 @@ import java.util.Map;
  */
 public class ShortCodesNamespace {
 
-    private static final String BASE = "/relay/rest/short_codes";
-    private final HttpClient httpClient;
+  private static final String BASE = "/relay/rest/short_codes";
+  private final HttpClient httpClient;
 
-    public ShortCodesNamespace(HttpClient httpClient) {
-        this.httpClient = httpClient;
-    }
+  public ShortCodesNamespace(HttpClient httpClient) {
+    this.httpClient = httpClient;
+  }
 
-    public String getBasePath() { return BASE; }
+  public String getBasePath() {
+    return BASE;
+  }
 
-    public Map<String, Object> list() {
-        return httpClient.get(BASE);
-    }
+  public Map<String, Object> list() {
+    return httpClient.get(BASE);
+  }
 
-    public Map<String, Object> list(Map<String, String> queryParams) {
-        return httpClient.get(BASE, queryParams);
-    }
+  public Map<String, Object> list(Map<String, String> queryParams) {
+    return httpClient.get(BASE, queryParams);
+  }
 
-    public Map<String, Object> get(String shortCodeId) {
-        return httpClient.get(BASE + "/" + shortCodeId);
-    }
+  public Map<String, Object> get(String shortCodeId) {
+    return httpClient.get(BASE + "/" + shortCodeId);
+  }
 
-    public Map<String, Object> update(String shortCodeId, Map<String, Object> body) {
-        return httpClient.put(BASE + "/" + shortCodeId, body);
-    }
+  public Map<String, Object> update(String shortCodeId, Map<String, Object> body) {
+    return httpClient.put(BASE + "/" + shortCodeId, body);
+  }
 }

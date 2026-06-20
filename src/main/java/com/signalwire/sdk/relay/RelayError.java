@@ -7,16 +7,16 @@
 package com.signalwire.sdk.relay;
 
 /**
- * Runtime exception for RELAY-level failures (dial timeout, dial failed,
- * connect rejected, etc.). Mirrors the Python {@code RelayError} class.
+ * Runtime exception for RELAY-level failures (dial timeout, dial failed, connect rejected, etc.).
+ * Mirrors the Python {@code RelayError} class.
  */
 public class RelayError extends RuntimeException {
 
-    public RelayError(String message) {
-        super(message);
-    }
+  public RelayError(String message) {
+    super(message);
+  }
 
-    public RelayError(String message, Throwable cause) {
-        super(message, cause);
-    }
+  public RelayError(String message, Throwable cause) {
+    super(message, cause);
+  }
 }

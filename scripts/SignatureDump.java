@@ -150,17 +150,30 @@ public class SignatureDump {
 
         List<String> methodEntries = new ArrayList<>();
 
-        // Constructors
+        // Constructors. Sort by param count, then by the full parameter-type
+        // signature so overloaded ctors with the SAME count get a stable total
+        // order — reflection's getDeclaredConstructors() order is unspecified
+        // and varies run-to-run, which otherwise churns port_signatures.json.
         Constructor<?>[] ctors = c.getDeclaredConstructors();
-        Arrays.sort(ctors, Comparator.comparingInt(Constructor::getParameterCount));
+        Arrays.sort(
+                ctors,
+                Comparator.<Constructor<?>>comparingInt(Constructor::getParameterCount)
+                        .thenComparing(SignatureDump::paramTypeSig));
         for (Constructor<?> k : ctors) {
             if (!Modifier.isPublic(k.getModifiers())) continue;
             methodEntries.add(dumpConstructor(k));
         }
 
-        // Methods
+        // Methods. Sort by name, then by the full parameter-type signature:
+        // OVERLOADED methods share a name, and Comparator.comparing is stable,
+        // so name-only ties keep getDeclaredMethods()'s order — which the JVM
+        // does NOT guarantee across runs, making port_signatures.json
+        // non-deterministic. The param-type tiebreaker gives a stable total order.
         Method[] methods = c.getDeclaredMethods();
-        Arrays.sort(methods, Comparator.comparing(Method::getName));
+        Arrays.sort(
+                methods,
+                Comparator.comparing(Method::getName)
+                        .thenComparing(SignatureDump::paramTypeSig));
         for (Method m : methods) {
             if (!Modifier.isPublic(m.getModifiers())) continue;
             if (m.isSynthetic() || m.isBridge()) continue;
@@ -188,6 +201,21 @@ public class SignatureDump {
             sb.append("\n        ").append(methodEntries.get(i));
         }
         sb.append("\n      ]\n    }");
+        return sb.toString();
+    }
+
+    /**
+     * A stable, deterministic string of an executable's parameter types, used
+     * ONLY as a sort tiebreaker so overloaded methods/constructors (same name /
+     * same param count) get a fixed order independent of reflection's
+     * unspecified getDeclared*() ordering. Not emitted into the output — purely
+     * for sorting. Uses Type.getTypeName() for the full (generic-aware) spelling.
+     */
+    static String paramTypeSig(java.lang.reflect.Executable e) {
+        StringBuilder sb = new StringBuilder();
+        for (Type t : e.getGenericParameterTypes()) {
+            sb.append(t.getTypeName()).append(',');
+        }
         return sb.toString();
     }
 

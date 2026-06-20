@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  LINT gate, layer 2 — Checkstyle config for signalwire-java.
+
+  A Google/Sun-derived rule set restricted to checks that catch real hygiene /
+  correctness issues and that are CONSISTENT WITH google-java-format. Rules the
+  formatter already owns and enforces (indentation, line wrapping, brace
+  placement, whitespace) are intentionally NOT duplicated here — they would
+  either be redundant or actively fight the formatter, and per porting-sdk
+  RULES.md a check must never enforce idiom the formatter has already settled.
+
+  Burned to zero (maxWarnings/maxErrors = 0 in build.gradle). A check is
+  excluded ONLY when it is purely stylistic / formatter-owned, never to hide a
+  real bug — those are fixed in the code.
+-->
+<module name="Checker">
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <!-- No tabs anywhere (google-java-format emits spaces). -->
+  <module name="FileTabCharacter">
+    <property name="eachLine" value="true"/>
+  </module>
+
+  <!-- Files end with a newline (matches spotless endWithNewline). -->
+  <module name="NewlineAtEndOfFile"/>
+
+  <module name="TreeWalker">
+    <!-- ===== Real-bug-adjacent checks ===== -->
+    <!-- Empty statement (stray semicolon) is almost always a bug. -->
+    <module name="EmptyStatement"/>
+    <!-- == on String / boxed types — a correctness footgun. -->
+    <module name="EqualsAvoidNull"/>
+    <!-- A class overriding equals() must override hashCode(). -->
+    <module name="EqualsHashCode"/>
+    <!-- Assignment inside a subexpression — usually a typo for ==. -->
+    <module name="InnerAssignment"/>
+    <!-- Default clause should be present / last in a switch. -->
+    <module name="MissingSwitchDefault"/>
+    <!-- Fall-through between switch cases without a comment. -->
+    <module name="FallThrough"/>
+    <!-- Boolean expressions that can be simplified (e.g. b == true). -->
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <!-- Catching/throwing overly broad or illegal types. -->
+    <module name="IllegalCatch">
+      <property name="illegalClassNames"
+                value="java.lang.Error, java.lang.Throwable"/>
+    </module>
+    <!-- A long literal must use uppercase L (l looks like 1). -->
+    <module name="UpperEll"/>
+    <!-- Array brackets on the type, not the variable: String[] not String a[]. -->
+    <module name="ArrayTypeStyle"/>
+    <!-- One top-level class per file. -->
+    <module name="OneTopLevelClass"/>
+    <!-- No unused/redundant imports. AvoidStarImport is intentionally NOT
+         enabled: google-java-format (the FMT-gate authority) permits star
+         imports and the codebase uses them idiomatically (e.g. JUnit's
+         `import static org.junit.jupiter.api.Assertions.*`, which JUnit's own
+         docs recommend). Forbidding them would impose a rule stricter than the
+         formatter backs and de-idiomatize test code — RULES.md: idiom is free,
+         a lint rule must not fight the formatter. -->
+    <module name="RedundantImport"/>
+    <module name="UnusedImports">
+      <property name="processJavadoc" value="true"/>
+    </module>
+    <!-- Modifier order matches the JLS (public static final, not static public). -->
+    <module name="ModifierOrder"/>
+    <!-- Default switch case must be last. -->
+    <module name="DefaultComesLast"/>
+    <!-- Multiple variable declarations on one line / statement. -->
+    <module name="MultipleVariableDeclarations"/>
+    <!-- A long if/else chain with no comment hides logic; off by default. -->
+    <module name="OneStatementPerLine"/>
+  </module>
+</module>

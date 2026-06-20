@@ -8,26 +8,25 @@ package com.signalwire.sdk.rest.namespaces;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
-
 import java.util.Map;
 
-/**
- * REST namespace for Pub/Sub resources.
- */
+/** REST namespace for Pub/Sub resources. */
 public class PubSubNamespace {
 
-    private final CrudResource channels;
-    private final HttpClient httpClient;
+  private final CrudResource channels;
+  private final HttpClient httpClient;
 
-    public PubSubNamespace(HttpClient httpClient) {
-        this.httpClient = httpClient;
-        this.channels = new CrudResource(httpClient, "/pubsub/channels");
-    }
+  public PubSubNamespace(HttpClient httpClient) {
+    this.httpClient = httpClient;
+    this.channels = new CrudResource(httpClient, "/pubsub/channels");
+  }
 
-    public CrudResource channels() { return channels; }
+  public CrudResource channels() {
+    return channels;
+  }
 
-    /** Publish a message to a channel. */
-    public Map<String, Object> publish(String channel, Map<String, Object> body) {
-        return httpClient.post("/pubsub/channels/" + channel + "/publish", body);
-    }
+  /** Publish a message to a channel. */
+  public Map<String, Object> publish(String channel, Map<String, Object> body) {
+    return httpClient.post("/pubsub/channels/" + channel + "/publish", body);
+  }
 }

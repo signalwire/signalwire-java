@@ -9,19 +9,22 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for compliance resources (CNAM, SHAKEN/STIR).
- */
+/** REST namespace for compliance resources (CNAM, SHAKEN/STIR). */
 public class ComplianceNamespace {
 
-    private final CrudResource cnamRegistrations;
-    private final CrudResource shakenStir;
+  private final CrudResource cnamRegistrations;
+  private final CrudResource shakenStir;
 
-    public ComplianceNamespace(HttpClient httpClient) {
-        this.cnamRegistrations = new CrudResource(httpClient, "/compliance/cnam");
-        this.shakenStir = new CrudResource(httpClient, "/compliance/shaken_stir");
-    }
+  public ComplianceNamespace(HttpClient httpClient) {
+    this.cnamRegistrations = new CrudResource(httpClient, "/compliance/cnam");
+    this.shakenStir = new CrudResource(httpClient, "/compliance/shaken_stir");
+  }
 
-    public CrudResource cnamRegistrations() { return cnamRegistrations; }
-    public CrudResource shakenStir() { return shakenStir; }
+  public CrudResource cnamRegistrations() {
+    return cnamRegistrations;
+  }
+
+  public CrudResource shakenStir() {
+    return shakenStir;
+  }
 }

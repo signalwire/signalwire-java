@@ -11,6 +11,15 @@
 #   4. surface-fresh gate                 — porting-sdk check_surface_freshness.py
 #   5. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
 #   6. emission gate                      — porting-sdk diff_port_emission.py
+#   7. fmt gate                           — spotless google-java-format
+#   8. lint gate                          — Error Prone + Checkstyle (zero findings)
+#   9. doc-audit gate                     — porting-sdk audit_docs.py
+#  10. surface-diff gate                  — porting-sdk diff_port_surface.py
+#  11. skill-contract gate                — porting-sdk diff_skill_contracts.py
+#   7. fmt gate                           — spotless (local: apply; CI: check)
+#   8. lint gate                          — errorprone + checkstyle, zero findings
+#   9. doc-audit gate                     — porting-sdk audit_docs.py
+#  10. surface-diff gate                  — porting-sdk diff_port_surface.py
 #
 # The SURFACE-FRESH gate closes the Layer-B-not-gated hole: the drift gate
 # only polices Layer A (port_signatures.json), so port_surface.json can
@@ -140,6 +149,98 @@ run_gate "NO-CHEAT" "audit_no_cheat_tests" \
 run_gate "EMISSION" "diff_port_emission vs python oracle" \
     python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
         --port java --port-repo "$PORT_ROOT"
+
+# Gate 7: FMT — the language format gate (java: Spotless + google-java-format).
+# google-java-format is the canonical Java formatter (analogous to gofmt/
+# rustfmt) — no style to bikeshed. Source-style only and proven surface/
+# emission-neutral (a reformat leaves port_surface.json byte-identical and
+# EMISSION 81/81 — verified during the burndown). Mirrors the go/ruby fmt_gate:
+#   * LOCAL ($CI unset)  → `spotlessApply`: reformats your working tree in place
+#     so you never hand-run it; notes if it changed files.
+#   * CI ($CI=true)      → `spotlessCheck` (read-only): FAILS if any unformatted
+#     source reached CI.
+fmt_gate() {
+    if [ -n "${CI:-}" ]; then
+        ./gradlew --no-daemon -q spotlessCheck
+    else
+        ./gradlew --no-daemon -q spotlessApply
+        if ! git diff --quiet 2>/dev/null; then
+            echo "    (FMT auto-applied formatting to your working tree — review & stage)"
+        fi
+        # A residual issue spotlessApply can't fix must still fail the gate.
+        ./gradlew --no-daemon -q spotlessCheck
+    fi
+}
+run_gate "FMT" "spotless google-java-format (local: apply; CI: check)" fmt_gate
+
+# Gate 8: LINT — the language lint gate (java), two blocking layers burned to
+# zero: Error Prone (compile-time bug patterns, warnings-as-errors) + Checkstyle
+# (config/checkstyle/checkstyle.xml). A check is turned off ONLY when obeying it
+# would force an API/contract change or police LLM-irrelevant javadoc prose —
+# never to hide a wire/type-shape issue; every OFF carries a one-line rationale
+# at its config site. The `build -x test` compile drives Error Prone; the
+# checkstyle{Main,Test} tasks drive Checkstyle. Mirrors the go vet+golangci /
+# ruby rubocop blocking-lint gate.
+run_gate "LINT" "errorprone (warnings-as-errors) + checkstyle, zero findings" \
+    ./gradlew --no-daemon -q clean build -x test checkstyleMain checkstyleTest
+
+# Gate 9: DOC-AUDIT — every method/class referenced in docs/ + examples/ fenced
+# code blocks must resolve to a real symbol in the port surface (catches
+# phantom-API doc promises). Uses the committed port_surface.json (the
+# SURFACE-FRESH gate above already proved it is fresh) + DOC_AUDIT_IGNORE.md for
+# intentional non-symbol references.
+run_gate "DOC-AUDIT" "audit_docs vs port_surface.json" \
+    python3 "$PORTING_SDK_DIR/scripts/audit_docs.py" \
+        --root "$PORT_ROOT" \
+        --surface "$PORT_ROOT/port_surface.json" \
+        --ignore "$PORT_ROOT/DOC_AUDIT_IGNORE.md"
+
+# Gate 10: SURFACE-DIFF — diff the port's public surface against the Python
+# reference (omissions + additions). The signature DRIFT gate (Layer A) checks
+# method *signatures*; this checks surface *membership* — public symbols the
+# port has that Python doesn't and vice-versa. Regenerate the surface in place
+# (the JAR is built in gate 2 SIGNATURES and again in the LINT gate above; the
+# enumerator parses source, so it is current), diff, then restore the committed
+# copy unconditionally so the gate is side-effect free.
+surface_diff_gate() {
+    local committed="/tmp/committed_surface_diff_${PORT_NAME}.$$"
+    git show HEAD:port_surface.json >"$committed" 2>/dev/null \
+        || cp port_surface.json "$committed"
+    python3 scripts/enumerate_surface.py >port_surface.json
+    local regen_rc=$?
+    if [ "$regen_rc" -ne 0 ]; then
+        git checkout -- port_surface.json 2>/dev/null || true
+        rm -f "$committed"
+        echo "surface regen failed (exit $regen_rc)" >&2
+        return "$regen_rc"
+    fi
+    python3 "$PORTING_SDK_DIR/scripts/diff_port_surface.py" \
+        --reference "$PORTING_SDK_DIR/python_surface.json" \
+        --port-surface port_surface.json \
+        --omissions "$PORT_ROOT/PORT_OMISSIONS.md" \
+        --additions "$PORT_ROOT/PORT_ADDITIONS.md"
+    local rc=$?
+    git checkout -- port_surface.json 2>/dev/null || true
+    rm -f "$committed"
+    return $rc
+}
+run_gate "SURFACE-DIFF" "diff_port_surface vs python reference" \
+    surface_diff_gate
+
+# Gate 11: SKILL-CONTRACT — the surface/drift/emission gates see signatures +
+# symbol names + FunctionResult.toMap(); NONE sees a built-in skill's SWAIG tool
+# contract ({name, parameters, required, enum} each skill registers). This differ
+# closes that gap: it builds the Python oracle by instantiating each covered
+# reference skill, runs the Java skill-dump program (the `emitSkills` Gradle task
+# → com.signalwire.sdk.tools.EmitSkills, which reads the SAME shared corpus), and
+# structurally compares the two. DESCRIPTIONS + implementation (handler vs
+# DataMap) are not compared — only name/param-name/param-type/enum/required.
+# Mirrors the go/ruby SKILL-CONTRACT gate. Same prereqs as EMISSION (signalwire-
+# python adjacent; no network); the JAR built in gate 2 is current here.
+run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
+    python3 "$PORTING_SDK_DIR/scripts/diff_skill_contracts.py" \
+        --dump-cmd "./gradlew --no-daemon -q emitSkills" \
+        --port-repo "$PORT_ROOT"
 
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"

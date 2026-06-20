@@ -9,16 +9,16 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for fax resources.
- */
+/** REST namespace for fax resources. */
 public class FaxNamespace {
 
-    private final CrudResource faxes;
+  private final CrudResource faxes;
 
-    public FaxNamespace(HttpClient httpClient) {
-        this.faxes = new CrudResource(httpClient, "/fax/faxes");
-    }
+  public FaxNamespace(HttpClient httpClient) {
+    this.faxes = new CrudResource(httpClient, "/fax/faxes");
+  }
 
-    public CrudResource faxes() { return faxes; }
+  public CrudResource faxes() {
+    return faxes;
+  }
 }

@@ -3,6 +3,18 @@ import com.vanniktech.maven.publish.SonatypeHost
 plugins {
     id 'java-library'
     id 'com.vanniktech.maven.publish' version '0.29.0'
+    // FMT gate: Spotless drives google-java-format over all Java sources. The
+    // run-ci.sh FMT gate runs `spotlessApply` locally (auto-fix) and
+    // `spotlessCheck` in CI (read-only). google-java-format is the canonical
+    // Java formatter — analogous to gofmt/rustfmt — so there is no style to
+    // bikeshed and the reformat is provably surface/emission-neutral.
+    id 'com.diffplug.spotless' version '6.25.0'
+    // LINT gate (two layers, both blocking, both burned to zero):
+    //   1. Error Prone — Google's compile-time bug-pattern checker, wired via
+    //      the net.ltgt.errorprone plugin with warnings-as-errors.
+    //   2. Checkstyle — the gradle built-in plugin, config in config/checkstyle.
+    id 'net.ltgt.errorprone' version '3.1.0'
+    id 'checkstyle'
 }
 
 group = 'com.signalwire'
@@ -43,6 +55,9 @@ dependencies {
     // servlet-style filter.
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
 
+    // LINT gate — Error Prone bug-pattern checker (runs in the compiler).
+    errorprone 'com.google.errorprone:error_prone_core:2.27.1'
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter:6.1.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -54,6 +69,80 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// FMT gate — Spotless + google-java-format over every Java source set (main,
+// test, and the tools/CLI sources that live under src/main + src/test). The
+// formatter is source-style only and proven surface/emission-neutral (a
+// reformat leaves port_signatures.json + port_surface.json byte-identical and
+// EMISSION 81/81 — verified during the rollout). run-ci.sh's FMT gate runs
+// `spotlessApply` locally and `spotlessCheck` in CI.
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat('1.22.0')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+// LINT gate, layer 1 — Error Prone. Runs inside javac as a bug-pattern
+// checker. Warnings-as-errors so any pattern Error Prone flags fails the
+// build (and thus the LINT gate). MEASURE-ONLY toggle: pass
+// -PerrorproneMeasure to demote everything to a warning so the raw burndown
+// volume can be counted without failing the build.
+import net.ltgt.gradle.errorprone.CheckSeverity
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone {
+        if (project.hasProperty('errorproneMeasure')) {
+            // MEASURE-ONLY: demote everything to a warning so the raw burndown
+            // volume can be counted without failing the build.
+            allErrorsAsWarnings = true
+        } else {
+            // Burndown floor: every Error Prone bug pattern is an ERROR (the
+            // build, and thus the LINT gate, fails on any finding). The whole
+            // default bug-pattern set was burned to zero in the rollout.
+            allErrorsAsWarnings = false
+        }
+        // The three Javadoc-PROSE checks below are turned OFF (not suppressed
+        // per-site). They police documentation completeness/markup quality —
+        // LLM-irrelevant prose, never wire/surface/correctness — so per
+        // porting-sdk RULES.md they are idiom, not a parity floor. Turning them
+        // off keeps the gate focused on real bug patterns rather than forcing
+        // boilerplate "@return the foo" summaries onto self-evident accessors.
+        check('MissingSummary', CheckSeverity.OFF)   // javadoc summary fragment
+        check('InvalidLink', CheckSeverity.OFF)       // javadoc {@link} resolution
+        check('EscapedEntity', CheckSeverity.OFF)     // javadoc HTML-entity prose
+        // The three checks below are OFF with a specific rationale — each would
+        // force an API/contract change, never a wire/surface change, so per
+        // RULES.md they cannot be obeyed without de-idiomatizing the port:
+        //   * AnnotateFormatMethod — adding @FormatMethod to Logger.log()
+        //     cascades FormatStringAnnotation errors onto every debug/info/warn/
+        //     error caller and up the whole logging call chain; annotating the
+        //     entire logging API to satisfy one site is not idiomatic.
+        //   * IterableAndIterator — PaginatedIterator is a public final SDK type
+        //     using the standard self-iterable pattern (implements both); the
+        //     only "fix" is dropping a public interface = a surface change.
+        //   * JdkObsolete — WebhookFilterTest's HttpServletRequest proxy MUST
+        //     return a StringBuffer from getRequestURL() (the servlet contract's
+        //     declared type); a StringBuilder would ClassCastException.
+        check('AnnotateFormatMethod', CheckSeverity.OFF)
+        check('IterableAndIterator', CheckSeverity.OFF)
+        check('JdkObsolete', CheckSeverity.OFF)
+    }
+}
+
+// LINT gate, layer 2 — Checkstyle. Config authored in config/checkstyle/
+// checkstyle.xml; the rule set is a Google/Sun-derived style consistent with
+// what google-java-format produces (it does NOT fight the formatter). Burned
+// to zero; maxWarnings=0 so any violation fails the gate.
+checkstyle {
+    toolVersion = '10.17.0'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    maxWarnings = 0
+    maxErrors = 0
+    ignoreFailures = project.hasProperty('checkstyleMeasure')
 }
 
 // Print the runtime classpath, one entry per line. Used by the doc-audit
@@ -77,6 +166,23 @@ tasks.register('emitCorpus', JavaExec) {
     group = 'verification'
     description = 'Dump the shared FunctionResult emission corpus as JSON (cross-port emission differ).'
     mainClass = 'com.signalwire.sdk.tools.EmitCorpus'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// emitSkills — the Java port's SKILL-DUMP entry point for the cross-port
+// SKILL-CONTRACT differ (porting-sdk/scripts/diff_skill_contracts.py). Runs
+// com.signalwire.sdk.tools.EmitSkills, which reads the shared skill corpus
+// (porting-sdk/scripts/skill_contract_corpus.py), instantiates each covered
+// skill, and prints one JSON object {id -> [tool-contract]} to stdout (logs to
+// stderr). Invoke quietly so only that JSON reaches stdout:
+//   ./gradlew --no-daemon -q emitSkills
+// The differ runs `./gradlew --no-daemon -q emitSkills` and structurally
+// compares each skill's tool contract against the Python reference. Sibling of
+// emitCorpus; mirrors Go's cmd/emit-skills + Ruby's bin/emit-skills.
+tasks.register('emitSkills', JavaExec) {
+    group = 'verification'
+    description = 'Dump the built-in skill tool contracts as JSON (cross-port skill-contract differ).'
+    mainClass = 'com.signalwire.sdk.tools.EmitSkills'
     classpath = sourceSets.main.runtimeClasspath
 }
 
