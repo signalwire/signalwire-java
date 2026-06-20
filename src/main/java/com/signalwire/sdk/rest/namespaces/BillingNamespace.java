@@ -9,19 +9,22 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for billing resources.
- */
+/** REST namespace for billing resources. */
 public class BillingNamespace {
 
-    private final CrudResource invoices;
-    private final CrudResource usage;
+  private final CrudResource invoices;
+  private final CrudResource usage;
 
-    public BillingNamespace(HttpClient httpClient) {
-        this.invoices = new CrudResource(httpClient, "/billing/invoices");
-        this.usage = new CrudResource(httpClient, "/billing/usage");
-    }
+  public BillingNamespace(HttpClient httpClient) {
+    this.invoices = new CrudResource(httpClient, "/billing/invoices");
+    this.usage = new CrudResource(httpClient, "/billing/usage");
+  }
 
-    public CrudResource invoices() { return invoices; }
-    public CrudResource usage() { return usage; }
+  public CrudResource invoices() {
+    return invoices;
+  }
+
+  public CrudResource usage() {
+    return usage;
+  }
 }

@@ -7,31 +7,31 @@
 package com.signalwire.sdk.rest.namespaces;
 
 import com.signalwire.sdk.rest.HttpClient;
-
 import java.util.Map;
 
 /**
- * SIP Profile namespace — get / update (PUT) the project's singleton SIP
- * profile.
+ * SIP Profile namespace — get / update (PUT) the project's singleton SIP profile.
  *
  * <p>Mirrors {@code signalwire.rest.namespaces.sip_profile.SipProfileResource}.
  */
 public class SipProfileNamespace {
 
-    private static final String BASE = "/relay/rest/sip_profile";
-    private final HttpClient httpClient;
+  private static final String BASE = "/relay/rest/sip_profile";
+  private final HttpClient httpClient;
 
-    public SipProfileNamespace(HttpClient httpClient) {
-        this.httpClient = httpClient;
-    }
+  public SipProfileNamespace(HttpClient httpClient) {
+    this.httpClient = httpClient;
+  }
 
-    public String getBasePath() { return BASE; }
+  public String getBasePath() {
+    return BASE;
+  }
 
-    public Map<String, Object> get() {
-        return httpClient.get(BASE);
-    }
+  public Map<String, Object> get() {
+    return httpClient.get(BASE);
+  }
 
-    public Map<String, Object> update(Map<String, Object> body) {
-        return httpClient.put(BASE, body);
-    }
+  public Map<String, Object> update(Map<String, Object> body) {
+    return httpClient.put(BASE, body);
+  }
 }

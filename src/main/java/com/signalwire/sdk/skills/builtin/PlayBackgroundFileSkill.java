@@ -4,67 +4,79 @@ import com.signalwire.sdk.datamap.DataMap;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
-
 import java.util.*;
 
 public class PlayBackgroundFileSkill implements SkillBase {
 
-    private String toolName = "play_background_file";
-    private List<Map<String, Object>> files = new ArrayList<>();
+  private String toolName = "play_background_file";
+  private List<Map<String, Object>> files = new ArrayList<>();
 
-    @Override public String getName() { return "play_background_file"; }
-    @Override public String getDescription() { return "Control background file playback"; }
-    @Override public boolean supportsMultipleInstances() { return true; }
+  @Override
+  public String getName() {
+    return "play_background_file";
+  }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public boolean setup(Map<String, Object> params) {
-        if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
-        if (params.containsKey("files")) {
-            this.files = (List<Map<String, Object>>) params.get("files");
-        }
-        return !files.isEmpty();
+  @Override
+  public String getDescription() {
+    return "Control background file playback";
+  }
+
+  @Override
+  public boolean supportsMultipleInstances() {
+    return true;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public boolean setup(Map<String, Object> params) {
+    if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
+    if (params.containsKey("files")) {
+      this.files = (List<Map<String, Object>>) params.get("files");
+    }
+    return !files.isEmpty();
+  }
+
+  @Override
+  public List<ToolDefinition> registerTools() {
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<Map<String, Object>> getSwaigFunctions() {
+    List<String> actionValues = new ArrayList<>();
+    for (Map<String, Object> file : files) {
+      String key = (String) file.get("key");
+      actionValues.add("start_" + key);
+    }
+    actionValues.add("stop");
+
+    DataMap dm =
+        new DataMap(toolName)
+            .purpose("Control background file playback for " + toolName)
+            .parameter("action", "string", "Action to perform", true, actionValues);
+
+    // Add expression for stop
+    dm.expression(
+        "${args.action}",
+        "stop",
+        new FunctionResult("Stopping background playback").addAction("stop_playback_bg", true));
+
+    // Add expressions for each file
+    for (Map<String, Object> file : files) {
+      String key = (String) file.get("key");
+      String url = (String) file.get("url");
+      boolean wait = Boolean.TRUE.equals(file.get("wait"));
+
+      FunctionResult output = new FunctionResult("Playing " + file.get("description"));
+      if (wait) {
+        output.addAction("playback_bg", Map.of("file", url, "wait", true));
+      } else {
+        output.addAction("playback_bg", url);
+      }
+
+      dm.expression("${args.action}", "start_" + key, output);
     }
 
-    @Override
-    public List<ToolDefinition> registerTools() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<Map<String, Object>> getSwaigFunctions() {
-        List<String> actionValues = new ArrayList<>();
-        for (Map<String, Object> file : files) {
-            String key = (String) file.get("key");
-            actionValues.add("start_" + key);
-        }
-        actionValues.add("stop");
-
-        DataMap dm = new DataMap(toolName)
-                .purpose("Control background file playback for " + toolName)
-                .parameter("action", "string", "Action to perform", true, actionValues);
-
-        // Add expression for stop
-        dm.expression("${args.action}", "stop",
-                new FunctionResult("Stopping background playback")
-                        .addAction("stop_playback_bg", true));
-
-        // Add expressions for each file
-        for (Map<String, Object> file : files) {
-            String key = (String) file.get("key");
-            String url = (String) file.get("url");
-            boolean wait = Boolean.TRUE.equals(file.get("wait"));
-
-            FunctionResult output = new FunctionResult("Playing " + file.get("description"));
-            if (wait) {
-                output.addAction("playback_bg", Map.of("file", url, "wait", true));
-            } else {
-                output.addAction("playback_bg", url);
-            }
-
-            dm.expression("${args.action}", "start_" + key, output);
-        }
-
-        return List.of(dm.toSwaigFunction());
-    }
+    return List.of(dm.toSwaigFunction());
+  }
 }

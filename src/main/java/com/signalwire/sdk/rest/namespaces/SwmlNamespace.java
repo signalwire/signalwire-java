@@ -9,16 +9,16 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for SWML script resources.
- */
+/** REST namespace for SWML script resources. */
 public class SwmlNamespace {
 
-    private final CrudResource scripts;
+  private final CrudResource scripts;
 
-    public SwmlNamespace(HttpClient httpClient) {
-        this.scripts = new CrudResource(httpClient, "/relay/swml/scripts");
-    }
+  public SwmlNamespace(HttpClient httpClient) {
+    this.scripts = new CrudResource(httpClient, "/relay/swml/scripts");
+  }
 
-    public CrudResource scripts() { return scripts; }
+  public CrudResource scripts() {
+    return scripts;
+  }
 }

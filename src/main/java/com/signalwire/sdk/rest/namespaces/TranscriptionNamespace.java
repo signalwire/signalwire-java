@@ -9,16 +9,16 @@ package com.signalwire.sdk.rest.namespaces;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * REST namespace for transcription resources.
- */
+/** REST namespace for transcription resources. */
 public class TranscriptionNamespace {
 
-    private final CrudResource transcriptions;
+  private final CrudResource transcriptions;
 
-    public TranscriptionNamespace(HttpClient httpClient) {
-        this.transcriptions = new CrudResource(httpClient, "/calling/transcriptions");
-    }
+  public TranscriptionNamespace(HttpClient httpClient) {
+    this.transcriptions = new CrudResource(httpClient, "/calling/transcriptions");
+  }
 
-    public CrudResource transcriptions() { return transcriptions; }
+  public CrudResource transcriptions() {
+    return transcriptions;
+  }
 }

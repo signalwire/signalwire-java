@@ -9,12 +9,12 @@ package com.signalwire.sdk.cli.fixtures;
 import com.signalwire.sdk.swml.Service;
 
 /**
- * Service fixture with no SWAIG tools registered, used to verify the
- * "No tools found." branch of the file-loader path.
+ * Service fixture with no SWAIG tools registered, used to verify the "No tools found." branch of
+ * the file-loader path.
  */
 public class EmptyServiceFixture extends Service {
 
-    public EmptyServiceFixture() {
-        super("empty-fixture", "/empty");
-    }
+  public EmptyServiceFixture() {
+    super("empty-fixture", "/empty");
+  }
 }

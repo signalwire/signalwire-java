@@ -3,6 +3,12 @@ import com.vanniktech.maven.publish.SonatypeHost
 plugins {
     id 'java-library'
     id 'com.vanniktech.maven.publish' version '0.29.0'
+    // FMT gate: Spotless drives google-java-format over all Java sources. The
+    // run-ci.sh FMT gate runs `spotlessApply` locally (auto-fix) and
+    // `spotlessCheck` in CI (read-only). google-java-format is the canonical
+    // Java formatter — analogous to gofmt/rustfmt — so there is no style to
+    // bikeshed and the reformat is provably surface/emission-neutral.
+    id 'com.diffplug.spotless' version '6.25.0'
 }
 
 group = 'com.signalwire'
@@ -54,6 +60,22 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// FMT gate — Spotless + google-java-format over every Java source set (main,
+// test, and the tools/CLI sources that live under src/main + src/test). The
+// formatter is source-style only and proven surface/emission-neutral (a
+// reformat leaves port_signatures.json + port_surface.json byte-identical and
+// EMISSION 81/81 — verified during the rollout). run-ci.sh's FMT gate runs
+// `spotlessApply` locally and `spotlessCheck` in CI.
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat('1.22.0')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
 
 // Print the runtime classpath, one entry per line. Used by the doc-audit
