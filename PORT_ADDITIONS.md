@@ -1110,4 +1110,8 @@ signalwire.security.webhook_filter.WebhookFilter.get_reader: java_idiom: Content
 signalwire.security.webhook_validator.WebhookValidator: java_idiom_class_wrapper: static class containing the validator free functions (Python keeps them at module level)
 signalwire.security.webhook_validator.WebhookValidator.validate_request: java_idiom_class_wrapper: see WebhookValidator class entry
 signalwire.security.webhook_validator.WebhookValidator.validate_webhook_signature: java_idiom_class_wrapper: see WebhookValidator class entry
+signalwire.security.security_utils.SecurityUtils: java_idiom_class_wrapper: static class containing the security_utils free functions (Python keeps them at module level signalwire.core.security.security_utils); the functions themselves are projected to that canonical module by the enumerator
+signalwire.security.security_utils.SecurityUtils.filter_sensitive_headers: java_idiom_class_wrapper: see SecurityUtils class entry
+signalwire.security.security_utils.SecurityUtils.is_valid_hostname: java_idiom_class_wrapper: see SecurityUtils class entry
+signalwire.security.security_utils.SecurityUtils.redact_url: java_idiom_class_wrapper: see SecurityUtils class entry
 signalwire.tools.emit_corpus.EmitCorpus.main: Java emit-corpus dump entry point for the cross-port EMISSION differ (porting-sdk diff_port_emission.py); builds the shared 81-entry FunctionResult corpus and prints {id->toMap()} as JSON. Port-only CI tooling, no SDK surface; Python's oracle side lives in porting-sdk/scripts (mirrors Go's cmd/emit-corpus and the existing SwaigTest.main CLI addition)

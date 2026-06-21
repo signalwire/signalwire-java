@@ -178,6 +178,15 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     ("ExecutionMode", "isServerlessMode"): ("signalwire.utils", "is_serverless_mode"),
     # UrlValidator
     ("UrlValidator", "validateUrl"): ("signalwire.utils.url_validator", "validate_url"),
+    # SecurityUtils static helpers → signalwire.core.security.security_utils
+    # free functions (the Python reference exports them as bare module
+    # functions; Java groups them on a static-only utility class).
+    ("SecurityUtils", "filterSensitiveHeaders"):
+        ("signalwire.core.security.security_utils", "filter_sensitive_headers"),
+    ("SecurityUtils", "redactUrl"):
+        ("signalwire.core.security.security_utils", "redact_url"),
+    ("SecurityUtils", "isValidHostname"):
+        ("signalwire.core.security.security_utils", "is_valid_hostname"),
 }
 
 
