@@ -703,7 +703,6 @@ signalwire.rest.namespaces.fabric.FabricTokens.create_subscriber_token: Java's F
 signalwire.rest.namespaces.fabric.FabricTokens.refresh_subscriber_token: Java's FabricNamespace exposes subresources through CrudResource accessors instead of Python's per-subresource class; see rest/docs/fabric.md for the mapping
 signalwire.rest.namespaces.fabric.GenericResources: Java routes generic Fabric operations through CrudResource accessors on FabricNamespace; the per-phone-route bind is handled by phone_numbers.set_* helpers per porting-sdk/phone-binding.md
 signalwire.rest.namespaces.fabric.GenericResources.assign_domain_application: Java's FabricNamespace exposes subresources through CrudResource accessors instead of Python's per-subresource class; see rest/docs/fabric.md for the mapping
-signalwire.rest.namespaces.fabric.GenericResources.assign_phone_route: narrow-use legacy API; Java ships only the good path via phone_numbers.set_* helpers, per porting-sdk/phone-binding.md
 signalwire.rest.namespaces.fabric.GenericResources.delete: Java's FabricNamespace exposes subresources through CrudResource accessors instead of Python's per-subresource class; see rest/docs/fabric.md for the mapping
 signalwire.rest.namespaces.fabric.GenericResources.get: Java's FabricNamespace exposes subresources through CrudResource accessors instead of Python's per-subresource class; see rest/docs/fabric.md for the mapping
 signalwire.rest.namespaces.fabric.GenericResources.list: Java's FabricNamespace exposes subresources through CrudResource accessors instead of Python's per-subresource class; see rest/docs/fabric.md for the mapping
@@ -791,10 +790,6 @@ signalwire.rest.namespaces.sip_profile.SipProfileResource: SIP profile API not y
 signalwire.rest.namespaces.sip_profile.SipProfileResource.__init__: SIP profile API not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
 signalwire.rest.namespaces.sip_profile.SipProfileResource.get: SIP profile API not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
 signalwire.rest.namespaces.sip_profile.SipProfileResource.update: SIP profile API not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
-signalwire.rest.namespaces.verified_callers.VerifiedCallersResource: Verified callers not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
-signalwire.rest.namespaces.verified_callers.VerifiedCallersResource.__init__: Verified callers not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
-signalwire.rest.namespaces.verified_callers.VerifiedCallersResource.redial_verification: Verified callers not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
-signalwire.rest.namespaces.verified_callers.VerifiedCallersResource.submit_verification: Verified callers not yet exposed as a first-class namespace in Java — available via RestClient HTTP primitives
 signalwire.rest.namespaces.video.VideoConferenceTokens: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource
 signalwire.rest.namespaces.video.VideoConferenceTokens.get: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource
 signalwire.rest.namespaces.video.VideoConferenceTokens.reset: Java exposes the Video API through a flat VideoNamespace + CrudResource accessors; Python splits into one class per resource

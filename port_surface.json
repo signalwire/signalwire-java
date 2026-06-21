@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ d25c881797fe0c2010071fb4e065893040bc836b",
+  "generated_from": "signalwire-java @ 753ed4f1a02a185d8701ded941144c3c81e9234a",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1077,6 +1077,7 @@
           "streams",
           "swml",
           "transcriptions",
+          "verified_callers",
           "video",
           "with_base_url"
         ]
@@ -1169,6 +1170,7 @@
         "ChatNamespace": [
           "__init__",
           "channels",
+          "create_token",
           "members",
           "messages"
         ]
@@ -1337,18 +1339,15 @@
           "__init__",
           "deploy_version",
           "list_addresses",
-          "list_versions",
-          "update"
+          "list_versions"
         ],
         "ConferenceRoomsResource": [
           "__init__",
-          "list_addresses",
-          "update"
+          "list_addresses"
         ],
         "CxmlApplicationsResource": [
           "__init__",
-          "create",
-          "update"
+          "create"
         ],
         "FabricAddresses": [
           "__init__",
@@ -1375,6 +1374,13 @@
           "swml_webhooks",
           "tokens"
         ],
+        "FabricResource": [
+          "__init__",
+          "list_addresses"
+        ],
+        "FabricResourcePUT": [
+          "__init__"
+        ],
         "FabricTokens": [
           "__init__",
           "create_embed_token",
@@ -1386,6 +1392,7 @@
         "GenericResources": [
           "__init__",
           "assign_domain_application",
+          "assign_phone_route",
           "delete",
           "get",
           "get_base_path",
@@ -1397,9 +1404,7 @@
           "create_sip_endpoint",
           "delete_sip_endpoint",
           "get_sip_endpoint",
-          "list_addresses",
           "list_sip_endpoints",
-          "update",
           "update_sip_endpoint"
         ]
       },
@@ -1556,6 +1561,7 @@
         "PubSubNamespace": [
           "__init__",
           "channels",
+          "create_token",
           "publish"
         ]
       },
@@ -1688,6 +1694,16 @@
         "TranscriptionNamespace": [
           "__init__",
           "transcriptions"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.verified_callers": {
+      "classes": {
+        "VerifiedCallersResource": [
+          "__init__",
+          "redial_verification",
+          "submit_verification"
         ]
       },
       "functions": []

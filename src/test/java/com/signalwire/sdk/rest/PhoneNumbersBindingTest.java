@@ -141,7 +141,7 @@ class PhoneNumbersBindingTest {
 
     var req = lastRequest();
     assertEquals("PUT", req.method);
-    assertEquals("/api/phone_numbers/pn-1", req.path);
+    assertEquals("/api/relay/rest/phone_numbers/pn-1", req.path);
 
     var body = bodyOf(req);
     assertEquals("relay_script", body.get("call_handler"));
@@ -276,7 +276,7 @@ class PhoneNumbersBindingTest {
 
     var req = recorded.get(0);
     assertEquals("PUT", req.method, "phone_numbers.update uses PUT");
-    assertEquals("/api/phone_numbers/pn-postmortem", req.path);
+    assertEquals("/api/relay/rest/phone_numbers/pn-postmortem", req.path);
 
     // The whole point of the post-mortem: no fabric webhook create/assign calls.
     for (var r : recorded) {

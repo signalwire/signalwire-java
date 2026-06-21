@@ -142,7 +142,7 @@ class RestTest {
     void phoneNumbersNamespace() {
       var ns = new PhoneNumbersNamespace(httpClient);
       assertNotNull(ns.getResource());
-      assertEquals("/phone_numbers", ns.getResource().getBasePath());
+      assertEquals("/relay/rest/phone_numbers", ns.getResource().getBasePath());
     }
 
     @Test
