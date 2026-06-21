@@ -483,6 +483,17 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
     ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"):
         ("signalwire.core.security.webhook_validator", "validate_request"),
+    # SecurityUtils static methods → Python module-level free functions in
+    # signalwire.core.security.security_utils. The Python reference exports
+    # these as bare module functions (filter_sensitive_headers, redact_url,
+    # is_valid_hostname); Java groups them on a static-only utility class for
+    # namespacing, so lift them back to the canonical free-function home.
+    ("com.signalwire.sdk.security.SecurityUtils", "filterSensitiveHeaders"):
+        ("signalwire.core.security.security_utils", "filter_sensitive_headers"),
+    ("com.signalwire.sdk.security.SecurityUtils", "redactUrl"):
+        ("signalwire.core.security.security_utils", "redact_url"),
+    ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"):
+        ("signalwire.core.security.security_utils", "is_valid_hostname"),
 }
 
 

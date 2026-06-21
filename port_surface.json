@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ a26092912f7487f6b2392da317573faa42cfc3e7",
+  "generated_from": "signalwire-java @ d25c881797fe0c2010071fb4e065893040bc836b",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -357,6 +357,14 @@
         ]
       },
       "functions": []
+    },
+    "signalwire.core.security.security_utils": {
+      "classes": {},
+      "functions": [
+        "filter_sensitive_headers",
+        "is_valid_hostname",
+        "redact_url"
+      ]
     },
     "signalwire.core.security.session_manager": {
       "classes": {
@@ -1798,6 +1806,16 @@
         "LambdaUrlResolver": [
           "__init__",
           "resolve_base_url"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.security.security_utils": {
+      "classes": {
+        "SecurityUtils": [
+          "filter_sensitive_headers",
+          "is_valid_hostname",
+          "redact_url"
         ]
       },
       "functions": []
