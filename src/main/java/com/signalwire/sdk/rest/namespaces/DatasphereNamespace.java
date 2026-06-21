@@ -40,11 +40,16 @@ public class DatasphereNamespace {
   // Sub-resources
   // ────────────────────────────────────────────────────────────────────
 
-  /** Document management with search and chunk operations. */
+  /**
+   * Document management with search and chunk operations.
+   *
+   * <p>Update sends PATCH to match the canonical {@code datasphere.update_document} route (Python's
+   * {@code DatasphereDocuments} inherits {@code CrudResource._update_method = "PATCH"}).
+   */
   public static class DatasphereDocuments extends CrudResource {
 
     public DatasphereDocuments(HttpClient httpClient, String basePath) {
-      super(httpClient, basePath);
+      super(httpClient, basePath, UpdateMethod.PATCH);
     }
 
     public Map<String, Object> search(Map<String, Object> body) {

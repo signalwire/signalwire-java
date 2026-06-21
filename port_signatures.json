@@ -12609,6 +12609,20 @@
               ],
               "returns": "class:signalwire.rest._base.CrudResource"
             },
+            "create_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "body",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "members": {
               "params": [
                 {
@@ -14297,25 +14311,6 @@
                 }
               ],
               "returns": "dict<string,any>"
-            },
-            "update": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "resource_id",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "body",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "dict<string,any>"
             }
           }
         },
@@ -14353,25 +14348,6 @@
                 }
               ],
               "returns": "dict<string,any>"
-            },
-            "update": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "resource_id",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "body",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "dict<string,any>"
             }
           }
         },
@@ -14401,25 +14377,6 @@
                 {
                   "name": "self",
                   "kind": "self"
-                },
-                {
-                  "name": "body",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "update": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "resource_id",
-                  "type": "string",
-                  "required": true
                 },
                 {
                   "name": "body",
@@ -14518,7 +14475,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResource"
             },
             "call_flows": {
               "params": [
@@ -14554,7 +14511,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResourcePUT"
             },
             "cxml_webhooks": {
               "params": [
@@ -14563,7 +14520,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResource"
             },
             "freeswitch_connectors": {
               "params": [
@@ -14572,7 +14529,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResourcePUT"
             },
             "relay_applications": {
               "params": [
@@ -14581,7 +14538,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResourcePUT"
             },
             "resources": {
               "params": [
@@ -14599,7 +14556,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResourcePUT"
             },
             "sip_gateways": {
               "params": [
@@ -14608,7 +14565,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResource"
             },
             "subscribers": {
               "params": [
@@ -14626,7 +14583,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResourcePUT"
             },
             "swml_webhooks": {
               "params": [
@@ -14635,7 +14592,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.rest._base.CrudResource"
+              "returns": "class:signalwire.rest.namespaces.fabric.FabricResource"
             },
             "tokens": {
               "params": [
@@ -14645,6 +14602,66 @@
                 }
               ],
               "returns": "class:signalwire.rest.namespaces.fabric.FabricNamespace"
+            }
+          }
+        },
+        "FabricResource": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "http_client",
+                  "type": "class:signalwire.rest._base.HttpClient",
+                  "required": true
+                },
+                {
+                  "name": "base_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "list_addresses": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "resource_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            }
+          }
+        },
+        "FabricResourcePUT": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "http_client",
+                  "type": "class:signalwire.rest._base.HttpClient",
+                  "required": true
+                },
+                {
+                  "name": "base_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
             }
           }
         },
@@ -14916,20 +14933,6 @@
               ],
               "returns": "dict<string,any>"
             },
-            "list_addresses": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "subscriber_id",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
             "list_sip_endpoints": {
               "params": [
                 {
@@ -14939,25 +14942,6 @@
                 {
                   "name": "subscriber_id",
                   "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "update": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "resource_id",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "body",
-                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -16091,6 +16075,20 @@
                 }
               ],
               "returns": "class:signalwire.rest._base.CrudResource"
+            },
+            "create_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "body",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "publish": {
               "params": [

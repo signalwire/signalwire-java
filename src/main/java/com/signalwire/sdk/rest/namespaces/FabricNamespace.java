@@ -6,7 +6,8 @@
  */
 package com.signalwire.sdk.rest.namespaces;
 
-import com.signalwire.sdk.rest.CrudResource;
+import com.signalwire.sdk.rest.FabricResource;
+import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 import java.util.Map;
 
@@ -24,18 +25,18 @@ public class FabricNamespace {
   private final FabricSubscribers subscribers;
   private final FabricAddresses addresses;
   private final GenericResources resources;
-  private final CrudResource aiAgents;
+  private final FabricResource aiAgents;
   private final CallFlowsResource callFlows;
   private final ConferenceRoomsResource conferenceRooms;
   private final CxmlApplicationsResource cxmlApplications;
-  private final CrudResource cxmlScripts;
-  private final CrudResource cxmlWebhooks;
-  private final CrudResource freeswitchConnectors;
-  private final CrudResource relayApplications;
-  private final CrudResource sipEndpoints;
-  private final CrudResource sipGateways;
-  private final CrudResource swmlScripts;
-  private final CrudResource swmlWebhooks;
+  private final FabricResourcePUT cxmlScripts;
+  private final FabricResource cxmlWebhooks;
+  private final FabricResourcePUT freeswitchConnectors;
+  private final FabricResourcePUT relayApplications;
+  private final FabricResourcePUT sipEndpoints;
+  private final FabricResource sipGateways;
+  private final FabricResourcePUT swmlScripts;
+  private final FabricResource swmlWebhooks;
   private final FabricTokens tokens;
 
   public FabricNamespace(HttpClient httpClient) {
@@ -43,21 +44,29 @@ public class FabricNamespace {
     this.subscribers = new FabricSubscribers(httpClient, resourcesBase + "/subscribers");
     this.addresses = new FabricAddresses(httpClient, "/fabric/addresses");
     this.resources = new GenericResources(httpClient, resourcesBase);
-    this.aiAgents = new CrudResource(httpClient, resourcesBase + "/ai_agents");
+    // PATCH-update resources (FabricResource): ai_agents, sip_gateways, and the
+    // auto-materialized webhooks. sip_gateways inherits list_addresses on the
+    // standard /{id}/addresses path; per Python this route is a doubled-path
+    // spec artifact and not reachable in practice, but the method is present
+    // for parity (matching Python's plain FabricResource).
+    this.aiAgents = new FabricResource(httpClient, resourcesBase + "/ai_agents");
+    this.sipGateways = new FabricResource(httpClient, resourcesBase + "/sip_gateways");
+    this.cxmlWebhooks = new FabricResource(httpClient, resourcesBase + "/cxml_webhooks");
+    this.swmlWebhooks = new FabricResource(httpClient, resourcesBase + "/swml_webhooks");
+    // PUT-update resources (FabricResourcePUT).
+    this.cxmlScripts = new FabricResourcePUT(httpClient, resourcesBase + "/cxml_scripts");
+    this.freeswitchConnectors =
+        new FabricResourcePUT(httpClient, resourcesBase + "/freeswitch_connectors");
+    this.relayApplications =
+        new FabricResourcePUT(httpClient, resourcesBase + "/relay_applications");
+    this.sipEndpoints = new FabricResourcePUT(httpClient, resourcesBase + "/sip_endpoints");
+    this.swmlScripts = new FabricResourcePUT(httpClient, resourcesBase + "/swml_scripts");
+    // PUT-update resources with singular sub-resource paths / sip-endpoint ops.
     this.callFlows = new CallFlowsResource(httpClient, resourcesBase + "/call_flows");
     this.conferenceRooms =
         new ConferenceRoomsResource(httpClient, resourcesBase + "/conference_rooms");
     this.cxmlApplications =
         new CxmlApplicationsResource(httpClient, resourcesBase + "/cxml_applications");
-    this.cxmlScripts = new CrudResource(httpClient, resourcesBase + "/cxml_scripts");
-    this.cxmlWebhooks = new CrudResource(httpClient, resourcesBase + "/cxml_webhooks");
-    this.freeswitchConnectors =
-        new CrudResource(httpClient, resourcesBase + "/freeswitch_connectors");
-    this.relayApplications = new CrudResource(httpClient, resourcesBase + "/relay_applications");
-    this.sipEndpoints = new CrudResource(httpClient, resourcesBase + "/sip_endpoints");
-    this.sipGateways = new CrudResource(httpClient, resourcesBase + "/sip_gateways");
-    this.swmlScripts = new CrudResource(httpClient, resourcesBase + "/swml_scripts");
-    this.swmlWebhooks = new CrudResource(httpClient, resourcesBase + "/swml_webhooks");
     this.tokens = new FabricTokens(httpClient);
   }
 
@@ -73,7 +82,7 @@ public class FabricNamespace {
     return resources;
   }
 
-  public CrudResource aiAgents() {
+  public FabricResource aiAgents() {
     return aiAgents;
   }
 
@@ -89,35 +98,35 @@ public class FabricNamespace {
     return cxmlApplications;
   }
 
-  public CrudResource cxmlScripts() {
+  public FabricResourcePUT cxmlScripts() {
     return cxmlScripts;
   }
 
-  public CrudResource cxmlWebhooks() {
+  public FabricResource cxmlWebhooks() {
     return cxmlWebhooks;
   }
 
-  public CrudResource freeswitchConnectors() {
+  public FabricResourcePUT freeswitchConnectors() {
     return freeswitchConnectors;
   }
 
-  public CrudResource relayApplications() {
+  public FabricResourcePUT relayApplications() {
     return relayApplications;
   }
 
-  public CrudResource sipEndpoints() {
+  public FabricResourcePUT sipEndpoints() {
     return sipEndpoints;
   }
 
-  public CrudResource sipGateways() {
+  public FabricResource sipGateways() {
     return sipGateways;
   }
 
-  public CrudResource swmlScripts() {
+  public FabricResourcePUT swmlScripts() {
     return swmlScripts;
   }
 
-  public CrudResource swmlWebhooks() {
+  public FabricResource swmlWebhooks() {
     return swmlWebhooks;
   }
 
@@ -157,16 +166,14 @@ public class FabricNamespace {
     }
   }
 
-  /** Subscribers resource with SIP-endpoint sub-resource. Update uses PUT. */
-  public static class FabricSubscribers extends CrudResource {
+  /**
+   * Subscribers resource with SIP-endpoint sub-resource. Update uses PUT; inherits {@code
+   * listAddresses} from {@link FabricResourcePUT}.
+   */
+  public static class FabricSubscribers extends FabricResourcePUT {
 
     public FabricSubscribers(HttpClient httpClient, String basePath) {
       super(httpClient, basePath);
-    }
-
-    @Override
-    public Map<String, Object> update(String resourceId, Map<String, Object> body) {
-      return getHttpClient().put(getBasePath() + "/" + resourceId, body);
     }
 
     public Map<String, Object> listSipEndpoints(String subscriberId) {
@@ -198,39 +205,28 @@ public class FabricNamespace {
       return getHttpClient()
           .delete(getBasePath() + "/" + subscriberId + "/sip_endpoints/" + endpointId);
     }
-
-    public Map<String, Object> listAddresses(String subscriberId) {
-      return getHttpClient().get(getBasePath() + "/" + subscriberId + "/addresses");
-    }
-
-    public Map<String, Object> listAddresses(String subscriberId, Map<String, String> queryParams) {
-      return getHttpClient().get(getBasePath() + "/" + subscriberId + "/addresses", queryParams);
-    }
   }
 
   /**
    * Call flows resource — uses PUT for update and rewrites the path segment to singular {@code
    * call_flow} for sub-collection paths (per the API spec).
    */
-  public static class CallFlowsResource extends CrudResource {
+  public static class CallFlowsResource extends FabricResourcePUT {
 
     public CallFlowsResource(HttpClient httpClient, String basePath) {
       super(httpClient, basePath);
-    }
-
-    @Override
-    public Map<String, Object> update(String resourceId, Map<String, Object> body) {
-      return getHttpClient().put(getBasePath() + "/" + resourceId, body);
     }
 
     private String singularBase() {
       return getBasePath().replace("/call_flows", "/call_flow");
     }
 
+    @Override
     public Map<String, Object> listAddresses(String resourceId) {
       return getHttpClient().get(singularBase() + "/" + resourceId + "/addresses");
     }
 
+    @Override
     public Map<String, Object> listAddresses(String resourceId, Map<String, String> queryParams) {
       return getHttpClient().get(singularBase() + "/" + resourceId + "/addresses", queryParams);
     }
@@ -249,25 +245,22 @@ public class FabricNamespace {
   }
 
   /** Conference rooms — singular {@code conference_room} for sub-collections. */
-  public static class ConferenceRoomsResource extends CrudResource {
+  public static class ConferenceRoomsResource extends FabricResourcePUT {
 
     public ConferenceRoomsResource(HttpClient httpClient, String basePath) {
       super(httpClient, basePath);
-    }
-
-    @Override
-    public Map<String, Object> update(String resourceId, Map<String, Object> body) {
-      return getHttpClient().put(getBasePath() + "/" + resourceId, body);
     }
 
     private String singularBase() {
       return getBasePath().replace("/conference_rooms", "/conference_room");
     }
 
+    @Override
     public Map<String, Object> listAddresses(String resourceId) {
       return getHttpClient().get(singularBase() + "/" + resourceId + "/addresses");
     }
 
+    @Override
     public Map<String, Object> listAddresses(String resourceId, Map<String, String> queryParams) {
       return getHttpClient().get(singularBase() + "/" + resourceId + "/addresses", queryParams);
     }
@@ -277,7 +270,7 @@ public class FabricNamespace {
    * cXML applications — read/update/delete only (no create endpoint exists). Calling {@code create}
    * raises {@link UnsupportedOperationException}.
    */
-  public static class CxmlApplicationsResource extends CrudResource {
+  public static class CxmlApplicationsResource extends FabricResourcePUT {
 
     public CxmlApplicationsResource(HttpClient httpClient, String basePath) {
       super(httpClient, basePath);
@@ -286,11 +279,6 @@ public class FabricNamespace {
     @Override
     public Map<String, Object> create(Map<String, Object> body) {
       throw new UnsupportedOperationException("cXML applications cannot be created via this API");
-    }
-
-    @Override
-    public Map<String, Object> update(String resourceId, Map<String, Object> body) {
-      return getHttpClient().put(getBasePath() + "/" + resourceId, body);
     }
   }
 

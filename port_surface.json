@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ d25c881797fe0c2010071fb4e065893040bc836b",
+  "generated_from": "signalwire-java @ 4e6a4625e1e0c5eff4f9e7e7ab1e61ee13620454",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1169,6 +1169,7 @@
         "ChatNamespace": [
           "__init__",
           "channels",
+          "create_token",
           "members",
           "messages"
         ]
@@ -1337,18 +1338,15 @@
           "__init__",
           "deploy_version",
           "list_addresses",
-          "list_versions",
-          "update"
+          "list_versions"
         ],
         "ConferenceRoomsResource": [
           "__init__",
-          "list_addresses",
-          "update"
+          "list_addresses"
         ],
         "CxmlApplicationsResource": [
           "__init__",
-          "create",
-          "update"
+          "create"
         ],
         "FabricAddresses": [
           "__init__",
@@ -1375,6 +1373,13 @@
           "swml_webhooks",
           "tokens"
         ],
+        "FabricResource": [
+          "__init__",
+          "list_addresses"
+        ],
+        "FabricResourcePUT": [
+          "__init__"
+        ],
         "FabricTokens": [
           "__init__",
           "create_embed_token",
@@ -1397,9 +1402,7 @@
           "create_sip_endpoint",
           "delete_sip_endpoint",
           "get_sip_endpoint",
-          "list_addresses",
           "list_sip_endpoints",
-          "update",
           "update_sip_endpoint"
         ]
       },
@@ -1556,6 +1559,7 @@
         "PubSubNamespace": [
           "__init__",
           "channels",
+          "create_token",
           "publish"
         ]
       },
