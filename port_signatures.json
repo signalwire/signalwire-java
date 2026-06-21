@@ -11645,6 +11645,15 @@
               ],
               "returns": "class:signalwire.rest.namespaces.TranscriptionNamespace"
             },
+            "verified_callers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.verified_callers.VerifiedCallersResource"
+            },
             "video": {
               "params": [
                 {
@@ -14793,6 +14802,25 @@
               ],
               "returns": "dict<string,any>"
             },
+            "assign_phone_route": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "resource_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "delete": {
               "params": [
                 {
@@ -16966,6 +16994,61 @@
                 }
               ],
               "returns": "class:signalwire.rest._base.CrudResource"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.rest.namespaces.verified_callers": {
+      "classes": {
+        "VerifiedCallersResource": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "http_client",
+                  "type": "class:signalwire.rest._base.HttpClient",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "redial_verification": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "caller_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "submit_verification": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "caller_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
             }
           }
         }

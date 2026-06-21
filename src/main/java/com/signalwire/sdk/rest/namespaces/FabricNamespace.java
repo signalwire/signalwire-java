@@ -328,6 +328,21 @@ public class FabricNamespace {
         String resourceId, Map<String, Object> body) {
       return httpClient.post(basePath + "/" + resourceId + "/domain_applications", body);
     }
+
+    /**
+     * Assign a phone route to a resource ({@code POST /api/fabric/resources/{id}/phone_routes}).
+     *
+     * <p><b>Deprecated for the common binding cases.</b> This endpoint accepts only a narrow set of
+     * legacy resource types as the attach target. It does <em>not</em> work for {@code
+     * swml_webhook} / {@code cxml_webhook} / {@code ai_agent} bindings — those are configured on
+     * the phone number (see {@code phoneNumbers().setSwmlWebhook} / {@code setCxmlWebhook}) and the
+     * Fabric resource is auto-materialized. See porting-sdk's phone-binding.md. Mirrors Python's
+     * {@code GenericResources.assign_phone_route}, which emits a {@code DeprecationWarning}.
+     */
+    @Deprecated
+    public Map<String, Object> assignPhoneRoute(String resourceId, Map<String, Object> body) {
+      return httpClient.post(basePath + "/" + resourceId + "/phone_routes", body);
+    }
   }
 
   /** Subscriber, guest, invite, and embed token endpoints (all POST). */

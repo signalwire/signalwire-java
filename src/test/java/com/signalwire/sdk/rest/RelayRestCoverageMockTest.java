@@ -35,9 +35,9 @@ import org.junit.jupiter.api.function.Executable;
  * the fabric side or under a different SIP path):
  *
  * <ul>
- *   <li>{@code relay-rest.*_verified_caller_id*} (7): list/create/get/update/delete +
- *       redial_verification_call + validate_verification_code — no {@code verifiedCallerIds()}
- *       namespace exists.
+ *   <li>{@code relay-rest.*_verified_caller_id*} (7) and {@code relay-rest.lookup_phone_number} are
+ *       now reachable via {@code verifiedCallers()} / {@code numberLookup().lookup} and are covered
+ *       in {@code ParityGapCoverageMockTest}.
  *   <li>{@code relay-rest.*_sip_endpoint*} (5): create/list/retrieve/update/delete at {@code
  *       /api/relay/rest/endpoints/sip} — {@code client.sip().endpoints()} targets {@code
  *       /api/sip/endpoints}, a different (non-canonical) path, so it does not cover these routes.
@@ -46,8 +46,7 @@ import org.junit.jupiter.api.function.Executable;
  *       assignDomainApplication} exists, not the top-level relay-rest collection.
  * </ul>
  *
- * <p>This matches python's relay-rest accepted gaps (SIP endpoints + domain_applications = 10);
- * java additionally lacks verified_caller_ids as a relay-rest namespace (17 total gap routes).
+ * <p>This matches python's relay-rest accepted gaps (SIP endpoints + domain_applications = 10).
  */
 class RelayRestCoverageMockTest {
 
@@ -664,14 +663,11 @@ class RelayRestCoverageMockTest {
   }
 
   // ════════════════════════════════════════════════════════════════════
-  // Lookup — ACCEPTED GAP (not covered here).
+  // Lookup — now covered in ParityGapCoverageMockTest.
   //
-  // The canonical route is GET /api/relay/rest/lookup/phone_number/{e164}, but
-  // NumberLookupNamespace.lookup() builds "/lookup/phone_number/..." which the
-  // HttpClient resolves to /api/lookup/phone_number/... (no relay/rest segment).
-  // That does not match the canonical relay-rest route, so the lookup route is
-  // not reachable from the SDK without a source change (out of scope for a
-  // tests-only task). Reported as a gap.
+  // NumberLookupNamespace.lookup() now builds "/relay/rest/lookup/phone_number/..."
+  // → /api/relay/rest/lookup/phone_number/{e164}, matching the canonical
+  // relay-rest.lookup_phone_number route. Exercised there with success + error.
   // ════════════════════════════════════════════════════════════════════
 
   // ════════════════════════════════════════════════════════════════════

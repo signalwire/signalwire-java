@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 4e6a4625e1e0c5eff4f9e7e7ab1e61ee13620454",
+  "generated_from": "signalwire-java @ 753ed4f1a02a185d8701ded941144c3c81e9234a",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1077,6 +1077,7 @@
           "streams",
           "swml",
           "transcriptions",
+          "verified_callers",
           "video",
           "with_base_url"
         ]
@@ -1391,6 +1392,7 @@
         "GenericResources": [
           "__init__",
           "assign_domain_application",
+          "assign_phone_route",
           "delete",
           "get",
           "get_base_path",
@@ -1692,6 +1694,16 @@
         "TranscriptionNamespace": [
           "__init__",
           "transcriptions"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.verified_callers": {
+      "classes": {
+        "VerifiedCallersResource": [
+          "__init__",
+          "redial_verification",
+          "submit_verification"
         ]
       },
       "functions": []

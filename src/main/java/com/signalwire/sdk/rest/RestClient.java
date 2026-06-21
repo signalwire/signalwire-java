@@ -64,6 +64,7 @@ public class RestClient {
   private volatile NumberGroupsNamespace numberGroupsNs;
   private volatile RegistryNamespace registryNs;
   private volatile LogsNamespace logsNs;
+  private volatile VerifiedCallersResource verifiedCallersNs;
 
   private RestClient(Builder builder) {
     this.project = builder.project;
@@ -431,5 +432,15 @@ public class RestClient {
       }
     }
     return logsNs;
+  }
+
+  /** Verified caller IDs (Python: {@code client.verified_callers}). */
+  public VerifiedCallersResource verifiedCallers() {
+    if (verifiedCallersNs == null) {
+      synchronized (this) {
+        if (verifiedCallersNs == null) verifiedCallersNs = new VerifiedCallersResource(httpClient);
+      }
+    }
+    return verifiedCallersNs;
   }
 }

@@ -527,6 +527,7 @@ signalwire.rest.client.RestClient.sip_profile: Java RestClient exposes the sip_p
 signalwire.rest.client.RestClient.streams: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.swml: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.transcriptions: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
+signalwire.rest.client.RestClient.verified_callers: Java RestClient exposes the verified_callers namespace as a typed accessor; Python's reference RestClient sets it as a bare instance attribute in __init__, so it does not appear in the Python class surface
 signalwire.rest.client.RestClient.video: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.with_base_url: Java factory for pointing the REST client at an explicit base URL (loopback fixture, plain HTTP) — used by examples/RestAuditHarness.java; Python tests use httpx_mock to redirect transport instead
 signalwire.rest.namespaces.addresses.AddressesResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart

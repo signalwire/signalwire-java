@@ -28,10 +28,10 @@ import org.junit.jupiter.api.function.Executable;
  * <p>Mirrors the idiom of {@code FabricMockTest}. Accepted gaps (NOT tested here — no SDK surface
  * or unreachable doubled-path spec artifacts): {@code dialogflow_agents} (5 routes), the
  * doubled-path {@code list_sip_gateway_addresses} and {@code assign_resource_sip_endpoint} (2
- * routes), and {@code assign_resource_phone_route} (no {@code assignPhoneRoute} method exists in
- * the Java SDK — Python has it; flagged as a Java gap). {@code cxml_applications.create} has no
- * canonical route and deliberately raises {@link UnsupportedOperationException}; that real
- * behaviour is asserted below.
+ * routes). ({@code fabric.assign_resource_phone_route} is now reachable via {@code
+ * resources().assignPhoneRoute} and is covered in {@code ParityGapCoverageMockTest}.) {@code
+ * cxml_applications.create} has no canonical route and deliberately raises {@link
+ * UnsupportedOperationException}; that real behaviour is asserted below.
  */
 class FabricCoverageMockTest {
 
