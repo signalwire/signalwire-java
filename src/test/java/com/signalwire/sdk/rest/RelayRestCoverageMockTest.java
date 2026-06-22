@@ -39,8 +39,9 @@ import org.junit.jupiter.api.function.Executable;
  *       now reachable via {@code verifiedCallers()} / {@code numberLookup().lookup} and are covered
  *       in {@code ParityGapCoverageMockTest}.
  *   <li>{@code relay-rest.*_sip_endpoint*} (5): create/list/retrieve/update/delete at {@code
- *       /api/relay/rest/endpoints/sip} — {@code client.sip().endpoints()} targets {@code
- *       /api/sip/endpoints}, a different (non-canonical) path, so it does not cover these routes.
+ *       /api/relay/rest/endpoints/sip} — the SDK has no relay-rest SIP-endpoints namespace; SIP
+ *       endpoints live under the Fabric base path instead (intentional Fabric supersession; same as
+ *       python/go).
  *   <li>{@code relay-rest.*_domain_application*} (5): create/list/retrieve/update/delete at {@code
  *       /api/relay/rest/domain_applications} — only the fabric-resource sub-path {@code
  *       assignDomainApplication} exists, not the top-level relay-rest collection.

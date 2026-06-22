@@ -1,13 +1,11 @@
 /**
  * Example: 10DLC campaign registration — brand and campaign management.
  *
- * Java exposes 10DLC resources through sub-CRUD handles on
- * {@code client.campaign()}: {@code brands()}, {@code campaigns()},
- * {@code orders()}, {@code assignments()}. Compliance records live under
- * {@code client.compliance().cnamRegistrations()} and
- * {@code client.compliance().shakenStir()}. There is no flat
- * {@code .create(...)} / {@code .list()} on the namespace itself — pick
- * the specific sub-resource first.
+ * Java exposes 10DLC / TCR registration through {@code client.registry()}
+ * (the canonical {@code /api/relay/rest/registry/beta} API): {@code brands()},
+ * {@code campaigns()}, {@code orders()}, {@code numbers()}. Pick the specific
+ * sub-resource first — there is no flat {@code .create(...)} / {@code .list()}
+ * on the namespace itself.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -28,7 +26,7 @@ public class Rest10dlcRegistration {
         // 1. Create a 10DLC brand via the brands sub-resource.
         System.out.println("Creating 10DLC brand...");
         try {
-            var brand = client.campaign().brands().create(Map.of(
+            var brand = client.registry().brands().create(Map.of(
                     "entity_type", "PRIVATE_PROFIT",
                     "company_name", "Acme Corp",
                     "ein", "12-3456789",
@@ -45,22 +43,22 @@ public class Rest10dlcRegistration {
             System.out.println("  Create failed (expected in demo): " + e.getStatusCode());
         }
 
-        // 2. List campaigns.
-        System.out.println("\nListing 10DLC campaigns...");
+        // 2. List brands.
+        System.out.println("\nListing 10DLC brands...");
         try {
-            var campaigns = client.campaign().campaigns().list();
-            System.out.println("  Campaigns: " + campaigns);
+            var brands = client.registry().brands().list();
+            System.out.println("  Brands: " + brands);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }
 
-        // 3. Check compliance status — list CNAM registrations.
-        System.out.println("\nChecking compliance (CNAM registrations)...");
+        // 3. Inspect a campaign by id.
+        System.out.println("\nRetrieving a 10DLC campaign...");
         try {
-            var cnam = client.compliance().cnamRegistrations().list();
-            System.out.println("  CNAM status: " + cnam);
+            var campaign = client.registry().campaigns().get("campaign-id");
+            System.out.println("  Campaign: " + campaign);
         } catch (RestError e) {
-            System.out.println("  Check failed: " + e.getStatusCode());
+            System.out.println("  Retrieve failed: " + e.getStatusCode());
         }
     }
 }

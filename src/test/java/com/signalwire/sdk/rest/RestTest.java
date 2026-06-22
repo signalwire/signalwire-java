@@ -74,7 +74,7 @@ class RestTest {
     private final HttpClient httpClient = new HttpClient("test.signalwire.com", "proj", "tok");
 
     @Test
-    @DisplayName("All 21 namespaces are accessible")
+    @DisplayName("Namespaces are accessible")
     void allNamespaces() {
       var client =
           RestClient.builder().project("proj").token("tok").space("test.signalwire.com").build();
@@ -85,22 +85,14 @@ class RestTest {
       assertNotNull(client.datasphere());
       assertNotNull(client.video());
       assertNotNull(client.compat());
-      assertNotNull(client.messaging());
-      assertNotNull(client.sip());
-      assertNotNull(client.fax());
       assertNotNull(client.chat());
       assertNotNull(client.pubSub());
-      assertNotNull(client.swml());
-      assertNotNull(client.campaign());
-      assertNotNull(client.compliance());
-      assertNotNull(client.billing());
       assertNotNull(client.project());
-      assertNotNull(client.streams());
       assertNotNull(client.numberLookup());
-      assertNotNull(client.conferences());
       assertNotNull(client.queues());
       assertNotNull(client.recordings());
-      assertNotNull(client.transcriptions());
+      assertNotNull(client.registry());
+      assertNotNull(client.sipProfile());
     }
 
     @Test
@@ -130,11 +122,11 @@ class RestTest {
     }
 
     @Test
-    @DisplayName("CallingNamespace has calls")
+    @DisplayName("CallingNamespace is command-dispatch")
     void callingNamespace() {
+      // Calling is command-dispatch (POST /api/calling/calls), not CRUD.
       var ns = new CallingNamespace(httpClient);
-      assertNotNull(ns.calls());
-      assertEquals("/calling/calls", ns.calls().getBasePath());
+      assertNotNull(ns);
     }
 
     @Test
@@ -154,14 +146,17 @@ class RestTest {
     }
 
     @Test
-    @DisplayName("VideoNamespace has rooms, sessions, recordings")
+    @DisplayName("VideoNamespace has rooms, sessions, recordings, room tokens")
     void videoNamespace() {
       var ns = new VideoNamespace(httpClient);
       assertNotNull(ns.rooms());
       assertNotNull(ns.roomSessions());
       assertNotNull(ns.recordings());
+      assertNotNull(ns.roomTokens());
       assertEquals("/video/rooms", ns.rooms().getBasePath());
       assertEquals("/video/room_sessions", ns.roomSessions().getBasePath());
+      // Python parity: VideoRoomTokens is create-only at /video/room_tokens.
+      assertEquals("/video/room_tokens", ns.roomTokens().getBasePath());
       // Python parity: VideoRoomRecordings lives at /video/room_recordings.
       assertEquals("/video/room_recordings", ns.recordings().getBasePath());
     }
@@ -177,96 +172,22 @@ class RestTest {
       assertNotNull(ns.conferences());
       assertNotNull(ns.transcriptions());
       assertNotNull(ns.applications());
-      assertNotNull(ns.sipDomains());
-      assertNotNull(ns.sipCredentialLists());
-      assertNotNull(ns.sipIpAccessControlLists());
     }
 
     @Test
-    @DisplayName("MessagingNamespace has messages")
-    void messagingNamespace() {
-      var ns = new MessagingNamespace(httpClient);
-      assertNotNull(ns.messages());
-      assertEquals("/messaging/messages", ns.messages().getBasePath());
-    }
-
-    @Test
-    @DisplayName("SipNamespace has endpoints and profiles")
-    void sipNamespace() {
-      var ns = new SipNamespace(httpClient);
-      assertEquals("/sip/endpoints", ns.endpoints().getBasePath());
-      assertEquals("/sip/profiles", ns.profiles().getBasePath());
-    }
-
-    @Test
-    @DisplayName("FaxNamespace has faxes")
-    void faxNamespace() {
-      var ns = new FaxNamespace(httpClient);
-      assertEquals("/fax/faxes", ns.faxes().getBasePath());
-    }
-
-    @Test
-    @DisplayName("ChatNamespace has channels, messages, members")
+    @DisplayName("ChatNamespace mints tokens only")
     void chatNamespace() {
+      // Chat REST = token minting only (matches Python's flat ChatResource).
       var ns = new ChatNamespace(httpClient);
-      assertEquals("/chat/channels", ns.channels().getBasePath());
-      assertEquals("/chat/messages", ns.messages().getBasePath());
-      assertEquals("/chat/members", ns.members().getBasePath());
+      assertNotNull(ns);
     }
 
     @Test
-    @DisplayName("PubSubNamespace has channels")
+    @DisplayName("PubSubNamespace mints tokens only")
     void pubSubNamespace() {
+      // Pub/Sub REST = token minting only (matches Python's flat PubSubResource).
       var ns = new PubSubNamespace(httpClient);
-      assertEquals("/pubsub/channels", ns.channels().getBasePath());
-    }
-
-    @Test
-    @DisplayName("SwmlNamespace has scripts")
-    void swmlNamespace() {
-      var ns = new SwmlNamespace(httpClient);
-      assertEquals("/relay/swml/scripts", ns.scripts().getBasePath());
-    }
-
-    @Test
-    @DisplayName("CampaignNamespace has brands, campaigns, orders, assignments")
-    void campaignNamespace() {
-      var ns = new CampaignNamespace(httpClient);
-      assertEquals("/campaign/brands", ns.brands().getBasePath());
-      assertEquals("/campaign/campaigns", ns.campaigns().getBasePath());
-      assertEquals("/campaign/orders", ns.orders().getBasePath());
-      assertEquals("/campaign/assignments", ns.assignments().getBasePath());
-    }
-
-    @Test
-    @DisplayName("ComplianceNamespace has cnam and shakenStir")
-    void complianceNamespace() {
-      var ns = new ComplianceNamespace(httpClient);
-      assertEquals("/compliance/cnam", ns.cnamRegistrations().getBasePath());
-      assertEquals("/compliance/shaken_stir", ns.shakenStir().getBasePath());
-    }
-
-    @Test
-    @DisplayName("BillingNamespace has invoices and usage")
-    void billingNamespace() {
-      var ns = new BillingNamespace(httpClient);
-      assertEquals("/billing/invoices", ns.invoices().getBasePath());
-      assertEquals("/billing/usage", ns.usage().getBasePath());
-    }
-
-    @Test
-    @DisplayName("StreamNamespace has streams")
-    void streamNamespace() {
-      var ns = new StreamNamespace(httpClient);
-      assertEquals("/streams", ns.streams().getBasePath());
-    }
-
-    @Test
-    @DisplayName("ConferenceNamespace has conferences and participants")
-    void conferenceNamespace() {
-      var ns = new ConferenceNamespace(httpClient);
-      assertEquals("/calling/conferences", ns.conferences().getBasePath());
-      assertEquals("/calling/conferences/participants", ns.participants().getBasePath());
+      assertNotNull(ns);
     }
 
     @Test
@@ -274,7 +195,7 @@ class RestTest {
     void queueNamespace() {
       var ns = new QueueNamespace(httpClient);
       // Python parity: /api/relay/rest/queues.
-      assertEquals("/relay/rest/queues", ns.queues().getBasePath());
+      assertEquals("/relay/rest/queues", ns.getBasePath());
     }
 
     @Test
@@ -282,14 +203,7 @@ class RestTest {
     void recordingNamespace() {
       var ns = new RecordingNamespace(httpClient);
       // Python parity: /api/relay/rest/recordings.
-      assertEquals("/relay/rest/recordings", ns.recordings().getBasePath());
-    }
-
-    @Test
-    @DisplayName("TranscriptionNamespace has transcriptions")
-    void transcriptionNamespace() {
-      var ns = new TranscriptionNamespace(httpClient);
-      assertEquals("/calling/transcriptions", ns.transcriptions().getBasePath());
+      assertEquals("/relay/rest/recordings", ns.getBasePath());
     }
   }
 

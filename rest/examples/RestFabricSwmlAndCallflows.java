@@ -1,10 +1,9 @@
 /**
  * Example: SWML scripts and call flow management via the REST API.
  *
- * Two paths exist for SWML scripts: the top-level {@code client.swml()}
- * namespace (used here for create/list) and {@code client.fabric().swmlScripts()}
- * under Fabric. Call flows live under {@code client.fabric().callFlows()} —
- * the typed sub-namespace that mirrors Python's {@code fabric.call_flows}.
+ * SWML scripts live under Fabric at {@code client.fabric().swmlScripts()}
+ * (matching python/go). Call flows live under {@code client.fabric().callFlows()}
+ * — the typed sub-namespace that mirrors Python's {@code fabric.call_flows}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -23,10 +22,10 @@ public class RestFabricSwmlAndCallflows {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create a SWML script via the top-level SWML namespace.
+        // 1. Create a SWML script via the Fabric swml_scripts resource.
         System.out.println("Creating SWML script...");
         try {
-            var swml = client.swml().scripts().create(Map.of(
+            var swmlScript = client.fabric().swmlScripts().create(Map.of(
                     "name", "greeting-script",
                     "content", Map.of(
                             "version", "1.0.0",
@@ -37,7 +36,7 @@ public class RestFabricSwmlAndCallflows {
                             ))
                     )
             ));
-            System.out.println("  SWML script: " + swml);
+            System.out.println("  SWML script: " + swmlScript);
         } catch (RestError e) {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
@@ -45,8 +44,8 @@ public class RestFabricSwmlAndCallflows {
         // 2. List SWML scripts.
         System.out.println("\nListing SWML scripts...");
         try {
-            var scripts = client.swml().scripts().list();
-            System.out.println("  Scripts: " + scripts);
+            var swmlScripts = client.fabric().swmlScripts().list();
+            System.out.println("  Scripts: " + swmlScripts);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
         }

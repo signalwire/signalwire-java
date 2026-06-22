@@ -1,12 +1,10 @@
 /**
  * Example: Place a call via the REST API and inspect the result.
  *
- * The Java SDK surfaces calling via a CRUD resource on
- * {@code client.calling().calls()} (native API) and on
- * {@code client.compat().calls()} (CXML/Twilio-compat API). Python's
- * {@code calling.execute("dial", ...)} RPC shim is intentionally not ported
- * — Java callers POST to the create endpoint with the standard parameters;
- * see {@code PORT_OMISSIONS.md} and {@code rest/docs/calling.md}.
+ * The Java SDK surfaces native calling via the command API on
+ * {@code client.calling()} ({@code dial}, {@code play}, {@code end}, ...),
+ * mirroring Python's per-command methods, and the CXML/Twilio-compat call
+ * CRUD on {@code client.compat().calls()}. See {@code rest/docs/calling.md}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -26,10 +24,10 @@ public class RestCallingPlayAndRecord {
 
         String callId = null;
 
-        // 1. Dial a number — create a call via the native calling namespace.
+        // 1. Dial a number via the calling command API.
         System.out.println("Dialing...");
         try {
-            var result = client.calling().calls().create(Map.of(
+            var result = client.calling().dial(Map.of(
                     "from", "+15559876543",
                     "to", "+15551234567",
                     "timeout", 30
@@ -41,11 +39,10 @@ public class RestCallingPlayAndRecord {
             return;
         }
 
-        // 2. Update the call to play TTS (SWML-driven updates flow through
-        //    the same CRUD handle using the standard PATCH verb).
-        System.out.println("Sending play update...");
+        // 2. Play a TTS prompt via the play command.
+        System.out.println("Sending play...");
         try {
-            client.calling().calls().update(callId, Map.of(
+            client.calling().play(callId, Map.of(
                     "play", Map.of("text", "Please leave a message after the beep."),
                     "beep", true
             ));
@@ -53,19 +50,21 @@ public class RestCallingPlayAndRecord {
             System.out.println("  Play failed: " + e.getStatusCode());
         }
 
-        // 3. Fetch the current call state to inspect recording metadata.
-        System.out.println("Fetching call...");
+        // 3. Start recording the call via the record command.
+        System.out.println("Starting recording...");
         try {
-            var call = client.calling().calls().get(callId);
-            System.out.println("  Call: " + call);
+            client.calling().record(callId, Map.of(
+                    "format", "mp3",
+                    "stereo", true
+            ));
         } catch (RestError e) {
-            System.out.println("  Fetch failed: " + e.getStatusCode());
+            System.out.println("  Record failed: " + e.getStatusCode());
         }
 
-        // 4. Hang up — delete the call.
+        // 4. Hang up via the end command.
         System.out.println("Hanging up...");
         try {
-            client.calling().calls().delete(callId);
+            client.calling().end(callId, Map.of());
             System.out.println("  Call ended.");
         } catch (RestError e) {
             System.out.println("  Hangup failed: " + e.getStatusCode());

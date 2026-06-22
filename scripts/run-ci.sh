@@ -181,6 +181,38 @@ rest_coverage_gate() {
 run_gate "REST-COVERAGE" "every implemented REST route covered success+error (parity + allowlist)" \
     rest_coverage_gate
 
+# Gate 5c: SPEC-PARITY — the routes the SDK actually IMPLEMENTS must equal the
+# canonical spec route set, modulo porting-sdk/SPEC_IMPLEMENTATION_GAPS.md. This
+# is the spec-first guard REST-COVERAGE can't give: REST-COVERAGE only proves
+# *tested* routes match the spec, so a route the SDK implements that the spec
+# doesn't define (or a canonical route the SDK never implemented) would slip past
+# it. Set B is built by the routeRegistry Gradle task — it drives the live
+# RestClient through a recording HttpClient (records (method, path), returns an
+# empty map, no network) and reflects over every namespace/sub-resource route
+# method, invoking each with sentinel args, so it sees every dispatched route
+# whether or not it's tested (not an AST scrape, not the journal). The shared
+# porting-sdk diff consumes that JSON via --registry-json. The registry prints
+# ONLY JSON to stdout (the SDK logger writes to stderr), captured to a temp file.
+# Mirrors go's Gate 5c (cmd/route-registry) and ts's route-registry.ts.
+spec_parity_gate() {
+    local registry
+    registry="$(mktemp)"
+    # -q so only the registry JSON reaches stdout; 2>/dev/null so any Gradle/SDK
+    # stderr can't pollute it. The task exits non-zero if Set B is incomplete.
+    if ! ./gradlew --no-daemon -q routeRegistry >"$registry" 2>/dev/null; then
+        rm -f "$registry"
+        return 1
+    fi
+    python3 "$PORTING_SDK_DIR/scripts/diff_spec_implementation.py" \
+        --registry-json "$registry" \
+        --gaps "$PORTING_SDK_DIR/SPEC_IMPLEMENTATION_GAPS.md"
+    local rc=$?
+    rm -f "$registry"
+    return $rc
+}
+run_gate "SPEC-PARITY" "implemented routes == canonical spec (modulo SPEC_IMPLEMENTATION_GAPS.md)" \
+    spec_parity_gate
+
 # Gate 6: emission — byte-compare FunctionResult.toMap() vs Python's to_dict()
 # across the shared 81-entry corpus (pure serialisation; no mocks/network).
 # --port-repo keeps the gate self-contained regardless of the invoking cwd.

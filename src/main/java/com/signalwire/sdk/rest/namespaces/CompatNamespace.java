@@ -33,9 +33,6 @@ public class CompatNamespace {
   private final CompatApplications applications;
   private final CompatLamlBins lamlBins;
   private final CompatTokens tokens;
-  private final CrudResource sipDomains;
-  private final CrudResource sipCredentialLists;
-  private final CrudResource sipIpAccessControlLists;
 
   public CompatNamespace(HttpClient httpClient, String accountSid) {
     this.accountBase = "/laml/2010-04-01/Accounts/" + accountSid;
@@ -54,10 +51,6 @@ public class CompatNamespace {
     this.applications = new CompatApplications(httpClient, accountBase + "/Applications");
     this.lamlBins = new CompatLamlBins(httpClient, accountBase + "/LamlBins");
     this.tokens = new CompatTokens(httpClient, accountBase + "/tokens");
-    this.sipDomains = new CrudResource(httpClient, accountBase + "/SIP/Domains");
-    this.sipCredentialLists = new CrudResource(httpClient, accountBase + "/SIP/CredentialLists");
-    this.sipIpAccessControlLists =
-        new CrudResource(httpClient, accountBase + "/SIP/IpAccessControlLists");
   }
 
   public CompatCalls calls() {
@@ -106,18 +99,6 @@ public class CompatNamespace {
 
   public CompatTokens tokens() {
     return tokens;
-  }
-
-  public CrudResource sipDomains() {
-    return sipDomains;
-  }
-
-  public CrudResource sipCredentialLists() {
-    return sipCredentialLists;
-  }
-
-  public CrudResource sipIpAccessControlLists() {
-    return sipIpAccessControlLists;
   }
 
   // ────────────────────────────────────────────────────────────────────

@@ -1,9 +1,10 @@
 /**
  * Example: Queue and recording management via the REST API.
  *
- * The Java SDK exposes queue and recording CRUD through dedicated
- * namespaces: {@code client.queues().queues()} and
- * {@code client.recordings().recordings()}. MFA verification is not
+ * The Java SDK exposes queue CRUD directly on {@code client.queues()}
+ * (list/create/get/update/delete) and recordings (read-only list/get/delete)
+ * directly on {@code client.recordings()}, matching Python parity. MFA
+ * verification is not
  * surfaced on the Java port — see {@code PORT_OMISSIONS.md}; it is
  * typically invoked via the messaging or voice flows.
  *
@@ -26,7 +27,7 @@ public class RestQueuesMfaAndRecordings {
         // 1. List call queues via the queues namespace.
         System.out.println("Listing queues...");
         try {
-            var queues = client.queues().queues().list();
+            var queues = client.queues().list();
             System.out.println("  Queues: " + queues);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
@@ -35,7 +36,7 @@ public class RestQueuesMfaAndRecordings {
         // 2. Create a queue.
         System.out.println("\nCreating a queue...");
         try {
-            var queue = client.queues().queues().create(Map.of(
+            var queue = client.queues().create(Map.of(
                     "name", "support-queue",
                     "max_size", 50
             ));
@@ -47,7 +48,7 @@ public class RestQueuesMfaAndRecordings {
         // 3. List recordings via the recordings namespace.
         System.out.println("\nListing recordings...");
         try {
-            var recordings = client.recordings().recordings().list();
+            var recordings = client.recordings().list();
             System.out.println("  Recordings: " + recordings);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
@@ -56,7 +57,7 @@ public class RestQueuesMfaAndRecordings {
         // 4. Fetch a specific recording by ID (demo).
         System.out.println("\nFetching a recording by ID (demo)...");
         try {
-            var recording = client.recordings().recordings().get("example-recording-id");
+            var recording = client.recordings().get("example-recording-id");
             System.out.println("  Recording: " + recording);
         } catch (RestError e) {
             System.out.println("  Fetch failed (expected in demo): " + e.getStatusCode());

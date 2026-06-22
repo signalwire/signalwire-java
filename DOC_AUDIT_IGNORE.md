@@ -65,6 +65,7 @@ header: HttpRequest.Builder#header (JDK) — set request header in examples
 uri: HttpRequest.Builder#uri (JDK) — set request URI in examples / DataMap webhooks
 ofString: HttpResponse.BodyHandlers.ofString (JDK) — string-body response handler
 noBody: HttpRequest.BodyPublishers.noBody (JDK) — empty-body request publisher
+send: HttpClient#send(request, bodyHandler) (JDK) — synchronous request dispatch in harnesses
 statusCode: HttpResponse#statusCode (JDK) — response status check in examples
 getRawPath: URI#getRawPath (JDK) — URL path extraction in harnesses
 getRawQuery: URI#getRawQuery (JDK) — URL query extraction in harnesses
@@ -214,17 +215,17 @@ stop_stream: Python calling-control RPC — not surfaced
 stream_stop: Python calling-control RPC — not surfaced
 tap_stop: Python calling-control RPC — not surfaced
 transcribe_stop: Python calling-control RPC — not surfaced
-update_recording: Python recording helper — Java uses recordings().recordings().update
-create_campaign: Python campaign helper — Java uses client.campaign().campaigns().create
-create_order: Python order helper — Java uses client.campaign().orders().create
-list_campaigns: Python campaign helper — Java uses client.campaign().campaigns().list
-list_orders: Python order helper — Java uses client.campaign().orders().list
-create_stream: Python stream helper — Java uses client.streams().streams().create
-list_streams: Python stream helper — Java uses client.streams().streams().list
+update_recording: Python recording helper — not surfaced (recordings are read-only)
+create_campaign: Python campaign helper — Java uses client.registry().brands().createCampaign
+create_order: Python order helper — Java uses client.registry().campaigns().createOrder
+list_campaigns: Python campaign helper — Java uses client.registry().brands().listCampaigns
+list_orders: Python order helper — Java uses client.registry().campaigns().listOrders
+create_stream: Python stream helper — Java uses client.video().rooms().createStream
+list_streams: Python stream helper — Java uses client.video().rooms().listStreams
 delete_chunk: Python datasphere helper — Java uses client.datasphere().documents()
 get_chunk: Python datasphere helper — Java uses client.datasphere().documents()
 list_chunks: Python datasphere helper — Java uses client.datasphere().documents()
-list_conference_tokens: Python conference helper — Java uses client.conferences().participants()
+list_conference_tokens: Python conference helper — Java uses client.video().conferences().listConferenceTokens
 list_events: Python events helper — not ported (use REST listeners)
 delete_media: Python compat helper — Java uses client.compat().messages().delete
 list_media: Python compat helper — Java uses client.compat().messages().list
