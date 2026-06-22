@@ -15785,15 +15785,6 @@
               ],
               "returns": "dict<string,any>"
             },
-            "queues": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "class:signalwire.rest._base.CrudResource"
-            },
             "update": {
               "params": [
                 {

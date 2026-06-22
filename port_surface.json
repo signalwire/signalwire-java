@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ df1ffd29fb32afd61601a2db829ca66c4ec26d00",
+  "generated_from": "signalwire-java @ 747860278063192319c13e2b420edc00226f1e68",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1495,7 +1495,6 @@
           "get_next_member",
           "list",
           "list_members",
-          "queues",
           "update"
         ]
       },

@@ -71,22 +71,4 @@ public class QueueNamespace {
   public Map<String, Object> getMember(String queueId, String memberId) {
     return httpClient.get(BASE + "/" + queueId + "/members/" + memberId);
   }
-
-  /**
-   * Returns the legacy {@code com.signalwire.sdk.rest.CrudResource}-shaped accessor so older
-   * callers like {@code client.queues().queues()} keep compiling. The returned resource targets the
-   * same path as this namespace ({@code /relay/rest/queues}).
-   *
-   * @deprecated direct calls on this namespace ({@link #list()}, {@link #get(String)} etc.) match
-   *     Python parity. Prefer those.
-   */
-  @Deprecated
-  public com.signalwire.sdk.rest.CrudResource queues() {
-    return new com.signalwire.sdk.rest.CrudResource(httpClient, BASE) {
-      @Override
-      public Map<String, Object> update(String id, Map<String, Object> body) {
-        return getHttpClient().put(getBasePath() + "/" + id, body);
-      }
-    };
-  }
 }

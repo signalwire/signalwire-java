@@ -23,10 +23,7 @@ class CallingTest {
   @Test
   void testQueueNamespacePath() {
     var ns = new QueueNamespace(httpClient);
-    // Python parity: client.queues hits /api/relay/rest/queues. The
-    // legacy queues() accessor still returns a CrudResource scoped to
-    // that path for backwards compat.
-    assertEquals("/relay/rest/queues", ns.queues().getBasePath());
+    // Python parity: client.queues hits /api/relay/rest/queues.
     assertEquals("/relay/rest/queues", ns.getBasePath());
   }
 

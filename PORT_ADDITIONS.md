@@ -621,7 +621,6 @@ signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.__init__: Java's Pu
 signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.create_token: Java exposes the canonical pub/sub token method (POST /api/pubsub/tokens) on the PubSubNamespace wrapper; Python ships the same wire call as PubSubResource.create_token on its flat resource class. Same verb + path; only the carrier class name differs (namespace wrapper vs flat resource)
 signalwire.rest.namespaces.queue_namespace.QueueNamespace: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
 signalwire.rest.namespaces.queue_namespace.QueueNamespace.__init__: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
-signalwire.rest.namespaces.queue_namespace.QueueNamespace.queues: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
 signalwire.rest.namespaces.queues.QueuesResource.create: Java QueuesResource exposes the create CRUD method directly on the resource; Python's reference scopes the surface to per-call helpers
 signalwire.rest.namespaces.queues.QueuesResource.delete: Java QueuesResource exposes the delete CRUD method directly on the resource; Python's reference scopes the surface to per-call helpers
 signalwire.rest.namespaces.queues.QueuesResource.get: Java QueuesResource exposes the get CRUD method directly on the resource; Python's reference scopes the surface to per-call helpers

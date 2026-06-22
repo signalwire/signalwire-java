@@ -195,7 +195,7 @@ class RestTest {
     void queueNamespace() {
       var ns = new QueueNamespace(httpClient);
       // Python parity: /api/relay/rest/queues.
-      assertEquals("/relay/rest/queues", ns.queues().getBasePath());
+      assertEquals("/relay/rest/queues", ns.getBasePath());
     }
 
     @Test
