@@ -39,7 +39,6 @@ import java.util.Optional;
 public final class MockTest {
 
   private static final Gson GSON = new Gson();
-  private static final int DEFAULT_PORT = 8767;
   private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(30);
   private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(5);
 
@@ -463,10 +462,26 @@ public final class MockTest {
           return p;
         }
       } catch (NumberFormatException ignored) {
-        // fall through to default
+        // fall through to dynamic allocation
       }
     }
-    return DEFAULT_PORT;
+    // No env override: pick a free port (bind :0) instead of a hardcoded
+    // default that collides with a stale/concurrent mock and hangs the suite.
+    return pickFreePort();
+  }
+
+  /** Ask the OS for a free loopback TCP port (bind :0, read it, release). */
+  private static int pickFreePort() {
+    try (java.net.ServerSocket s =
+        new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+      int p = s.getLocalPort();
+      if (p <= 0) {
+        throw new IllegalStateException("invalid port from OS: " + p);
+      }
+      return p;
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("failed to allocate a free port for mock_signalwire", e);
+    }
   }
 
   private static Process spawnMockServer(int port) throws IOException {

@@ -54,9 +54,32 @@ import org.junit.jupiter.api.Assumptions;
  */
 public final class TlsSupport {
 
-  static final int MOCK_RELAY_WS_PORT = 18877;
-  static final int MOCK_RELAY_HTTP_PORT = 19877;
-  static final int MOCK_SIGNALWIRE_PORT = 18867;
+  // TLS mocks are test-local (spawned + killed within this suite), so pick three
+  // free loopback ports up front rather than hardcoding — avoids collision with
+  // a stale/concurrent listener. Env overrides win when set.
+  static final int MOCK_RELAY_WS_PORT = resolveTlsPort("MOCK_RELAY_TLS_WS_PORT");
+  static final int MOCK_RELAY_HTTP_PORT = resolveTlsPort("MOCK_RELAY_TLS_HTTP_PORT");
+  static final int MOCK_SIGNALWIRE_PORT = resolveTlsPort("MOCK_SIGNALWIRE_TLS_PORT");
+
+  private static int resolveTlsPort(String envVar) {
+    String raw = System.getenv(envVar);
+    if (raw != null && !raw.isBlank()) {
+      try {
+        int p = Integer.parseInt(raw.trim());
+        if (p > 0) {
+          return p;
+        }
+      } catch (NumberFormatException ignored) {
+        // fall through to dynamic allocation
+      }
+    }
+    try (java.net.ServerSocket s =
+        new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+      return s.getLocalPort();
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("failed to allocate a free TLS mock port", e);
+    }
+  }
 
   // mock_signalwire loads 13 OpenAPI specs on boot (~15s cold start), so give
   // it a generous readiness window; mock_relay is fast.
