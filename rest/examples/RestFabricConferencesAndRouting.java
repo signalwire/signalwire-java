@@ -1,13 +1,10 @@
 /**
  * Example: Conference and call-flow resources via the Fabric API.
  *
- * Java routes Fabric subresources (conferences, call flows, SWML scripts,
- * AI agents, SIP endpoints) through the generic
- * {@code client.fabric().resources()} CRUD handle, distinguished by the
- * {@code type} field in the body. Python's per-subresource accessors
- * ({@code fabric.conferences}, {@code fabric.call_flows}, ...) are folded
- * into this one entry point. Top-level conference participants live
- * under the dedicated {@code client.conferences()} namespace.
+ * Fabric subresources have dedicated accessors that mirror Python's
+ * ({@code client.fabric().callFlows()}, {@code .swmlScripts()},
+ * {@code .aiAgents()}, {@code .subscribers().sipEndpoints()}, ...). Live
+ * video conference sessions are listed via {@code client.video().conferences()}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
@@ -61,10 +58,10 @@ public class RestFabricConferencesAndRouting {
             System.out.println("  Create failed: " + e.getStatusCode());
         }
 
-        // 4. List live conference sessions under the dedicated namespace.
+        // 4. List live conference sessions via the video namespace.
         System.out.println("\nListing live conferences...");
         try {
-            var liveConferences = client.conferences().conferences().list();
+            var liveConferences = client.video().conferences().list();
             System.out.println("  Live: " + liveConferences);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());

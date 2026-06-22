@@ -49,10 +49,10 @@ public class RestManageResources {
         ));
         System.out.println("  Available: " + available);
 
-        // 4. Place a test call via the native calling CRUD resource.
+        // 4. Place a test call via the calling command API (dial).
         System.out.println("\nPlacing a test call...");
         try {
-            var result = client.calling().calls().create(Map.of(
+            var result = client.calling().dial(Map.of(
                     "from", "+15559876543",
                     "to", "+15551234567",
                     "url", "https://example.com/call-handler"
