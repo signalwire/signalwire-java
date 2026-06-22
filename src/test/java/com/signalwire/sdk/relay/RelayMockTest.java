@@ -40,8 +40,6 @@ import java.util.Optional;
 public final class RelayMockTest {
 
   private static final Gson GSON = new Gson();
-  private static final int DEFAULT_WS_PORT = 8777;
-  private static final int DEFAULT_HTTP_PORT = 9777;
   private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(30);
   private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(5);
 
@@ -599,8 +597,8 @@ public final class RelayMockTest {
             "RelayMockTest: previous startup failed: " + startupFailure.getMessage(),
             startupFailure);
       }
-      int wsPort = resolvePort("MOCK_RELAY_PORT", DEFAULT_WS_PORT);
-      int httpPort = resolvePort("MOCK_RELAY_HTTP_PORT", DEFAULT_HTTP_PORT);
+      int wsPort = resolvePort("MOCK_RELAY_PORT");
+      int httpPort = resolvePort("MOCK_RELAY_HTTP_PORT");
       String httpBase = "http://127.0.0.1:" + httpPort;
       String wsBase = "ws://127.0.0.1:" + wsPort;
       java.net.http.HttpClient probeClient =
@@ -672,7 +670,7 @@ public final class RelayMockTest {
     }
   }
 
-  private static int resolvePort(String envVar, int defaultPort) {
+  private static int resolvePort(String envVar) {
     String raw = System.getenv(envVar);
     if (raw != null && !raw.isBlank()) {
       try {
@@ -681,10 +679,26 @@ public final class RelayMockTest {
           return p;
         }
       } catch (NumberFormatException ignored) {
-        // fall through to default
+        // fall through to dynamic allocation
       }
     }
-    return defaultPort;
+    // No env override: pick a free port (bind :0) instead of a hardcoded
+    // default. WS and HTTP are picked independently (two separate free ports).
+    return pickFreePort();
+  }
+
+  /** Ask the OS for a free loopback TCP port (bind :0, read it, release). */
+  private static int pickFreePort() {
+    try (java.net.ServerSocket s =
+        new java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())) {
+      int p = s.getLocalPort();
+      if (p <= 0) {
+        throw new IllegalStateException("invalid port from OS: " + p);
+      }
+      return p;
+    } catch (java.io.IOException e) {
+      throw new IllegalStateException("failed to allocate a free port for mock_relay", e);
+    }
   }
 
   private static Process spawnMockServer(int wsPort, int httpPort) throws IOException {
