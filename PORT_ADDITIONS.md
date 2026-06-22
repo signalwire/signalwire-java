@@ -494,23 +494,17 @@ signalwire.rest.call_handler.PhoneCallHandler.values: Java PhoneCallHandler.valu
 signalwire.rest.call_handler.PhoneCallHandler.video_room: Java PhoneCallHandler.video_room is an enum constant for a phone-number routing target; Python encodes the same routing options as string constants
 signalwire.rest.call_handler.PhoneCallHandler.wire_value: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.addresses: Java RestClient exposes the addresses namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
-signalwire.rest.client.RestClient.billing: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.builder: Java builder pattern — RestClient.builder() exposes the idiomatic constructor entry point
 signalwire.rest.client.RestClient.calling: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.campaign: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.chat: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.compat: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.compliance: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.conferences: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.datasphere: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.fabric: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.fax: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.get_http_client: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.get_project: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.get_space: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.imported_numbers: Java RestClient exposes the imported_numbers namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
 signalwire.rest.client.RestClient.logs: Java RestClient exposes the logs namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
-signalwire.rest.client.RestClient.messaging: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.mfa: Java RestClient exposes the mfa namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
 signalwire.rest.client.RestClient.number_groups: Java RestClient exposes the number_groups namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
 signalwire.rest.client.RestClient.number_lookup: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -522,44 +516,15 @@ signalwire.rest.client.RestClient.queues: idiomatic Java surface extension (buil
 signalwire.rest.client.RestClient.recordings: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.registry: Java RestClient exposes the registry namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
 signalwire.rest.client.RestClient.short_codes: Java RestClient exposes the short_codes namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
-signalwire.rest.client.RestClient.sip: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.sip_profile: Java RestClient exposes the sip_profile namespace as a typed accessor; Python's reference RestClient does not surface this namespace directly
-signalwire.rest.client.RestClient.streams: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.swml: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.transcriptions: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.verified_callers: Java RestClient exposes the verified_callers namespace as a typed accessor; Python's reference RestClient sets it as a bare instance attribute in __init__, so it does not appear in the Python class surface
 signalwire.rest.client.RestClient.video: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.with_base_url: Java factory for pointing the REST client at an explicit base URL (loopback fixture, plain HTTP) — used by examples/RestAuditHarness.java; Python tests use httpx_mock to redirect transport instead
 signalwire.rest.namespaces.addresses.AddressesResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.billing.BillingNamespace.__init__: Java BillingNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.billing.BillingNamespace.invoices: Java BillingNamespace.invoices is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.billing.BillingNamespace.usage: Java BillingNamespace.usage is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.billing_namespace.BillingNamespace: Java's BillingNamespace exposes the billing API one-liner; Python accesses billing via the compat namespace
-signalwire.rest.namespaces.billing_namespace.BillingNamespace.__init__: Java's BillingNamespace exposes the billing API one-liner; Python accesses billing via the compat namespace
-signalwire.rest.namespaces.billing_namespace.BillingNamespace.invoices: Java's BillingNamespace exposes the billing API one-liner; Python accesses billing via the compat namespace
-signalwire.rest.namespaces.billing_namespace.BillingNamespace.usage: Java's BillingNamespace exposes the billing API one-liner; Python accesses billing via the compat namespace
-signalwire.rest.namespaces.calling.CallingNamespace.calls: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.campaign.CampaignNamespace.__init__: Java CampaignNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.campaign.CampaignNamespace.assignments: Java CampaignNamespace.assignments is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.campaign.CampaignNamespace.brands: Java CampaignNamespace.brands is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.campaign.CampaignNamespace.campaigns: Java CampaignNamespace.campaigns is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.campaign.CampaignNamespace.orders: Java CampaignNamespace.orders is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace.__init__: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace.assignments: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace.brands: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace.campaigns: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
-signalwire.rest.namespaces.campaign_namespace.CampaignNamespace.orders: Java's CampaignNamespace is the equivalent of Python's RegistryNamespace for 10DLC/TCR registration
 signalwire.rest.namespaces.chat.ChatNamespace.__init__: Java ChatNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.chat.ChatNamespace.channels: Java ChatNamespace.channels is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.chat.ChatNamespace.members: Java ChatNamespace.members is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.chat.ChatNamespace.messages: Java ChatNamespace.messages is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
 signalwire.rest.namespaces.chat_namespace.ChatNamespace: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
 signalwire.rest.namespaces.chat_namespace.ChatNamespace.__init__: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
-signalwire.rest.namespaces.chat_namespace.ChatNamespace.channels: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
 signalwire.rest.namespaces.chat_namespace.ChatNamespace.create_token: Java exposes the canonical chat token method (POST /api/chat/tokens) on the ChatNamespace wrapper; Python ships the same wire call as ChatResource.create_token on its flat resource class. Same verb + path; only the carrier class name differs (namespace wrapper vs flat resource)
-signalwire.rest.namespaces.chat_namespace.ChatNamespace.members: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
-signalwire.rest.namespaces.chat_namespace.ChatNamespace.messages: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
 signalwire.rest.namespaces.compat.CompatAccounts.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.compat.CompatApplications.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.compat.CompatCalls.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
@@ -578,9 +543,6 @@ signalwire.rest.namespaces.compat.CompatNamespace.messages: idiomatic Java surfa
 signalwire.rest.namespaces.compat.CompatNamespace.phone_numbers: Java CompatNamespace exposes the phone_numbers sub-resource as a typed accessor; Python's reference flattens this surface differently
 signalwire.rest.namespaces.compat.CompatNamespace.queues: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.compat.CompatNamespace.recordings: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.sip_credential_lists: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.sip_domains: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.sip_ip_access_control_lists: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.compat.CompatNamespace.tokens: Java CompatNamespace exposes the tokens sub-resource as a typed accessor; Python's reference flattens this surface differently
 signalwire.rest.namespaces.compat.CompatNamespace.transcriptions: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.compat.CompatPhoneNumbers.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
@@ -591,20 +553,6 @@ signalwire.rest.namespaces.compat.CompatTokens.__init__: Java requires an explic
 signalwire.rest.namespaces.compat.CompatTokens.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.compat.CompatTranscriptions.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.compat.CompatTranscriptions.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compliance.ComplianceNamespace.__init__: Java ComplianceNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.compliance.ComplianceNamespace.cnam_registrations: Java ComplianceNamespace.cnam_registrations is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.compliance.ComplianceNamespace.shaken_stir: Java ComplianceNamespace.shaken_stir is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.compliance_namespace.ComplianceNamespace: Java's ComplianceNamespace exposes TCR/carrier compliance APIs; Python routes these through RegistryNamespace
-signalwire.rest.namespaces.compliance_namespace.ComplianceNamespace.__init__: Java's ComplianceNamespace exposes TCR/carrier compliance APIs; Python routes these through RegistryNamespace
-signalwire.rest.namespaces.compliance_namespace.ComplianceNamespace.cnam_registrations: Java's ComplianceNamespace exposes TCR/carrier compliance APIs; Python routes these through RegistryNamespace
-signalwire.rest.namespaces.compliance_namespace.ComplianceNamespace.shaken_stir: Java's ComplianceNamespace exposes TCR/carrier compliance APIs; Python routes these through RegistryNamespace
-signalwire.rest.namespaces.conference.ConferenceNamespace.__init__: Java ConferenceNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.conference.ConferenceNamespace.conferences: Java ConferenceNamespace.conferences is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.conference.ConferenceNamespace.participants: Java ConferenceNamespace.participants is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.conference_namespace.ConferenceNamespace: Java's ConferenceNamespace wraps the conference API with a namespace-level accessor; Python routes through CompatConferences
-signalwire.rest.namespaces.conference_namespace.ConferenceNamespace.__init__: Java's ConferenceNamespace wraps the conference API with a namespace-level accessor; Python routes through CompatConferences
-signalwire.rest.namespaces.conference_namespace.ConferenceNamespace.conferences: Java's ConferenceNamespace wraps the conference API with a namespace-level accessor; Python routes through CompatConferences
-signalwire.rest.namespaces.conference_namespace.ConferenceNamespace.participants: Java's ConferenceNamespace wraps the conference API with a namespace-level accessor; Python routes through CompatConferences
 signalwire.rest.namespaces.datasphere.DatasphereNamespace.documents: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.datasphere.DatasphereNamespace.search: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.fabric.CallFlowsResource.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
@@ -634,11 +582,6 @@ signalwire.rest.namespaces.fabric.FabricResourcePUT.__init__: Java requires an e
 signalwire.rest.namespaces.fabric.GenericResources.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.fabric.GenericResources.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.fabric.SubscribersResource.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.fax.FaxNamespace.__init__: Java FaxNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.fax.FaxNamespace.faxes: Java FaxNamespace.faxes is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.fax_namespace.FaxNamespace: Java's FaxNamespace exposes fax APIs; Python routes through CompatFaxes under the compat namespace
-signalwire.rest.namespaces.fax_namespace.FaxNamespace.__init__: Java's FaxNamespace exposes fax APIs; Python routes through CompatFaxes under the compat namespace
-signalwire.rest.namespaces.fax_namespace.FaxNamespace.faxes: Java's FaxNamespace exposes fax APIs; Python routes through CompatFaxes under the compat namespace
 signalwire.rest.namespaces.imported_numbers.ImportedNumbersResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.logs.ConferenceLogs.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.logs.ConferenceLogs.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
@@ -652,13 +595,6 @@ signalwire.rest.namespaces.logs.MessageLogs.__init__: Java requires an explicit 
 signalwire.rest.namespaces.logs.MessageLogs.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.logs.VoiceLogs.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.logs.VoiceLogs.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.messaging.MessagingNamespace.__init__: Java MessagingNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.messaging.MessagingNamespace.messages: Java MessagingNamespace.messages is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.messaging.MessagingNamespace.send: Java MessagingNamespace.send is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.messaging_namespace.MessagingNamespace: Java's MessagingNamespace is the namespace-level accessor for messaging; Python routes through CompatMessages
-signalwire.rest.namespaces.messaging_namespace.MessagingNamespace.__init__: Java's MessagingNamespace is the namespace-level accessor for messaging; Python routes through CompatMessages
-signalwire.rest.namespaces.messaging_namespace.MessagingNamespace.messages: Java's MessagingNamespace is the namespace-level accessor for messaging; Python routes through CompatMessages
-signalwire.rest.namespaces.messaging_namespace.MessagingNamespace.send: Java's MessagingNamespace is the namespace-level accessor for messaging; Python routes through CompatMessages
 signalwire.rest.namespaces.mfa.MfaResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.number_groups.NumberGroupsResource.create: Java NumberGroupsResource ships with the full CRUD surface; Python's reference handles number-groups membership only and exposes the CRUD methods via its base resource indirectly
 signalwire.rest.namespaces.number_groups.NumberGroupsResource.delete: Java NumberGroupsResource ships with the full CRUD surface; Python's reference handles number-groups membership only and exposes the CRUD methods via its base resource indirectly
@@ -677,20 +613,12 @@ signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.get: idiomatic Jav
 signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.get_resource: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.list: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.phone_numbers.PhoneNumbersResource.update: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.project.ProjectNamespace.create_token: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.project.ProjectNamespace.get: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.project.ProjectNamespace.list_tokens: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.project.ProjectNamespace.tokens: Java ProjectNamespace exposes the tokens sub-resource as a typed accessor; Python's reference uses indexed dispatch on the project namespace
-signalwire.rest.namespaces.project.ProjectNamespace.update: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.project.ProjectTokens.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.pub_sub.PubSubNamespace.__init__: Java PubSubNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.pub_sub.PubSubNamespace.channels: Java PubSubNamespace.channels is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.pub_sub.PubSubNamespace.publish: Java PubSubNamespace.publish is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
 signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace: Java's PubSubNamespace wraps the Pub/Sub API; Python exposes a flat PubSubResource
 signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.__init__: Java's PubSubNamespace wraps the Pub/Sub API; Python exposes a flat PubSubResource
-signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.channels: Java's PubSubNamespace wraps the Pub/Sub API; Python exposes a flat PubSubResource
 signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.create_token: Java exposes the canonical pub/sub token method (POST /api/pubsub/tokens) on the PubSubNamespace wrapper; Python ships the same wire call as PubSubResource.create_token on its flat resource class. Same verb + path; only the carrier class name differs (namespace wrapper vs flat resource)
-signalwire.rest.namespaces.pub_sub_namespace.PubSubNamespace.publish: Java's PubSubNamespace wraps the Pub/Sub API; Python exposes a flat PubSubResource
 signalwire.rest.namespaces.queue_namespace.QueueNamespace: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
 signalwire.rest.namespaces.queue_namespace.QueueNamespace.__init__: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
 signalwire.rest.namespaces.queue_namespace.QueueNamespace.queues: Java's QueueNamespace wraps the queues API; Python exposes a flat QueuesResource
@@ -703,9 +631,7 @@ signalwire.rest.namespaces.queues.QueuesResource.queues: Java QueuesResource exp
 signalwire.rest.namespaces.queues.QueuesResource.update: Java QueuesResource exposes the update CRUD method directly on the resource; Python's reference scopes the surface to per-call helpers
 signalwire.rest.namespaces.recording_namespace.RecordingNamespace: Java's RecordingNamespace wraps the recordings API; Python exposes a flat RecordingsResource
 signalwire.rest.namespaces.recording_namespace.RecordingNamespace.__init__: Java's RecordingNamespace wraps the recordings API; Python exposes a flat RecordingsResource
-signalwire.rest.namespaces.recording_namespace.RecordingNamespace.recordings: Java's RecordingNamespace wraps the recordings API; Python exposes a flat RecordingsResource
 signalwire.rest.namespaces.recordings.RecordingsResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.recordings.RecordingsResource.recordings: Java RecordingsResource exposes a recordings() typed accessor for nested-resource navigation; Python's reference does not expose this accessor
 signalwire.rest.namespaces.registry.RegistryBrands.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.registry.RegistryBrands.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.registry.RegistryCampaigns.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
@@ -719,29 +645,7 @@ signalwire.rest.namespaces.registry.RegistryNumbers.get_base_path: Java exposes 
 signalwire.rest.namespaces.registry.RegistryOrders.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.registry.RegistryOrders.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.short_codes.ShortCodesResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.sip.SipNamespace.__init__: Java SipNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.sip.SipNamespace.endpoints: Java SipNamespace.endpoints is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.sip.SipNamespace.profiles: Java SipNamespace.profiles is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.sip_namespace.SipNamespace: Java's SipNamespace exposes SIP-endpoint configuration; Python routes through SubscribersResource on the Fabric namespace
-signalwire.rest.namespaces.sip_namespace.SipNamespace.__init__: Java's SipNamespace exposes SIP-endpoint configuration; Python routes through SubscribersResource on the Fabric namespace
-signalwire.rest.namespaces.sip_namespace.SipNamespace.endpoints: Java's SipNamespace exposes SIP-endpoint configuration; Python routes through SubscribersResource on the Fabric namespace
-signalwire.rest.namespaces.sip_namespace.SipNamespace.profiles: Java's SipNamespace exposes SIP-endpoint configuration; Python routes through SubscribersResource on the Fabric namespace
 signalwire.rest.namespaces.sip_profile.SipProfileResource.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.stream.StreamNamespace.__init__: Java StreamNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.stream.StreamNamespace.streams: Java StreamNamespace.streams is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.stream_namespace.StreamNamespace: Java's StreamNamespace wraps the media-stream API; Python routes through the compat namespace
-signalwire.rest.namespaces.stream_namespace.StreamNamespace.__init__: Java's StreamNamespace wraps the media-stream API; Python routes through the compat namespace
-signalwire.rest.namespaces.stream_namespace.StreamNamespace.streams: Java's StreamNamespace wraps the media-stream API; Python routes through the compat namespace
-signalwire.rest.namespaces.swml.SwmlNamespace.__init__: Java SwmlNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.swml.SwmlNamespace.scripts: Java SwmlNamespace.scripts is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.swml_namespace.SwmlNamespace: Java's SwmlNamespace exposes SWML-endpoint management as a dedicated namespace; Python routes through the SwmlWebhooks resource on the Fabric namespace
-signalwire.rest.namespaces.swml_namespace.SwmlNamespace.__init__: Java's SwmlNamespace exposes SWML-endpoint management as a dedicated namespace; Python routes through the SwmlWebhooks resource on the Fabric namespace
-signalwire.rest.namespaces.swml_namespace.SwmlNamespace.scripts: Java's SwmlNamespace exposes SWML-endpoint management as a dedicated namespace; Python routes through the SwmlWebhooks resource on the Fabric namespace
-signalwire.rest.namespaces.transcription.TranscriptionNamespace.__init__: Java TranscriptionNamespace requires an explicit public constructor for HttpClient injection; Python's reference handles this namespace via a polymorphic CrudResource without a typed wrapper class
-signalwire.rest.namespaces.transcription.TranscriptionNamespace.transcriptions: Java TranscriptionNamespace.transcriptions is a typed sub-resource accessor for the namespace; Python's reference handles this surface differently via indexed CrudResource dispatch
-signalwire.rest.namespaces.transcription_namespace.TranscriptionNamespace: Java's TranscriptionNamespace wraps the transcription API as a dedicated namespace; Python routes through the compat namespace
-signalwire.rest.namespaces.transcription_namespace.TranscriptionNamespace.__init__: Java's TranscriptionNamespace wraps the transcription API as a dedicated namespace; Python routes through the compat namespace
-signalwire.rest.namespaces.transcription_namespace.TranscriptionNamespace.transcriptions: Java's TranscriptionNamespace wraps the transcription API as a dedicated namespace; Python routes through the compat namespace
 signalwire.rest.namespaces.video.VideoConferenceTokens.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.video.VideoConferenceTokens.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.video.VideoConferences.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
@@ -758,6 +662,8 @@ signalwire.rest.namespaces.video.VideoRoomRecordings.__init__: Java requires an 
 signalwire.rest.namespaces.video.VideoRoomRecordings.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.video.VideoRoomSessions.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.video.VideoRoomSessions.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
+signalwire.rest.namespaces.video.VideoRoomTokens.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
+signalwire.rest.namespaces.video.VideoRoomTokens.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.video.VideoRooms.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
 signalwire.rest.namespaces.video.VideoRooms.update: Java video resource exposes the update CRUD verb explicitly; Python's reference omits update on this video resource
 signalwire.rest.namespaces.video.VideoStreams.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart

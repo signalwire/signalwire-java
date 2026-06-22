@@ -39,22 +39,12 @@ public class RestClient {
   private volatile DatasphereNamespace datasphereNs;
   private volatile VideoNamespace videoNs;
   private volatile CompatNamespace compatNs;
-  private volatile MessagingNamespace messagingNs;
-  private volatile SipNamespace sipNs;
-  private volatile FaxNamespace faxNs;
   private volatile ChatNamespace chatNs;
   private volatile PubSubNamespace pubSubNs;
-  private volatile SwmlNamespace swmlNs;
-  private volatile CampaignNamespace campaignNs;
-  private volatile ComplianceNamespace complianceNs;
-  private volatile BillingNamespace billingNs;
   private volatile ProjectNamespace projectNs;
-  private volatile StreamNamespace streamNs;
   private volatile NumberLookupNamespace numberLookupNs;
-  private volatile ConferenceNamespace conferenceNs;
   private volatile QueueNamespace queueNs;
   private volatile RecordingNamespace recordingNs;
-  private volatile TranscriptionNamespace transcriptionNs;
   // Python parity namespaces (closing the small-namespaces gap).
   private volatile AddressesNamespace addressesNs;
   private volatile ShortCodesNamespace shortCodesNs;
@@ -216,33 +206,6 @@ public class RestClient {
     return compatNs;
   }
 
-  public MessagingNamespace messaging() {
-    if (messagingNs == null) {
-      synchronized (this) {
-        if (messagingNs == null) messagingNs = new MessagingNamespace(httpClient);
-      }
-    }
-    return messagingNs;
-  }
-
-  public SipNamespace sip() {
-    if (sipNs == null) {
-      synchronized (this) {
-        if (sipNs == null) sipNs = new SipNamespace(httpClient);
-      }
-    }
-    return sipNs;
-  }
-
-  public FaxNamespace fax() {
-    if (faxNs == null) {
-      synchronized (this) {
-        if (faxNs == null) faxNs = new FaxNamespace(httpClient);
-      }
-    }
-    return faxNs;
-  }
-
   public ChatNamespace chat() {
     if (chatNs == null) {
       synchronized (this) {
@@ -261,42 +224,6 @@ public class RestClient {
     return pubSubNs;
   }
 
-  public SwmlNamespace swml() {
-    if (swmlNs == null) {
-      synchronized (this) {
-        if (swmlNs == null) swmlNs = new SwmlNamespace(httpClient);
-      }
-    }
-    return swmlNs;
-  }
-
-  public CampaignNamespace campaign() {
-    if (campaignNs == null) {
-      synchronized (this) {
-        if (campaignNs == null) campaignNs = new CampaignNamespace(httpClient);
-      }
-    }
-    return campaignNs;
-  }
-
-  public ComplianceNamespace compliance() {
-    if (complianceNs == null) {
-      synchronized (this) {
-        if (complianceNs == null) complianceNs = new ComplianceNamespace(httpClient);
-      }
-    }
-    return complianceNs;
-  }
-
-  public BillingNamespace billing() {
-    if (billingNs == null) {
-      synchronized (this) {
-        if (billingNs == null) billingNs = new BillingNamespace(httpClient);
-      }
-    }
-    return billingNs;
-  }
-
   public ProjectNamespace project() {
     if (projectNs == null) {
       synchronized (this) {
@@ -306,15 +233,6 @@ public class RestClient {
     return projectNs;
   }
 
-  public StreamNamespace streams() {
-    if (streamNs == null) {
-      synchronized (this) {
-        if (streamNs == null) streamNs = new StreamNamespace(httpClient);
-      }
-    }
-    return streamNs;
-  }
-
   public NumberLookupNamespace numberLookup() {
     if (numberLookupNs == null) {
       synchronized (this) {
@@ -322,15 +240,6 @@ public class RestClient {
       }
     }
     return numberLookupNs;
-  }
-
-  public ConferenceNamespace conferences() {
-    if (conferenceNs == null) {
-      synchronized (this) {
-        if (conferenceNs == null) conferenceNs = new ConferenceNamespace(httpClient);
-      }
-    }
-    return conferenceNs;
   }
 
   public QueueNamespace queues() {
@@ -349,15 +258,6 @@ public class RestClient {
       }
     }
     return recordingNs;
-  }
-
-  public TranscriptionNamespace transcriptions() {
-    if (transcriptionNs == null) {
-      synchronized (this) {
-        if (transcriptionNs == null) transcriptionNs = new TranscriptionNamespace(httpClient);
-      }
-    }
-    return transcriptionNs;
   }
 
   // ── Python-parity namespaces ─────────────────────────────────────────

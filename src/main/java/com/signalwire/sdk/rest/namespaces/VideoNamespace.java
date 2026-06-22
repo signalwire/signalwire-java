@@ -21,7 +21,7 @@ import java.util.Map;
 public class VideoNamespace {
 
   private final VideoRooms rooms;
-  private final CrudResource roomTokens;
+  private final VideoRoomTokens roomTokens;
   private final VideoRoomSessions roomSessions;
   private final VideoRoomRecordings roomRecordings;
   private final VideoConferences conferences;
@@ -31,7 +31,7 @@ public class VideoNamespace {
   public VideoNamespace(HttpClient httpClient) {
     String base = "/video";
     this.rooms = new VideoRooms(httpClient, base + "/rooms");
-    this.roomTokens = new CrudResource(httpClient, base + "/room_tokens");
+    this.roomTokens = new VideoRoomTokens(httpClient, base + "/room_tokens");
     this.roomSessions = new VideoRoomSessions(httpClient, base + "/room_sessions");
     this.roomRecordings = new VideoRoomRecordings(httpClient, base + "/room_recordings");
     this.conferences = new VideoConferences(httpClient, base + "/conferences");
@@ -43,7 +43,7 @@ public class VideoNamespace {
     return rooms;
   }
 
-  public CrudResource roomTokens() {
+  public VideoRoomTokens roomTokens() {
     return roomTokens;
   }
 
@@ -101,6 +101,29 @@ public class VideoNamespace {
 
     public Map<String, Object> createStream(String roomId, Map<String, Object> body) {
       return getHttpClient().post(getBasePath() + "/" + roomId + "/streams", body);
+    }
+  }
+
+  /**
+   * Video room tokens — create-only (POST {@code /video/room_tokens}). Mirrors Python's {@code
+   * VideoRoomTokens(BaseResource)} which exposes only {@code create}.
+   */
+  public static class VideoRoomTokens {
+
+    private final HttpClient httpClient;
+    private final String basePath;
+
+    public VideoRoomTokens(HttpClient httpClient, String basePath) {
+      this.httpClient = httpClient;
+      this.basePath = basePath;
+    }
+
+    public String getBasePath() {
+      return basePath;
+    }
+
+    public Map<String, Object> create(Map<String, Object> body) {
+      return httpClient.post(basePath, body);
     }
   }
 

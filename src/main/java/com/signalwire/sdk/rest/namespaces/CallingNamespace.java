@@ -6,7 +6,6 @@
  */
 package com.signalwire.sdk.rest.namespaces;
 
-import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -21,16 +20,10 @@ import java.util.Map;
 public class CallingNamespace {
 
   private final HttpClient httpClient;
-  private final CrudResource calls;
   private static final String BASE_PATH = "/calling/calls";
 
   public CallingNamespace(HttpClient httpClient) {
     this.httpClient = httpClient;
-    this.calls = new CrudResource(httpClient, BASE_PATH);
-  }
-
-  public CrudResource calls() {
-    return calls;
   }
 
   /**

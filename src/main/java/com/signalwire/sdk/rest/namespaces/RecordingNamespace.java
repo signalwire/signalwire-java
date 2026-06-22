@@ -43,15 +43,4 @@ public class RecordingNamespace {
   public Map<String, Object> delete(String recordingId) {
     return httpClient.delete(BASE + "/" + recordingId);
   }
-
-  /**
-   * Legacy CRUD-shaped accessor for backwards compat with the previous Java surface ({@code
-   * client.recordings().recordings()}). Targets the same path as this namespace.
-   *
-   * @deprecated prefer the direct namespace methods which match Python.
-   */
-  @Deprecated
-  public com.signalwire.sdk.rest.CrudResource recordings() {
-    return new com.signalwire.sdk.rest.CrudResource(httpClient, BASE);
-  }
 }

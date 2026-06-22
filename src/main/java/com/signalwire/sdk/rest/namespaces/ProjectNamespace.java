@@ -17,38 +17,14 @@ import java.util.Map;
  */
 public class ProjectNamespace {
 
-  private final HttpClient httpClient;
   private final ProjectTokens tokens;
 
   public ProjectNamespace(HttpClient httpClient) {
-    this.httpClient = httpClient;
     this.tokens = new ProjectTokens(httpClient);
   }
 
   public ProjectTokens tokens() {
     return tokens;
-  }
-
-  // ── Legacy single-method accessors (kept for backwards compat) ───
-
-  /** Get project info. */
-  public Map<String, Object> get() {
-    return httpClient.get("/project");
-  }
-
-  /** Update project settings. */
-  public Map<String, Object> update(Map<String, Object> body) {
-    return httpClient.put("/project", body);
-  }
-
-  /** List project tokens (legacy single-method form). */
-  public Map<String, Object> listTokens() {
-    return httpClient.get("/project/tokens");
-  }
-
-  /** Create a project token (legacy single-method form). */
-  public Map<String, Object> createToken(Map<String, Object> body) {
-    return httpClient.post("/project/tokens", body);
   }
 
   // ────────────────────────────────────────────────────────────────────

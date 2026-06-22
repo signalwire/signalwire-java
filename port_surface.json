@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 753ed4f1a02a185d8701ded941144c3c81e9234a",
+  "generated_from": "signalwire-java @ df1ffd29fb32afd61601a2db829ca66c4ec26d00",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1045,23 +1045,17 @@
       "classes": {
         "RestClient": [
           "addresses",
-          "billing",
           "builder",
           "calling",
-          "campaign",
           "chat",
           "compat",
-          "compliance",
-          "conferences",
           "datasphere",
           "fabric",
-          "fax",
           "get_http_client",
           "get_project",
           "get_space",
           "imported_numbers",
           "logs",
-          "messaging",
           "mfa",
           "number_groups",
           "number_lookup",
@@ -1072,11 +1066,7 @@
           "recordings",
           "registry",
           "short_codes",
-          "sip",
           "sip_profile",
-          "streams",
-          "swml",
-          "transcriptions",
           "verified_callers",
           "video",
           "with_base_url"
@@ -1097,16 +1087,6 @@
       },
       "functions": []
     },
-    "signalwire.rest.namespaces.billing_namespace": {
-      "classes": {
-        "BillingNamespace": [
-          "__init__",
-          "invoices",
-          "usage"
-        ]
-      },
-      "functions": []
-    },
     "signalwire.rest.namespaces.calling": {
       "classes": {
         "CallingNamespace": [
@@ -1115,7 +1095,6 @@
           "ai_message",
           "ai_stop",
           "ai_unhold",
-          "calls",
           "collect",
           "collect_start_input_timers",
           "collect_stop",
@@ -1153,26 +1132,11 @@
       },
       "functions": []
     },
-    "signalwire.rest.namespaces.campaign_namespace": {
-      "classes": {
-        "CampaignNamespace": [
-          "__init__",
-          "assignments",
-          "brands",
-          "campaigns",
-          "orders"
-        ]
-      },
-      "functions": []
-    },
     "signalwire.rest.namespaces.chat_namespace": {
       "classes": {
         "ChatNamespace": [
           "__init__",
-          "channels",
-          "create_token",
-          "members",
-          "messages"
+          "create_token"
         ]
       },
       "functions": []
@@ -1246,9 +1210,6 @@
           "phone_numbers",
           "queues",
           "recordings",
-          "sip_credential_lists",
-          "sip_domains",
-          "sip_ip_access_control_lists",
           "tokens",
           "transcriptions"
         ],
@@ -1292,26 +1253,6 @@
           "get",
           "get_base_path",
           "list"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compliance_namespace": {
-      "classes": {
-        "ComplianceNamespace": [
-          "__init__",
-          "cnam_registrations",
-          "shaken_stir"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.conference_namespace": {
-      "classes": {
-        "ConferenceNamespace": [
-          "__init__",
-          "conferences",
-          "participants"
         ]
       },
       "functions": []
@@ -1410,15 +1351,6 @@
       },
       "functions": []
     },
-    "signalwire.rest.namespaces.fax_namespace": {
-      "classes": {
-        "FaxNamespace": [
-          "__init__",
-          "faxes"
-        ]
-      },
-      "functions": []
-    },
     "signalwire.rest.namespaces.imported_numbers": {
       "classes": {
         "ImportedNumbersResource": [
@@ -1461,16 +1393,6 @@
           "get_base_path",
           "list",
           "list_events"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.messaging_namespace": {
-      "classes": {
-        "MessagingNamespace": [
-          "__init__",
-          "messages",
-          "send"
         ]
       },
       "functions": []
@@ -1540,11 +1462,7 @@
       "classes": {
         "ProjectNamespace": [
           "__init__",
-          "create_token",
-          "get",
-          "list_tokens",
-          "tokens",
-          "update"
+          "tokens"
         ],
         "ProjectTokens": [
           "__init__",
@@ -1560,9 +1478,7 @@
       "classes": {
         "PubSubNamespace": [
           "__init__",
-          "channels",
-          "create_token",
-          "publish"
+          "create_token"
         ]
       },
       "functions": []
@@ -1592,8 +1508,7 @@
           "delete",
           "get",
           "get_base_path",
-          "list",
-          "recordings"
+          "list"
         ]
       },
       "functions": []
@@ -1650,16 +1565,6 @@
       },
       "functions": []
     },
-    "signalwire.rest.namespaces.sip_namespace": {
-      "classes": {
-        "SipNamespace": [
-          "__init__",
-          "endpoints",
-          "profiles"
-        ]
-      },
-      "functions": []
-    },
     "signalwire.rest.namespaces.sip_profile": {
       "classes": {
         "SipProfileResource": [
@@ -1667,33 +1572,6 @@
           "get",
           "get_base_path",
           "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.stream_namespace": {
-      "classes": {
-        "StreamNamespace": [
-          "__init__",
-          "streams"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.swml_namespace": {
-      "classes": {
-        "SwmlNamespace": [
-          "__init__",
-          "scripts"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.transcription_namespace": {
-      "classes": {
-        "TranscriptionNamespace": [
-          "__init__",
-          "transcriptions"
         ]
       },
       "functions": []
@@ -1750,6 +1628,11 @@
           "list_events",
           "list_members",
           "list_recordings"
+        ],
+        "VideoRoomTokens": [
+          "__init__",
+          "create",
+          "get_base_path"
         ],
         "VideoRooms": [
           "__init__",
