@@ -186,6 +186,26 @@ tasks.register('emitSkills', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// routeRegistry — the Java port's SET-B program for the cross-port SPEC-PARITY
+// gate (porting-sdk/scripts/diff_spec_implementation.py --registry-json). Runs
+// com.signalwire.sdk.rest.RouteRegistry, which drives the live RestClient
+// through a recording HttpClient (records (method, path), returns an empty map,
+// no network) and reflects over every namespace/sub-resource route method,
+// invoking each with sentinel args — so it sees every dispatched route whether
+// or not it's tested (not an AST scrape, not the journal). It prints ONE JSON
+// object {routes,skipped,errors} to stdout (logs/errors to stderr) and exits
+// non-zero if Set B is incomplete. Invoke quietly so only that JSON reaches
+// stdout:
+//   ./gradlew --no-daemon -q routeRegistry
+// The SPEC-PARITY gate feeds that JSON to the shared diff via --registry-json.
+// Mirrors Go's cmd/route-registry + TypeScript's scripts/route-registry.ts.
+tasks.register('routeRegistry', JavaExec) {
+    group = 'verification'
+    description = 'Enumerate the REST routes the SDK implements as JSON (cross-port SPEC-PARITY gate).'
+    mainClass = 'com.signalwire.sdk.rest.RouteRegistry'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',
