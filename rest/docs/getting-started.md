@@ -4,38 +4,36 @@ The REST client provides synchronous access to all SignalWire APIs using standar
 
 ## Installation
 
-The REST client is included in the `signalwire-agents` package:
+The REST client ships in the single `com.signalwire:signalwire-sdk` artifact (requires Java 21+):
 
-```bash
-pip install signalwire-agents
+```groovy
+implementation 'com.signalwire:signalwire-sdk:2.0.2'
 ```
-
-The only additional dependency is `requests`, which is installed automatically.
 
 ## Configuration
 
 You need three things to connect:
 
-| Parameter | Env Var | Description |
-|-----------|---------|-------------|
-| `project` | `SIGNALWIRE_PROJECT_ID` | Your SignalWire project ID |
-| `token` | `SIGNALWIRE_API_TOKEN` | Your SignalWire API token |
-| `host` | `SIGNALWIRE_SPACE` | Your space hostname (e.g. `example.signalwire.com`) |
+| Builder method | Env Var | Description |
+|----------------|---------|-------------|
+| `.project(...)` | `SIGNALWIRE_PROJECT_ID` | Your SignalWire project ID |
+| `.token(...)` | `SIGNALWIRE_API_TOKEN` | Your SignalWire API token |
+| `.space(...)` | `SIGNALWIRE_SPACE` | Your space hostname (e.g. `example.signalwire.com`) |
 
 ## Minimal Example
 
-```python
-from signalwire_agents.rest import RestClient
+```java
+import com.signalwire.sdk.rest.RestClient;
 
-client = RestClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="example.signalwire.com",
-)
+var client = RestClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .space("example.signalwire.com")
+        .build();
 
-# List your AI agents
-agents = client.fabric.ai_agents.list()
-print(agents)
+// List your AI agents
+var agents = client.fabric().aiAgents().list();
+System.out.println(agents);
 ```
 
 Or use environment variables and skip the constructor args:

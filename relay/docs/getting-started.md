@@ -1,53 +1,52 @@
 # Getting Started with RELAY
 
-The RELAY client connects to SignalWire via WebSocket and gives you real-time, imperative control over phone calls using Python's asyncio.
+The RELAY client connects to SignalWire via WebSocket and gives you real-time, imperative control over phone calls.
 
 ## Installation
 
-The RELAY client is included in the `signalwire-agents` package:
+The RELAY client ships in the single `com.signalwire:signalwire-sdk` artifact (requires Java 21+):
 
-```bash
-pip install signalwire-agents
+```groovy
+implementation 'com.signalwire:signalwire-sdk:2.0.2'
 ```
-
-The only additional dependency is `websockets>=12.0`, which is installed automatically.
 
 ## Configuration
 
 You need three things to connect:
 
-| Parameter | Env Var | Description |
-|-----------|---------|-------------|
-| `project` | `SIGNALWIRE_PROJECT_ID` | Your SignalWire project ID |
-| `token` | `SIGNALWIRE_API_TOKEN` | Your SignalWire API token |
-| `host` | `SIGNALWIRE_SPACE` | Your space hostname (e.g. `example.signalwire.com`) |
+| Builder method | Env Var | Description |
+|----------------|---------|-------------|
+| `.project(...)` | `SIGNALWIRE_PROJECT_ID` | Your SignalWire project ID |
+| `.token(...)` | `SIGNALWIRE_API_TOKEN` | Your SignalWire API token |
+| `.space(...)` | `SIGNALWIRE_SPACE` | Your space hostname (e.g. `example.signalwire.com`) |
 
 Alternatively, you can authenticate with a JWT token:
 
-| Parameter | Env Var | Description |
-|-----------|---------|-------------|
-| `jwt_token` | `SIGNALWIRE_JWT_TOKEN` | A SignalWire JWT auth token |
+| Builder method | Env Var | Description |
+|----------------|---------|-------------|
+| `.jwtToken(...)` | `SIGNALWIRE_JWT_TOKEN` | A SignalWire JWT auth token |
 
 ## Minimal Example
 
-```python
-from signalwire_agents.relay import RelayClient
+```java
+import com.signalwire.sdk.relay.RelayClient;
+import java.util.List;
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="example.signalwire.com",
-    contexts=["default"],
-)
+var client = RelayClient.builder()
+        .project("your-project-id")
+        .token("your-api-token")
+        .space("example.signalwire.com")
+        .contexts(List.of("default"))
+        .build();
 
-@client.on_call
-async def handle(call):
-    await call.answer()
-    action = await call.play([{"type": "tts", "params": {"text": "Hello!"}}])
-    await action.wait()
-    await call.hangup()
+client.onCall(call -> {
+    call.answer();
+    var action = call.playTts("Hello!");
+    action.waitForCompletion();
+    call.hangup();
+});
 
-client.run()
+client.run();
 ```
 
 Or use environment variables and skip the constructor args:

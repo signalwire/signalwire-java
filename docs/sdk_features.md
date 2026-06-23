@@ -318,34 +318,19 @@ Each inbound request creates an **ephemeral copy** of the agent. The callback cu
 
 ## Search System
 
-The SDK includes a complete hybrid search engine for local knowledge bases:
-
-**Building indexes:**
-```bash
-sw-search ./docs --output knowledge.swsearch
-sw-search ./docs ./examples --file-types md,txt,py --chunking-strategy sentence
-sw-search validate ./knowledge.swsearch
-sw-search search ./knowledge.swsearch "how do I configure SSL?"
-```
+The `native_vector_search` skill adds document search by querying a **remote** vector-search server over HTTP. (The Java port supports remote mode only; it does not build or read local index files.)
 
 **In agents:**
 ```python
 agent.add_skill("native_vector_search", {
-    "index_path": "knowledge.swsearch",
+    "remote_url": "http://localhost:8001/search",
+    "index_name": "docs",
     "tool_name": "search_docs",
     "description": "Search product documentation"
 })
 ```
 
-The search system supports:
-- **Document processing:** PDF, DOCX, Excel, PowerPoint, HTML, Markdown, plain text
-- **Chunking strategies:** sentence, sliding window, paragraph, page, semantic, topic, QA-optimized, markdown-aware, JSON
-- **Embedding models:** mini (384d, fast), base (768d), large
-- **Hybrid search:** Vector similarity + keyword matching + filename search + metadata search
-- **Backends:** SQLite (`.swsearch` files for local/serverless) or PostgreSQL (pgvector for production)
-- **Installation tiers:** `search-queryonly` (~400MB, query only), `search` (~500MB, basic), `search-full` (~600MB, document processing), `search-all` (~700MB, everything)
-
-The `.swsearch` format is a self-contained SQLite database with embeddings, chunks, and metadata -- deploy it alongside your agent to Lambda or any serverless platform.
+The skill POSTs the user's query (and optional `index_name`) to the configured `remote_url` and surfaces the returned results to the agent. Configure the number of results with `count` and add speech `hints` as needed.
 
 ---
 

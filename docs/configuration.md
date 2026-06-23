@@ -118,30 +118,6 @@ Configuration values are applied in this order (highest to lowest):
 }
 ```
 
-### Search Service Configuration
-
-```json
-{
-  "service": {
-    "port": "${SEARCH_PORT|8001}",
-    "indexes": {
-      "docs": "${DOCS_INDEX|./docs.swsearch}",
-      "api": "${API_INDEX|./api.swsearch}"
-    }
-  },
-  "security": {
-    "ssl_enabled": "${SEARCH_SSL|false}",
-    "auth": {
-      "basic": {
-        "enabled": true,
-        "user": "${SEARCH_USER|search}",
-        "password": "${SEARCH_PASSWORD}"
-      }
-    }
-  }
-}
-```
-
 ### MCP Gateway Configuration
 
 ```json
@@ -297,11 +273,6 @@ class MyAgent(AgentBase):
     def __init__(self):
         # Auto-detects config.json if present
         super().__init__(name="my-agent", config_file="agent_config.json")
-
-# Search Service
-from signalwire_agents.search import SearchService
-
-service = SearchService(config_file="search_config.json")
 
 # MCP Gateway
 from mcp_gateway.gateway_service import MCPGateway

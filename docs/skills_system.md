@@ -102,57 +102,34 @@ Perform mathematical calculations.
 - `calculate(expression)` - Evaluate mathematical expressions safely
 
 ### Native Vector Search (`native_vector_search`)
-Search local document collections using vector similarity and keyword search.
-
-**Requirements:**
-- Packages: `sentence-transformers`, `scikit-learn`, `numpy`
-- Install with: `pip install signalwire-agents[search]`
+Search documents by querying a **remote** vector-search server over HTTP. (The Java port supports remote mode only; it does not build or read local index files.)
 
 **Parameters:**
+- `remote_url` (required) - URL of the remote search server endpoint
+- `index_name` (optional) - Index name to query on the remote server
 - `tool_name` (default: "search_knowledge") - Custom name for the search tool
-- `index_file` (optional) - Path to local `.swsearch` index file
-- `remote_url` (optional) - URL of remote search server
-- `index_name` (default: "default") - Index name on remote server
-- `build_index` (default: False) - Auto-build index if missing
-- `source_dir` (optional) - Source directory for auto-building
+- `description` (default: "Search the local knowledge base for information") - Tool description
 - `count` (default: 3) - Number of search results to return
-- `distance_threshold` (default: 0.0) - Minimum similarity score
-- `response_prefix` (optional) - Text to prepend to responses
-- `response_postfix` (optional) - Text to append to responses
+- `hints` (optional) - Additional speech hints to register
 
 **Tools provided:**
-- `search_knowledge(query, count)` - Search documents with hybrid vector/keyword search
+- `search_knowledge(query, count)` - Search the remote index and return matched results
 
 **Usage examples:**
 ```python
-# Local mode with auto-build from concepts guide
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_docs",
-    "build_index": True,
-    "source_dir": "./docs",  # Will build from directory
-    "index_file": "concepts.swsearch"
-})
-
-# Or build from specific concepts guide file
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_concepts",
-    "index_file": "concepts.swsearch"  # Pre-built from concepts guide
-})
-
 # Remote mode
 agent.add_skill("native_vector_search", {
-    "remote_url": "http://localhost:8001",
+    "remote_url": "http://localhost:8001/search",
     "index_name": "knowledge"
 })
 
-# Multiple instances for different document collections
+# Multiple instances for different remote endpoints
 agent.add_skill("native_vector_search", {
     "tool_name": "search_examples",
-    "index_file": "examples.swsearch"
+    "remote_url": "http://localhost:8001/examples",
+    "index_name": "examples"
 })
 ```
-
-For complete documentation, see [Search Overview](search_overview.md).
 
 ### SWML Transfer (`swml_transfer`)
 Transfer calls between agents using pattern matching.

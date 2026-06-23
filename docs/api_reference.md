@@ -2983,27 +2983,29 @@ agent.add_skill("datasphere", {
 ```
 
 #### `native_vector_search` Skill
-Local document search with vector similarity and keyword search.
+Document search against a **remote** vector-search server over HTTP. (The Java port supports remote mode only; it does not build or read local index files.)
 
 **Parameters:**
-- `index_path` (str): Path to search index file (required)
-- `tool_name` (Optional[str]): Custom tool name (default: "search_documents")
-- `max_results` (Optional[int]): Maximum results to return (default: 5)
-- `similarity_threshold` (Optional[float]): Minimum similarity score 0.0-1.0 (default: 0.0). Higher values are stricter, lower values are more permissive. Typical range: 0.2-0.4 for all-MiniLM-L6-v2, 0.3-0.5 for all-mpnet-base-v2
+- `remote_url` (str): URL of the remote search server endpoint (required)
+- `index_name` (Optional[str]): Index name to query on the remote server
+- `tool_name` (Optional[str]): Custom tool name (default: "search_knowledge")
+- `count` (Optional[int]): Maximum results to return (default: 3)
+- `hints` (Optional[List[str]]): Additional speech hints to register
 
 **Usage:**
 ```python
-# Basic local search
+# Remote search
 agent.add_skill("native_vector_search", {
-    "index_path": "./knowledge.swsearch"
+    "remote_url": "http://localhost:8001/search",
+    "index_name": "knowledge"
 })
 
 # With custom settings
 agent.add_skill("native_vector_search", {
-    "index_path": "./docs.swsearch",
+    "remote_url": "http://localhost:8001/search",
+    "index_name": "docs",
     "tool_name": "search_docs",
-    "max_results": 10,
-    "similarity_threshold": 0.25
+    "count": 10
 })
 ```
 
