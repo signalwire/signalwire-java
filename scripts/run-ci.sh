@@ -330,6 +330,24 @@ run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
         --dump-cmd "./gradlew --no-daemon -q emitSkills" \
         --port-repo "$PORT_ROOT"
 
+# Gate 14: SWAIG-CLI — lightweight shared swaig-test mini-contract (NOT python
+# parity; python's in-process simulator surface is reference-only). Black-box:
+# invokes `bin/swaig-test --help` + golden invocations and asserts the shared
+# verbs are documented, an unknown --simulate-serverless platform errors (no
+# silent fallback), and no-action errors (the cross-port majority default). Java
+# accepts --simulate-serverless (lambda only), so --has-serverless applies; the
+# probe passes a dummy agent-class positional since platform validation happens
+# before the class is resolved. The SDK JAR built in gate 2 (SIGNATURES) is what
+# bin/swaig-test puts on the classpath.
+run_gate "SWAIG-CLI" "swaig-test shared mini-contract (verbs/serverless-reject/default-action)" \
+    python3 "$PORTING_SDK_DIR/scripts/audit_swaig_cli_contract.py" \
+        --port java \
+        --cmd "bash $PORT_ROOT/bin/swaig-test" \
+        --require-url-model \
+        --default-action-argv='--url|http://user:pass@127.0.0.1:1/' \
+        --has-serverless \
+        --serverless-argv='DummyAgentClass|--simulate-serverless|bogus-platform-xyz|--dump-swml'
+
 if [ -z "$FAILED_GATES" ]; then
     echo "==> CI PASS"
     exit 0

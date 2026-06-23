@@ -35,7 +35,14 @@ fi
 # The CLI depends on SDK classes (AgentBase, LambdaAgentHandler, EnvProvider, etc.)
 # and Gson, so we need the whole project compiled. Prefer the published jar;
 # fall back to the build/classes directory for local development.
-SDK_JAR=$(ls "$PROJECT_DIR"/build/libs/*.jar 2>/dev/null | head -1 || true)
+#
+# `gradle build` produces THREE artifacts in build/libs: the main jar plus a
+# `-sources.jar` and (when configured) a `-javadoc.jar`. A naive `*.jar | head -1`
+# picks `-sources.jar` (it sorts first) — a classes-free archive — and the CLI
+# then dies with ClassNotFoundException. Select the MAIN jar by excluding the
+# -sources/-javadoc suffixes.
+SDK_JAR=$(ls "$PROJECT_DIR"/build/libs/*.jar 2>/dev/null \
+    | grep -Ev -- '-(sources|javadoc)\.jar$' | head -1 || true)
 SDK_CLASSES="$PROJECT_DIR/build/classes/java/main"
 
 CLASSPATH=""
