@@ -8,7 +8,7 @@ Update your `build.gradle`:
 implementation 'com.signalwire:signalwire-agents:1.x.x'
 
 // After
-implementation 'com.signalwire:signalwire-sdk:2.0.0'
+implementation 'com.signalwire:signalwire-sdk:2.0.2'
 ```
 
 Or in `pom.xml`:
@@ -24,7 +24,7 @@ Or in `pom.xml`:
 <dependency>
     <groupId>com.signalwire</groupId>
     <artifactId>signalwire-sdk</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.2</version>
 </dependency>
 ```
 

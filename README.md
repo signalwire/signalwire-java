@@ -30,23 +30,12 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 | **RELAY Client** | Control live calls and SMS/MMS in real time over WebSocket -- answer, play, record, collect DTMF, conference, transfer, and more | [RELAY docs](relay/README.md) |
 | **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 18+ API namespaces | [REST docs](rest/README.md) |
 
-**Gradle:**
-
 ```groovy
-implementation 'com.signalwire:signalwire-sdk:2.0.0'
+// build.gradle -- requires Java 21+
+implementation 'com.signalwire:signalwire-sdk:2.0.2'
 ```
 
-**Maven:**
-
-```xml
-<dependency>
-    <groupId>com.signalwire</groupId>
-    <artifactId>signalwire-sdk</artifactId>
-    <version>2.0.0</version>
-</dependency>
-```
-
-Requires **Java 21+**.
+See [Installation](#installation) for the Maven coordinates.
 
 ---
 
@@ -116,18 +105,19 @@ bin/swaig-test --url http://user:pass@localhost:3000 --exec get_time
 
 ### Agent Examples
 
-The [`examples/`](examples/) directory contains 30+ working examples:
+The [`examples/`](examples/) directory contains 50+ working examples:
 
 | Example | What it demonstrates |
 |---------|---------------------|
 | [SimpleAgent.java](examples/SimpleAgent.java) | POM prompts, SWAIG tools, speech hints |
 | [ContextsDemo.java](examples/ContextsDemo.java) | Multi-persona workflow with context switching and step navigation |
 | [DataMapDemo.java](examples/DataMapDemo.java) | Server-side API tools without webhooks |
-| [CallFlow.java](examples/CallFlow.java) | Call flow verbs and actions |
-| [SessionState.java](examples/SessionState.java) | Global data and post-prompt summaries |
+| [CallFlowAndActionsDemo.java](examples/CallFlowAndActionsDemo.java) | Call flow verbs and FunctionResult actions |
+| [SkillsDemo.java](examples/SkillsDemo.java) | Loading built-in skills (datetime, math) |
+| [SessionAndStateDemo.java](examples/SessionAndStateDemo.java) | Global data and post-prompt summaries |
 | [MultiAgentServer.java](examples/MultiAgentServer.java) | Multiple agents on one server |
 | [LambdaAgent.java](examples/LambdaAgent.java) | AWS Lambda deployment |
-| [ComprehensiveDynamic.java](examples/ComprehensiveDynamic.java) | Per-request dynamic configuration, multi-tenant routing |
+| [ComprehensiveDynamicAgent.java](examples/ComprehensiveDynamicAgent.java) | Per-request dynamic configuration, multi-tenant routing |
 
 See [examples/README.md](examples/README.md) for the full list organized by category.
 
@@ -179,6 +169,7 @@ Synchronous REST client for managing SignalWire resources and controlling calls 
 ```java
 import com.signalwire.sdk.rest.RestClient;
 
+import java.util.List;
 import java.util.Map;
 
 var client = RestClient.builder()
@@ -194,8 +185,7 @@ client.fabric().aiAgents().create(Map.of(
 ));
 
 // Control a live call
-client.calling().execute("play", Map.of(
-        "call_id", callId,
+client.calling().play(callId, Map.of(
         "play", List.of(Map.of("type", "tts", "text", "Hello!"))
 ));
 
@@ -213,6 +203,28 @@ client.datasphere().documents().search(Map.of("query_string", "billing policy"))
 See the **[REST documentation](rest/README.md)** for the full guide, API reference, and examples.
 
 ---
+
+## Installation
+
+The SDK is published to Maven Central as `com.signalwire:signalwire-sdk` and requires **Java 21+**.
+
+**Gradle:**
+
+```groovy
+implementation 'com.signalwire:signalwire-sdk:2.0.2'
+```
+
+**Maven:**
+
+```xml
+<dependency>
+    <groupId>com.signalwire</groupId>
+    <artifactId>signalwire-sdk</artifactId>
+    <version>2.0.2</version>
+</dependency>
+```
+
+A single artifact provides the agents framework, the RELAY WebSocket client, and the REST client -- no optional modules or extras to select.
 
 ## Documentation
 
@@ -279,10 +291,10 @@ Guides are also available in the [`docs/`](docs/) directory:
 ./gradlew test
 
 # Run a specific test class
-./gradlew test --tests "com.signalwire.sdk.agent.AgentBaseTest"
+./gradlew test --tests "com.signalwire.sdk.AgentBaseTest"
 
-# Coverage
-./gradlew test jacocoTestReport
+# Build without running tests
+./gradlew build -x test
 ```
 
 ## License

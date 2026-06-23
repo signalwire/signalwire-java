@@ -83,26 +83,6 @@ agent = MyAgent()
 agent.run()
 ```
 
-### Search Service
-
-The standalone search service also supports the same security configuration:
-
-```python
-from signalwire_agents.search import SearchService
-
-# Basic usage - security configured from environment
-service = SearchService(port=8001, indexes={"docs": "index.swsearch"})
-service.start()
-
-# Override SSL settings programmatically
-service.start(
-    host="0.0.0.0",
-    port=8001,
-    ssl_cert="/path/to/cert.pem",
-    ssl_key="/path/to/key.pem"
-)
-```
-
 ## Security Headers
 
 When HTTPS is enabled, the following security headers are automatically added to responses:
