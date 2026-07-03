@@ -577,14 +577,36 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     if java_package == "com.signalwire.sdk.rest.namespaces.generated":
         # 1. Drop every nested class (keep only the file's top-level type).
         classes = {outer_name: classes.get(outer_name, [])}
-        # 2. Drop the ResourceTree plumbing base entirely.
+        # 2. ResourceTree plumbing base. In python-reference mode drop it
+        #    entirely (the oracle has no ResourceTree; the RestClient's
+        #    top-level namespace accessors map to Python attributes and are
+        #    covered by PORT_ADDITIONS). In NATIVE mode keep its top-level
+        #    namespace-accessor methods (``registry()``/``fabric()``/…) so
+        #    doc snippets ``client.registry().brands()`` resolve — dropping
+        #    them leaves the container-getter half of the chain unresolvable.
+        #    Constructor spellings are stripped as elsewhere.
         if outer_name == "ResourceTree":
-            return {}
-        # 3. Namespace containers: keep only __init__ (match the oracle's
-        #    _client_tree_generated classes, which record init only).
+            if not native:
+                return {}
+            ctor_names = {outer_name, camel_to_snake(outer_name)}
+            classes[outer_name] = [m for m in classes[outer_name] if m not in ctor_names]
+        # 3. Namespace containers. In python-reference mode keep only
+        #    ``__init__`` (match the oracle's ``_client_tree_generated``
+        #    classes, which record init only — the lazy accessors mirror
+        #    Python instance attributes set in ``__init__``, not methods).
+        #    In NATIVE mode the surface feeds doc-audit resolution, so the
+        #    container's lazy-accessor METHODS (``brands()``/``campaigns()``…)
+        #    must remain resolvable — doc snippets call ``client.registry
+        #    .brands()``. Native has no ``__init__`` (the constructor
+        #    translates to ``<ClassName>``/``<snake_class>`` — line 279-290);
+        #    drop just those constructor spellings and keep the accessors.
         if outer_name in _GENERATED_CONTAINERS:
             meths = classes[outer_name]
-            classes[outer_name] = ["__init__"] if "__init__" in meths else []
+            if native:
+                ctor_names = {outer_name, camel_to_snake(outer_name)}
+                classes[outer_name] = [m for m in meths if m not in ctor_names]
+            else:
+                classes[outer_name] = ["__init__"] if "__init__" in meths else []
         else:
             # 4. Implicit-base projection. SignatureDump/the text parser only see
             #    DECLARED methods, so a generated resource that INHERITS

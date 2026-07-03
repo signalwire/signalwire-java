@@ -55,6 +55,47 @@ def load_aliases() -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# Generated-REST typed-input sidecar (rest_signatures.json)
+# ---------------------------------------------------------------------------
+#
+# The generated REST resource methods take the Java NAMED idiom for keyword
+# params — a builder ``<Method>Request`` object (``create(CreateRequest req)``)
+# — which reflection sees as a SINGLE ``request`` param (L13: the builder is the
+# user-facing idiom, never flattened to positionals). The oracle records the
+# exploded flat keyword set (body fields → keyword, ``extras`` → keyword, a
+# leading path-id → positional, a GET/list query bag → ``var_keyword``). Java
+# reflection cannot express keyword-only params, so the generator emits a
+# canonical unfold sidecar next to the generated resources; this enumerator
+# REPLACES the reflected builder-``request`` param list with the sidecar's flat
+# set so the drift gate compares count+kind against the oracle (L10 — the
+# generator explodes, the enumerator reclassifies). Body-field types are the
+# open value type (``optional<any>`` / ``string`` / …) — the gate compares
+# param count+kind, not the static field type, so this is idiom-safe.
+#
+# Static-typed Java has no ``**kwargs`` mechanism, so (like go/dotnet) the
+# unfold keeps ``extras`` only and does NOT synthesize the oracle's trailing
+# ``**kwargs`` var_keyword. The 1-param residual that leaves (methods whose
+# oracle signature carries a trailing ``kwargs``) is documented per-method in
+# PORT_SIGNATURE_OMISSIONS.md with a ``java-no-kwargs`` honest reason — never a
+# BACKLOG/loose-body tag.
+_GENERATED_PKG = "com.signalwire.sdk.rest.namespaces.generated"
+
+
+def load_rest_sidecar() -> dict[str, list[dict]]:
+    """Load the generator's canonical typed-param records for generated REST
+    resource methods. Keyed by ``<ResourceClass>::<javaMethod>`` → param list
+    (each ``{name, kind, type, required[, default]}``)."""
+    path = (
+        PORT_ROOT / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
+        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+    )
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data.get("methods", {})
+
+
+# ---------------------------------------------------------------------------
 # Java type translation
 # ---------------------------------------------------------------------------
 
@@ -553,9 +594,10 @@ MIXIN_PROJECTIONS = {
 }
 
 
-def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
+def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = None) -> tuple[dict, list]:
     out_modules: dict = {}
     failures: list = []
+    sidecar = sidecar or {}
 
     for type_entry in raw.get("types", []):
         pkg = type_entry.get("package", "")
@@ -564,6 +606,22 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             continue
         if type_entry.get("kind") in ("annotation",):
             continue
+
+        # Generated-REST scaffolding drop (mirror enumerate_surface.py §8).
+        # The generated package's typed-input BUILDER scaffolding — every
+        # write/command/set method emits a nested ``<Method>Request`` + its
+        # ``Builder`` (the Java NAMED idiom for keyword params, L13) — is
+        # implementation detail of the typed input, not a route/resource, so
+        # the oracle has no counterpart. Drop these here exactly as the
+        # surface enumerator drops all nested classes in the package. Also
+        # drop the ``ResourceTree`` plumbing base entirely (the oracle has no
+        # ResourceTree; the RestClient's namespace accessors map to Python
+        # instance attributes and are covered by PORT_ADDITIONS). The resource
+        # classes (Mfa, Calling, …) and the namespace CONTAINERS
+        # (RegistryNamespace, …) are kept.
+        if pkg == _GENERATED_PKG:
+            if java_name == "ResourceTree" or java_name.endswith("Request") or java_name == "Builder":
+                continue
 
         # First check explicit Java module overrides
         full_pkg = f"{pkg}.{java_name}" if pkg else java_name
@@ -633,6 +691,32 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             except TypeTranslationError as e:
                 failures.append(str(e))
                 continue
+            # Generated-REST typed-input unfold (L10). Java reflection sees a
+            # write/command/set method as a single builder-``request`` param;
+            # the generator's sidecar records the canonical flat keyword set the
+            # oracle expects (body fields → keyword, ``extras`` → keyword, a
+            # leading path-id → positional, a query bag → var_keyword). Replace
+            # the reflected params with the sidecar's — keeping the implicit
+            # ``self`` receiver — so the drift gate compares the oracle's shape.
+            if pkg == _GENERATED_PKG and native != "<init>":
+                unfold = sidecar.get(f"{java_name}::{native}")
+                if unfold is not None:
+                    new_params: list = []
+                    if sig["params"] and sig["params"][0].get("kind") == "self":
+                        new_params.append(sig["params"][0])
+                    for p in unfold:
+                        param: dict = {
+                            "name": p["name"],
+                            "type": p.get("type", "any"),
+                            "required": bool(p.get("required", True)),
+                        }
+                        kind = p.get("kind", "keyword")
+                        if kind != "positional":
+                            param["kind"] = kind
+                        if "default" in p:
+                            param["default"] = p["default"]
+                        new_params.append(param)
+                    sig["params"] = new_params
             # Public fields project as zero-arg accessor methods only when
             # their type names an SDK class — primitive state fields drop
             # out (matches Python adapter's _is_sdk_class_type filter).
@@ -841,13 +925,14 @@ def main() -> int:
     CLASS_TO_MODULE = build_class_to_module_map(PSDK / "python_surface.json")
 
     aliases = load_aliases()
+    sidecar = load_rest_sidecar()
 
     if args.raw and args.raw.is_file():
         raw = json.loads(args.raw.read_text(encoding="utf-8"))
     else:
         raw = run_dump()
 
-    canonical, failures = collect(raw, aliases)
+    canonical, failures = collect(raw, aliases, sidecar)
     if failures:
         print(f"enumerate_signatures: {len(failures)} translation failure(s)", file=sys.stderr)
         for f in failures[:30]:

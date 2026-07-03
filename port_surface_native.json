@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 9ce014ab079af129ef7f4916f9c4226f045be080",
+  "generated_from": "signalwire-java @ 1f8f530f36c38b58bb7970463dc6f59fb5b30f89",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -1576,12 +1576,67 @@
     },
     "signalwire.rest.namespaces._client_tree_generated": {
       "classes": {
-        "DatasphereNamespace": [],
-        "FabricNamespace": [],
-        "LogsNamespace": [],
-        "ProjectNamespace": [],
-        "RegistryNamespace": [],
-        "VideoNamespace": []
+        "DatasphereNamespace": [
+          "documents"
+        ],
+        "FabricNamespace": [
+          "addresses",
+          "aiAgents",
+          "ai_agents",
+          "callFlows",
+          "call_flows",
+          "conferenceRooms",
+          "conference_rooms",
+          "cxmlApplications",
+          "cxmlScripts",
+          "cxmlWebhooks",
+          "cxml_applications",
+          "cxml_scripts",
+          "cxml_webhooks",
+          "freeswitchConnectors",
+          "freeswitch_connectors",
+          "relayApplications",
+          "relay_applications",
+          "resources",
+          "sipEndpoints",
+          "sipGateways",
+          "sip_endpoints",
+          "sip_gateways",
+          "subscribers",
+          "swmlScripts",
+          "swmlWebhooks",
+          "swml_scripts",
+          "swml_webhooks",
+          "tokens"
+        ],
+        "LogsNamespace": [
+          "conferences",
+          "fax",
+          "messages",
+          "voice"
+        ],
+        "ProjectNamespace": [
+          "tokens"
+        ],
+        "RegistryNamespace": [
+          "brands",
+          "campaigns",
+          "numbers",
+          "orders"
+        ],
+        "VideoNamespace": [
+          "conferenceTokens",
+          "conference_tokens",
+          "conferences",
+          "roomRecordings",
+          "roomSessions",
+          "roomTokens",
+          "room_recordings",
+          "room_sessions",
+          "room_tokens",
+          "rooms",
+          "streams"
+        ]
       },
       "functions": []
     },
@@ -1853,6 +1908,39 @@
         "FaxLogs": [
           "FaxLogs",
           "fax_logs"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.generated.resource_tree": {
+      "classes": {
+        "ResourceTree": [
+          "addresses",
+          "calling",
+          "chat",
+          "datasphere",
+          "fabric",
+          "importedNumbers",
+          "imported_numbers",
+          "logs",
+          "lookup",
+          "mfa",
+          "numberGroups",
+          "number_groups",
+          "phoneNumbers",
+          "phone_numbers",
+          "project",
+          "pubsub",
+          "queues",
+          "recordings",
+          "registry",
+          "shortCodes",
+          "short_codes",
+          "sipProfile",
+          "sip_profile",
+          "verifiedCallers",
+          "verified_callers",
+          "video"
         ]
       },
       "functions": []
