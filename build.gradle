@@ -206,6 +206,21 @@ tasks.register('routeRegistry', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// routeTestPlan — the per-via call plan the REST wire-test generator
+// (scripts/generate_rest_tests.py) consumes. Runs com.signalwire.sdk.rest.
+// RouteTestPlan, which drives the live RestClient through a recording HttpClient
+// (same shape as RouteRegistry) and reflects over every route method, emitting
+// per via the accessor chain, terminal member, and type-correct Java literal
+// args. Prints ONE JSON object {plan,errors} to stdout, exits non-zero if any
+// route is unreflectable. Invoke quietly so only that JSON reaches stdout:
+//   ./gradlew --no-daemon -q routeTestPlan
+tasks.register('routeTestPlan', JavaExec) {
+    group = 'verification'
+    description = 'Per-via REST call plan (chain/member/typed args) for the wire-test generator.'
+    mainClass = 'com.signalwire.sdk.rest.RouteTestPlan'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

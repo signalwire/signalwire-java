@@ -163,6 +163,17 @@ run_gate "GEN-FRESH-RELAY" "generate_relay_protocol.py --check (RELAY types matc
 run_gate "GEN-FRESH-SWAIG" "generate_swaig_payloads.py --check (SWAIG payloads match swaig-specs)" \
     python3 scripts/generate_swaig_payloads.py --check
 
+# Gate 4f: GEN-FRESH-TESTS — the generated full-mock REST wire-test suite
+# (src/test/java/com/signalwire/sdk/rest/generated/*GeneratedTest.java) is emitted
+# by scripts/generate_rest_tests.py from the route-registry × spec-operationId
+# oracle (REST_TEST_GENERATOR_RULES.md) and is DO-NOT-EDIT. This gate re-runs the
+# generator in --check mode and fails if any on-disk generated test drifts from
+# the generator output (a hand edit, a route added/removed, or a leftover file).
+# The generated tests themselves run in the REST-COVERAGE gate below (they live in
+# the com.signalwire.sdk.rest.* package and feed the coverage journal).
+run_gate "GEN-FRESH-TESTS" "generate_rest_tests.py --check (generated REST wire tests match oracle)" \
+    python3 scripts/generate_rest_tests.py --check
+
 # Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
