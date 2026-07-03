@@ -15,6 +15,16 @@
 # `clean` forces Error Prone to re-run over the full source (no incremental skip).
 # Reports findings and exits non-zero on any finding.
 #
+# --no-build-cache is LOAD-BEARING here: Error Prone runs as a javac plugin inside
+# compileJava, and compileJava's OUTPUT (the .class files) is cacheable. With the
+# build cache on (sw_gradle adds --build-cache; gradle.properties sets
+# org.gradle.caching=true), a `clean` would be defeated — Gradle would restore the
+# compiled classes FROM-CACHE and Error Prone would NOT re-execute, silently
+# masking a new lint finding. Disabling the cache for THIS invocation keeps the
+# "clean forces a real recompile → Error Prone actually runs" guarantee. The
+# daemon (warm JVM) is unaffected and still applies. Command-line --no-build-cache
+# wins over both --build-cache and the gradle.properties setting.
+#
 # Java's linters (Error Prone / Checkstyle) have no safe autofix, so this is
 # report-only — there is no --fix mode (per RUN_LINT_FORMAT_SPEC.md: "otherwise
 # report-only"). Run `bash scripts/run-format.sh` for formatting fixes.
@@ -30,4 +40,4 @@ if [ -n "${1:-}" ]; then
 fi
 
 echo "==> LINT (errorprone warnings-as-errors + checkstyle, zero findings) — repo: $REPO_ROOT"
-sw_gradle -q clean build -x test checkstyleMain checkstyleTest
+sw_gradle -q --no-build-cache clean build -x test checkstyleMain checkstyleTest

@@ -68,6 +68,13 @@ PORTING_SDK_DIR="$(resolve_porting_sdk)" || {
     exit 2
 }
 
+# Source the shared tool-env so the raw `./gradlew` gate lines below honour the
+# SAME daemon policy as the run-{format,lint,tests}.sh scripts: $GRADLE_DAEMON_FLAG
+# is `--no-daemon` in CI ($CI set) and EMPTY locally (warm daemon reuses one JVM
+# across the ~8 gradle invocations here — ~3-3.5s saved per call). Result-neutral.
+# shellcheck source=scripts/_env.sh
+source "$PORT_ROOT/scripts/_env.sh"
+
 FAILED_GATES=""
 
 run_gate() {
@@ -104,7 +111,7 @@ run_gate "TEST" "run-tests.sh (gradle test)" \
 # Gate 2: signature regen — must rebuild jar first so adapter reflection
 # sees the latest source.
 run_gate "SIGNATURES" "build jar + regenerate port_signatures.json" \
-    bash -c "./gradlew --no-daemon build -x test && python3 scripts/enumerate_signatures.py"
+    bash -c "./gradlew $GRADLE_DAEMON_FLAG --build-cache build -x test && python3 scripts/enumerate_signatures.py"
 
 # Gate 3: drift gate
 run_gate "DRIFT" "diff_port_signatures vs python reference" \
@@ -229,7 +236,8 @@ rest_coverage_gate() {
         return 1
     fi
     python3 -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:$port/__mock__/journal/reset',method='POST'),timeout=5).read()"
-    MOCK_SIGNALWIRE_PORT="$port" ./gradlew --no-daemon test --tests "com.signalwire.sdk.rest.*" --rerun-tasks -q || return 1
+    # shellcheck disable=SC2086
+    MOCK_SIGNALWIRE_PORT="$port" ./gradlew $GRADLE_DAEMON_FLAG --build-cache test --tests "com.signalwire.sdk.rest.*" --rerun-tasks -q || return 1
     python3 -m mock_signalwire.rest_coverage \
         --mock-url "http://127.0.0.1:$port" \
         --spec-root "$PORTING_SDK_DIR/rest-apis" \
@@ -258,7 +266,8 @@ spec_parity_gate() {
     registry="$(mktemp)"
     # -q so only the registry JSON reaches stdout; 2>/dev/null so any Gradle/SDK
     # stderr can't pollute it. The task exits non-zero if Set B is incomplete.
-    if ! ./gradlew --no-daemon -q routeRegistry >"$registry" 2>/dev/null; then
+    # shellcheck disable=SC2086
+    if ! ./gradlew $GRADLE_DAEMON_FLAG --build-cache -q routeRegistry >"$registry" 2>/dev/null; then
         rm -f "$registry"
         return 1
     fi
@@ -275,9 +284,14 @@ run_gate "SPEC-PARITY" "implemented routes == canonical spec (modulo SPEC_IMPLEM
 # Gate 6: emission — byte-compare FunctionResult.toMap() vs Python's to_dict()
 # across the shared 81-entry corpus (pure serialisation; no mocks/network).
 # --port-repo keeps the gate self-contained regardless of the invoking cwd.
+# --dump-cmd overrides the porting-sdk built-in (which hardcodes --no-daemon) so
+# the emitCorpus JavaExec honours this repo's daemon policy ($GRADLE_DAEMON_FLAG);
+# --port java still selects the correct oracle. Run from $PORT_ROOT (the --dump-cmd
+# is executed in --port-repo), so the relative ./gradlew resolves.
 run_gate "EMISSION" "diff_port_emission vs python oracle" \
     python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
-        --port java --port-repo "$PORT_ROOT"
+        --port java --port-repo "$PORT_ROOT" \
+        --dump-cmd "./gradlew $GRADLE_DAEMON_FLAG --build-cache -q emitCorpus"
 
 # Gate 6b: SWAIG-COVERAGE — every engine response action in the vendored
 # swaig-specs/swaig-response.yaml must be emittable by this port's FunctionResult
@@ -374,7 +388,7 @@ run_gate "SURFACE-DIFF" "diff_port_surface vs python reference" \
 # python adjacent; no network); the JAR built in gate 2 is current here.
 run_gate "SKILL-CONTRACT" "diff_skill_contracts vs python reference" \
     python3 "$PORTING_SDK_DIR/scripts/diff_skill_contracts.py" \
-        --dump-cmd "./gradlew --no-daemon -q emitSkills" \
+        --dump-cmd "./gradlew $GRADLE_DAEMON_FLAG --build-cache -q emitSkills" \
         --port-repo "$PORT_ROOT"
 
 # Gate 14: SWAIG-CLI — lightweight shared swaig-test mini-contract (NOT python

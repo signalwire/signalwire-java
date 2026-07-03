@@ -13,9 +13,21 @@
 #                    relative to $REPO_ROOT, NOT the caller's CWD.
 #   * $JAVA_HOME   — exported and pointing at a resolvable JDK (already-set value
 #                    honoured; otherwise best-effort discovery). `java` is on PATH.
-#   * `sw_gradle …` — runs the wrapper from $REPO_ROOT with --no-daemon, having
-#                    verified the wrapper + JDK are present. Fails loud with a
-#                    clear install hint if either is missing.
+#   * $GRADLE_DAEMON_FLAG — `--no-daemon` in CI ($CI set), EMPTY locally so the
+#                    Gradle daemon persists a warm JVM across the ~8 gradle
+#                    invocations run-ci makes. Cold-starting the JVM + re-reading
+#                    the build graph costs ~3-3.5s per call; the daemon pays that
+#                    once, not every gate. Ephemeral CI runners are one-shot, so
+#                    a daemon buys nothing there and just risks a leaked process —
+#                    hence --no-daemon under $CI. The daemon does NOT change task
+#                    results (same inputs → same outputs); it only reuses the JVM.
+#                    All call sites (sw_gradle here + the raw ./gradlew lines in
+#                    run-ci.sh) reference this ONE flag so local==CI modulo it.
+#   * `sw_gradle …` — runs the wrapper from $REPO_ROOT with $GRADLE_DAEMON_FLAG
+#                    and --build-cache (task-output reuse keyed on inputs; a pure
+#                    speedup with no semantic change), having verified the wrapper
+#                    + JDK are present. Fails loud with a clear install hint if
+#                    either is missing.
 #
 # Per-port tools (RUN_LINT_FORMAT_SPEC.md): FMT = gradle spotlessApply /
 # spotlessCheck (google-java-format); LINT = errorprone (warnings-as-errors) +
@@ -32,6 +44,15 @@ export REPO_ROOT
 # gradle/wrapper/gradle-wrapper.properties.
 GRADLEW="$REPO_ROOT/gradlew"
 export GRADLEW
+
+# Daemon policy: keep a warm JVM locally (the daemon reuses it across run-ci's
+# many gradle invocations — ~3-3.5s saved per call once warm), but force
+# --no-daemon in CI, whose runners are ephemeral one-shots where a daemon buys
+# nothing and only risks a leaked process. Gate on the conventional $CI env var
+# (set by GitHub Actions and every major CI). The daemon is result-neutral: same
+# task inputs produce the same outputs regardless of which JVM ran them.
+GRADLE_DAEMON_FLAG="${CI:+--no-daemon}"
+export GRADLE_DAEMON_FLAG
 
 # Ensure JAVA_HOME resolves to a usable JDK. Honour an already-set JAVA_HOME; else
 # try a small set of common locations. Export it and put its bin on PATH so the
@@ -93,9 +114,14 @@ _sw_bootstrap_gradle() {
     return 0
 }
 
-# sw_gradle <gradle-args…> — run the wrapper from the repo root with --no-daemon.
-# Bootstraps (verifies wrapper + JDK) on every call; fails loud on a missing tool.
+# sw_gradle <gradle-args…> — run the wrapper from the repo root, honouring the
+# daemon policy ($GRADLE_DAEMON_FLAG: --no-daemon in CI, warm daemon locally) and
+# --build-cache (task-output reuse keyed on inputs — pure speedup, no semantic
+# change). Bootstraps (verifies wrapper + JDK) on every call; fails loud on a
+# missing tool. $GRADLE_DAEMON_FLAG is intentionally unquoted so the empty local
+# value expands to nothing.
 sw_gradle() {
     _sw_bootstrap_gradle || return 1
-    (cd "$REPO_ROOT" && "$GRADLEW" --no-daemon "$@")
+    # shellcheck disable=SC2086
+    (cd "$REPO_ROOT" && "$GRADLEW" $GRADLE_DAEMON_FLAG --build-cache "$@")
 }
