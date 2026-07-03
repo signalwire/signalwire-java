@@ -620,8 +620,18 @@ public final class RelayMockTest {
                 .addShutdownHook(
                     new Thread(
                         () -> {
+                          // Graceful SIGTERM, then escalate to SIGKILL if it lingers, so
+                          // a mock never survives the JVM on the normal-exit path. (The
+                          // mock also self-terminates on parent death via its own
+                          // watchdog — this hook covers the clean-shutdown case.)
                           try {
                             p.destroy();
+                            if (!p.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                              p.destroyForcibly();
+                            }
+                          } catch (InterruptedException ie) {
+                            p.destroyForcibly();
+                            Thread.currentThread().interrupt();
                           } catch (Exception ignored) {
                             // best-effort cleanup on shutdown; nothing to do on failure
                           }
