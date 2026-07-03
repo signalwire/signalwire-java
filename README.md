@@ -196,7 +196,7 @@ client.phoneNumbers().search(Map.of("area_code", "512"));
 client.datasphere().documents().search(Map.of("query_string", "billing policy"));
 ```
 
-- 21 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
+- 20 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
 - Uses `java.net.http.HttpClient` for connection pooling
 - Map returns -- raw JSON decoded to Maps, no wrapper objects
 

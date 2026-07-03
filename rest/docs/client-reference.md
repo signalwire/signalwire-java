@@ -76,7 +76,6 @@ Reached via `client.fabric()`:
 | `client.project()` | API token management |
 | `client.pubSub()` | PubSub token creation |
 | `client.chat()` | Chat token creation |
-| `client.compat()` | Twilio-compatible LAML API |
 
 ## Error Handling
 

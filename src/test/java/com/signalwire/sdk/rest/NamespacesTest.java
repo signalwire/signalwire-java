@@ -2,7 +2,6 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.CompatNamespace;
 import com.signalwire.sdk.rest.namespaces.generated.Chat;
 import com.signalwire.sdk.rest.namespaces.generated.DatasphereNamespace;
 import com.signalwire.sdk.rest.namespaces.generated.Lookup;
@@ -25,7 +24,6 @@ class NamespacesTest {
     assertNotNull(client.phoneNumbers());
     assertNotNull(client.datasphere());
     assertNotNull(client.video());
-    assertNotNull(client.compat());
     assertNotNull(client.chat());
     assertNotNull(client.pubsub());
     assertNotNull(client.project());
@@ -77,18 +75,6 @@ class NamespacesTest {
   void testNumberLookupNamespace() {
     var ns = new Lookup(httpClient);
     assertNotNull(ns);
-  }
-
-  @Test
-  void testCompatNamespacePaths() {
-    var ns = new CompatNamespace(httpClient, "AC123");
-    assertTrue(ns.calls().getBasePath().contains("AC123"));
-    assertTrue(ns.messages().getBasePath().contains("AC123"));
-    assertNotNull(ns.recordings());
-    assertNotNull(ns.queues());
-    assertNotNull(ns.conferences());
-    assertNotNull(ns.transcriptions());
-    assertNotNull(ns.applications());
   }
 
   @Test

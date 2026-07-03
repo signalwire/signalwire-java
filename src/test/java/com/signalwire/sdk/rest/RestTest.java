@@ -8,7 +8,6 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.CompatNamespace;
 import com.signalwire.sdk.rest.namespaces.generated.Calling;
 import com.signalwire.sdk.rest.namespaces.generated.Chat;
 import com.signalwire.sdk.rest.namespaces.generated.DatasphereNamespace;
@@ -93,7 +92,6 @@ class RestTest {
       assertNotNull(client.phoneNumbers());
       assertNotNull(client.datasphere());
       assertNotNull(client.video());
-      assertNotNull(client.compat());
       assertNotNull(client.chat());
       assertNotNull(client.pubsub());
       assertNotNull(client.project());
@@ -113,7 +111,6 @@ class RestTest {
       assertSame(client.phoneNumbers(), client.phoneNumbers());
       assertSame(client.fabric(), client.fabric());
       assertSame(client.datasphere(), client.datasphere());
-      assertSame(client.compat(), client.compat());
     }
 
     @Test
@@ -167,19 +164,6 @@ class RestTest {
       assertEquals("/video/room_tokens", ns.roomTokens().getBasePath());
       // Python parity: VideoRoomRecordings lives at /video/room_recordings.
       assertEquals("/video/room_recordings", ns.roomRecordings().getBasePath());
-    }
-
-    @Test
-    @DisplayName("CompatNamespace paths include account SID")
-    void compatNamespace() {
-      var ns = new CompatNamespace(httpClient, "AC123");
-      assertEquals("/laml/2010-04-01/Accounts/AC123/Calls", ns.calls().getBasePath());
-      assertEquals("/laml/2010-04-01/Accounts/AC123/Messages", ns.messages().getBasePath());
-      assertNotNull(ns.recordings());
-      assertNotNull(ns.queues());
-      assertNotNull(ns.conferences());
-      assertNotNull(ns.transcriptions());
-      assertNotNull(ns.applications());
     }
 
     @Test

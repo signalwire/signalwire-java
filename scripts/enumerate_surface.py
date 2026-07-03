@@ -168,7 +168,6 @@ _METHOD_RENAMES: dict[str, str] = {
     # both surfaces line up at the same canonical name.
     "get_chat": "chat",
     "get_pubsub": "pubsub",
-    "get_compat": "compat",
     "get_fabric": "fabric",
     "get_video": "video",
     "get_logs": "logs",

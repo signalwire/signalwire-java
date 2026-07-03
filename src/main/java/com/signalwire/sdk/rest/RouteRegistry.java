@@ -114,7 +114,7 @@ final class RouteRegistry {
    * /fabric/resources}); the SDK's {@link HttpClient#buildUrl} prepends the base URL's path
    * component ({@code /api}) before dispatch. We record that SAME on-the-wire path so Set B lines
    * up with the spec's {@code path_template}, which carries the server prefix (e.g. {@code
-   * /api/laml/2010-04-01/…}). This mirrors Go's registry recording {@code req.URL.Path} (the full
+   * /api/relay/rest/…}). This mirrors Go's registry recording {@code req.URL.Path} (the full
    * dispatched path) rather than the resource-relative argument.
    */
   private static final class RecordingHttpClient extends HttpClient {

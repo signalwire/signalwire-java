@@ -506,7 +506,6 @@ signalwire.rest.client.RestClient.addresses: Java RestClient exposes the address
 signalwire.rest.client.RestClient.builder: Java builder pattern — RestClient.builder() exposes the idiomatic constructor entry point
 signalwire.rest.client.RestClient.calling: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.chat: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.client.RestClient.compat: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.datasphere: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.fabric: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.client.RestClient.get_http_client: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
@@ -534,34 +533,6 @@ signalwire.rest.namespaces.chat.ChatNamespace.__init__: Java ChatNamespace requi
 signalwire.rest.namespaces.chat_namespace.ChatNamespace: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
 signalwire.rest.namespaces.chat_namespace.ChatNamespace.__init__: Java's ChatNamespace is the namespace-level accessor for the Chat API; Python has a flat ChatResource class
 signalwire.rest.namespaces.chat_namespace.ChatNamespace.create_token: Java exposes the canonical chat token method (POST /api/chat/tokens) on the ChatNamespace wrapper; Python ships the same wire call as ChatResource.create_token on its flat resource class. Same verb + path; only the carrier class name differs (namespace wrapper vs flat resource)
-signalwire.rest.namespaces.compat.CompatAccounts.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compat.CompatApplications.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatCalls.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatConferences.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatConferences.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compat.CompatFaxes.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatLamlBins.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatMessages.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatNamespace.accounts: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.applications: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.calls: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.conferences: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.faxes: Java CompatNamespace exposes the faxes sub-resource as a typed accessor; Python's reference flattens this surface differently
-signalwire.rest.namespaces.compat.CompatNamespace.laml_bins: Java CompatNamespace exposes the laml_bins sub-resource as a typed accessor; Python's reference flattens this surface differently
-signalwire.rest.namespaces.compat.CompatNamespace.messages: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.phone_numbers: Java CompatNamespace exposes the phone_numbers sub-resource as a typed accessor; Python's reference flattens this surface differently
-signalwire.rest.namespaces.compat.CompatNamespace.queues: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.recordings: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatNamespace.tokens: Java CompatNamespace exposes the tokens sub-resource as a typed accessor; Python's reference flattens this surface differently
-signalwire.rest.namespaces.compat.CompatNamespace.transcriptions: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
-signalwire.rest.namespaces.compat.CompatPhoneNumbers.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compat.CompatQueues.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatRecordings.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatRecordings.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compat.CompatTokens.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatTokens.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
-signalwire.rest.namespaces.compat.CompatTranscriptions.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart
-signalwire.rest.namespaces.compat.CompatTranscriptions.get_base_path: Java exposes the resource base path via getBasePath() for runtime URL building; Python encodes it as a class attribute so the getter has no Python counterpart
 signalwire.rest.namespaces.datasphere.DatasphereNamespace.documents: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.datasphere.DatasphereNamespace.search: idiomatic Java surface extension (builder, getter/setter, or overload) not present in Python
 signalwire.rest.namespaces.fabric.CallFlowsResource.__init__: Java requires an explicit public constructor on every CRUD resource (HttpClient is injected); Python materialises the resource implicitly via class instantiation, so the constructor has no Python __init__ counterpart

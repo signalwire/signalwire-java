@@ -3,8 +3,7 @@
  *
  * The Java SDK surfaces native calling via the command API on
  * {@code client.calling()} ({@code dial}, {@code play}, {@code end}, ...),
- * mirroring Python's per-command methods, and the CXML/Twilio-compat call
- * CRUD on {@code client.compat().calls()}. See {@code rest/docs/calling.md}.
+ * mirroring Python's per-command methods. See {@code rest/docs/calling.md}.
  *
  * Set these env vars:
  *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID

@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 5ac3602c1ddcdbc2d14b258a4db07a551e595e51",
+  "generated_from": "signalwire-java @ 9ce014ab079af129ef7f4916f9c4226f045be080",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1056,7 +1056,6 @@
       "classes": {
         "RestClient": [
           "builder",
-          "compat",
           "get_http_client",
           "get_project",
           "get_space",
@@ -1139,182 +1138,6 @@
         "Chat": [
           "__init__",
           "create_token"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace": {
-      "classes": {
-        "CompatNamespace": [
-          "__init__",
-          "accounts",
-          "applications",
-          "calls",
-          "conferences",
-          "faxes",
-          "laml_bins",
-          "messages",
-          "phone_numbers",
-          "queues",
-          "recordings",
-          "tokens",
-          "transcriptions"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_accounts": {
-      "classes": {
-        "CompatNamespaceCompatAccounts": [
-          "__init__",
-          "create",
-          "get",
-          "get_base_path",
-          "list",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_applications": {
-      "classes": {
-        "CompatNamespaceCompatApplications": [
-          "__init__",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_calls": {
-      "classes": {
-        "CompatNamespaceCompatCalls": [
-          "__init__",
-          "start_recording",
-          "start_stream",
-          "stop_stream",
-          "update",
-          "update_recording"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_conferences": {
-      "classes": {
-        "CompatNamespaceCompatConferences": [
-          "__init__",
-          "delete_recording",
-          "get",
-          "get_base_path",
-          "get_participant",
-          "get_recording",
-          "list",
-          "list_participants",
-          "list_recordings",
-          "remove_participant",
-          "start_stream",
-          "stop_stream",
-          "update",
-          "update_participant",
-          "update_recording"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_faxes": {
-      "classes": {
-        "CompatNamespaceCompatFaxes": [
-          "__init__",
-          "delete_media",
-          "get_media",
-          "list_media",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_laml_bins": {
-      "classes": {
-        "CompatNamespaceCompatLamlBins": [
-          "__init__",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_messages": {
-      "classes": {
-        "CompatNamespaceCompatMessages": [
-          "__init__",
-          "delete_media",
-          "get_media",
-          "list_media",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_phone_numbers": {
-      "classes": {
-        "CompatNamespaceCompatPhoneNumbers": [
-          "__init__",
-          "delete",
-          "get",
-          "get_base_path",
-          "import_number",
-          "list",
-          "list_available_countries",
-          "purchase",
-          "search_local",
-          "search_toll_free",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_queues": {
-      "classes": {
-        "CompatNamespaceCompatQueues": [
-          "__init__",
-          "dequeue_member",
-          "get_member",
-          "list_members",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_recordings": {
-      "classes": {
-        "CompatNamespaceCompatRecordings": [
-          "__init__",
-          "delete",
-          "get",
-          "get_base_path",
-          "list"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_tokens": {
-      "classes": {
-        "CompatNamespaceCompatTokens": [
-          "__init__",
-          "create",
-          "delete",
-          "get_base_path",
-          "update"
-        ]
-      },
-      "functions": []
-    },
-    "signalwire.rest.namespaces.compat_namespace_compat_transcriptions": {
-      "classes": {
-        "CompatNamespaceCompatTranscriptions": [
-          "__init__",
-          "delete",
-          "get",
-          "get_base_path",
-          "list"
         ]
       },
       "functions": []

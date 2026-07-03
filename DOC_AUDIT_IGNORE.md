@@ -227,8 +227,6 @@ get_chunk: Python datasphere helper — Java uses client.datasphere().documents(
 list_chunks: Python datasphere helper — Java uses client.datasphere().documents()
 list_conference_tokens: Python conference helper — Java uses client.video().conferences().listConferenceTokens
 list_events: Python events helper — not ported (use REST listeners)
-delete_media: Python compat helper — Java uses client.compat().messages().delete
-list_media: Python compat helper — Java uses client.compat().messages().list
 delete_recording: Python recording helper — Java uses recordings().recordings().delete
 get_recording: Python recording helper — Java uses recordings().recordings().get
 list_recordings: Python recording helper — Java uses recordings().recordings().list
@@ -243,13 +241,10 @@ update_participant: Python conference helper — Java uses participants().update
 remove_participant: Python conference helper — Java uses participants().delete
 list_addresses: Python Fabric helper — Java uses fabric().addresses().list
 list_available_countries: Python phone-numbers helper — not ported
-import_number: Python compat number import — not ported
 purchase: Python phone-numbers helper — Java uses phoneNumbers().create(body-with-number)
 verify: Python verified-callers helper — Java uses compliance().cnamRegistrations()
 redial_verification: Python verified-callers helper — not ported
 submit_verification: Python verified-callers helper — not ported
-search_local: Python compat number search — Java uses phoneNumbers().search
-search_toll_free: Python compat number search — Java uses phoneNumbers().search
 sms: Python messaging namespace — Java uses client.messaging().messages()
 phone_number: doc-link reference, not a callable
 end: Python Call.end — Java uses Call#hangup
@@ -259,3 +254,17 @@ end: Python Call.end — Java uses Call#hangup
 from_payload: Python RelayEvent classmethod — Java parses via RelayClient internals
 wait_for: Python Call.wait_for — Java uses polling or Action#waitForCompletion
 wait_for_ended: Python Call.wait_for_ended — Java uses Call#isEnded polling
+
+### Generated-namespace accessors not yet enumerated by the surface tool
+
+Real accessors on the generated ResourceTree / namespace classes
+(client.phoneNumbers(), client.queues(), client.recordings(),
+LogsNamespace.conferences()/VideoNamespace.conferences()) that the current
+enumerator does not surface under their bare accessor name. Pre-existing
+enumerator gap from the REST-generation (changeset A) layout; tracked
+separately. Listed here so legitimate example references resolve.
+
+phoneNumbers: real ResourceTree.phoneNumbers() accessor; enumerator does not surface the bare name
+queues: real ResourceTree.queues() accessor; enumerator does not surface the bare name
+recordings: real ResourceTree.recordings() accessor; enumerator does not surface the bare name
+conferences: real LogsNamespace/VideoNamespace conferences() accessor; enumerator does not surface the bare name

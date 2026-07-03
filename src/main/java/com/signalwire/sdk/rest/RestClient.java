@@ -6,7 +6,6 @@
  */
 package com.signalwire.sdk.rest;
 
-import com.signalwire.sdk.rest.namespaces.CompatNamespace;
 import com.signalwire.sdk.rest.namespaces.generated.ResourceTree;
 import java.util.Objects;
 
@@ -16,8 +15,7 @@ import java.util.Objects;
  * <p>Uses {@code java.net.http.HttpClient} with Basic Auth. Extends the generated {@link
  * ResourceTree} (in {@code com.signalwire.sdk.rest.namespaces.generated}) which supplies every REST
  * resource and namespace-container accessor from the spec markup (§8). The hand client keeps only
- * the non-spec-derivable bits: auth / HTTP construction, the {@link Builder}, and the Twilio-compat
- * ({@code /api/laml}) namespace (not spec-generated).
+ * the non-spec-derivable bits: auth / HTTP construction and the {@link Builder}.
  *
  * <pre>{@code
  * var client = RestClient.builder()
@@ -35,10 +33,6 @@ public class RestClient extends ResourceTree {
   private final String project;
   private final String space;
   private final HttpClient httpClient;
-
-  // Twilio-compat (/api/laml) namespace — NOT spec-generated, so it stays a
-  // hand accessor on the client (kept until the compat-removal pass).
-  private volatile CompatNamespace compatNs;
 
   private RestClient(Builder builder) {
     this.project = builder.project;
@@ -138,16 +132,5 @@ public class RestClient extends ResourceTree {
 
   public HttpClient getHttpClient() {
     return httpClient;
-  }
-
-  // ── Twilio-compat namespace (hand-wired; not spec-generated) ──────
-
-  public CompatNamespace compat() {
-    if (compatNs == null) {
-      synchronized (this) {
-        if (compatNs == null) compatNs = new CompatNamespace(httpClient, project);
-      }
-    }
-    return compatNs;
   }
 }

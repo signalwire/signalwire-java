@@ -27,9 +27,9 @@ import org.junit.jupiter.api.function.Executable;
  * (404/422/500) that must surface as a {@link RestError} carrying the right status code, with the
  * journal recording the same {@code matched_route} and {@code response_status}.
  *
- * <p>Mirrors the idiom of {@code FabricCoverageMockTest} / {@code CompatCoverageMockTest}. Every
- * relay-rest path is asserted against its concrete canonical {@code /api/relay/rest/...} form —
- * notably phone_numbers now lives at {@code /api/relay/rest/phone_numbers} (parity fix 77db8f2).
+ * <p>Mirrors the idiom of {@code FabricCoverageMockTest}. Every relay-rest path is asserted against
+ * its concrete canonical {@code /api/relay/rest/...} form — notably phone_numbers now lives at
+ * {@code /api/relay/rest/phone_numbers} (parity fix 77db8f2).
  *
  * <p>Accepted gaps (NO relay-rest SDK surface — NOT tested here; the matching paths exist only on
  * the fabric side or under a different SIP path):
