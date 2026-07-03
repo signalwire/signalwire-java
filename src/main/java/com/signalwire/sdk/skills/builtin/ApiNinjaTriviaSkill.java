@@ -8,22 +8,33 @@ import java.util.*;
 
 public class ApiNinjaTriviaSkill implements SkillBase {
 
-  private static final List<String> ALL_CATEGORIES =
-      List.of(
-          "artliterature",
-          "language",
-          "sciencenature",
-          "general",
-          "fooddrink",
-          "peopleplaces",
-          "geography",
-          "historyholidays",
-          "entertainment",
-          "toysgames",
-          "music",
-          "mathematics",
-          "religionmythology",
-          "sportsleisure");
+  /**
+   * Python parity: {@code api_ninjas_trivia/skill.py VALID_CATEGORIES} -- ordered category key to
+   * human-readable description. Used both as the valid-category list and to build the {@code
+   * categories} parameter-schema description.
+   */
+  private static final Map<String, String> VALID_CATEGORIES;
+
+  static {
+    Map<String, String> m = new LinkedHashMap<>();
+    m.put("artliterature", "Art and Literature");
+    m.put("language", "Language");
+    m.put("sciencenature", "Science and Nature");
+    m.put("general", "General Knowledge");
+    m.put("fooddrink", "Food and Drink");
+    m.put("peopleplaces", "People and Places");
+    m.put("geography", "Geography");
+    m.put("historyholidays", "History and Holidays");
+    m.put("entertainment", "Entertainment");
+    m.put("toysgames", "Toys and Games");
+    m.put("music", "Music");
+    m.put("mathematics", "Mathematics");
+    m.put("religionmythology", "Religion and Mythology");
+    m.put("sportsleisure", "Sports and Leisure");
+    VALID_CATEGORIES = Collections.unmodifiableMap(m);
+  }
+
+  private static final List<String> ALL_CATEGORIES = List.copyOf(VALID_CATEGORIES.keySet());
 
   private String apiKey;
   private String toolName = "get_trivia";
@@ -76,5 +87,56 @@ public class ApiNinjaTriviaSkill implements SkillBase {
                         + "Answer: ${array[0].answer}, be sure to give the user time to answer before saying the answer."));
 
     return List.of(dm.toSwaigFunction());
+  }
+
+  /**
+   * Python parity: {@code api_ninjas_trivia/skill.py get_instance_key} -- {@code
+   * f"{SKILL_NAME}_{tool_name}"}.
+   */
+  @Override
+  public String getInstanceKey() {
+    return getName() + "_" + toolName;
+  }
+
+  /**
+   * Python parity: {@code api_ninjas_trivia/skill.py get_tools} -- the reference builds the DataMap
+   * tool in {@code get_tools()}. In Java that tool is built in {@link #getSwaigFunctions()}, so
+   * {@code getTools()} returns exactly that list (the DataMap tool list).
+   */
+  public List<Map<String, Object>> getTools() {
+    return getSwaigFunctions();
+  }
+
+  /**
+   * Python parity: {@code api_ninjas_trivia/skill.py get_parameter_schema} -- base schema plus
+   * {@code api_key} (hidden, required, env_var API_NINJAS_KEY) and {@code categories} (array of
+   * category keys; description enumerates VALID_CATEGORIES).
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(true, getName());
+
+    SkillParams.addString(schema, "api_key", "API Ninjas API key", true, true, "API_NINJAS_KEY");
+
+    StringBuilder options = new StringBuilder("List of trivia categories to enable. Available: ");
+    boolean first = true;
+    for (Map.Entry<String, String> e : VALID_CATEGORIES.entrySet()) {
+      if (!first) {
+        options.append(", ");
+      }
+      options.append(e.getKey()).append(" (").append(e.getValue()).append(")");
+      first = false;
+    }
+
+    Map<String, Object> categoriesField = new LinkedHashMap<>();
+    categoriesField.put("type", "array");
+    categoriesField.put("description", options.toString());
+    categoriesField.put("default", new ArrayList<>(VALID_CATEGORIES.keySet()));
+    categoriesField.put("required", false);
+    categoriesField.put(
+        "items", Map.of("type", "string", "enum", new ArrayList<>(VALID_CATEGORIES.keySet())));
+    schema.put("categories", categoriesField);
+
+    return schema;
   }
 }

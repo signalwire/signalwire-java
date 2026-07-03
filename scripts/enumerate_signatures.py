@@ -453,7 +453,8 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
 JAVA_SKILL_RENAMES = {
     "DatasphereSkill": "DataSphereSkill",
     "DatasphereServerlessSkill": "DataSphereServerlessSkill",
-    "McpGatewaySkill": "MCPGatewaySkill",
+    "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
+    "DatetimeSkill": "DateTimeSkill",
     "SwmlTransferSkill": "SWMLTransferSkill",
 }
 
@@ -461,7 +462,12 @@ JAVA_SKILL_RENAMES = {
 # Key: Java fully-qualified package.Class
 JAVA_MODULE_OVERRIDES = {
     "com.signalwire.sdk.swml.Service": "signalwire.core.swml_service",
-    "com.signalwire.sdk.swml.Document": "signalwire.core.swml_builder",
+    # Java's SWML ``Document`` (the doc model) is port-only — the reference
+    # ``swml_builder`` module records ``SWMLBuilder``, not ``Document``. Pin it
+    # to the same port-only home the SURFACE enumerator uses
+    # (signalwire.swml.document) so both gates agree and its methods are
+    # PORT_ADDITIONS, not a spurious swml_builder.Document overlay.
+    "com.signalwire.sdk.swml.Document": "signalwire.swml.document",
     # SchemaUtils.java is the canonical SchemaUtils port (Python parity
     # at signalwire.utils.schema_utils.SchemaUtils); class-name lookup
     # routes it automatically.  The pre-existing Schema.java is a
@@ -512,11 +518,23 @@ JAVA_MODULE_OVERRIDES = {
 FREE_FUNCTION_PROJECTIONS = {
     ("com.signalwire.sdk.utils.UrlValidator", "validateUrl"):
         ("signalwire.utils.url_validator", "validate_url"),
+    # RelayEvent.parseEvent → module-level signalwire.relay.event.parse_event
+    # (Python free function; Java groups it as a static factory on RelayEvent).
+    ("com.signalwire.sdk.relay.RelayEvent", "parseEvent"):
+        ("signalwire.relay.event", "parse_event"),
     # ExecutionMode helpers — Python ships them as free functions in
     # two distinct modules; Java groups both static methods on the
     # ExecutionMode enum for cohesion.
     ("com.signalwire.sdk.runtime.ExecutionMode", "getExecutionMode"):
         ("signalwire.core.logging_config", "get_execution_mode"),
+    # logging_config module-level free functions grouped on Logger's static
+    # helpers (mirrors _FREE_FUNCTION_SURFACE_PROJECTIONS in enumerate_surface.py).
+    ("com.signalwire.sdk.logging.Logger", "configureLogging"):
+        ("signalwire.core.logging_config", "configure_logging"),
+    ("com.signalwire.sdk.logging.Logger", "resetLoggingConfiguration"):
+        ("signalwire.core.logging_config", "reset_logging_configuration"),
+    ("com.signalwire.sdk.logging.Logger", "stripControlChars"):
+        ("signalwire.core.logging_config", "strip_control_chars"),
     ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"):
         ("signalwire.utils", "is_serverless_mode"),
     # Top-level Signalwire class projects each static helper onto the
@@ -532,6 +550,8 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire", "add_skill_directory"),
     ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"):
         ("signalwire", "list_skills_with_params"),
+    ("com.signalwire.sdk.Signalwire", "listSkills"):
+        ("signalwire", "list_skills"),
     # WebhookValidator static methods → Python module-level free functions
     # in signalwire.core.security.webhook_validator. Java collapses both
     # entry points onto a static-only utility class for namespacing; the
@@ -558,19 +578,20 @@ FREE_FUNCTION_PROJECTIONS = {
 MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
         "add_function_include", "add_hint", "add_hints", "add_internal_filler",
-        "add_language", "add_pattern_hint", "add_pronunciation",
-        "enable_debug_events", "get_language_params", "set_function_includes",
-        "set_global_data", "set_internal_fillers", "set_language_params",
-        "set_languages", "set_native_functions",
-        "set_param", "set_params", "set_post_prompt_llm_params",
-        "set_prompt_llm_params", "set_pronunciations", "update_global_data",
+        "add_language", "add_mcp_server", "add_pattern_hint", "add_pronunciation",
+        "enable_debug_events", "enable_mcp_server", "get_language_params",
+        "set_function_includes", "set_global_data", "set_internal_fillers",
+        "set_language_params", "set_languages", "set_multilingual",
+        "set_native_functions", "set_param", "set_params",
+        "set_post_prompt_llm_params", "set_prompt_llm_params",
+        "set_pronunciations", "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
-        "define_contexts", "get_post_prompt", "get_prompt",
+        "contexts", "define_contexts", "get_post_prompt", "get_prompt",
         "prompt_add_section",
         "prompt_add_subsection", "prompt_add_to_section",
         "prompt_has_section", "reset_contexts", "set_post_prompt",
-        "set_prompt_text",
+        "set_prompt_pom", "set_prompt_text",
     ],
     # Python additionally extracted a ``PromptManager`` class that
     # PromptMixin delegates to. The user-facing surface is identical
@@ -588,7 +609,8 @@ MIXIN_PROJECTIONS = {
         "add_skill", "has_skill", "list_skills", "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "on_function_call", "register_swaig_function",
+        "define_tool", "define_tools", "on_function_call",
+        "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
         "define_tool", "register_swaig_function",
@@ -599,15 +621,34 @@ MIXIN_PROJECTIONS = {
         "validate_basic_auth", "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
-        "set_dynamic_config_callback", "on_request", "on_swml_request",
-    ],
-    ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
-        "add_mcp_server",
+        "as_router", "enable_debug_routes", "get_app", "manual_set_proxy_url",
+        "on_request", "on_swml_request", "register_routing_callback", "run",
+        "serve", "set_dynamic_config_callback", "setup_graceful_shutdown",
     ],
     ("signalwire.core.mixins.state_mixin", "StateMixin"): [
         "validate_tool_token",
     ],
+}
+
+
+# Idiom-scaffolding Java simple names to DROP (mirrors enumerate_surface.py's
+# _SURFACE_EXCLUDED_CLASSES; here keyed by the bare simple name SignatureDump
+# emits for the nested/helper type). All are port-only value/builder types with
+# no reference counterpart.
+_SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
+    "RenderOptions",            # SwmlRenderer options-builder
+    "SWAIGFunctionBuilder",     # SWAIGFunction options-builder
+    "ValidationResult",         # (valid, errors) tuple record (swml/swaig/security)
+    "AuthException",            # AuthHandler nested exception
+    "AuthResult",               # AuthHandler nested result
+    "BasicCredentials",         # AuthHandler nested credential type
+    "BearerCredentials",        # AuthHandler nested credential type
+    "RequestHandler",           # AuthHandler framework-neutral middleware wrapper
+    "Response",                 # AuthHandler nested response value
+    "LoggingLevel",             # logging enum helper (Logger.Level is the surface)
+    "SkillParams",              # package-private skill base-schema helper
+    "SWAIGFunctionHandler",     # @FunctionalInterface handler
+    "ToolRegistryTool",         # ToolRegistry nested tool value
 }
 
 
@@ -622,6 +663,23 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         if not java_name:
             continue
         if type_entry.get("kind") in ("annotation",):
+            continue
+
+        # Idiom-scaffolding types (mirror enumerate_surface.py's
+        # _SURFACE_EXCLUDED_CLASSES). These are the Java expression of a Python
+        # kwargs bundle / return tuple / value object — a static-typing
+        # NECESSITY, not reference surface: options-builders (the NAMED-param
+        # idiom for many-optional-arg methods), validation-RESULT records
+        # (Python returns a ``(bool, list)`` tuple), credential/exception/
+        # response value types nested inside AuthHandler, the SWAIGFunction
+        # builder, the LoggingLevel enum, and the private SkillParams helper.
+        # The reference has no counterpart, so drop them on BOTH sides rather
+        # than launder them as PORT_ADDITIONS (keeps the surface + signature
+        # additions sets consistent). Guarded to hand packages only so a
+        # generated DTO that happens to share a name is never dropped.
+        if java_name in _SIG_EXCLUDED_SIMPLE_NAMES and not (
+            pkg == _GENERATED_PKG or _gen_type_module(pkg) is not None
+        ):
             continue
 
         # Generated-REST scaffolding drop (mirror enumerate_surface.py §8).

@@ -7,6 +7,25 @@ import java.util.*;
 
 public class MathSkill implements SkillBase {
 
+  /**
+   * Python parity: {@code MathSkill.get_hints} returns {@code []} (the reference documents optional
+   * example hints in a comment but ships none). Declared explicitly so the cross-language audit
+   * sees it on this class.
+   */
+  @Override
+  public List<String> getHints() {
+    return Collections.emptyList();
+  }
+
+  /**
+   * Python parity: {@code MathSkill.get_parameter_schema} has no custom parameters and returns the
+   * base schema ({@code super().get_parameter_schema()}).
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    return SkillParams.base(supportsMultipleInstances(), getName());
+  }
+
   @Override
   public String getName() {
     return "math";

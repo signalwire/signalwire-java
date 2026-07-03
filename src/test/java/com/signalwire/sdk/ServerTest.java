@@ -143,4 +143,110 @@ class ServerTest {
     assertTrue(routes.contains("/support"));
     assertTrue(routes.contains("/billing"));
   }
+
+  // ======== getAgents ========
+
+  @Test
+  void testGetAgentsReturnsRegisteredAgents() {
+    server = new AgentServer(0);
+    AgentBase a1 = AgentBase.builder().name("a1").authUser("u").authPassword("p").build();
+    AgentBase a2 = AgentBase.builder().name("a2").authUser("u").authPassword("p").build();
+    server.register(a1, "/sales");
+    server.register(a2, "/support");
+
+    List<Map.Entry<String, AgentBase>> entries = server.getAgents();
+    assertEquals(2, entries.size());
+
+    Map<String, AgentBase> byRoute = new HashMap<>();
+    for (Map.Entry<String, AgentBase> e : entries) {
+      byRoute.put(e.getKey(), e.getValue());
+    }
+    assertSame(a1, byRoute.get("/sales"));
+    assertSame(a2, byRoute.get("/support"));
+  }
+
+  @Test
+  void testGetAgentsEmptyWhenNoneRegistered() {
+    server = new AgentServer(0);
+    assertTrue(server.getAgents().isEmpty());
+  }
+
+  // ======== setupSipRouting + registerSipUsername ========
+
+  @Test
+  void testRegisterSipUsernameRequiresSetup() {
+    server = new AgentServer(0);
+    AgentBase agent = AgentBase.builder().name("sup").authUser("u").authPassword("p").build();
+    server.register(agent, "/support");
+
+    // Without setupSipRouting, register_sip_username is a no-op (mirrors Python's warning path).
+    server.registerSipUsername("alice", "/support");
+    assertNull(server.getSipRoute("alice"));
+
+    server.setupSipRouting("/sip", false);
+    server.registerSipUsername("alice", "/support");
+    assertEquals("/support", server.getSipRoute("alice"));
+  }
+
+  @Test
+  void testRegisterSipUsernameIsCaseInsensitive() {
+    server = new AgentServer(0);
+    AgentBase agent = AgentBase.builder().name("sup").authUser("u").authPassword("p").build();
+    server.register(agent, "/support");
+    server.setupSipRouting("/sip", false);
+
+    server.registerSipUsername("Alice", "/support");
+    // Resolution lowercases the username.
+    assertEquals("/support", server.getSipRoute("alice"));
+  }
+
+  @Test
+  void testSetupSipRoutingAutoMapsAgentNameAndRoute() {
+    server = new AgentServer(0);
+    AgentBase agent = AgentBase.builder().name("support").authUser("u").authPassword("p").build();
+    server.register(agent, "/help");
+
+    server.setupSipRouting("/sip", true);
+    // Auto-maps by cleaned agent name...
+    assertEquals("/help", server.getSipRoute("support"));
+    // ...and by the last route segment.
+    assertEquals("/help", server.getSipRoute("help"));
+  }
+
+  @Test
+  void testSetupSipRoutingAutoMapsAgentRegisteredAfterSetup() {
+    server = new AgentServer(0);
+    server.setupSipRouting("/sip", true);
+
+    AgentBase agent = AgentBase.builder().name("billing").authUser("u").authPassword("p").build();
+    server.register(agent, "/billing");
+    // Registering after setup still auto-maps (mirrors Python's register() SIP wiring).
+    assertEquals("/billing", server.getSipRoute("billing"));
+  }
+
+  @Test
+  void testSetupSipRoutingIdempotent() {
+    server = new AgentServer(0);
+    AgentBase agent = AgentBase.builder().name("a").authUser("u").authPassword("p").build();
+    server.register(agent, "/a");
+    server.setupSipRouting("/sip", true);
+    // A second call is a warn-and-return no-op; nothing throws.
+    server.setupSipRouting("/sip", true);
+    assertEquals("/a", server.getSipRoute("a"));
+  }
+
+  // ======== registerGlobalRoutingCallback ========
+
+  @Test
+  void testRegisterGlobalRoutingCallbackAppliesToAllAgents() {
+    server = new AgentServer(0);
+    AgentBase a1 = AgentBase.builder().name("a1").authUser("u").authPassword("p").build();
+    AgentBase a2 = AgentBase.builder().name("a2").authUser("u").authPassword("p").build();
+    server.register(a1, "/a1");
+    server.register(a2, "/a2");
+
+    // The callback should be installed on every registered agent's routing slot.
+    server.registerGlobalRoutingCallback((path, body) -> "/a2", "/route");
+    assertSame(server, server.registerGlobalRoutingCallback((path, body) -> null, "/route2"));
+  }
 }

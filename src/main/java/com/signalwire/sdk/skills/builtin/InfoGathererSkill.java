@@ -157,4 +157,67 @@ public class InfoGathererSkill implements SkillBase {
         namespace,
         Map.of("questions", questions, "question_index", 0, "answers", new ArrayList<>()));
   }
+
+  /**
+   * Python parity: {@code info_gatherer/skill.py get_instance_key} -- {@code prefix =
+   * params.get("prefix"); return f"info_gatherer_{prefix}" if prefix else "info_gatherer"}.
+   */
+  @Override
+  public String getInstanceKey() {
+    if (prefix != null && !prefix.isEmpty()) {
+      return getName() + "_" + prefix;
+    }
+    return getName();
+  }
+
+  /**
+   * Python parity: {@code info_gatherer/skill.py get_parameter_schema} -- base schema plus {@code
+   * questions}, {@code prefix}, {@code completion_message}.
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(true, getName());
+
+    Map<String, Object> questionItems = new LinkedHashMap<>();
+    questionItems.put("type", "object");
+    questionItems.put(
+        "properties",
+        Map.of(
+            "key_name", Map.of("type", "string"),
+            "question_text", Map.of("type", "string"),
+            "confirm", Map.of("type", "boolean"),
+            "prompt_add", Map.of("type", "string")));
+
+    Map<String, Object> questionsField = new LinkedHashMap<>();
+    questionsField.put("type", "array");
+    questionsField.put(
+        "description",
+        "List of question objects. Each must have 'key_name' (str) and 'question_text' (str)."
+            + " Optional 'confirm' (bool) asks the agent to confirm the answer before proceeding.");
+    questionsField.put("required", true);
+    questionsField.put("items", questionItems);
+    schema.put("questions", questionsField);
+
+    Map<String, Object> prefixField = new LinkedHashMap<>();
+    prefixField.put("type", "string");
+    prefixField.put(
+        "description",
+        "Optional prefix for tool names and namespace. When set, tools are named"
+            + " <prefix>_start_questions / <prefix>_submit_answer and state is stored under"
+            + " 'skill:<prefix>' in global_data.");
+    prefixField.put("required", false);
+    schema.put("prefix", prefixField);
+
+    Map<String, Object> completionField = new LinkedHashMap<>();
+    completionField.put("type", "string");
+    completionField.put("description", "Message returned after all questions are answered");
+    completionField.put(
+        "default",
+        "Thank you! All questions have been answered. You can now summarize the information"
+            + " collected or ask if there's anything else the user would like to discuss.");
+    completionField.put("required", false);
+    schema.put("completion_message", completionField);
+
+    return schema;
+  }
 }

@@ -29,6 +29,10 @@
           ],
           "returns": "void"
         },
+        "list_skills": {
+          "params": [],
+          "returns": "list<dict<string,any>>"
+        },
         "list_skills_with_params": {
           "params": [],
           "returns": "dict<string,dict<string,any>>"
@@ -359,6 +363,15 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "get_agents": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<tuple<string,class:signalwire.core.agent_base.AgentBase>>"
+            },
             "get_routes": {
               "params": [
                 {
@@ -405,7 +418,45 @@
               ],
               "returns": "class:signalwire.agent_server.AgentServer"
             },
+            "register_global_routing_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "callback",
+                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "required": true
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agent_server.AgentServer"
+            },
             "register_sip_route": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "username",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "route",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agent_server.AgentServer"
+            },
+            "register_sip_username": {
               "params": [
                 {
                   "name": "self",
@@ -466,6 +517,15 @@
               ],
               "returns": "class:signalwire.agent_server.AgentServer"
             },
+            "setup_sip_routing": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.agent_server.AgentServer"
+            },
             "stop": {
               "params": [
                 {
@@ -488,6 +548,176 @@
                 }
               ],
               "returns": "class:signalwire.agent_server.AgentServer"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.agents.bedrock": {
+      "classes": {
+        "BedrockAgent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "get_max_tokens": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_temperature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "float"
+            },
+            "get_top_p": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "float"
+            },
+            "get_voice_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "render_swml": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "base_url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "set_inference_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "temperature",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "top_p",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "max_tokens",
+                  "type": "int",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "set_llm_model": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "model",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "set_llm_temperature": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "temperature",
+                  "type": "float",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "set_post_prompt_llm_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "set_prompt_llm_params": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "set_voice": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "voice_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.agents.bedrock.BedrockAgent"
+            },
+            "to_string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             }
           }
         }
@@ -643,6 +873,15 @@
       "classes": {
         "PromptManager": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "define_contexts": {
               "params": [
                 {
@@ -687,6 +926,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "pom": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.pom.pom.PromptObjectModel"
             },
             "prompt_add_section": {
               "params": [
@@ -814,6 +1062,15 @@
       "classes": {
         "ToolRegistry": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "define_tool": {
               "params": [
                 {
@@ -828,33 +1085,14 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
-            "register_swaig_function": {
+            "get_all_functions": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
-                },
-                {
-                  "name": "swaig_func",
-                  "type": "dict<string,any>",
-                  "required": true
                 }
               ],
-              "returns": "class:signalwire.core.agent_base.AgentBase"
-            },
-            "has_function": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
+              "returns": "dict<string,class:signalwire.swaig.ToolDefinition>"
             },
             "get_function": {
               "params": [
@@ -870,14 +1108,42 @@
               ],
               "returns": "class:signalwire.swaig.ToolDefinition"
             },
-            "get_all_functions": {
+            "has_function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "register_class_decorated_tools": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 }
               ],
-              "returns": "dict<string,class:signalwire.swaig.ToolDefinition>"
+              "returns": "void"
+            },
+            "register_swaig_function": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "swaig_func",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
             },
             "remove_function": {
               "params": [
@@ -1049,15 +1315,6 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
-            "contexts": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "class:signalwire.core.contexts.ContextBuilder"
-            },
             "create_tool_token": {
               "params": [
                 {
@@ -1077,20 +1334,6 @@
               ],
               "returns": "string"
             },
-            "define_tools": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "tool_defs",
-                  "type": "list<class:signalwire.swaig.ToolDefinition>",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.agent_base.AgentBase"
-            },
             "detect_serverless_base_url": {
               "params": [
                 {
@@ -1099,15 +1342,6 @@
                 }
               ],
               "returns": "string"
-            },
-            "enable_mcp_server": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "class:signalwire.core.agent_base.AgentBase"
             },
             "enable_sip_routing": {
               "params": [
@@ -1457,6 +1691,216 @@
                 }
               ],
               "returns": "bool"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.auth_handler": {
+      "classes": {
+        "AuthHandler": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "security_config",
+                  "type": "class:signalwire.core.security_config.SecurityConfig",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "flask_decorator": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "app",
+                  "type": "class:signalwire.core.auth_handler.AuthHandler",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.auth_handler.AuthHandler"
+            },
+            "get_auth_info": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_fastapi_dependency": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "callable<list<dict<string,string>>,class:signalwire.core.auth_handler.AuthHandler>"
+            },
+            "get_security_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.security_config.SecurityConfig"
+            },
+            "verify_api_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "api_key",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "verify_basic_auth": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "credentials",
+                  "type": "class:signalwire.core.auth_handler.AuthHandler",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "verify_bearer_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "credentials",
+                  "type": "class:signalwire.core.auth_handler.AuthHandler",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.config_loader": {
+      "classes": {
+        "ConfigLoader": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "find_config_file": {
+              "params": [
+                {
+                  "name": "service_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "get": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "key_path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "get_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_config_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "section",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "has_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "merge_with_env": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "substitute_vars": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "value",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "any"
             }
           }
         }
@@ -3678,8 +4122,26 @@
         }
       },
       "functions": {
+        "configure_logging": {
+          "params": [],
+          "returns": "void"
+        },
         "get_execution_mode": {
           "params": [],
+          "returns": "string"
+        },
+        "reset_logging_configuration": {
+          "params": [],
+          "returns": "void"
+        },
+        "strip_control_chars": {
+          "params": [
+            {
+              "name": "value",
+              "type": "string",
+              "required": true
+            }
+          ],
           "returns": "string"
         }
       }
@@ -3778,6 +4240,20 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "add_mcp_server": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
             "add_pattern_hint": {
               "params": [
                 {
@@ -3817,6 +4293,15 @@
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
             "enable_debug_events": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "enable_mcp_server": {
               "params": [
                 {
                   "name": "self",
@@ -3909,6 +4394,20 @@
                 {
                   "name": "langs",
                   "type": "list<dict<string,any>>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "set_multilingual": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "config",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
@@ -4057,32 +4556,19 @@
         }
       }
     },
-    "signalwire.core.mixins.mcp_server_mixin": {
-      "classes": {
-        "MCPServerMixin": {
-          "methods": {
-            "add_mcp_server": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "url",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.agent_base.AgentBase"
-            }
-          }
-        }
-      }
-    },
     "signalwire.core.mixins.prompt_mixin": {
       "classes": {
         "PromptMixin": {
           "methods": {
+            "contexts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.contexts.ContextBuilder"
+            },
             "define_contexts": {
               "params": [
                 {
@@ -4204,6 +4690,20 @@
                 {
                   "name": "text",
                   "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "set_prompt_pom": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "pom",
+                  "type": "list<dict<string,any>>",
                   "required": true
                 }
               ],
@@ -4341,6 +4841,20 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "define_tools": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "tool_defs",
+                  "type": "list<class:signalwire.swaig.ToolDefinition>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
             "on_function_call": {
               "params": [
                 {
@@ -4387,6 +4901,15 @@
       "classes": {
         "WebMixin": {
           "methods": {
+            "as_router": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
             "enable_debug_routes": {
               "params": [
                 {
@@ -4395,6 +4918,15 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "get_app": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "any"
             },
             "manual_set_proxy_url": {
               "params": [
@@ -4405,38 +4937,6 @@
                 {
                   "name": "url",
                   "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.agent_base.AgentBase"
-            },
-            "run": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "void"
-            },
-            "serve": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "void"
-            },
-            "set_dynamic_config_callback": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "callback",
-                  "type": "class:signalwire.core.agent_base.AgentBase",
                   "required": true
                 }
               ],
@@ -4479,6 +4979,228 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "register_routing_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "callback",
+                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "run": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "serve": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "set_dynamic_config_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "callback",
+                  "type": "class:signalwire.core.agent_base.AgentBase",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "setup_graceful_shutdown": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.pom_builder": {
+      "classes": {
+        "PomBuilder": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "add_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.pom_builder.PomBuilder"
+            },
+            "add_subsection": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "parent_title",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.pom_builder.PomBuilder"
+            },
+            "add_to_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "bullet",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "bullets",
+                  "type": "list<string>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.pom_builder.PomBuilder"
+            },
+            "from_sections": {
+              "params": [
+                {
+                  "name": "sections",
+                  "type": "list<dict<string,any>>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.pom_builder.PomBuilder"
+            },
+            "get_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_verbs_generated.Section"
+            },
+            "has_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "title",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "pom": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.pom.pom.PromptObjectModel"
+            },
+            "render_markdown": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "render_xml": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "to_dict": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "to_json": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             }
           }
         }
@@ -5977,6 +6699,29 @@
               ],
               "returns": "void"
             },
+            "activate_session": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "create_session": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "create_token": {
               "params": [
                 {
@@ -5996,6 +6741,124 @@
               ],
               "returns": "string"
             },
+            "create_tool_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "function_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "debug_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "token",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "end_session": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "generate_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "function_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "get_session_metadata": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "set_debug_mode": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "debug_mode",
+                  "type": "bool",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "set_session_metadata": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "key",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "value",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
             "validate_token": {
               "params": [
                 {
@@ -6009,6 +6872,30 @@
                 },
                 {
                   "name": "function_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "call_id",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "validate_tool_token": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "function_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "token",
                   "type": "string",
                   "required": true
                 },
@@ -6078,6 +6965,240 @@
         }
       }
     },
+    "signalwire.core.security_config": {
+      "classes": {
+        "SecurityConfig": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "get_allowed_hosts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_basic_auth": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_basic_auth_password": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_basic_auth_user": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_cors_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_cors_origins": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_domain": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_hsts_max_age": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_max_request_size": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_rate_limit": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_request_timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_security_headers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,string>"
+            },
+            "get_ssl_cert_path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_ssl_context_kwargs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_ssl_key_path": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_ssl_verify_mode": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_url_scheme": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "is_ssl_enabled": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "is_use_hsts": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "load_from_env": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "log_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "service_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "should_allow_host": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "host",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "validate_ssl_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.security_config.SecurityConfig"
+            }
+          }
+        }
+      }
+    },
     "signalwire.core.skill_base": {
       "classes": {
         "SkillBase": {
@@ -6090,6 +7211,35 @@
                 }
               ],
               "returns": "void"
+            },
+            "define_tool": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "parameters",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "handler",
+                  "type": "class:signalwire.swaig.ToolHandler",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ToolDefinition"
             },
             "get_description": {
               "params": [
@@ -6181,6 +7331,20 @@
               ],
               "returns": "list<string>"
             },
+            "get_skill_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_swaig_functions": {
               "params": [
                 {
@@ -6223,6 +7387,43 @@
               "returns": "bool"
             },
             "supports_multiple_instances": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "update_skill_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "result",
+                  "type": "class:signalwire.core.function_result.FunctionResult",
+                  "required": true
+                },
+                {
+                  "name": "data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
+            "validate_env_vars": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "validate_packages": {
               "params": [
                 {
                   "name": "self",
@@ -6281,6 +7482,20 @@
               ],
               "returns": "void"
             },
+            "get_skill": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_identifier",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.skill_base.SkillBase"
+            },
             "has_skill": {
               "params": [
                 {
@@ -6295,6 +7510,15 @@
               ],
               "returns": "bool"
             },
+            "list_loaded_skills": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
             "list_skills": {
               "params": [
                 {
@@ -6303,6 +7527,34 @@
                 }
               ],
               "returns": "list<string>"
+            },
+            "load_skill": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "loaded_skills": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,class:signalwire.core.skill_base.SkillBase>"
             },
             "remove_skill": {
               "params": [
@@ -6317,6 +7569,20 @@
                 }
               ],
               "returns": "void"
+            },
+            "unload_skill": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_identifier",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
             }
           }
         }
@@ -6436,6 +7702,201 @@
                 }
               ],
               "returns": "any"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.swaig_function": {
+      "classes": {
+        "SWAIGFunction": {
+          "methods": {
+            "builder": {
+              "params": [],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "call": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "execute": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_extra_swaig_fields": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "get_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_required": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_wait_file_loops": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_webhook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "is_external": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "is_secure": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "is_typed_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
+            "to_swaig": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "base_url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "validate_args": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             }
           }
         }
@@ -6725,13 +8186,18 @@
     },
     "signalwire.core.swml_builder": {
       "classes": {
-        "Document": {
+        "SWMLBuilder": {
           "methods": {
             "__init__": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "service",
+                  "type": "class:signalwire.core.swml_service.SWMLService",
+                  "required": true
                 }
               ],
               "returns": "void"
@@ -6743,103 +8209,78 @@
                   "kind": "self"
                 },
                 {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "list<dict<string,any>>"
-            },
-            "add_verb": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "verb_name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "verb_data",
-                  "type": "any",
-                  "required": true
-                }
-              ],
-              "returns": "void"
-            },
-            "add_verb_to_section": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
                   "name": "section_name",
                   "type": "string",
                   "required": true
-                },
-                {
-                  "name": "verb_name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "verb_data",
-                  "type": "any",
-                  "required": true
                 }
               ],
-              "returns": "void"
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
             },
-            "get_section_verbs": {
+            "ai": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 },
                 {
-                  "name": "name",
-                  "type": "string",
+                  "name": "config",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
-              "returns": "list<dict<string,any>>"
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
             },
-            "get_verbs": {
+            "answer": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 }
               ],
-              "returns": "list<dict<string,any>>"
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
             },
-            "has_section": {
+            "build": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_service": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "hangup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+            },
+            "play": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 },
                 {
-                  "name": "name",
-                  "type": "string",
+                  "name": "config",
+                  "type": "dict<string,any>",
                   "required": true
                 }
               ],
-              "returns": "bool"
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
             },
             "render": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
-            },
-            "render_pretty": {
               "params": [
                 {
                   "name": "self",
@@ -6855,16 +8296,246 @@
                   "kind": "self"
                 }
               ],
-              "returns": "void"
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
             },
-            "to_dict": {
+            "say": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+            },
+            "sleep_verb": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "milliseconds",
+                  "type": "int",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+            },
+            "verb": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "config",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.swml_handler": {
+      "classes": {
+        "AIVerbHandler": {
+          "methods": {
+            "__init__": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 }
               ],
+              "returns": "void"
+            },
+            "build_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "kwargs",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
               "returns": "dict<string,any>"
+            },
+            "get_verb_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "validate_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "config",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_handler.SWMLVerbHandler"
+            }
+          }
+        },
+        "SWMLVerbHandler": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "build_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "kwargs",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_verb_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "validate_config": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "config",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_handler.SWMLVerbHandler"
+            }
+          }
+        },
+        "VerbHandlerRegistry": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "get_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_handler.SWMLVerbHandler"
+            },
+            "has_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "register_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "class:signalwire.core.swml_handler.SWMLVerbHandler",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.core.swml_renderer": {
+      "classes": {
+        "SwmlRenderer": {
+          "methods": {
+            "render_function_response_swml": {
+              "params": [
+                {
+                  "name": "response_text",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "service",
+                  "type": "class:signalwire.core.swml_service.SWMLService",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "render_swml": {
+              "params": [
+                {
+                  "name": "opts",
+                  "type": "class:signalwire.core.swml_renderer.SwmlRenderer",
+                  "required": true
+                }
+              ],
+              "returns": "string"
             }
           }
         }
@@ -6888,6 +8559,63 @@
               ],
               "returns": "void"
             },
+            "add_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "section_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "add_verb": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "add_verb_to_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "section_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
             "ai": {
               "params": [
                 {
@@ -6900,7 +8628,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "amazon_bedrock": {
               "params": [
@@ -6914,7 +8642,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "answer": {
               "params": [
@@ -6928,7 +8656,16 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "as_router": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "close": {
               "params": [
@@ -6951,7 +8688,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "connect": {
               "params": [
@@ -6965,7 +8702,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "define_tool": {
               "params": [
@@ -6979,7 +8716,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "define_tools": {
               "params": [
@@ -6993,7 +8730,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "denoise": {
               "params": [
@@ -7007,7 +8744,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "detect_machine": {
               "params": [
@@ -7021,7 +8758,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "enter_queue": {
               "params": [
@@ -7035,7 +8772,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "execute": {
               "params": [
@@ -7049,7 +8786,26 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "extract_sip_username": {
+              "params": [
+                {
+                  "name": "request_body",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "full_validation_enabled": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
             },
             "get_all_functions": {
               "params": [
@@ -7149,7 +8905,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "hangup": {
               "params": [
@@ -7158,7 +8914,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "has_function": {
               "params": [
@@ -7186,7 +8942,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "join_room": {
               "params": [
@@ -7200,7 +8956,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "label": {
               "params": [
@@ -7214,7 +8970,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "list_tool_names": {
               "params": [
@@ -7237,7 +8993,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "live_translate": {
               "params": [
@@ -7251,7 +9007,21 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "manual_set_proxy_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "proxy_url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "on_function_call": {
               "params": [
@@ -7327,7 +9097,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "play": {
               "params": [
@@ -7341,7 +9111,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "prompt": {
               "params": [
@@ -7355,7 +9125,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "receive_fax": {
               "params": [
@@ -7369,7 +9139,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "record": {
               "params": [
@@ -7383,7 +9153,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "record_call": {
               "params": [
@@ -7397,7 +9167,21 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "register_routing_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "callback",
+                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "register_swaig_function": {
               "params": [
@@ -7411,7 +9195,21 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "register_verb_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "class:signalwire.core.swml_handler.SWMLVerbHandler",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "remove_function": {
               "params": [
@@ -7427,6 +9225,15 @@
               ],
               "returns": "bool"
             },
+            "render_document": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "request": {
               "params": [
                 {
@@ -7439,7 +9246,16 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "reset_document": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "return_verb": {
               "params": [
@@ -7453,7 +9269,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "schema_utils": {
               "params": [
@@ -7476,7 +9292,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "send_fax": {
               "params": [
@@ -7490,7 +9306,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "send_sms": {
               "params": [
@@ -7504,7 +9320,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "serve": {
               "params": [
@@ -7527,7 +9343,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "sip_refer": {
               "params": [
@@ -7541,7 +9357,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "sleep": {
               "params": [
@@ -7555,7 +9371,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "stop": {
               "params": [
@@ -7578,7 +9394,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "stop_record_call": {
               "params": [
@@ -7592,7 +9408,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "stop_tap": {
               "params": [
@@ -7606,7 +9422,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "switch_verb": {
               "params": [
@@ -7620,7 +9436,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "tap": {
               "params": [
@@ -7634,7 +9450,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "transfer": {
               "params": [
@@ -7648,7 +9464,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "unset": {
               "params": [
@@ -7662,7 +9478,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "user_event": {
               "params": [
@@ -7676,7 +9492,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swml.Service"
+              "returns": "class:signalwire.core.swml_service.SWMLService"
             },
             "validate_basic_auth": {
               "params": [
@@ -7696,6 +9512,15 @@
                 }
               ],
               "returns": "bool"
+            },
+            "verb_registry": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.swml_handler.VerbHandlerRegistry"
             }
           }
         }
@@ -15387,6 +17212,25 @@
               ],
               "returns": "dict<string,any>"
             },
+            "check_availability": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
             "get_agent": {
               "params": [
                 {
@@ -15395,6 +17239,48 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "get_directions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
+            "get_summary_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "callable<list<dict<string,any>,dict<string,any>>,void>"
+            },
+            "on_summary": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,void>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.prefabs.concierge.ConciergeAgent"
             },
             "run": {
               "params": [
@@ -15461,6 +17347,31 @@
               ],
               "returns": "dict<string,any>"
             },
+            "faq_with_categories": {
+              "params": [
+                {
+                  "name": "question",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "answer",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "keywords",
+                  "type": "list<string>",
+                  "required": true
+                },
+                {
+                  "name": "categories",
+                  "type": "list<string>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_agent": {
               "params": [
                 {
@@ -15470,6 +17381,29 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "get_summary_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "callable<list<dict<string,any>,dict<string,any>>,void>"
+            },
+            "on_summary": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,void>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.prefabs.faq_bot.FAQBotAgent"
+            },
             "run": {
               "params": [
                 {
@@ -15478,6 +17412,25 @@
                 }
               ],
               "returns": "void"
+            },
+            "search_faqs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
             },
             "serve": {
               "params": [
@@ -15524,6 +17477,30 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "on_swml_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "query_params",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "question": {
               "params": [
                 {
@@ -15556,6 +17533,90 @@
                 }
               ],
               "returns": "void"
+            },
+            "set_question_callback": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "callback",
+                  "type": "class:signalwire.prefabs.info_gatherer.InfoGathererAgent",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.prefabs.info_gatherer.InfoGathererAgent"
+            },
+            "start_questions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
+            "submit_answer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.prefabs.question_callback": {
+      "classes": {
+        "QuestionCallback": {
+          "methods": {
+            "apply": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "query_params",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "body_params",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "list<dict<string,any>>"
             }
           }
         }
@@ -15597,6 +17658,29 @@
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
+            },
+            "get_summary_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "callable<list<dict<string,any>,dict<string,any>>,void>"
+            },
+            "on_summary": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,void>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.prefabs.receptionist.ReceptionistAgent"
             },
             "phone_department": {
               "params": [
@@ -15682,6 +17766,64 @@
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
             },
+            "get_summary_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "callable<list<dict<string,any>,dict<string,any>>,void>"
+            },
+            "id_question": {
+              "params": [
+                {
+                  "name": "id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "scale",
+                  "type": "int",
+                  "required": true
+                },
+                {
+                  "name": "options",
+                  "type": "list<string>",
+                  "required": true
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "log_response": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
+            },
             "multiple_choice_question": {
               "params": [
                 {
@@ -15696,6 +17838,20 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "on_summary": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "callable<list<dict<string,any>,dict<string,any>>,void>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.prefabs.survey.SurveyAgent"
             },
             "open_ended_question": {
               "params": [
@@ -15744,6 +17900,25 @@
                 }
               ],
               "returns": "void"
+            },
+            "validate_response": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "args",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "raw_data",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.function_result.FunctionResult"
             },
             "yes_no_question": {
               "params": [
@@ -16987,6 +19162,56 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "wait_for": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "target_state",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "wait_for_answered": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "wait_for_ended": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "wait_for_ending": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "wait_for_ringing": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             }
           }
         },
@@ -17340,6 +19565,15 @@
                   "name": "call",
                   "type": "class:signalwire.relay.call.Call",
                   "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "start_input_timers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 }
               ],
               "returns": "void"
@@ -18019,6 +20253,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18092,6 +20336,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18157,6 +20411,71 @@
             }
           }
         },
+        "CallingErrorEvent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "event_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "timestamp",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "get_call_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_message": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        },
         "CollectEvent": {
           "methods": {
             "__init__": {
@@ -18182,6 +20501,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_call_id": {
               "params": [
@@ -18247,6 +20576,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18293,6 +20632,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18310,6 +20659,62 @@
                 }
               ],
               "returns": "string"
+            }
+          }
+        },
+        "DenoiseEvent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "event_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "timestamp",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "get_call_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "is_denoised": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
             }
           }
         },
@@ -18338,6 +20743,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_call_id": {
               "params": [
@@ -18403,6 +20818,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18459,6 +20884,62 @@
             }
           }
         },
+        "EchoEvent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "event_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "timestamp",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "get_call_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        },
         "FaxEvent": {
           "methods": {
             "__init__": {
@@ -18485,6 +20966,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18495,6 +20986,62 @@
               "returns": "string"
             },
             "get_control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_state": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        },
+        "HoldEvent": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "event_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "timestamp",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
+            "get_call_id": {
               "params": [
                 {
                   "name": "self",
@@ -18539,6 +21086,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_body": {
               "params": [
@@ -18657,6 +21214,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_body": {
               "params": [
@@ -18785,6 +21352,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18839,6 +21416,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_call_id": {
               "params": [
@@ -18895,6 +21482,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -18940,6 +21537,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_call_id": {
               "params": [
@@ -19023,6 +21630,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -19068,6 +21685,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "from_raw_params": {
               "params": [
@@ -19157,6 +21784,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -19202,6 +21839,16 @@
                 }
               ],
               "returns": "void"
+            },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "get_call_id": {
               "params": [
@@ -19258,6 +21905,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -19313,6 +21970,16 @@
               ],
               "returns": "void"
             },
+            "from_payload": {
+              "params": [
+                {
+                  "name": "payload",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "get_call_id": {
               "params": [
                 {
@@ -19341,6 +22008,18 @@
               "returns": "string"
             }
           }
+        }
+      },
+      "functions": {
+        "parse_event": {
+          "params": [
+            {
+              "name": "payload",
+              "type": "dict<string,any>",
+              "required": true
+            }
+          ],
+          "returns": "class:signalwire.relay.event.RelayEvent"
         }
       }
     },
@@ -19511,6 +22190,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "result": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "set_body": {
               "params": [
@@ -69267,9 +71955,9 @@
         }
       }
     },
-    "signalwire.skills.builtin.api_ninja_trivia_skill": {
+    "signalwire.skills.api_ninjas_trivia.skill": {
       "classes": {
-        "ApiNinjaTriviaSkill": {
+        "ApiNinjasTriviaSkill": {
           "methods": {
             "__init__": {
               "params": [
@@ -69289,6 +71977,15 @@
               ],
               "returns": "string"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -69297,6 +71994,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_swaig_functions": {
               "params": [
@@ -69307,74 +72013,7 @@
               ],
               "returns": "list<dict<string,any>>"
             },
-            "register_tools": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "list<class:signalwire.swaig.ToolDefinition>"
-            },
-            "setup": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "params",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
-            },
-            "supports_multiple_instances": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "bool"
-            }
-          }
-        }
-      }
-    },
-    "signalwire.skills.builtin.datetime_skill": {
-      "classes": {
-        "DatetimeSkill": {
-          "methods": {
-            "__init__": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "void"
-            },
-            "get_description": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
-            },
-            "get_name": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
-            },
-            "get_prompt_sections": {
+            "get_tools": {
               "params": [
                 {
                   "name": "self",
@@ -69450,6 +72089,15 @@
               ],
               "returns": "list<string>"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -69458,6 +72106,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -69517,6 +72174,15 @@
               ],
               "returns": "void"
             },
+            "cleanup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_description": {
               "params": [
                 {
@@ -69535,6 +72201,24 @@
               ],
               "returns": "dict<string,any>"
             },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -69543,6 +72227,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -69620,6 +72313,24 @@
               ],
               "returns": "dict<string,any>"
             },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -69628,6 +72339,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -69639,6 +72359,100 @@
               "returns": "list<dict<string,any>>"
             },
             "get_swaig_functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "register_tools": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<class:signalwire.swaig.ToolDefinition>"
+            },
+            "setup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "supports_multiple_instances": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.skills.datetime.skill": {
+      "classes": {
+        "DateTimeSkill": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "get_description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_prompt_sections": {
               "params": [
                 {
                   "name": "self",
@@ -69723,6 +72537,15 @@
               ],
               "returns": "string"
             },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_prompt_sections": {
               "params": [
                 {
@@ -69790,6 +72613,15 @@
               ],
               "returns": "dict<string,any>"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -69798,6 +72630,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -69875,6 +72716,15 @@
               ],
               "returns": "dict<string,any>"
             },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
             "get_name": {
               "params": [
                 {
@@ -69883,6 +72733,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -69951,6 +72810,15 @@
               ],
               "returns": "string"
             },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
             "get_name": {
               "params": [
                 {
@@ -69959,6 +72827,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -70005,11 +72882,20 @@
         }
       }
     },
-    "signalwire.skills.mcp_gateway.skill": {
+    "signalwire.skills.native_vector_search.skill": {
       "classes": {
-        "MCPGatewaySkill": {
+        "NativeVectorSearchSkill": {
           "methods": {
             "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "cleanup": {
               "params": [
                 {
                   "name": "self",
@@ -70045,6 +72931,15 @@
               ],
               "returns": "list<string>"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -70053,6 +72948,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -70062,73 +72966,6 @@
                 }
               ],
               "returns": "list<dict<string,any>>"
-            },
-            "register_tools": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "list<class:signalwire.swaig.ToolDefinition>"
-            },
-            "setup": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "params",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
-            }
-          }
-        }
-      }
-    },
-    "signalwire.skills.native_vector_search.skill": {
-      "classes": {
-        "NativeVectorSearchSkill": {
-          "methods": {
-            "__init__": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "void"
-            },
-            "get_description": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
-            },
-            "get_hints": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "list<string>"
-            },
-            "get_name": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             },
             "register_tools": {
               "params": [
@@ -70188,6 +73025,15 @@
               ],
               "returns": "string"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -70197,7 +73043,25 @@
               ],
               "returns": "string"
             },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_swaig_functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "get_tools": {
               "params": [
                 {
                   "name": "self",
@@ -70332,6 +73196,15 @@
               ],
               "returns": "void"
             },
+            "discover_skills": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
             "get": {
               "params": [
                 {
@@ -70360,6 +73233,20 @@
               ],
               "returns": "list<string>"
             },
+            "get_skill_class": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
             "has": {
               "params": [
                 {
@@ -70374,6 +73261,24 @@
               "params": [],
               "returns": "list<string>"
             },
+            "list_all_skill_sources": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,list<string>>"
+            },
+            "list_skills": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
             "register": {
               "params": [
                 {
@@ -70384,6 +73289,20 @@
                 {
                   "name": "factory",
                   "type": "callable<list<>,class:signalwire.core.skill_base.SkillBase>",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "register_skill": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "skill_class",
+                  "type": "any",
                   "required": true
                 }
               ],
@@ -70456,10 +73375,6 @@
               "params": [],
               "returns": "class:signalwire.skills.SkillName"
             },
-            "mcp_gateway": {
-              "params": [],
-              "returns": "class:signalwire.skills.SkillName"
-            },
             "native_vector_search": {
               "params": [],
               "returns": "class:signalwire.skills.SkillName"
@@ -70519,6 +73434,15 @@
               ],
               "returns": "void"
             },
+            "cleanup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_description": {
               "params": [
                 {
@@ -70537,6 +73461,15 @@
               ],
               "returns": "list<string>"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -70545,6 +73478,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "register_tools": {
               "params": [
@@ -70613,6 +73555,15 @@
               ],
               "returns": "list<string>"
             },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_name": {
               "params": [
                 {
@@ -70621,6 +73572,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -70707,7 +73667,25 @@
               ],
               "returns": "string"
             },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "get_swaig_functions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "get_tools": {
               "params": [
                 {
                   "name": "self",
@@ -70773,6 +73751,24 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_instance_key": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             },
             "get_name": {
               "params": [
@@ -70868,6 +73864,15 @@
               ],
               "returns": "string"
             },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
             "get_name": {
               "params": [
                 {
@@ -70876,6 +73881,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             },
             "get_prompt_sections": {
               "params": [
@@ -70894,6 +73908,20 @@
                 }
               ],
               "returns": "list<class:signalwire.swaig.ToolDefinition>"
+            },
+            "search_wiki": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "query",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "string"
             },
             "setup": {
               "params": [
@@ -70929,72 +73957,14 @@
       "classes": {
         "ParameterSchemaBuilder": {
           "methods": {
-            "array": {
+            "__init__": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "item_type",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "description",
-                  "type": "string",
-                  "required": true
                 }
               ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "array_of_objects": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "item_schema",
-                  "type": "dict<string,any>",
-                  "required": true
-                },
-                {
-                  "name": "description",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "bool": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "description",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
+              "returns": "void"
             },
             "build": {
               "params": [
@@ -71003,37 +73973,13 @@
                   "kind": "self"
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             },
-            "default_value": {
+            "description": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
-                },
-                {
-                  "name": "value",
-                  "type": "any",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "enum_of": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "values",
-                  "type": "list<class:signalwire.swml.WireEnum>",
-                  "required": true
                 },
                 {
                   "name": "description",
@@ -71041,83 +73987,91 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             },
-            "format": {
+            "extra_swaig_fields": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 },
                 {
-                  "name": "format",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "integer": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "description",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "number": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "description",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
-            },
-            "object": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "object_schema",
+                  "name": "extra_swaig_fields",
                   "type": "dict<string,any>",
                   "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "fillers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 },
                 {
-                  "name": "description",
+                  "name": "fillers",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "handler",
+                  "type": "class:signalwire.core.swaig_function.SWAIGFunction",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "is_typed_handler": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "is_typed_handler",
+                  "type": "bool",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
                   "type": "string",
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "parameters": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "parameters",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             },
             "required": {
               "params": [
@@ -71126,32 +74080,68 @@
                   "kind": "self"
                 },
                 {
-                  "name": "names",
+                  "name": "required",
                   "type": "list<string>",
-                  "required": true,
-                  "kind": "var_positional"
+                  "required": true
                 }
               ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             },
-            "string": {
+            "secure": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
                 },
                 {
-                  "name": "name",
-                  "type": "string",
+                  "name": "secure",
+                  "type": "bool",
                   "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "wait_file": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
                 },
                 {
-                  "name": "description",
+                  "name": "wait_file",
                   "type": "string",
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.swaig.ParameterSchema"
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "wait_file_loops": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "wait_file_loops",
+                  "type": "int",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "webhook_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "webhook_url",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             }
           }
         }
@@ -71375,6 +74365,153 @@
             "values": {
               "params": [],
               "returns": "list<class:signalwire.swml.Codec>"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.swml.document": {
+      "classes": {
+        "Document": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "add_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "add_verb": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "add_verb_to_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "section_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "verb_data",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "get_section_verbs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "get_verbs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "has_section": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
+            "render": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "render_pretty": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "reset": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "to_dict": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
             }
           }
         }
@@ -71635,6 +74772,15 @@
               ],
               "returns": "void"
             },
+            "full_validation_available": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
             "generate_method_body": {
               "params": [
                 {
@@ -71713,15 +74859,6 @@
                 }
               ],
               "returns": "list<string>"
-            },
-            "is_full_validation_available": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "bool"
             },
             "load_schema": {
               "params": [
@@ -71826,6 +74963,101 @@
             }
           ],
           "returns": "bool"
+        }
+      }
+    },
+    "signalwire.web.web_service": {
+      "classes": {
+        "WebService": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "add_directory": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "route",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "directory",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "get_directories": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,string>"
+            },
+            "get_port": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_security": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.core.security_config.SecurityConfig"
+            },
+            "remove_directory": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "route",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "start": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "stop": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            }
+          }
         }
       }
     }

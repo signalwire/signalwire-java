@@ -73,6 +73,28 @@ def build_class_to_module_map(reference_json: Path) -> dict[str, str]:
 # uses a structurally identical class under a different name (e.g. relay
 # events keep a ``Call`` prefix in Java for grouping, Python drops it).
 _CLASS_RENAMES: dict[str, str] = {
+    # Java's SWML ``Service`` is the reference ``SWMLService`` (mirrors
+    # enumerate_signatures.py::JAVA_EXTRA_RENAMES). The FQN override below routes
+    # it to ``signalwire.core.swml_service``; this rename makes it compare
+    # against the reference's ``SWMLService`` class name. The ~44 extra Java verb
+    # methods are PORT_ADDITIONS; the reference-only delegator methods that Java
+    # folds onto its Document/AgentBase are excused omissions (parity with the
+    # SIGNATURE gate, which renames + excuses the same set).
+    "Service": "SWMLService",
+    # Built-in skill class-name spelling folds (mirror
+    # enumerate_signatures.py::JAVA_SKILL_RENAMES) so the port's Java-spelled
+    # skill class compares against the reference's canonical name.
+    "DatasphereSkill": "DataSphereSkill",
+    "DatasphereServerlessSkill": "DataSphereServerlessSkill",
+    "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
+    "DatetimeSkill": "DateTimeSkill",
+    "SwmlTransferSkill": "SWMLTransferSkill",
+    # RELAY action-class folds: Java's ``PlayAndCollectAction`` is the
+    # reference's ``StandaloneCollectAction`` (both carry start_input_timers);
+    # Java's inbound ``ReceiveFaxAction`` is the reference's ``FaxAction``
+    # (SendFaxAction stays a port addition). Rename-not-omission.
+    "PlayAndCollectAction": "StandaloneCollectAction",
+    "ReceiveFaxAction": "FaxAction",
     "CallDialEvent": "DialEvent",
     "CallPlayEvent": "PlayEvent",
     "CallRecordEvent": "RecordEvent",
@@ -233,6 +255,19 @@ _PY_KEYWORDS = {"pass", "class", "def", "from", "import", "return", "yield",
 # ``toMap`` vs Python's ``to_dict``).
 _METHOD_RENAMES: dict[str, str] = {
     "to_map": "to_dict",
+    # Java's boolean getter idiom prefixes ``is`` — the reference records the
+    # SchemaUtils accessor as ``full_validation_available`` (no ``is_``).
+    "is_full_validation_available": "full_validation_available",
+    # Action/Message ``await()`` is the reference ``wait`` — Java cannot name a
+    # method ``wait`` (java.lang.Object.wait is final and non-overridable), so
+    # the reserved-name escape is ``await`` (rename-not-omission; wire behavior
+    # identical). Only Action/Message declare ``await`` so the global rename is
+    # unambiguous, and it applies to BOTH enumerators (signatures imports
+    # _METHOD_RENAMES) so the surface and signature gates agree. The key is
+    # ``await_`` because ``await`` is a Python keyword: translate_method_name
+    # snake-cases ``await`` then appends ``_`` (keyword escape) BEFORE consulting
+    # this table, so the pre-rename name seen here is ``await_``.
+    "await_": "wait",
     # Java's ``pubSub`` field snake-cases to ``pub_sub``; Python keeps it
     # as a single token ``pubsub``.
     "pub_sub": "pubsub",
@@ -262,6 +297,70 @@ _METHOD_RENAMES: dict[str, str] = {
     "get_registry": "registry",
 }
 
+# Fully-qualified-class → Python module overrides (item H). MIRRORS
+# enumerate_signatures.py's JAVA_MODULE_OVERRIDES so the surface and signature
+# gates route every class to the SAME reference module. The surface enumerator
+# had drifted: it relied ONLY on the class-name→module map built from
+# python_surface.json (build_class_to_module_map), which picks the
+# alphabetically-first module when a class NAME appears in several reference
+# modules. That misroutes a hand class whose name collides with a generated
+# DTO — e.g. the real ``com.signalwire.sdk.pom.Section`` was routed to
+# ``signalwire.core.swml_verbs_generated`` (a generated ``Section`` DTO lives
+# there and sorts first) instead of ``signalwire.pom.pom``; likewise the real
+# SWML ``Document`` collided with the datasphere generated ``Document``. These
+# FQN overrides WIN over the class-name map (checked first in
+# java_to_python_module) so the collision is resolved deterministically by the
+# Java package, exactly as the signature enumerator does it.
+#
+# Keyed by the Java FQN (``package.ClassName``). Kept in sync with
+# enumerate_signatures.py::JAVA_MODULE_OVERRIDES plus the item-I subsystem
+# classes implemented this turn (routed to their reference core modules).
+_JAVA_SURFACE_MODULE_OVERRIDES: dict[str, str] = {
+    # Collisions with generated DTOs / classes absent from the ref name-map.
+    # Java's rich ``Service`` (62 schema-driven verb + SWAIG + serve methods)
+    # is a port-only fold that PROVIDES the reference SWMLService surface plus
+    # the verb builders; it keeps its port-only home ``signalwire.swml.service``
+    # (all PORT_ADDITIONS) while the reference ``SWMLService`` class is projected
+    # from it (see _SWML_SERVICE_PROJECTION). Java's ``Document`` (the SWML doc
+    # model) collides by NAME with the datasphere generated ``Document`` DTO —
+    # pin it to a port-only home so it does not leak into that generated module.
+    "com.signalwire.sdk.swml.SWMLService": "signalwire.core.swml_service",
+    "com.signalwire.sdk.swml.Document": "signalwire.swml.document",
+    "com.signalwire.sdk.pom.Section": "signalwire.pom.pom",
+    "com.signalwire.sdk.pom.PromptObjectModel": "signalwire.pom.pom",
+    "com.signalwire.sdk.logging.Logger": "signalwire.core.logging_config",
+    "com.signalwire.sdk.swaig.ToolDefinition": "signalwire.core.swaig_function",
+    "com.signalwire.sdk.swaig.ToolHandler": "signalwire.core.swaig_function",
+    "com.signalwire.sdk.swaig.FunctionResult": "signalwire.core.function_result",
+    "com.signalwire.sdk.skills.SkillBase": "signalwire.core.skill_base",
+    "com.signalwire.sdk.skills.SkillManager": "signalwire.core.skill_manager",
+    "com.signalwire.sdk.contexts.Context": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.ContextBuilder": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.Step": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.GatherInfo": "signalwire.core.contexts",
+    "com.signalwire.sdk.contexts.GatherQuestion": "signalwire.core.contexts",
+    "com.signalwire.sdk.datamap.DataMap": "signalwire.core.data_map",
+    # Item-I subsystem classes implemented this turn — route the new Java
+    # classes to their reference core modules (class name matches the reference
+    # leaf verbatim, but these packages differ from the natural fallback).
+    "com.signalwire.sdk.swaig.SWAIGFunction": "signalwire.core.swaig_function",
+    "com.signalwire.sdk.agents.BedrockAgent": "signalwire.agents.bedrock",
+    "com.signalwire.sdk.core.agent.prompt.PromptManager":
+        "signalwire.core.agent.prompt.manager",
+    "com.signalwire.sdk.core.agent.tools.ToolRegistry":
+        "signalwire.core.agent.tools.registry",
+    "com.signalwire.sdk.swml.SWMLBuilder": "signalwire.core.swml_builder",
+    "com.signalwire.sdk.swml.SwmlRenderer": "signalwire.core.swml_renderer",
+    "com.signalwire.sdk.swml.SWMLVerbHandler": "signalwire.core.swml_handler",
+    "com.signalwire.sdk.swml.AIVerbHandler": "signalwire.core.swml_handler",
+    "com.signalwire.sdk.swml.VerbHandlerRegistry": "signalwire.core.swml_handler",
+    "com.signalwire.sdk.web.WebService": "signalwire.web.web_service",
+    "com.signalwire.sdk.core.ConfigLoader": "signalwire.core.config_loader",
+    "com.signalwire.sdk.core.SecurityConfig": "signalwire.core.security_config",
+    "com.signalwire.sdk.core.AuthHandler": "signalwire.core.auth_handler",
+    "com.signalwire.sdk.core.PomBuilder": "signalwire.core.pom_builder",
+}
+
 # Free-function projection at surface level (mirrors FREE_FUNCTION_PROJECTIONS
 # in enumerate_signatures.py). Static methods on certain Java helper classes
 # are projected to module-level free functions so they line up with Python's
@@ -280,11 +379,23 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     ("Signalwire", "registerSkill"): ("signalwire", "register_skill"),
     ("Signalwire", "addSkillDirectory"): ("signalwire", "add_skill_directory"),
     ("Signalwire", "listSkillsWithParams"): ("signalwire", "list_skills_with_params"),
+    ("Signalwire", "listSkills"): ("signalwire", "list_skills"),
     # ExecutionMode helpers
     ("ExecutionMode", "getExecutionMode"): ("signalwire.core.logging_config", "get_execution_mode"),
+    # logging_config module-level free functions — Java groups them on the
+    # Logger static-helper class; project back to the reference free-function
+    # names (mirrors enumerate_signatures.py's FREE_FUNCTION_PROJECTIONS).
+    ("Logger", "getLogger"): ("signalwire.core.logging_config", "get_logger"),
+    ("Logger", "configureLogging"): ("signalwire.core.logging_config", "configure_logging"),
+    ("Logger", "resetLoggingConfiguration"):
+        ("signalwire.core.logging_config", "reset_logging_configuration"),
+    ("Logger", "stripControlChars"): ("signalwire.core.logging_config", "strip_control_chars"),
     ("ExecutionMode", "isServerlessMode"): ("signalwire.utils", "is_serverless_mode"),
     # UrlValidator
     ("UrlValidator", "validateUrl"): ("signalwire.utils.url_validator", "validate_url"),
+    # RelayEvent.parseEvent → module-level signalwire.relay.event.parse_event
+    # (Python ships it as a free function; Java groups it as a static factory).
+    ("RelayEvent", "parseEvent"): ("signalwire.relay.event", "parse_event"),
     # SecurityUtils static helpers → signalwire.core.security.security_utils
     # free functions (the Python reference exports them as bare module
     # functions; Java groups them on a static-only utility class).
@@ -294,6 +405,12 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
         ("signalwire.core.security.security_utils", "redact_url"),
     ("SecurityUtils", "isValidHostname"):
         ("signalwire.core.security.security_utils", "is_valid_hostname"),
+    # WebhookValidator static helpers → signalwire.core.security.webhook_validator
+    # free functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py).
+    ("WebhookValidator", "validateWebhookSignature"):
+        ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
+    ("WebhookValidator", "validateRequest"):
+        ("signalwire.core.security.webhook_validator", "validate_request"),
 }
 
 
@@ -320,8 +437,91 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
 # does not flag a port-side extra.
 _MIXIN_SURFACE_PROJECTIONS: dict[tuple[str, str], list[str]] = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
-        "get_language_params", "set_language_params",
+        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
+        "add_language", "add_mcp_server", "add_pattern_hint", "add_pronunciation",
+        "enable_debug_events", "enable_mcp_server", "get_language_params",
+        "set_function_includes", "set_global_data", "set_internal_fillers",
+        "set_language_params", "set_languages", "set_multilingual",
+        "set_native_functions", "set_param", "set_params",
+        "set_post_prompt_llm_params", "set_prompt_llm_params",
+        "set_pronunciations", "update_global_data",
     ],
+    ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
+        "contexts", "define_contexts", "get_post_prompt", "get_prompt",
+        "prompt_add_section",
+        "prompt_add_subsection", "prompt_add_to_section",
+        "prompt_has_section", "reset_contexts", "set_post_prompt",
+        "set_prompt_pom", "set_prompt_text",
+    ],
+    ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
+        "add_skill", "has_skill", "list_skills", "remove_skill",
+    ],
+    ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
+        "define_tool", "define_tools", "on_function_call",
+        "register_swaig_function",
+    ],
+    ("signalwire.core.mixins.auth_mixin", "AuthMixin"): [
+        "validate_basic_auth", "get_basic_auth_credentials",
+    ],
+    ("signalwire.core.mixins.web_mixin", "WebMixin"): [
+        "as_router", "enable_debug_routes", "get_app", "manual_set_proxy_url",
+        "on_request", "on_swml_request", "register_routing_callback", "run",
+        "serve", "set_dynamic_config_callback", "setup_graceful_shutdown",
+    ],
+    ("signalwire.core.mixins.state_mixin", "StateMixin"): [
+        "validate_tool_token",
+    ],
+}
+
+
+# Per-(module, class) method-NAME aliases: Java-idiom method name → the
+# reference's method name so the two compare EQUAL (Rule 2 — reconcile idiom in
+# the enumerator, not via an omission). Applied per class during module
+# assignment. Currently: the SWMLBuilder ``verb(name, config)`` catch-all is the
+# Java analog of the reference's runtime ``__getattr__`` verb dispatch (Java is
+# statically typed and has no ``__getattr__``, so a single explicit catch-all
+# method fills that role — the same way the Ruby port projects ``method_missing``).
+_SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
+    ("signalwire.core.swml_builder", "SWMLBuilder"): {"verb": "__getattr__"},
+    # SWAIGFunction's ``call(args, rawData)`` is the Java analog of the
+    # reference's Python callable protocol ``__call__`` (Java has no callable
+    # object protocol — a named method fills that role).
+    ("signalwire.core.swaig_function", "SWAIGFunction"): {"call": "__call__"},
+}
+
+
+# Idiom-scaffolding classes to DROP from the compared surface. These are the
+# Java expression of a Python kwargs bundle / return tuple / value object — a
+# static-typing NECESSITY, not reference surface: options-builders (the Java
+# NAMED-param idiom for a method with many optional kwargs), validation-RESULT
+# records (Python returns a ``(bool, list)`` tuple; Java returns a small
+# record), and credential/exception value types nested inside a handler. The
+# reference has no counterpart for any of them, so — like the generated
+# ``<Method>Request``/``Builder`` scaffolding already dropped in §8 — they are
+# excluded here rather than laundered as PORT_ADDITIONS. Keyed by the
+# fully-qualified SURFACE class name (outer-qualified for nested types, exactly
+# as parse_type_body emits them).
+_SURFACE_EXCLUDED_CLASSES: set[str] = {
+    # Options-builder for SwmlRenderer's many-optional-param static methods.
+    "SwmlRendererRenderOptions",
+    # Options-builder for SWAIGFunction's many-optional-param constructor.
+    "SWAIGFunctionBuilder",
+    # Validation-result records (Python returns a (valid, errors) tuple).
+    "SWMLVerbHandlerValidationResult",
+    "SWAIGFunctionValidationResult",
+    "SecurityConfigValidationResult",
+    # AuthHandler nested value/handler types (credentials, exception, response,
+    # framework-neutral request-handler wrapper) — Python uses plain dicts /
+    # framework decorators; Java models them as small nested types.
+    "AuthHandlerAuthException",
+    "AuthHandlerAuthResult",
+    "AuthHandlerBasicCredentials",
+    "AuthHandlerBearerCredentials",
+    "AuthHandlerRequestHandler",
+    "AuthHandlerResponse",
+    # SWAIGFunction handler @FunctionalInterface + ToolRegistry nested tool type.
+    "SWAIGFunctionHandler",
+    "ToolRegistryTool",
 }
 
 
@@ -393,17 +593,79 @@ _CHAR_LIT = re.compile(r"'(?:\\.|[^'\\])*'")
 
 
 def strip_comments_and_strings(src: str) -> str:
-    """Replace comments and string/char literals with placeholders.
+    """Replace comments and string/char literals with same-length placeholders.
 
     We care about structural tokens (``public``, ``class``, ``{``, ``}``).
     Comments and string contents can contain those tokens and would confuse
-    a brace walker; blanking them is safer than regex-matching around them.
+    a brace walker; blanking them is safer than matching around them.
+
+    This is a SINGLE-PASS state machine (not sequential regexes). A multi-pass
+    approach blanks line-comments before strings, so a ``//`` INSIDE a string
+    literal (e.g. ``"https://" + x``) is mistaken for a comment and the rest of
+    the line — including the string's closing quote and any braces — is eaten,
+    desyncing the brace walker so later methods leak (AGENT_RULES L20). The
+    state machine only recognises a comment/string opener when NOT already
+    inside a string/char/comment, so ``//`` and ``/*`` inside a literal are
+    left as literal content (which is itself blanked). Text blocks (``\"\"\"``)
+    are handled too. Length is preserved so downstream indices stay aligned.
     """
-    src = _BLOCK_COMMENT.sub(lambda m: " " * len(m.group(0)), src)
-    src = _LINE_COMMENT.sub(lambda m: " " * len(m.group(0)), src)
-    src = _STRING_LIT.sub(lambda m: '"' + " " * (len(m.group(0)) - 2) + '"', src)
-    src = _CHAR_LIT.sub(lambda m: "'" + " " * (len(m.group(0)) - 2) + "'", src)
-    return src
+    out = []
+    i = 0
+    n = len(src)
+    while i < n:
+        c = src[i]
+        # Block comment.
+        if c == "/" and i + 1 < n and src[i + 1] == "*":
+            j = src.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            out.append(" " * (j - i))
+            i = j
+            continue
+        # Line comment.
+        if c == "/" and i + 1 < n and src[i + 1] == "/":
+            j = src.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i))
+            i = j
+            continue
+        # Text block (\"\"\" ... \"\"\").
+        if c == '"' and src.startswith('"""', i):
+            j = src.find('"""', i + 3)
+            j = n if j < 0 else j + 3
+            # Keep the delimiters; blank the (newline-containing) interior,
+            # preserving newlines so line numbers/anchors stay aligned.
+            interior = src[i + 3 : max(i + 3, j - 3)]
+            blanked = "".join("\n" if ch == "\n" else " " for ch in interior)
+            out.append('"""' + blanked + '"""')
+            i = j
+            continue
+        # String literal.
+        if c == '"':
+            j = i + 1
+            while j < n and src[j] != '"':
+                if src[j] == "\\":
+                    j += 2
+                else:
+                    j += 1
+            j = min(j + 1, n)
+            out.append('"' + " " * max(0, j - i - 2) + '"')
+            i = j
+            continue
+        # Char literal.
+        if c == "'":
+            j = i + 1
+            while j < n and src[j] != "'":
+                if src[j] == "\\":
+                    j += 2
+                else:
+                    j += 1
+            j = min(j + 1, n)
+            out.append("'" + " " * max(0, j - i - 2) + "'")
+            i = j
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
 
 
 # Matches a ``public class/interface/enum/record Name`` header.
@@ -424,6 +686,24 @@ _METHOD_HEADER = re.compile(
     r"(?:[\w.$<>,\[\]\s?]+\s+)?"                        # return type (omitted for ctors)
     r"(?P<name>[A-Za-z_$][\w$]*)"
     r"\s*\("
+)
+
+# Interface members are implicitly public — they carry no ``public`` keyword
+# (``default List<String> getHints()`` / ``String getVerbName();``). Match a
+# method declaration anchored at a statement boundary (start of line or after
+# ``{``/``}``/``;``), optionally led by ``default``/``static``/``abstract``,
+# then a return type and the method name + ``(``. Declarations led by
+# ``private`` or ``protected`` are NOT public interface API and are filtered in
+# code (the modifier alternation below does not admit them; a private helper
+# starting with ``private`` won't reach the return-type group as a public one).
+_INTERFACE_METHOD_HEADER = re.compile(
+    r"(?:^|[{};])\s*"
+    r"(?P<mods>(?:default\s+|static\s+|abstract\s+|strictfp\s+|final\s+)*)"
+    r"(?:<[^>]+>\s+)?"                                  # generic params
+    r"(?P<rtype>[A-Za-z_$][\w.$<>,\[\]?\s]*?\s+)"       # return type (required)
+    r"(?P<name>[A-Za-z_$][\w$]*)"
+    r"\s*\(",
+    re.MULTILINE,
 )
 
 
@@ -448,6 +728,7 @@ def parse_type_body(
     known_python_classes: set[str] | None = None,
     java_outer_name: str | None = None,
     native: bool = False,
+    is_interface: bool = False,
 ) -> dict[str, dict]:
     """Parse a class/interface/enum body. Returns ``{ClassName: [methods]}``
     for the outer class and any public nested classes found inside it.
@@ -469,11 +750,14 @@ def parse_type_body(
     classes: dict[str, list[str]] = {outer_name: []}
     methods: list[str] = classes[outer_name]
 
-    # Walk the body extracting public methods + public nested types.
+    # Walk the body extracting public methods + public nested types. In an
+    # interface, members are implicitly public and carry no ``public`` keyword,
+    # so use the interface-aware header (and skip private/protected helpers).
+    method_re = _INTERFACE_METHOD_HEADER if is_interface else _METHOD_HEADER
     i = 0
     while i < len(src):
         m_type = _TYPE_HEADER.search(src, i)
-        m_meth = _METHOD_HEADER.search(src, i)
+        m_meth = method_re.search(src, i)
 
         # Pick whichever comes first.
         next_type_pos = m_type.start() if m_type else len(src) + 1
@@ -501,9 +785,11 @@ def parse_type_body(
                 continue
             body_close = find_matching_brace(src, body_open)
             inner_body = src[body_open + 1 : body_close]
+            inner_is_interface = m_type.group("kind") == "interface"
             inner_classes = parse_type_body(
                 inner_body, effective_name, known_python_classes,
                 java_outer_name=name, native=native,
+                is_interface=inner_is_interface,
             )
             for cls_name, cls_methods in inner_classes.items():
                 if cls_name in classes:
@@ -513,6 +799,17 @@ def parse_type_body(
             i = body_close + 1
         else:
             name = m_meth.group("name")
+            # For interface bodies, reject private/protected helpers (not public
+            # API) and obvious non-declarations (control-flow keywords whose
+            # ``rtype`` capture is a keyword like ``return``/``if``/``for``).
+            if is_interface:
+                rtype = (m_meth.groupdict().get("rtype") or "").strip()
+                first = rtype.split()[0] if rtype.split() else ""
+                if first in ("private", "protected", "return", "if", "for",
+                             "while", "switch", "catch", "new", "throw", "else",
+                             "do", "synchronized", "assert"):
+                    i = m_meth.end()
+                    continue
             # Skip if this identifier is actually a type header (we saw
             # ``public class Foo {`` — _METHOD_HEADER would not match because
             # there is no ``(``, but a ``public record Foo(int x)`` does have
@@ -572,6 +869,12 @@ def java_to_python_module(java_package: str, class_name: str,
     """Pick the Python module path to emit a class under.
 
     Priority:
+      0. If the Java FQN (``package.ClassName``) has an explicit override in
+         ``_JAVA_SURFACE_MODULE_OVERRIDES``, use it. This WINS over the
+         class-name map so a hand class whose name collides with a generated
+         DTO (``pom.Section`` vs the generated ``Section``; ``swml.Document`` vs
+         the datasphere generated ``Document``) routes by its Java package,
+         exactly as enumerate_signatures.py does.
       1. If the class name exists in ``python_surface.json``, use the
          reference module.
       2. Otherwise translate the Java package naturally (drop
@@ -579,6 +882,9 @@ def java_to_python_module(java_package: str, class_name: str,
          ``signalwire.``), then append the snake_cased class name.
          Port-only classes end up at ``signalwire.<pkg>.<snake_class>``.
     """
+    fqn = f"{java_package}.{class_name}" if java_package else class_name
+    if fqn in _JAVA_SURFACE_MODULE_OVERRIDES:
+        return _JAVA_SURFACE_MODULE_OVERRIDES[fqn]
     if class_name in class_to_module:
         return class_to_module[class_name]
 
@@ -632,6 +938,7 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     classes = parse_type_body(
         body, outer_name, known_python_classes,
         java_outer_name=outer_name_raw, native=native,
+        is_interface=(m_type.group("kind") == "interface"),
     )
 
     # Generated wire-type / read-side-payload files (item A/H + D): a method-less
@@ -741,9 +1048,20 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     # Assign each class to its Python-reference module.
     out: dict[str, dict] = {}
     for cls_name, methods in classes.items():
+        if cls_name in _SURFACE_EXCLUDED_CLASSES:
+            continue  # idiom-scaffolding (options-builder / result record / nested value type)
+        mod = java_to_python_module(java_package, cls_name, class_to_module)
+        # Per-(module, class) method-NAME aliases: a Java-idiom method whose
+        # name differs from the reference's (e.g. SWMLBuilder's ``verb`` catch-
+        # all is the Java analog of the reference's runtime ``__getattr__`` verb
+        # dispatch). Reconcile via the enumerator so the two compare EQUAL
+        # (Rule 2 — idiom via rename, not omission). Applied before dedupe so the
+        # renamed name folds with any pre-existing copy.
+        aliases = _SURFACE_METHOD_ALIASES.get((mod, cls_name))
+        if aliases and not native:
+            methods = [aliases.get(m, m) for m in methods]
         # Deduplicate overloaded methods; stable ordering.
         unique_sorted = sorted(set(methods))
-        mod = java_to_python_module(java_package, cls_name, class_to_module)
         entry = out.setdefault(mod, {"classes": {}, "functions": []})
         if cls_name in entry["classes"]:
             entry["classes"][cls_name] = sorted(
@@ -790,13 +1108,32 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
     if not native:
         ab_entry = merged.get("signalwire.core.agent_base", {})
         ab_methods = ab_entry.get("classes", {}).get("AgentBase", [])
+        # AgentBase extends Service (→ SWMLService); the TEXT enumerator only
+        # sees DECLARED methods, so AgentBase's INHERITED Service methods
+        # (serve / on_request / on_swml_request / validate_basic_auth /
+        # get_basic_auth_credentials …) are invisible on AgentBase even though
+        # they are part of its surface. Include the SWMLService method set when
+        # detecting which mixin methods are "present on AgentBase" so the
+        # WebMixin/AuthMixin projections fire for inherited methods too. The
+        # signature enumerator sees these via JAR reflection; this restores
+        # parity for the source-based surface enumerator. Inherited methods are
+        # ADDED to the mixin path but NOT removed from SWMLService (they
+        # legitimately belong to both — the reference records them on both).
+        svc_methods = (
+            merged.get("signalwire.core.swml_service", {})
+            .get("classes", {})
+            .get("SWMLService", [])
+        )
+        ab_visible = set(ab_methods) | set(svc_methods)
         for (target_mod, target_cls), expected in _MIXIN_SURFACE_PROJECTIONS.items():
-            present = [m for m in expected if m in ab_methods]
+            present = [m for m in expected if m in ab_visible]
             if not present:
                 continue
             target = merged.setdefault(target_mod, {"classes": {}, "functions": []})
             existing = target["classes"].get(target_cls, [])
             target["classes"][target_cls] = sorted(set(existing) | set(present))
+            # Only strip the projected methods from AgentBase's OWN declared
+            # list (never from the inherited SWMLService copy).
             ab_methods = [m for m in ab_methods if m not in present]
         if ab_entry:
             if ab_methods:
@@ -806,7 +1143,54 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
                 if not ab_entry.get("classes") and not ab_entry.get("functions"):
                     merged.pop("signalwire.core.agent_base", None)
 
+        _project_relay_action_mixins(merged)
+
     return merged
+
+
+# Relay-action mixin projection (item H). Python's ``signalwire.relay.call``
+# factors the shared call-action control verbs into three small base classes —
+# ``PausableAction`` (pause/resume), ``StoppableAction`` (stop) and
+# ``VolumeAction`` (volume) — from which the concrete action classes
+# (PlayAction/RecordAction/…) inherit. Java has no such bases; each concrete
+# action DECLARES the control methods directly, so the text enumerator sees
+# ``PlayAction.stop`` etc. as port-side extras while the reference records
+# ``stop`` only on ``StoppableAction``. Mirror the reference's inheritance
+# structure: hoist each control method OFF the concrete actions and onto its
+# base-mixin class (creating the three base classes), so the surface compares
+# EQUAL to the oracle (Rule 2 — reconcile idiom in the enumerator, not via an
+# omission). This is the surface analog of the reference's class hierarchy.
+_RELAY_ACTION_MIXINS: dict[str, list[str]] = {
+    "PausableAction": ["pause", "resume"],
+    "StoppableAction": ["stop"],
+    "VolumeAction": ["volume"],
+}
+
+
+def _project_relay_action_mixins(merged: dict[str, dict]) -> None:
+    mod = merged.get("signalwire.relay.call")
+    if not mod:
+        return
+    classes = mod.get("classes", {})
+    method_to_base = {
+        m: base for base, methods in _RELAY_ACTION_MIXINS.items() for m in methods
+    }
+    for cls_name, methods in list(classes.items()):
+        if cls_name in _RELAY_ACTION_MIXINS:
+            continue
+        kept = []
+        for m in methods:
+            base = method_to_base.get(m)
+            if base is None:
+                kept.append(m)
+                continue
+            existing = classes.setdefault(base, [])
+            if m not in existing:
+                existing.append(m)
+        classes[cls_name] = sorted(set(kept))
+    for base in _RELAY_ACTION_MIXINS:
+        if base in classes:
+            classes[base] = sorted(set(classes[base]))
 
 
 def git_sha(repo: Path) -> str:

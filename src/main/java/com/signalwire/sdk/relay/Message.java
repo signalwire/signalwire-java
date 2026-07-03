@@ -235,6 +235,36 @@ public class Message {
     }
   }
 
+  /**
+   * The terminal {@link RelayEvent}, or {@code null} if the message has not yet reached a terminal
+   * state. Python-surface name for the reference's {@code Message.result} property (the {@link
+   * #getResult()} accessor returns the same value wrapped in an {@link Optional}).
+   */
+  public RelayEvent result() {
+    return done ? result : null;
+  }
+
+  /**
+   * Block until the message reaches a terminal state, returning the terminal event. Java-idiom name
+   * for the reference's {@code Message.wait}: the bare name {@code wait} collides with {@code
+   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
+   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   */
+  public RelayEvent await() {
+    return waitForCompletion();
+  }
+
+  /**
+   * Block until the message reaches a terminal state, with a timeout. Java-idiom name for the
+   * reference's {@code Message.wait(timeout)} (see {@link #await()}).
+   *
+   * @param timeoutMs timeout in milliseconds
+   * @return the terminal event, or null on timeout
+   */
+  public RelayEvent await(long timeoutMs) {
+    return waitForCompletion(timeoutMs);
+  }
+
   /** Resolve the message completion. */
   void resolve(RelayEvent event) {
     if (!done) {

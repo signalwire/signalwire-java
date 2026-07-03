@@ -95,6 +95,27 @@ public class Action {
     }
   }
 
+  /**
+   * Wait for the action to complete, returning the terminal event. Java-idiom name for the
+   * reference's {@code Action.wait}: the bare name {@code wait} collides with {@code
+   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
+   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   */
+  public RelayEvent await() {
+    return waitForCompletion();
+  }
+
+  /**
+   * Wait for the action to complete with a timeout. Java-idiom name for the reference's {@code
+   * Action.wait(timeout)} (see {@link #await()} for why the name differs).
+   *
+   * @param timeoutMs timeout in milliseconds
+   * @return the terminal event, or null on timeout
+   */
+  public RelayEvent await(long timeoutMs) {
+    return waitForCompletion(timeoutMs);
+  }
+
   /** Stop the action. */
   public void stop() {
     // Subclasses override with specific stop method
@@ -283,6 +304,18 @@ public class Action {
       params.put("control_id", getControlId());
       params.put("volume", volumeDb);
       getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_VOLUME, params);
+    }
+
+    /**
+     * Restart the digit/speech input timers on this standalone collect. Mirrors the reference
+     * StandaloneCollectAction.start_input_timers (same wire method as CollectAction).
+     */
+    public void startInputTimers() {
+      Map<String, Object> params = new LinkedHashMap<>();
+      params.put("node_id", getCall().getNodeId().orElse(null));
+      params.put("call_id", getCall().getCallId());
+      params.put("control_id", getControlId());
+      getCall().executeOnCall(Constants.METHOD_COLLECT_START_INPUT_TIMERS, params);
     }
   }
 

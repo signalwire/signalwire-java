@@ -9,6 +9,7 @@ package com.signalwire.sdk;
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.skills.SkillRegistry;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -214,5 +215,17 @@ public final class Signalwire {
       out.put(name, entry);
     }
     return out;
+  }
+
+  /**
+   * List all registered skills as a flat list of metadata maps. Mirrors the top-level Python free
+   * function {@code signalwire.list_skills()} (the list form; {@link #listSkillsWithParams()} is
+   * the keyed form).
+   *
+   * @return one metadata map ({@code name} + optional {@code description}/{@code version}) per
+   *     skill
+   */
+  public static List<Map<String, Object>> listSkills() {
+    return new ArrayList<>(listSkillsWithParams().values());
   }
 }

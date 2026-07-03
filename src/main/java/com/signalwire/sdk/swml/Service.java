@@ -68,6 +68,16 @@ public class Service implements AutoCloseable {
   // HTTP server — protected so AgentBase can register additional routes
   protected HttpServer httpServer;
 
+  // SWMLService reference-API state (verb-handler registry, dynamic routing
+  // callback, and schema-validation toggle). Built/registered lazily via the
+  // reference-API delegators below.
+  protected VerbHandlerRegistry verbHandlerRegistry;
+  protected java.util.function.BiFunction<String, java.util.Map<String, Object>, String>
+      routingCallback;
+  protected boolean schemaValidation = true;
+  // Proxy URL base for webhook callbacks (SWMLService.manual_set_proxy_url).
+  protected String proxyUrlBase;
+
   public Service(String name) {
     this(name, "/", "0.0.0.0", resolvePort(), null, null);
   }
@@ -426,6 +436,132 @@ public class Service implements AutoCloseable {
       schemaUtilsInstance = new SchemaUtils(null, true);
     }
     return schemaUtilsInstance;
+  }
+
+  // -------- SWMLService reference-API delegators --------
+  // The Python reference SWMLService exposes document-manipulation and routing
+  // helpers directly on the service; Java folds the document model into a
+  // Document object and the routing/proxy helpers onto AgentBase. These thin
+  // delegators surface the reference SWMLService API on the Service class so
+  // the cross-port surface compares equal (mirrors the Ruby port's SWMLService
+  // delegators and the SIGNATURE gate's Service→SWMLService rename).
+
+  /** Add a section to the document. Mirrors SWMLService.add_section. */
+  public Service addSection(String sectionName) {
+    document.addSection(sectionName);
+    return this;
+  }
+
+  /** Add a verb to the main section. Mirrors SWMLService.add_verb. */
+  public Service addVerb(String verbName, Object verbData) {
+    document.addVerb(verbName, verbData);
+    return this;
+  }
+
+  /** Add a verb to a named section. Mirrors SWMLService.add_verb_to_section. */
+  public Service addVerbToSection(String sectionName, String verbName, Object verbData) {
+    document.addVerbToSection(sectionName, verbName, verbData);
+    return this;
+  }
+
+  /** Render the current document as a compact JSON string. Mirrors SWMLService.render_document. */
+  public String renderDocument() {
+    return document.render();
+  }
+
+  /** Reset the current document to an empty state. Mirrors SWMLService.reset_document. */
+  public Service resetDocument() {
+    document.reset();
+    return this;
+  }
+
+  /**
+   * Register a custom SWML verb handler. Mirrors SWMLService.register_verb_handler — delegates to
+   * the service's {@link VerbHandlerRegistry}.
+   */
+  public Service registerVerbHandler(SWMLVerbHandler handler) {
+    verbRegistry().registerHandler(handler);
+    return this;
+  }
+
+  /**
+   * The verb-handler registry for this service (built lazily). Mirrors SWMLService.verb_registry.
+   */
+  public VerbHandlerRegistry verbRegistry() {
+    if (verbHandlerRegistry == null) {
+      verbHandlerRegistry = new VerbHandlerRegistry();
+    }
+    return verbHandlerRegistry;
+  }
+
+  /**
+   * Register a routing callback invoked to resolve dynamic routes. Mirrors
+   * SWMLService.register_routing_callback. Java stores the callback for the HTTP layer to consult.
+   */
+  public Service registerRoutingCallback(
+      java.util.function.BiFunction<String, java.util.Map<String, Object>, String> callback) {
+    this.routingCallback = callback;
+    return this;
+  }
+
+  /**
+   * Return a router-style handle for this service. Mirrors SWMLService.as_router — Python returns a
+   * FastAPI APIRouter; Java has no external web framework, so this returns the service itself as
+   * the mountable request handler (its {@link #onRequest} is the route entry point).
+   */
+  public Service asRouter() {
+    return this;
+  }
+
+  /**
+   * Whether full JSON-Schema validation is enabled and available. Mirrors
+   * SWMLService.full_validation_enabled.
+   */
+  public boolean fullValidationEnabled() {
+    return schemaValidation && getSchemaUtils().isFullValidationAvailable();
+  }
+
+  /**
+   * Manually set the proxy URL base for webhook callbacks (may be called at runtime). Mirrors
+   * SWMLService.manual_set_proxy_url.
+   */
+  public Service manualSetProxyUrl(String proxyUrl) {
+    this.proxyUrlBase = proxyUrl;
+    return this;
+  }
+
+  /**
+   * Extract the SIP username (the user portion of the {@code to} SIP URI) from a request body's
+   * call data. Mirrors the static SWMLService.extract_sip_username.
+   *
+   * @param requestBody the parsed request body (expects {@code call.to} or a top-level {@code to})
+   * @return the SIP username, or null when none is present
+   */
+  @SuppressWarnings("unchecked")
+  public static String extractSipUsername(java.util.Map<String, Object> requestBody) {
+    if (requestBody == null) {
+      return null;
+    }
+    Object to = null;
+    Object call = requestBody.get("call");
+    if (call instanceof java.util.Map) {
+      to = ((java.util.Map<String, Object>) call).get("to");
+    }
+    if (to == null) {
+      to = requestBody.get("to");
+    }
+    if (!(to instanceof String) || ((String) to).isEmpty()) {
+      return null;
+    }
+    String work = (String) to;
+    for (String prefix : new String[] {"sip:", "SIP:", "sips:", "SIPS:"}) {
+      if (work.startsWith(prefix)) {
+        work = work.substring(prefix.length());
+        break;
+      }
+    }
+    int at = work.indexOf('@');
+    return at >= 0 ? work.substring(0, at) : work;
   }
 
   // -------- 38 Schema-Driven Verb Methods --------

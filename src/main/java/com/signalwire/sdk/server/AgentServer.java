@@ -27,6 +27,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 
@@ -44,6 +45,9 @@ public class AgentServer implements AutoCloseable {
   private final int port;
   private final Map<String, AgentBase> agents = new ConcurrentHashMap<>();
   private final Map<String, String> sipRoutes = new ConcurrentHashMap<>();
+  private boolean sipRoutingEnabled;
+  private String sipRoute;
+  private boolean sipAutoMap;
   private String staticFilesDir;
   private String staticFilesRoute;
   private HttpServer httpServer;
@@ -97,8 +101,36 @@ public class AgentServer implements AutoCloseable {
       }
     }
 
+    // If server-level SIP routing is active, wire this newly registered agent in too
+    // (auto-map its usernames and install the routing callback) -- mirrors Python's
+    // AgentServer.register when _sip_routing_enabled.
+    if (sipRoutingEnabled) {
+      if (sipAutoMap) {
+        autoMapAgentSipUsernames(agent, normalizedRoute);
+      }
+      if (sipRoute != null) {
+        agent.registerRoutingCallback(serverSipRoutingCallback());
+      }
+    }
+
     log.info("Registered agent '%s' at route '%s'", agent.getName(), normalizedRoute);
     return this;
+  }
+
+  /** The unified server-level SIP routing callback (resolves a SIP username to a target route). */
+  private BiFunction<String, Map<String, Object>, String> serverSipRoutingCallback() {
+    return (callbackPath, body) -> {
+      String sipUsername = extractSipUsername(body);
+      if (sipUsername != null) {
+        String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
+        if (target != null) {
+          log.info("Routing SIP request to %s", target);
+          return target;
+        }
+        log.warn("No route found for SIP username: %s", sipUsername);
+      }
+      return null;
+    };
   }
 
   /** Register an agent at its own configured route. */
@@ -126,6 +158,16 @@ public class AgentServer implements AutoCloseable {
   /** List all registered routes. */
   public Set<String> getRoutes() {
     return Collections.unmodifiableSet(agents.keySet());
+  }
+
+  /**
+   * Return all registered agents as {@code (route, agent)} pairs. Ported from Python
+   * AgentServer.get_agents (which returns a list of {@code (route, agent)} tuples).
+   *
+   * @return an unmodifiable list of route/agent entries
+   */
+  public List<Map.Entry<String, AgentBase>> getAgents() {
+    return List.copyOf(agents.entrySet());
   }
 
   /** Set directory for serving static files at /static route. */
@@ -283,6 +325,135 @@ public class AgentServer implements AutoCloseable {
   /** Get route for a SIP username. */
   public String getSipRoute(String username) {
     return sipRoutes.get(username);
+  }
+
+  /**
+   * Set up central SIP-based routing across all registered agents. Ported from Python
+   * AgentServer.setup_sip_routing: enables SIP routing at {@code route}, optionally auto-maps each
+   * registered agent's name/route to a SIP username, and installs a unified routing callback (that
+   * resolves the SIP username to a target route) on every agent at {@code route}.
+   *
+   * @param route the SIP routing path (default "/sip"); normalized to a leading-slash form
+   * @param autoMap whether to auto-map SIP usernames from agent names/routes
+   * @return this server for chaining
+   */
+  public AgentServer setupSipRouting(String route, boolean autoMap) {
+    if (sipRoutingEnabled) {
+      log.warn("SIP routing is already enabled");
+      return this;
+    }
+
+    String normalizedRoute = normalizeRoute(route);
+    sipRoutingEnabled = true;
+    sipRoute = normalizedRoute;
+    sipAutoMap = autoMap;
+
+    if (autoMap) {
+      for (Map.Entry<String, AgentBase> entry : agents.entrySet()) {
+        autoMapAgentSipUsernames(entry.getValue(), entry.getKey());
+      }
+    }
+
+    // Unified routing callback: resolve the SIP username in the body to a target route.
+    BiFunction<String, Map<String, Object>, String> sipRoutingCallback = serverSipRoutingCallback();
+    for (AgentBase agent : agents.values()) {
+      agent.registerRoutingCallback(sipRoutingCallback);
+    }
+
+    log.info("SIP routing enabled at %s on all agents", normalizedRoute);
+    return this;
+  }
+
+  /** Set up central SIP routing at the default "/sip" path with auto-mapping enabled. */
+  public AgentServer setupSipRouting() {
+    return setupSipRouting("/sip", true);
+  }
+
+  /**
+   * Register a mapping from a SIP username to an agent route. Ported from Python
+   * AgentServer.register_sip_username. Requires {@link #setupSipRouting} to have been called first;
+   * the username is lowercased for case-insensitive resolution.
+   *
+   * @param username the SIP username
+   * @param route the target agent route
+   * @return this server for chaining
+   */
+  public AgentServer registerSipUsername(String username, String route) {
+    if (!sipRoutingEnabled) {
+      log.warn("SIP routing is not enabled. Call setupSipRouting() first.");
+      return this;
+    }
+
+    String normalizedRoute = normalizeRoute(route);
+    if (!agents.containsKey(normalizedRoute)) {
+      log.warn(
+          "Route %s not found. SIP username will be registered but may not work.", normalizedRoute);
+    }
+
+    sipRoutes.put(username.toLowerCase(Locale.ROOT), normalizedRoute);
+    log.info("Registered SIP username '%s' to route '%s'", username, normalizedRoute);
+    return this;
+  }
+
+  private void autoMapAgentSipUsernames(AgentBase agent, String route) {
+    String agentName = agent.getName().toLowerCase(Locale.ROOT);
+    String cleanName = agentName.replaceAll("[^a-z0-9_]", "");
+    if (!cleanName.isEmpty()) {
+      registerSipUsername(cleanName, route);
+    }
+
+    if (route != null && !route.isEmpty()) {
+      String[] parts = route.split("/");
+      String routePart = parts.length > 0 ? parts[parts.length - 1] : "";
+      String cleanRoute = routePart.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "");
+      if (!cleanRoute.isEmpty() && !cleanRoute.equals(cleanName)) {
+        registerSipUsername(cleanRoute, route);
+      }
+    }
+  }
+
+  /**
+   * Extract a SIP username from a SWML/SWAIG request body. Looks for a {@code call.from} field of
+   * the form {@code sip:user@host} (or {@code user@host}) and delegates the username parse to
+   * {@link AgentBase#extractSipUsername(String)}.
+   */
+  @SuppressWarnings("unchecked")
+  static String extractSipUsername(Map<String, Object> body) {
+    if (body == null) {
+      return null;
+    }
+    Object call = body.get("call");
+    if (call instanceof Map) {
+      Object from = ((Map<String, Object>) call).get("from");
+      if (from instanceof String s && !s.isEmpty()) {
+        return AgentBase.extractSipUsername(s);
+      }
+    }
+    Object from = body.get("from");
+    if (from instanceof String s && !s.isEmpty()) {
+      return AgentBase.extractSipUsername(s);
+    }
+    return null;
+  }
+
+  /**
+   * Register a routing callback across all registered agents at a shared path. Ported from Python
+   * AgentServer.register_global_routing_callback: installs the same {@code (callbackPath, body) ->
+   * targetRoute} callback on every agent so unified routing logic applies uniformly.
+   *
+   * @param callback the routing callback (returns a target route, or {@code null} for no
+   *     redirection)
+   * @param path the routing path to register the callback at (normalized)
+   * @return this server for chaining
+   */
+  public AgentServer registerGlobalRoutingCallback(
+      BiFunction<String, Map<String, Object>, String> callback, String path) {
+    String normalizedPath = normalizeRoute(path);
+    for (AgentBase agent : agents.values()) {
+      agent.registerRoutingCallback(callback);
+    }
+    log.info("Registered global routing callback at %s on all agents", normalizedPath);
+    return this;
   }
 
   // ============================================================

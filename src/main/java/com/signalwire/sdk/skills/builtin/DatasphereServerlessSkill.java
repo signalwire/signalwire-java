@@ -102,4 +102,103 @@ public class DatasphereServerlessSkill implements SkillBase {
         "knowledge_provider",
         "SignalWire DataSphere (Serverless)");
   }
+
+  /** Python parity: get_hints returns an empty list (datasphere_serverless/skill.py). */
+  @Override
+  public List<String> getHints() {
+    return Collections.emptyList();
+  }
+
+  /**
+   * Python parity: get_instance_key uses the tool name (default {@code "search_knowledge"}) —
+   * {@code f"{SKILL_NAME}_{tool_name}"} (datasphere_serverless/skill.py).
+   */
+  @Override
+  public String getInstanceKey() {
+    return getName() + "_" + toolName;
+  }
+
+  /**
+   * Python parity: get_parameter_schema (datasphere_serverless/skill.py) — base params plus custom
+   * fields.
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(true, getName());
+
+    SkillParams.addString(
+        schema,
+        "space_name",
+        "SignalWire space name (e.g., 'mycompany' from mycompany.signalwire.com)",
+        true,
+        false,
+        null);
+    SkillParams.addString(
+        schema, "project_id", "SignalWire project ID", true, false, "SIGNALWIRE_PROJECT_ID");
+    SkillParams.addString(schema, "token", "SignalWire API token", true, true, "SIGNALWIRE_TOKEN");
+    SkillParams.addString(
+        schema, "document_id", "DataSphere document ID to search within", true, false, null);
+
+    Map<String, Object> count = numberEntry("integer", "Number of search results to return", 1);
+    count.put("minimum", 1);
+    count.put("maximum", 10);
+    schema.put("count", count);
+
+    Map<String, Object> distance =
+        numberEntry(
+            "number", "Maximum distance threshold for results (lower is more relevant)", 3.0);
+    distance.put("minimum", 0.0);
+    distance.put("maximum", 10.0);
+    schema.put("distance", distance);
+
+    Map<String, Object> tags = new LinkedHashMap<>();
+    tags.put("type", "array");
+    tags.put("description", "Tags to filter search results");
+    tags.put("required", false);
+    tags.put("items", Map.of("type", "string"));
+    schema.put("tags", tags);
+
+    Map<String, Object> language = new LinkedHashMap<>();
+    language.put("type", "string");
+    language.put("description", "Language code for query expansion (e.g., 'en', 'es')");
+    language.put("required", false);
+    schema.put("language", language);
+
+    Map<String, Object> posToExpand = new LinkedHashMap<>();
+    posToExpand.put("type", "array");
+    posToExpand.put("description", "Parts of speech to expand with synonyms");
+    posToExpand.put("required", false);
+    posToExpand.put(
+        "items", Map.of("type", "string", "enum", List.of("NOUN", "VERB", "ADJ", "ADV")));
+    schema.put("pos_to_expand", posToExpand);
+
+    Map<String, Object> maxSynonyms = new LinkedHashMap<>();
+    maxSynonyms.put("type", "integer");
+    maxSynonyms.put("description", "Maximum number of synonyms to use for query expansion");
+    maxSynonyms.put("required", false);
+    maxSynonyms.put("minimum", 1);
+    maxSynonyms.put("maximum", 10);
+    schema.put("max_synonyms", maxSynonyms);
+
+    Map<String, Object> noResults = new LinkedHashMap<>();
+    noResults.put("type", "string");
+    noResults.put("description", "Message to return when no results are found");
+    noResults.put(
+        "default",
+        "I couldn't find any relevant information for '{query}' in the knowledge base. Try"
+            + " rephrasing your question or asking about a different topic.");
+    noResults.put("required", false);
+    schema.put("no_results_message", noResults);
+
+    return schema;
+  }
+
+  private static Map<String, Object> numberEntry(String type, String description, Object dflt) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("type", type);
+    m.put("description", description);
+    m.put("default", dflt);
+    m.put("required", false);
+    return m;
+  }
 }

@@ -126,4 +126,33 @@ class ActionTest {
     Action action = new Action("ctrl-1", call);
     assertSame(call, action.getCall());
   }
+
+  // ── Python-surface await() (= Action.wait) ───────────────────────
+
+  @Test
+  void testAwaitReturnsTerminalEvent() throws Exception {
+    Action action = new Action("ctrl-1", dummyCall());
+    RelayEvent terminal = dummyEvent();
+    Thread producer =
+        new Thread(
+            () -> {
+              try {
+                Thread.sleep(30);
+              } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+              }
+              action.updateState(Constants.ACTION_STATE_FINISHED, terminal);
+            });
+    producer.start();
+    RelayEvent got = action.await();
+    producer.join();
+    assertSame(terminal, got);
+    assertTrue(action.isDone());
+  }
+
+  @Test
+  void testAwaitWithTimeoutReturnsNullWhenNotDone() {
+    Action action = new Action("ctrl-1", dummyCall());
+    assertNull(action.await(50));
+  }
 }

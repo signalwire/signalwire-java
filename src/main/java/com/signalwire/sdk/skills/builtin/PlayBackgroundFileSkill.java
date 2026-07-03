@@ -79,4 +79,62 @@ public class PlayBackgroundFileSkill implements SkillBase {
 
     return List.of(dm.toSwaigFunction());
   }
+
+  /**
+   * Python parity: {@code play_background_file/skill.py get_instance_key} -- {@code
+   * f"{SKILL_NAME}_{tool_name}"}.
+   */
+  @Override
+  public String getInstanceKey() {
+    return getName() + "_" + toolName;
+  }
+
+  /**
+   * Python parity: {@code play_background_file/skill.py get_tools} -- the reference builds the
+   * DataMap tool in {@code get_tools()}. In Java that tool is built in {@link
+   * #getSwaigFunctions()}, so {@code getTools()} returns exactly that list.
+   */
+  public List<Map<String, Object>> getTools() {
+    return getSwaigFunctions();
+  }
+
+  /**
+   * Python parity: {@code play_background_file/skill.py get_parameter_schema} -- base schema plus a
+   * {@code files} array (each file: key, description, url, wait).
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(true, getName());
+
+    Map<String, Object> fileProps = new LinkedHashMap<>();
+    fileProps.put("key", Map.of("type", "string", "description", "Unique identifier for the file"));
+    fileProps.put(
+        "description",
+        Map.of("type", "string", "description", "Human-readable description of the file"));
+    fileProps.put(
+        "url", Map.of("type", "string", "description", "URL of the audio/video file to play"));
+    fileProps.put(
+        "wait",
+        Map.of(
+            "type",
+            "boolean",
+            "description",
+            "Whether to wait for file to finish playing",
+            "default",
+            false));
+
+    Map<String, Object> fileItems = new LinkedHashMap<>();
+    fileItems.put("type", "object");
+    fileItems.put("properties", fileProps);
+    fileItems.put("required", List.of("key", "description", "url"));
+
+    Map<String, Object> filesField = new LinkedHashMap<>();
+    filesField.put("type", "array");
+    filesField.put("description", "Array of file configurations to make available for playback");
+    filesField.put("required", true);
+    filesField.put("items", fileItems);
+    schema.put("files", filesField);
+
+    return schema;
+  }
 }

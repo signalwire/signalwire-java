@@ -25,7 +25,7 @@ public final class SkillRegistry {
   private final List<String> externalPaths = new ArrayList<>();
 
   static {
-    // Register all 18 built-in skills
+    // Register all 17 built-in skills
     register("datetime", DatetimeSkill::new);
     register("math", MathSkill::new);
     register("joke", JokeSkill::new);
@@ -42,7 +42,6 @@ public final class SkillRegistry {
     register("native_vector_search", NativeVectorSearchSkill::new);
     register("info_gatherer", InfoGathererSkill::new);
     register("claude_skills", ClaudeSkillsSkill::new);
-    register("mcp_gateway", McpGatewaySkill::new);
     register("custom_skills", CustomSkillsSkill::new);
   }
 
@@ -112,6 +111,113 @@ public final class SkillRegistry {
    */
   public synchronized List<String> getExternalPaths() {
     return Collections.unmodifiableList(new ArrayList<>(externalPaths));
+  }
+
+  /**
+   * List metadata for all available (registered) skills.
+   *
+   * <p>Mirrors Python {@code SkillRegistry.list_skills}: returns one entry per skill with its name,
+   * description, and version. Java skills are registered eagerly (no on-demand directory scan), so
+   * this enumerates the static registry.
+   *
+   * @return a list of skill metadata maps
+   */
+  public List<Map<String, Object>> listSkills() {
+    List<Map<String, Object>> out = new ArrayList<>();
+    for (String name : new TreeSet<>(registry.keySet())) {
+      SkillBase skill = get(name);
+      Map<String, Object> entry = new LinkedHashMap<>();
+      entry.put("name", name);
+      if (skill != null) {
+        entry.put("description", skill.getDescription());
+        entry.put("version", skill.getVersion());
+        entry.put("supports_multiple_instances", skill.supportsMultipleInstances());
+        entry.put("required_packages", skill.getRequiredPackages());
+        entry.put("required_env_vars", skill.getRequiredEnvVars());
+      }
+      out.add(entry);
+    }
+    return out;
+  }
+
+  /**
+   * Discover and return all available skills.
+   *
+   * <p>Mirrors Python {@code SkillRegistry.discover_skills}, which returns the same enumeration as
+   * {@code list_skills} (skills load on-demand, so discovery is the same scan).
+   *
+   * @return a list of skill metadata maps
+   */
+  public List<Map<String, Object>> discoverSkills() {
+    return listSkills();
+  }
+
+  /**
+   * Get the skill class registered under a name.
+   *
+   * <p>Mirrors Python {@code SkillRegistry.get_skill_class(skill_name)}: returns the concrete
+   * {@link SkillBase} subclass registered for {@code skillName}, or {@code null} if none is
+   * registered.
+   *
+   * @param skillName the registered skill name
+   * @return the skill's implementation class, or null if not registered
+   */
+  public Class<? extends SkillBase> getSkillClass(String skillName) {
+    SkillBase skill = get(skillName);
+    return skill == null ? null : skill.getClass();
+  }
+
+  /**
+   * Register a skill class directly.
+   *
+   * <p>Mirrors Python {@code SkillRegistry.register_skill(skill_class)}: instantiate the class,
+   * derive its name from {@link SkillBase#getName()}, and register a factory for it. Throws {@link
+   * IllegalArgumentException} (the Java analog of Python's {@code ValueError}) if the class cannot
+   * be instantiated with a public no-arg constructor.
+   *
+   * @param skillClass a concrete {@link SkillBase} subclass with a public no-arg constructor
+   * @throws IllegalArgumentException if the class cannot be instantiated
+   */
+  public void registerSkill(Class<? extends SkillBase> skillClass) {
+    try {
+      SkillBase probe = skillClass.getDeclaredConstructor().newInstance();
+      String name = probe.getName();
+      if (name == null || name.isEmpty()) {
+        throw new IllegalArgumentException(
+            skillClass.getName() + " must define a non-empty skill name");
+      }
+      register(name, () -> newInstance(skillClass));
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalArgumentException(
+          "Cannot register skill " + skillClass.getName() + ": " + e.getMessage(), e);
+    }
+  }
+
+  private static SkillBase newInstance(Class<? extends SkillBase> skillClass) {
+    try {
+      return skillClass.getDeclaredConstructor().newInstance();
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException("Cannot instantiate skill " + skillClass.getName(), e);
+    }
+  }
+
+  /**
+   * List all skill sources and the skills available from each.
+   *
+   * <p>Mirrors Python {@code SkillRegistry.list_all_skill_sources}: a map from source type ({@code
+   * built-in}, {@code external_paths}, {@code entry_points}, {@code registered}) to the skill names
+   * from that source. Java has no entry-point mechanism, so all registered skills report as {@code
+   * built-in} and external directories are listed under {@code external_paths}.
+   *
+   * @return a map of source name to the list of skill names from that source
+   */
+  public Map<String, List<String>> listAllSkillSources() {
+    Map<String, List<String>> sources = new LinkedHashMap<>();
+    sources.put("built-in", new ArrayList<>(new TreeSet<>(registry.keySet())));
+    sources.put("external_paths", new ArrayList<>(externalPaths));
+    sources.put("entry_points", new ArrayList<>());
+    sources.put("registered", new ArrayList<>());
+    return sources;
   }
 
   /**

@@ -127,6 +127,89 @@ public class SkillManager {
     }
   }
 
+  /**
+   * Load and setup a skill by name.
+   *
+   * <p>Mirrors Python {@code SkillManager.load_skill}: resolves the skill from the registry, sets
+   * it up, and registers its tools/hints/global-data/prompt-sections with the agent. Delegates to
+   * {@link #addSkill(String, Map)} (the Java idiom for the same lifecycle) and reports success by
+   * whether the skill became active.
+   *
+   * @param skillName the registered skill name
+   * @param params optional configuration parameters (may be null)
+   * @return true if the skill was loaded and is now active
+   */
+  public boolean loadSkill(String skillName, Map<String, Object> params) {
+    Map<String, Object> p = params == null ? new LinkedHashMap<>() : params;
+    String instanceKey = skillName;
+    if (p.containsKey("tool_name")) {
+      instanceKey = skillName + ":" + p.get("tool_name");
+    }
+    addSkill(skillName, p);
+    return activeSkills.containsKey(instanceKey);
+  }
+
+  /**
+   * Unload a skill and clean it up.
+   *
+   * <p>Mirrors Python {@code SkillManager.unload_skill(skill_identifier)}: looks the skill up by
+   * its instance key, calls {@link SkillBase#cleanup()}, and removes it. Returns whether a skill
+   * was actually unloaded.
+   *
+   * @param skillIdentifier a skill name or instance key
+   * @return true if a loaded skill was found and unloaded
+   */
+  public boolean unloadSkill(String skillIdentifier) {
+    SkillBase skill = activeSkills.get(skillIdentifier);
+    if (skill == null) {
+      log.warn("Skill '%s' is not loaded", skillIdentifier);
+      return false;
+    }
+    try {
+      skill.cleanup();
+    } catch (Exception e) {
+      log.error("Error unloading skill '%s': %s", skillIdentifier, e.getMessage());
+      return false;
+    }
+    activeSkills.remove(skillIdentifier);
+    log.info("Successfully unloaded skill instance '%s'", skillIdentifier);
+    return true;
+  }
+
+  /**
+   * Get a loaded skill instance by identifier.
+   *
+   * <p>Mirrors Python {@code SkillManager.get_skill(skill_identifier)}.
+   *
+   * @param skillIdentifier a skill name or instance key
+   * @return the loaded skill instance, or null if not loaded
+   */
+  public SkillBase getSkill(String skillIdentifier) {
+    return activeSkills.get(skillIdentifier);
+  }
+
+  /**
+   * List the instance keys of currently loaded skills.
+   *
+   * <p>Mirrors Python {@code SkillManager.list_loaded_skills}.
+   *
+   * @return the loaded skill instance keys
+   */
+  public List<String> listLoadedSkills() {
+    return new ArrayList<>(activeSkills.keySet());
+  }
+
+  /**
+   * The map of loaded skills keyed by instance key.
+   *
+   * <p>Mirrors Python's {@code SkillManager.loaded_skills} attribute.
+   *
+   * @return an unmodifiable view of the loaded-skills map
+   */
+  public Map<String, SkillBase> loadedSkills() {
+    return Collections.unmodifiableMap(activeSkills);
+  }
+
   /** List active skill instance keys. */
   public List<String> listSkills() {
     return new ArrayList<>(activeSkills.keySet());

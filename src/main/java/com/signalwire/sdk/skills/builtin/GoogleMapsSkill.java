@@ -153,6 +153,34 @@ public class GoogleMapsSkill implements SkillBase {
     return List.of("address", "location", "route", "directions", "miles", "distance");
   }
 
+  /**
+   * Python parity: google_maps get_parameter_schema() — base schema plus {@code api_key} (required,
+   * hidden, env_var GOOGLE_MAPS_API_KEY), {@code lookup_tool_name} (default "lookup_address") and
+   * {@code route_tool_name} (default "compute_route").
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(supportsMultipleInstances(), getName());
+    SkillParams.addString(
+        schema, "api_key", "Google Maps API key", true, true, "GOOGLE_MAPS_API_KEY");
+
+    Map<String, Object> lookupToolNameParam = new LinkedHashMap<>();
+    lookupToolNameParam.put("type", "string");
+    lookupToolNameParam.put("description", "Name for the address lookup tool");
+    lookupToolNameParam.put("default", "lookup_address");
+    lookupToolNameParam.put("required", false);
+    schema.put("lookup_tool_name", lookupToolNameParam);
+
+    Map<String, Object> routeToolNameParam = new LinkedHashMap<>();
+    routeToolNameParam.put("type", "string");
+    routeToolNameParam.put("description", "Name for the route computation tool");
+    routeToolNameParam.put("default", "compute_route");
+    routeToolNameParam.put("required", false);
+    schema.put("route_tool_name", routeToolNameParam);
+
+    return schema;
+  }
+
   @Override
   public List<Map<String, Object>> getPromptSections() {
     Map<String, Object> section = new LinkedHashMap<>();

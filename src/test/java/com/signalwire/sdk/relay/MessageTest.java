@@ -119,4 +119,52 @@ class MessageTest {
     String s = msg.toString();
     assertTrue(s.contains("msg-123"));
   }
+
+  // ── Python-surface result() / await() ────────────────────────────
+
+  @Test
+  void testResultIsNullBeforeTerminalAndSetAfter() {
+    Message msg = new Message("msg-123");
+    // Python's Message.result property is None until a terminal state.
+    assertNull(msg.result());
+
+    Map<String, Object> params = new LinkedHashMap<>();
+    params.put("message_id", "msg-123");
+    params.put("message_state", Constants.MESSAGE_STATE_DELIVERED);
+    var event = new RelayEvent.MessagingStateEvent(Constants.EVENT_MESSAGING_STATE, 0.0, params);
+    msg.updateFromEvent(event);
+
+    assertNotNull(msg.result());
+    assertSame(event, msg.result());
+  }
+
+  @Test
+  void testAwaitReturnsTerminalEvent() throws Exception {
+    Message msg = new Message("msg-123");
+    var terminal =
+        new RelayEvent.MessagingStateEvent(
+            Constants.EVENT_MESSAGING_STATE,
+            0.0,
+            Map.of("message_id", "msg-123", "message_state", Constants.MESSAGE_STATE_DELIVERED));
+    Thread producer =
+        new Thread(
+            () -> {
+              try {
+                Thread.sleep(30);
+              } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+              }
+              msg.updateFromEvent(terminal);
+            });
+    producer.start();
+    RelayEvent got = msg.await();
+    producer.join();
+    assertSame(terminal, got);
+  }
+
+  @Test
+  void testAwaitWithTimeoutReturnsNullWhenNotTerminal() {
+    Message msg = new Message("msg-123");
+    assertNull(msg.await(50));
+  }
 }

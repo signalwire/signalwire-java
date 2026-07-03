@@ -131,4 +131,68 @@ class CallTest {
     call.setClient(null);
     assertNotNull(call);
   }
+
+  // ── State-wait helpers (Python parity: Call.wait_for*) ───────────
+
+  @Test
+  void testWaitForReturnsImmediatelyWhenAlreadyPastTarget() {
+    Call call = new Call("call-1", "node-1");
+    call.setState(Constants.CALL_STATE_ANSWERED);
+    // ringing is earlier than answered — must resolve immediately.
+    RelayEvent e = call.waitForRinging();
+    assertNotNull(e);
+    assertInstanceOf(RelayEvent.CallStateEvent.class, e);
+    assertEquals(Constants.CALL_STATE_ANSWERED, ((RelayEvent.CallStateEvent) e).getCallState());
+  }
+
+  @Test
+  void testWaitForResolvesOnLaterStateEvent() throws Exception {
+    Call call = new Call("call-1", "node-1"); // starts CREATED
+    Thread producer =
+        new Thread(
+            () -> {
+              try {
+                Thread.sleep(50);
+              } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+              }
+              call.dispatchEvent(
+                  makeStateEvent("call-1", "node-1", Constants.CALL_STATE_ANSWERED, null));
+            });
+    producer.start();
+
+    RelayEvent e = call.waitForAnswered();
+    producer.join();
+    assertNotNull(e);
+    assertEquals(Constants.CALL_STATE_ANSWERED, ((RelayEvent.CallStateEvent) e).getCallState());
+  }
+
+  @Test
+  void testWaitForTimesOutWhenStateNeverReached() {
+    Call call = new Call("call-1", "node-1"); // stays CREATED
+    RelayEvent e = call.waitFor(Constants.CALL_STATE_ENDED, 60);
+    assertNull(e, "expected null on timeout");
+  }
+
+  @Test
+  void testWaitForEndedResolvesOnEndEvent() throws Exception {
+    Call call = new Call("call-1", "node-1");
+    Thread producer =
+        new Thread(
+            () -> {
+              try {
+                Thread.sleep(30);
+              } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+              }
+              call.dispatchEvent(
+                  makeStateEvent(
+                      "call-1", "node-1", Constants.CALL_STATE_ENDED, Constants.END_REASON_HANGUP));
+            });
+    producer.start();
+    RelayEvent e = call.waitForEnded();
+    producer.join();
+    assertNotNull(e);
+    assertEquals(Constants.CALL_STATE_ENDED, ((RelayEvent.CallStateEvent) e).getCallState());
+  }
 }

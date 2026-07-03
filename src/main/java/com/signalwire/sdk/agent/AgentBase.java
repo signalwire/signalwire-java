@@ -65,6 +65,10 @@ public class AgentBase extends Service {
   // --- AI Config ---
   private final List<String> hints = new ArrayList<>();
   private final List<Map<String, Object>> languages = new ArrayList<>();
+  // ASR-driven multilingual mode (set_multilingual). When set, emitted as the
+  // top-level ``multilingual`` object on the AI verb (mutually exclusive with
+  // languages — the server prefers multilingual). Null until configured.
+  private Map<String, Object> multilingual;
   private final List<Map<String, Object>> pronunciations = new ArrayList<>();
   private final Map<String, Object> params = new LinkedHashMap<>();
   private final Map<String, Object> promptLlmParams = new LinkedHashMap<>();
@@ -125,10 +129,12 @@ public class AgentBase extends Service {
   // httpServer is now inherited from Service.
 
   /**
-   * Package-private constructor — use the Builder. Calls Service's full constructor with all
-   * configuration.
+   * Protected constructor — use the Builder for standard agents. Calls Service's full constructor
+   * with all configuration. Exposed as {@code protected} (was package-private) so out-of-package
+   * subclasses such as {@link com.signalwire.sdk.agents.BedrockAgent} can chain to it via {@code
+   * super(...)}; the Builder remains the recommended path for {@code AgentBase} itself.
    */
-  AgentBase(
+  protected AgentBase(
       String name, String route, String host, int port, String authUser, String authPassword) {
     super(name, route, host, port, authUser, authPassword);
     this.autoAnswer = true;
@@ -788,6 +794,24 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Configure ASR-driven multilingual mode (Mode B). Emits a top-level {@code multilingual} object
+   * on the AI verb — the recognizer runs in code-switching mode and the agent answers in whatever
+   * language the caller actually spoke. Mutually exclusive with {@link #setLanguages}: if both are
+   * set the server uses {@code multilingual} and ignores {@code languages}. Mirrors
+   * AIConfigMixin.set_multilingual.
+   *
+   * @param config the multilingual config object (languages, allowed, start_language,
+   *     min_switch_words, fillers, etc.)
+   * @return this agent, for chaining
+   */
+  public AgentBase setMultilingual(Map<String, Object> config) {
+    if (config != null && !config.isEmpty()) {
+      this.multilingual = new LinkedHashMap<>(config);
+    }
+    return this;
+  }
+
   public AgentBase addPronunciation(String replace, String with, boolean ignoreCase) {
     Map<String, Object> pron = new LinkedHashMap<>();
     pron.put("replace", replace);
@@ -1138,6 +1162,43 @@ public class AgentBase extends Service {
   public AgentBase manualSetProxyUrl(String url) {
     this.proxyUrlBase = url;
     return this;
+  }
+
+  /**
+   * Get the underlying HTTP application/server instance for deployment adapters. Mirrors
+   * WebMixin.get_app — Python returns the FastAPI app for adapters like Mangum/Lambda; Java has no
+   * web framework, so this returns the JDK {@link com.sun.net.httpserver.HttpServer} (lazily
+   * started if not already running).
+   *
+   * @return the bound HttpServer instance
+   */
+  public com.sun.net.httpserver.HttpServer getApp() {
+    if (httpServer == null) {
+      try {
+        serve();
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to initialize the HTTP server", e);
+      }
+    }
+    return httpServer;
+  }
+
+  /**
+   * Register a JVM shutdown hook for graceful shutdown (useful under Kubernetes). Mirrors
+   * WebMixin.setup_graceful_shutdown — Python installs SIGTERM/SIGINT handlers; Java uses a JVM
+   * shutdown hook that stops the HTTP server cleanly.
+   */
+  public void setupGracefulShutdown() {
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    stop();
+                  } catch (RuntimeException e) {
+                    // Best-effort cleanup during JVM shutdown; nothing else to do.
+                  }
+                }));
   }
 
   public AgentBase addSwaigQueryParams(Map<String, String> params) {
@@ -1690,6 +1751,12 @@ public class AgentBase extends Service {
       ai.put("languages", new ArrayList<>(languages));
     }
 
+    // ASR-driven multilingual mode (set_multilingual) — emitted as the
+    // top-level ``multilingual`` object; the server prefers it over languages.
+    if (multilingual != null && !multilingual.isEmpty()) {
+      ai.put("multilingual", new LinkedHashMap<>(multilingual));
+    }
+
     // Pronunciations
     if (!pronunciations.isEmpty()) {
       ai.put("pronounce", new ArrayList<>(pronunciations));
@@ -1820,6 +1887,9 @@ public class AgentBase extends Service {
     copy.pomSections.addAll(deepCopyList(this.pomSections));
     copy.hints.addAll(this.hints);
     copy.languages.addAll(deepCopyList(this.languages));
+    if (this.multilingual != null) {
+      copy.multilingual = new LinkedHashMap<>(this.multilingual);
+    }
     copy.pronunciations.addAll(deepCopyList(this.pronunciations));
     copy.params.putAll(this.params);
     copy.promptLlmParams.putAll(this.promptLlmParams);

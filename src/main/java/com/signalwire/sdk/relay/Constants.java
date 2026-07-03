@@ -137,6 +137,10 @@ public final class Constants {
   public static final String EVENT_CALL_REFER = "calling.call.refer";
   public static final String EVENT_CALL_SEND_DIGITS = "calling.call.send_digits";
   public static final String EVENT_CALL_PAY = "calling.call.pay";
+  public static final String EVENT_CALL_DENOISE = "calling.call.denoise";
+  public static final String EVENT_CALL_ECHO = "calling.call.echo";
+  public static final String EVENT_CALL_HOLD = "calling.call.hold";
+  public static final String EVENT_CALLING_ERROR = "calling.error";
   public static final String EVENT_CONFERENCE = "calling.conference";
   public static final String EVENT_QUEUE = "calling.queue";
   public static final String EVENT_AUTHORIZATION_STATE = "signalwire.authorization.state";
