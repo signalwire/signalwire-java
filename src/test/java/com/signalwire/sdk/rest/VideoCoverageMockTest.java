@@ -170,7 +170,7 @@ class VideoCoverageMockTest {
 
     @Test
     void listStreamsSuccess() {
-      Map<String, Object> body = client.video().rooms().listStreams("room-1");
+      Map<String, Object> body = client.video().rooms().listStreams("room-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -183,13 +183,23 @@ class VideoCoverageMockTest {
       assertEquals(
           500,
           errCall(
-              "video.list_room_streams", 500, () -> client.video().rooms().listStreams("room-1")));
+              "video.list_room_streams",
+              500,
+              () -> client.video().rooms().listStreams("room-1", java.util.Map.of())));
     }
 
     @Test
     void createStreamSuccess() {
       Map<String, Object> body =
-          client.video().rooms().createStream("room-1", kw("url", "rtmp://example.com/live"));
+          client
+              .video()
+              .rooms()
+              .createStream(
+                  "room-1",
+                  com.signalwire.sdk.rest.namespaces.generated.VideoRooms.CreateStreamRequest
+                      .builder()
+                      .extras(kw("url", "rtmp://example.com/live"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("rtmp://example.com/live", j.bodyMap().get("url"));
@@ -205,7 +215,16 @@ class VideoCoverageMockTest {
           errCall(
               "video.create_room_stream",
               422,
-              () -> client.video().rooms().createStream("room-1", kw("url", "rtmp://x"))));
+              () ->
+                  client
+                      .video()
+                      .rooms()
+                      .createStream(
+                          "room-1",
+                          com.signalwire.sdk.rest.namespaces.generated.VideoRooms
+                              .CreateStreamRequest.builder()
+                              .extras(kw("url", "rtmp://x"))
+                              .build())));
     }
   }
 
@@ -219,7 +238,15 @@ class VideoCoverageMockTest {
 
     @Test
     void createSuccess() {
-      Map<String, Object> body = client.video().roomTokens().create(kw("room_name", "r"));
+      Map<String, Object> body =
+          client
+              .video()
+              .roomTokens()
+              .create(
+                  com.signalwire.sdk.rest.namespaces.generated.VideoRoomTokens.CreateRequest
+                      .builder()
+                      .extras(kw("room_name", "r"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "video.create_room_token",
@@ -233,7 +260,15 @@ class VideoCoverageMockTest {
           errCall(
               "video.create_room_token",
               422,
-              () -> client.video().roomTokens().create(kw("room_name", "r"))));
+              () ->
+                  client
+                      .video()
+                      .roomTokens()
+                      .create(
+                          com.signalwire.sdk.rest.namespaces.generated.VideoRoomTokens.CreateRequest
+                              .builder()
+                              .extras(kw("room_name", "r"))
+                              .build())));
     }
   }
 
@@ -281,7 +316,8 @@ class VideoCoverageMockTest {
 
     @Test
     void listEventsSuccess() {
-      Map<String, Object> body = client.video().roomSessions().listEvents("sess-1");
+      Map<String, Object> body =
+          client.video().roomSessions().listEvents("sess-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -297,12 +333,13 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_room_session_events",
               500,
-              () -> client.video().roomSessions().listEvents("sess-1")));
+              () -> client.video().roomSessions().listEvents("sess-1", java.util.Map.of())));
     }
 
     @Test
     void listMembersSuccess() {
-      Map<String, Object> body = client.video().roomSessions().listMembers("sess-1");
+      Map<String, Object> body =
+          client.video().roomSessions().listMembers("sess-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -318,12 +355,13 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_room_session_members",
               500,
-              () -> client.video().roomSessions().listMembers("sess-1")));
+              () -> client.video().roomSessions().listMembers("sess-1", java.util.Map.of())));
     }
 
     @Test
     void listRecordingsSuccess() {
-      Map<String, Object> body = client.video().roomSessions().listRecordings("sess-1");
+      Map<String, Object> body =
+          client.video().roomSessions().listRecordings("sess-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -341,7 +379,7 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_room_session_recordings",
               500,
-              () -> client.video().roomSessions().listRecordings("sess-1")));
+              () -> client.video().roomSessions().listRecordings("sess-1", java.util.Map.of())));
     }
   }
 
@@ -355,7 +393,7 @@ class VideoCoverageMockTest {
 
     @Test
     void listSuccess() {
-      Map<String, Object> body = client.video().roomRecordings().list();
+      Map<String, Object> body = client.video().roomRecordings().list(java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -367,12 +405,15 @@ class VideoCoverageMockTest {
     void listError() {
       assertEquals(
           500,
-          errCall("video.list_room_recordings", 500, () -> client.video().roomRecordings().list()));
+          errCall(
+              "video.list_room_recordings",
+              500,
+              () -> client.video().roomRecordings().list(java.util.Map.of())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.video().roomRecordings().get("rec-1");
+      Map<String, Object> body = client.video().roomRecordings().get("rec-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "video.get_room_recording",
@@ -386,7 +427,7 @@ class VideoCoverageMockTest {
           errCall(
               "video.get_room_recording",
               404,
-              () -> client.video().roomRecordings().get("missing")));
+              () -> client.video().roomRecordings().get("missing", java.util.Map.of())));
     }
 
     @Test
@@ -410,7 +451,8 @@ class VideoCoverageMockTest {
 
     @Test
     void listEventsSuccess() {
-      Map<String, Object> body = client.video().roomRecordings().listEvents("rec-1");
+      Map<String, Object> body =
+          client.video().roomRecordings().listEvents("rec-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -428,7 +470,7 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_room_recording_events",
               500,
-              () -> client.video().roomRecordings().listEvents("rec-1")));
+              () -> client.video().roomRecordings().listEvents("rec-1", java.util.Map.of())));
     }
   }
 
@@ -535,7 +577,8 @@ class VideoCoverageMockTest {
 
     @Test
     void listConferenceTokensSuccess() {
-      Map<String, Object> body = client.video().conferences().listConferenceTokens("conf-1");
+      Map<String, Object> body =
+          client.video().conferences().listConferenceTokens("conf-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -553,12 +596,14 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_conference_tokens",
               500,
-              () -> client.video().conferences().listConferenceTokens("conf-1")));
+              () ->
+                  client.video().conferences().listConferenceTokens("conf-1", java.util.Map.of())));
     }
 
     @Test
     void listStreamsSuccess() {
-      Map<String, Object> body = client.video().conferences().listStreams("conf-1");
+      Map<String, Object> body =
+          client.video().conferences().listStreams("conf-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -574,13 +619,21 @@ class VideoCoverageMockTest {
           errCall(
               "video.list_conference_streams",
               500,
-              () -> client.video().conferences().listStreams("conf-1")));
+              () -> client.video().conferences().listStreams("conf-1", java.util.Map.of())));
     }
 
     @Test
     void createStreamSuccess() {
       Map<String, Object> body =
-          client.video().conferences().createStream("conf-1", kw("url", "rtmp://example.com/c"));
+          client
+              .video()
+              .conferences()
+              .createStream(
+                  "conf-1",
+                  com.signalwire.sdk.rest.namespaces.generated.VideoConferences.CreateStreamRequest
+                      .builder()
+                      .extras(kw("url", "rtmp://example.com/c"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("rtmp://example.com/c", j.bodyMap().get("url"));
@@ -597,7 +650,16 @@ class VideoCoverageMockTest {
           errCall(
               "video.create_conference_stream",
               422,
-              () -> client.video().conferences().createStream("conf-1", kw("url", "rtmp://x"))));
+              () ->
+                  client
+                      .video()
+                      .conferences()
+                      .createStream(
+                          "conf-1",
+                          com.signalwire.sdk.rest.namespaces.generated.VideoConferences
+                              .CreateStreamRequest.builder()
+                              .extras(kw("url", "rtmp://x"))
+                              .build())));
     }
   }
 
@@ -611,7 +673,7 @@ class VideoCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.video().conferenceTokens().get("tok-1");
+      Map<String, Object> body = client.video().conferenceTokens().get("tok-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "video.get_conference_token",
@@ -625,7 +687,7 @@ class VideoCoverageMockTest {
           errCall(
               "video.get_conference_token",
               404,
-              () -> client.video().conferenceTokens().get("missing")));
+              () -> client.video().conferenceTokens().get("missing", java.util.Map.of())));
     }
 
     @Test
@@ -659,7 +721,7 @@ class VideoCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.video().streams().get("stream-1");
+      Map<String, Object> body = client.video().streams().get("stream-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "video.get_stream", okJournal("GET", "/api/video/streams/stream-1", "video.get_stream"));
@@ -668,13 +730,24 @@ class VideoCoverageMockTest {
     @Test
     void getError() {
       assertEquals(
-          404, errCall("video.get_stream", 404, () -> client.video().streams().get("missing")));
+          404,
+          errCall(
+              "video.get_stream",
+              404,
+              () -> client.video().streams().get("missing", java.util.Map.of())));
     }
 
     @Test
     void updateSuccess() {
       Map<String, Object> body =
-          client.video().streams().update("stream-1", kw("url", "rtmp://example.com/new"));
+          client
+              .video()
+              .streams()
+              .update(
+                  "stream-1",
+                  com.signalwire.sdk.rest.namespaces.generated.VideoStreams.UpdateRequest.builder()
+                      .extras(kw("url", "rtmp://example.com/new"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("rtmp://example.com/new", j.bodyMap().get("url"));
@@ -690,7 +763,16 @@ class VideoCoverageMockTest {
           errCall(
               "video.update_stream",
               404,
-              () -> client.video().streams().update("missing", kw("url", "rtmp://x"))));
+              () ->
+                  client
+                      .video()
+                      .streams()
+                      .update(
+                          "missing",
+                          com.signalwire.sdk.rest.namespaces.generated.VideoStreams.UpdateRequest
+                              .builder()
+                              .extras(kw("url", "rtmp://x"))
+                              .build())));
     }
 
     @Test

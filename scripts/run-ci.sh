@@ -139,6 +139,17 @@ surface_fresh_gate() {
 run_gate "SURFACE-FRESH" "check_surface_freshness vs committed port_surface.json" \
     surface_fresh_gate
 
+# Gate 4b: GEN-FRESH — the generated REST resource layer
+# (src/main/java/com/signalwire/sdk/rest/namespaces/generated/*) is emitted by
+# scripts/generate_rest.py from the porting-sdk REST specs and is DO-NOT-EDIT.
+# This gate re-runs the generator in --check mode and fails if any on-disk
+# generated file drifts from the generator output (a hand edit, a spec change
+# not regenerated, or a leftover file). Mirrors SURFACE-FRESH for the generated
+# code. The generator formats through google-java-format so its output is
+# byte-identical to what the FMT gate (spotless) produces.
+run_gate "GEN-FRESH" "generate_rest.py --check (generated REST files match specs)" \
+    python3 scripts/generate_rest.py --check
+
 # Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"

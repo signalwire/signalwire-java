@@ -156,7 +156,15 @@ class FabricCoverageMockTest {
 
     @Test
     void createEmbedsTokenSuccess() {
-      Map<String, Object> body = client.fabric().tokens().createEmbedToken(kw("a", "b"));
+      Map<String, Object> body =
+          client
+              .fabric()
+              .tokens()
+              .createEmbedToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateEmbedTokenRequest
+                      .builder()
+                      .extras(kw("a", "b"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.create_embeds_token",
@@ -170,12 +178,28 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.create_embeds_token",
               422,
-              () -> client.fabric().tokens().createEmbedToken(kw("a", "b"))));
+              () ->
+                  client
+                      .fabric()
+                      .tokens()
+                      .createEmbedToken(
+                          com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                              .CreateEmbedTokenRequest.builder()
+                              .extras(kw("a", "b"))
+                              .build())));
     }
 
     @Test
     void createGuestTokenSuccess() {
-      Map<String, Object> body = client.fabric().tokens().createGuestToken(kw("a", "b"));
+      Map<String, Object> body =
+          client
+              .fabric()
+              .tokens()
+              .createGuestToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateGuestTokenRequest
+                      .builder()
+                      .extras(kw("a", "b"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.create_subscriber_guest_token",
@@ -189,13 +213,28 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.create_subscriber_guest_token",
               422,
-              () -> client.fabric().tokens().createGuestToken(kw("a", "b"))));
+              () ->
+                  client
+                      .fabric()
+                      .tokens()
+                      .createGuestToken(
+                          com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                              .CreateGuestTokenRequest.builder()
+                              .extras(kw("a", "b"))
+                              .build())));
     }
 
     @Test
     void createInviteTokenSuccess() {
       Map<String, Object> body =
-          client.fabric().tokens().createInviteToken(kw("email", "x@example.com"));
+          client
+              .fabric()
+              .tokens()
+              .createInviteToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateInviteTokenRequest
+                      .builder()
+                      .extras(kw("email", "x@example.com"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.create_subscriber_invite_token",
@@ -210,12 +249,28 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.create_subscriber_invite_token",
               422,
-              () -> client.fabric().tokens().createInviteToken(kw("email", "x@example.com"))));
+              () ->
+                  client
+                      .fabric()
+                      .tokens()
+                      .createInviteToken(
+                          com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                              .CreateInviteTokenRequest.builder()
+                              .extras(kw("email", "x@example.com"))
+                              .build())));
     }
 
     @Test
     void createSubscriberTokenSuccess() {
-      Map<String, Object> body = client.fabric().tokens().createSubscriberToken(kw("a", "b"));
+      Map<String, Object> body =
+          client
+              .fabric()
+              .tokens()
+              .createSubscriberToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                      .CreateSubscriberTokenRequest.builder()
+                      .extras(kw("a", "b"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.create_subscriber_token",
@@ -229,13 +284,28 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.create_subscriber_token",
               422,
-              () -> client.fabric().tokens().createSubscriberToken(kw("a", "b"))));
+              () ->
+                  client
+                      .fabric()
+                      .tokens()
+                      .createSubscriberToken(
+                          com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                              .CreateSubscriberTokenRequest.builder()
+                              .extras(kw("a", "b"))
+                              .build())));
     }
 
     @Test
     void refreshSubscriberTokenSuccess() {
       Map<String, Object> body =
-          client.fabric().tokens().refreshSubscriberToken(kw("refresh_token", "t"));
+          client
+              .fabric()
+              .tokens()
+              .refreshSubscriberToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                      .RefreshSubscriberTokenRequest.builder()
+                      .extras(kw("refresh_token", "t"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.refresh_subscriber_token",
@@ -250,7 +320,15 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.refresh_subscriber_token",
               422,
-              () -> client.fabric().tokens().refreshSubscriberToken(kw("refresh_token", "t"))));
+              () ->
+                  client
+                      .fabric()
+                      .tokens()
+                      .refreshSubscriberToken(
+                          com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                              .RefreshSubscriberTokenRequest.builder()
+                              .extras(kw("refresh_token", "t"))
+                              .build())));
     }
   }
 
@@ -264,7 +342,7 @@ class FabricCoverageMockTest {
 
     @Test
     void listSuccess() {
-      Map<String, Object> body = client.fabric().resources().list();
+      Map<String, Object> body = client.fabric().resources().list(java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -275,12 +353,16 @@ class FabricCoverageMockTest {
     @Test
     void listError() {
       assertEquals(
-          500, errCall("fabric.list_resources", 500, () -> client.fabric().resources().list()));
+          500,
+          errCall(
+              "fabric.list_resources",
+              500,
+              () -> client.fabric().resources().list(java.util.Map.of())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.fabric().resources().get("res-1");
+      Map<String, Object> body = client.fabric().resources().get("res-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "fabric.get_resource",
@@ -291,7 +373,10 @@ class FabricCoverageMockTest {
     void getError() {
       assertEquals(
           404,
-          errCall("fabric.get_resource", 404, () -> client.fabric().resources().get("missing")));
+          errCall(
+              "fabric.get_resource",
+              404,
+              () -> client.fabric().resources().get("missing", java.util.Map.of())));
     }
 
     @Test
@@ -313,7 +398,8 @@ class FabricCoverageMockTest {
 
     @Test
     void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().resources().listAddresses("res-3");
+      Map<String, Object> body =
+          client.fabric().resources().listAddresses("res-3", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -329,7 +415,7 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_resource_addresses",
               500,
-              () -> client.fabric().resources().listAddresses("res-3")));
+              () -> client.fabric().resources().listAddresses("res-3", java.util.Map.of())));
     }
 
     @Test
@@ -338,7 +424,12 @@ class FabricCoverageMockTest {
           client
               .fabric()
               .resources()
-              .assignDomainApplication("res-4", kw("domain_application_id", "da-7"));
+              .assignDomainApplication(
+                  "res-4",
+                  com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                      .AssignDomainApplicationRequest.builder()
+                      .extras(kw("domain_application_id", "da-7"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("da-7", j.bodyMap().get("domain_application_id"));
@@ -361,7 +452,12 @@ class FabricCoverageMockTest {
                   client
                       .fabric()
                       .resources()
-                      .assignDomainApplication("res-4", kw("domain_application_id", "da-7"))));
+                      .assignDomainApplication(
+                          "res-4",
+                          com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                              .AssignDomainApplicationRequest.builder()
+                              .extras(kw("domain_application_id", "da-7"))
+                              .build())));
     }
   }
 
@@ -458,29 +554,6 @@ class FabricCoverageMockTest {
           404,
           errCall(
               "fabric.delete_ai_agent", 404, () -> client.fabric().aiAgents().delete("missing")));
-    }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().aiAgents().listAddresses("a-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_ai_agent_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/ai_agents/a-1/addresses",
-              "fabric.list_ai_agent_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_ai_agent_addresses",
-              500,
-              () -> client.fabric().aiAgents().listAddresses("a-1")));
     }
   }
 
@@ -581,7 +654,8 @@ class FabricCoverageMockTest {
 
     @Test
     void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().callFlows().listAddresses("cf-1");
+      Map<String, Object> body =
+          client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -599,12 +673,13 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_call_flow_addresses",
               500,
-              () -> client.fabric().callFlows().listAddresses("cf-1")));
+              () -> client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of())));
     }
 
     @Test
     void listVersionsSuccess() {
-      Map<String, Object> body = client.fabric().callFlows().listVersions("cf-1");
+      Map<String, Object> body =
+          client.fabric().callFlows().listVersions("cf-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "fabric.list_call_flow_versions",
@@ -621,7 +696,7 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_call_flow_versions",
               500,
-              () -> client.fabric().callFlows().listVersions("cf-1")));
+              () -> client.fabric().callFlows().listVersions("cf-1", java.util.Map.of())));
     }
 
     @Test
@@ -760,7 +835,8 @@ class FabricCoverageMockTest {
 
     @Test
     void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().conferenceRooms().listAddresses("cr-1");
+      Map<String, Object> body =
+          client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -778,7 +854,7 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_conference_room_addresses",
               500,
-              () -> client.fabric().conferenceRooms().listAddresses("cr-1")));
+              () -> client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of())));
     }
   }
 
@@ -792,7 +868,7 @@ class FabricCoverageMockTest {
 
     @Test
     void listSuccess() {
-      Map<String, Object> body = client.fabric().cxmlApplications().list();
+      Map<String, Object> body = client.fabric().cxmlApplications().list(java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -808,12 +884,12 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_cxml_applications",
               500,
-              () -> client.fabric().cxmlApplications().list()));
+              () -> client.fabric().cxmlApplications().list(java.util.Map.of())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.fabric().cxmlApplications().get("ca-1");
+      Map<String, Object> body = client.fabric().cxmlApplications().get("ca-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "fabric.get_cxml_application",
@@ -830,12 +906,21 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.get_cxml_application",
               404,
-              () -> client.fabric().cxmlApplications().get("missing")));
+              () -> client.fabric().cxmlApplications().get("missing", java.util.Map.of())));
     }
 
     @Test
     void updateSuccess() {
-      Map<String, Object> body = client.fabric().cxmlApplications().update("ca-1", kw("name", "x"));
+      Map<String, Object> body =
+          client
+              .fabric()
+              .cxmlApplications()
+              .update(
+                  "ca-1",
+                  com.signalwire.sdk.rest.namespaces.generated.CxmlApplications.UpdateRequest
+                      .builder()
+                      .extras(kw("name", "x"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.update_cxml_application",
@@ -852,7 +937,16 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.update_cxml_application",
               404,
-              () -> client.fabric().cxmlApplications().update("missing", kw("name", "x"))));
+              () ->
+                  client
+                      .fabric()
+                      .cxmlApplications()
+                      .update(
+                          "missing",
+                          com.signalwire.sdk.rest.namespaces.generated.CxmlApplications
+                              .UpdateRequest.builder()
+                              .extras(kw("name", "x"))
+                              .build())));
     }
 
     @Test
@@ -879,7 +973,8 @@ class FabricCoverageMockTest {
 
     @Test
     void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().cxmlApplications().listAddresses("ca-1");
+      Map<String, Object> body =
+          client.fabric().cxmlApplications().listAddresses("ca-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -897,18 +992,19 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_cxml_application_addresses",
               500,
-              () -> client.fabric().cxmlApplications().listAddresses("ca-1")));
+              () -> client.fabric().cxmlApplications().listAddresses("ca-1", java.util.Map.of())));
     }
 
     @Test
-    void createRaisesUnsupported() {
-      UnsupportedOperationException ex =
-          assertThrows(
-              UnsupportedOperationException.class,
-              () -> client.fabric().cxmlApplications().create(kw("name", "nope")));
-      assertTrue(
-          ex.getMessage().contains("cXML applications cannot"),
-          "unexpected message: " + ex.getMessage());
+    void noCreateSurface() {
+      // The generated CxmlApplications resource has NO create method — cXML applications cannot
+      // be created through the fabric API (the old hand namespace threw
+      // UnsupportedOperationException
+      // from a create() stub; the generated resource omits the method, enforcing this at compile
+      // time).
+      var cxml = client.fabric().cxmlApplications();
+      assertNotNull(cxml);
+      assertEquals("/fabric/resources/cxml_applications", cxml.getBasePath());
       assertTrue(mock.journal().isEmpty(), "expected no journal entries, got " + mock.journal());
     }
   }
@@ -1012,29 +1108,6 @@ class FabricCoverageMockTest {
               404,
               () -> client.fabric().cxmlScripts().delete("missing")));
     }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().cxmlScripts().listAddresses("cs-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_cxml_script_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/cxml_scripts/cs-1/addresses",
-              "fabric.list_cxml_script_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_cxml_script_addresses",
-              500,
-              () -> client.fabric().cxmlScripts().listAddresses("cs-1")));
-    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -1137,29 +1210,6 @@ class FabricCoverageMockTest {
               "fabric.delete_cxml_webhook",
               404,
               () -> client.fabric().cxmlWebhooks().delete("missing")));
-    }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().cxmlWebhooks().listAddresses("cw-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_cxml_webhook_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/cxml_webhooks/cw-1/addresses",
-              "fabric.list_cxml_webhook_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_cxml_webhook_addresses",
-              500,
-              () -> client.fabric().cxmlWebhooks().listAddresses("cw-1")));
     }
   }
 
@@ -1282,29 +1332,6 @@ class FabricCoverageMockTest {
               404,
               () -> client.fabric().freeswitchConnectors().delete("missing")));
     }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().freeswitchConnectors().listAddresses("fc-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_freeswitch_connector_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/freeswitch_connectors/fc-1/addresses",
-              "fabric.list_freeswitch_connector_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_freeswitch_connector_addresses",
-              500,
-              () -> client.fabric().freeswitchConnectors().listAddresses("fc-1")));
-    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -1424,29 +1451,6 @@ class FabricCoverageMockTest {
               404,
               () -> client.fabric().relayApplications().delete("missing")));
     }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().relayApplications().listAddresses("ra-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_relay_application_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/relay_applications/ra-1/addresses",
-              "fabric.list_relay_application_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_relay_application_addresses",
-              500,
-              () -> client.fabric().relayApplications().listAddresses("ra-1")));
-    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -1550,29 +1554,6 @@ class FabricCoverageMockTest {
               "fabric.delete_sip_endpoint",
               404,
               () -> client.fabric().sipEndpoints().delete("missing")));
-    }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().sipEndpoints().listAddresses("se-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_sip_endpoint_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/sip_endpoints/se-1/addresses",
-              "fabric.list_sip_endpoint_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_sip_endpoint_addresses",
-              500,
-              () -> client.fabric().sipEndpoints().listAddresses("se-1")));
     }
   }
 
@@ -1780,29 +1761,9 @@ class FabricCoverageMockTest {
     }
 
     @Test
-    void listAddressesSuccess() {
-      assertEquals(
-          200,
-          okListArrayBody(
-              "GET",
-              "/api/fabric/resources/subscribers/su-1/addresses",
-              "fabric.list_subscriber_addresses",
-              () -> client.fabric().subscribers().listAddresses("su-1")));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_subscriber_addresses",
-              500,
-              () -> client.fabric().subscribers().listAddresses("su-1")));
-    }
-
-    @Test
     void listSipEndpointsSuccess() {
-      Map<String, Object> body = client.fabric().subscribers().listSipEndpoints("su-1");
+      Map<String, Object> body =
+          client.fabric().subscribers().listSipEndpoints("su-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -1820,13 +1781,21 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.list_subscriber_sip_endpoints",
               500,
-              () -> client.fabric().subscribers().listSipEndpoints("su-1")));
+              () -> client.fabric().subscribers().listSipEndpoints("su-1", java.util.Map.of())));
     }
 
     @Test
     void createSipEndpointSuccess() {
       Map<String, Object> body =
-          client.fabric().subscribers().createSipEndpoint("su-1", kw("username", "u"));
+          client
+              .fabric()
+              .subscribers()
+              .createSipEndpoint(
+                  "su-1",
+                  com.signalwire.sdk.rest.namespaces.generated.Subscribers.CreateSipEndpointRequest
+                      .builder()
+                      .extras(kw("username", "u"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.create_subscriber_sip_endpoint",
@@ -1843,12 +1812,22 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.create_subscriber_sip_endpoint",
               422,
-              () -> client.fabric().subscribers().createSipEndpoint("su-1", kw("username", "u"))));
+              () ->
+                  client
+                      .fabric()
+                      .subscribers()
+                      .createSipEndpoint(
+                          "su-1",
+                          com.signalwire.sdk.rest.namespaces.generated.Subscribers
+                              .CreateSipEndpointRequest.builder()
+                              .extras(kw("username", "u"))
+                              .build())));
     }
 
     @Test
     void getSipEndpointSuccess() {
-      Map<String, Object> body = client.fabric().subscribers().getSipEndpoint("su-1", "ep-1");
+      Map<String, Object> body =
+          client.fabric().subscribers().getSipEndpoint("su-1", "ep-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "fabric.get_subscriber_sip_endpoint",
@@ -1865,13 +1844,26 @@ class FabricCoverageMockTest {
           errCall(
               "fabric.get_subscriber_sip_endpoint",
               404,
-              () -> client.fabric().subscribers().getSipEndpoint("su-1", "missing")));
+              () ->
+                  client
+                      .fabric()
+                      .subscribers()
+                      .getSipEndpoint("su-1", "missing", java.util.Map.of())));
     }
 
     @Test
     void updateSipEndpointSuccess() {
       Map<String, Object> body =
-          client.fabric().subscribers().updateSipEndpoint("su-1", "ep-1", kw("username", "r"));
+          client
+              .fabric()
+              .subscribers()
+              .updateSipEndpoint(
+                  "su-1",
+                  "ep-1",
+                  com.signalwire.sdk.rest.namespaces.generated.Subscribers.UpdateSipEndpointRequest
+                      .builder()
+                      .extras(kw("username", "r"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("r", j.bodyMap().get("username"));
@@ -1894,7 +1886,13 @@ class FabricCoverageMockTest {
                   client
                       .fabric()
                       .subscribers()
-                      .updateSipEndpoint("su-1", "missing", kw("username", "r"))));
+                      .updateSipEndpoint(
+                          "su-1",
+                          "missing",
+                          com.signalwire.sdk.rest.namespaces.generated.Subscribers
+                              .UpdateSipEndpointRequest.builder()
+                              .extras(kw("username", "r"))
+                              .build())));
     }
 
     @Test
@@ -2020,29 +2018,6 @@ class FabricCoverageMockTest {
               404,
               () -> client.fabric().swmlScripts().delete("missing")));
     }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().swmlScripts().listAddresses("ss-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_swml_script_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/swml_scripts/ss-1/addresses",
-              "fabric.list_swml_script_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_swml_script_addresses",
-              500,
-              () -> client.fabric().swmlScripts().listAddresses("ss-1")));
-    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -2145,29 +2120,6 @@ class FabricCoverageMockTest {
               "fabric.delete_swml_webhook",
               404,
               () -> client.fabric().swmlWebhooks().delete("missing")));
-    }
-
-    @Test
-    void listAddressesSuccess() {
-      Map<String, Object> body = client.fabric().swmlWebhooks().listAddresses("sw-1");
-      assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertEquals(
-          "fabric.list_swml_webhook_addresses",
-          okJournal(
-              "GET",
-              "/api/fabric/resources/swml_webhooks/sw-1/addresses",
-              "fabric.list_swml_webhook_addresses"));
-    }
-
-    @Test
-    void listAddressesError() {
-      assertEquals(
-          500,
-          errCall(
-              "fabric.list_swml_webhook_addresses",
-              500,
-              () -> client.fabric().swmlWebhooks().listAddresses("sw-1")));
     }
   }
 }

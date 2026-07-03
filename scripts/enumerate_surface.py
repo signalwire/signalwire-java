@@ -115,6 +115,35 @@ _CLASS_RENAMES: dict[str, str] = {
     "RestError": "SignalWireRestError",
 }
 
+# The 6 generated namespace-container classes (package
+# ...rest.namespaces.generated). The oracle's ``_client_tree_generated`` module
+# records these with ONLY ``__init__``; their Java lazy-accessor methods are the
+# client-tree wiring the oracle does not compare. Restrict them to ``__init__``.
+_GENERATED_CONTAINERS = {
+    "FabricNamespace", "VideoNamespace", "LogsNamespace",
+    "RegistryNamespace", "ProjectNamespace", "DatasphereNamespace",
+}
+
+# Generated-resource bases whose subclasses inherit create + update (the oracle
+# records exactly {create, update} on each such subclass; get/list/delete stay
+# on the base module). ReadResource/BaseResource contribute no implicit route.
+_CRUD_LIKE_BASES = {"CrudResource", "FabricResource", "FabricResourcePUT"}
+
+# ``public class Foo extends Bar {`` header of a generated resource. Read from
+# the RAW source (comments/imports already name ``BaseResource`` etc., so match
+# the class-declaration line specifically).
+_GENERATED_EXTENDS_RE = re.compile(
+    r"\bpublic\s+(?:final\s+|abstract\s+)*class\s+[A-Z]\w*\s+extends\s+([A-Z]\w*)"
+)
+
+
+def _generated_extends(raw_src: str) -> str | None:
+    """Return the direct superclass name of the file's top-level generated
+    resource class, or None if it declares no ``extends`` (a container /
+    command-dispatch class)."""
+    m = _GENERATED_EXTENDS_RE.search(raw_src)
+    return m.group(1) if m else None
+
 _CAMEL_RE_1 = re.compile(r"(.)([A-Z][a-z]+)")
 _CAMEL_RE_2 = re.compile(r"([a-z0-9])([A-Z])")
 _PY_KEYWORDS = {"pass", "class", "def", "from", "import", "return", "yield",
@@ -526,6 +555,52 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         body, outer_name, known_python_classes,
         java_outer_name=outer_name_raw, native=native,
     )
+
+    # Generated REST layer projection (§8). The generated resource/container
+    # classes live in ``...rest.namespaces.generated`` and carry two kinds of
+    # PORT-ONLY surface the Python oracle does not record:
+    #   * the typed-input BUILDER scaffolding — every write/command/set method
+    #     emits a nested ``<Method>Request`` + its ``Builder`` (the Java NAMED
+    #     idiom for keyword params, L13). These are implementation detail of the
+    #     typed input, not a route/resource, so the oracle has no counterpart.
+    #     Drop ALL nested classes in the generated package (the resource and
+    #     container classes are each the file's single top-level type; the only
+    #     nested types are this Request/Builder scaffolding).
+    #   * the client-tree WIRING — the ``ResourceTree`` plumbing base and the
+    #     namespace containers expose lazy accessor methods (``aiAgents()`` …)
+    #     that mirror Python instance attributes set in ``__init__``. The oracle
+    #     records the containers with ONLY ``__init__`` (attributes aren't
+    #     methods there) and has no ResourceTree at all. So: drop ResourceTree,
+    #     and restrict each container to ``__init__``. The RestClient's own
+    #     accessors are inherited from ResourceTree (not re-declared on
+    #     RestClient) and are likewise absent from the compared surface — the
+    #     6 hand RestClient members that remain are covered by PORT_ADDITIONS.
+    if java_package == "com.signalwire.sdk.rest.namespaces.generated":
+        # 1. Drop every nested class (keep only the file's top-level type).
+        classes = {outer_name: classes.get(outer_name, [])}
+        # 2. Drop the ResourceTree plumbing base entirely.
+        if outer_name == "ResourceTree":
+            return {}
+        # 3. Namespace containers: keep only __init__ (match the oracle's
+        #    _client_tree_generated classes, which record init only).
+        if outer_name in _GENERATED_CONTAINERS:
+            meths = classes[outer_name]
+            classes[outer_name] = ["__init__"] if "__init__" in meths else []
+        else:
+            # 4. Implicit-base projection. SignatureDump/the text parser only see
+            #    DECLARED methods, so a generated resource that INHERITS
+            #    create/update from a CRUD/Fabric base shows neither. The oracle
+            #    records create + update on every such subclass (verified: the
+            #    CrudResource/FabricResource/FabricResourcePUT bases contribute
+            #    exactly {create, update} to their subclasses — get/list/delete
+            #    live on the base module, not projected onto the resource).
+            #    Inject the two method NAMES the class doesn't already declare.
+            base = _generated_extends(raw)
+            if base in _CRUD_LIKE_BASES:
+                have = set(classes[outer_name])
+                for m in ("create", "update"):
+                    if m not in have:
+                        classes[outer_name].append(m)
 
     # Free-function projection: a static method on certain Java classes
     # surfaces as a Python module-level free function. Without this, the

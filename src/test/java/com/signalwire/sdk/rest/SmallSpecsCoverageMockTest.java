@@ -8,6 +8,9 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+import com.signalwire.sdk.rest.namespaces.generated.Chat;
+import com.signalwire.sdk.rest.namespaces.generated.PubSub;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +87,14 @@ class SmallSpecsCoverageMockTest {
 
     @Test
     void createSuccess() {
-      Map<String, Object> body = client.project().tokens().create(kw("name", "tok"));
+      Map<String, Object> body =
+          client
+              .project()
+              .tokens()
+              .create(
+                  com.signalwire.sdk.rest.namespaces.generated.ProjectTokens.CreateRequest.builder()
+                      .extras(kw("name", "tok"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "project.create_token", okJournal("POST", "/api/project/tokens", "project.create_token"));
@@ -97,12 +107,28 @@ class SmallSpecsCoverageMockTest {
           errCall(
               "project.create_token",
               422,
-              () -> client.project().tokens().create(kw("name", "tok"))));
+              () ->
+                  client
+                      .project()
+                      .tokens()
+                      .create(
+                          com.signalwire.sdk.rest.namespaces.generated.ProjectTokens.CreateRequest
+                              .builder()
+                              .extras(kw("name", "tok"))
+                              .build())));
     }
 
     @Test
     void updateSuccess() {
-      Map<String, Object> body = client.project().tokens().update("tok-1", kw("name", "renamed"));
+      Map<String, Object> body =
+          client
+              .project()
+              .tokens()
+              .update(
+                  "tok-1",
+                  com.signalwire.sdk.rest.namespaces.generated.ProjectTokens.UpdateRequest.builder()
+                      .extras(kw("name", "renamed"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "project.update_token",
@@ -116,7 +142,16 @@ class SmallSpecsCoverageMockTest {
           errCall(
               "project.update_token",
               404,
-              () -> client.project().tokens().update("missing", kw("name", "renamed"))));
+              () ->
+                  client
+                      .project()
+                      .tokens()
+                      .update(
+                          "missing",
+                          com.signalwire.sdk.rest.namespaces.generated.ProjectTokens.UpdateRequest
+                              .builder()
+                              .extras(kw("name", "renamed"))
+                              .build())));
     }
 
     @Test
@@ -173,7 +208,7 @@ class SmallSpecsCoverageMockTest {
 
     @Test
     void listEventsSuccess() {
-      Map<String, Object> body = client.logs().voice().listEvents("vl-1");
+      Map<String, Object> body = client.logs().voice().listEvents("vl-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "voice.list_voice_log_events",
@@ -185,7 +220,9 @@ class SmallSpecsCoverageMockTest {
       assertEquals(
           500,
           errCall(
-              "voice.list_voice_log_events", 500, () -> client.logs().voice().listEvents("vl-1")));
+              "voice.list_voice_log_events",
+              500,
+              () -> client.logs().voice().listEvents("vl-1", java.util.Map.of())));
     }
   }
 
@@ -272,7 +309,7 @@ class SmallSpecsCoverageMockTest {
 
     @Test
     void listSuccess() {
-      Map<String, Object> body = client.logs().conferences().list();
+      Map<String, Object> body = client.logs().conferences().list(java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "logs.list_conferences",
@@ -282,7 +319,11 @@ class SmallSpecsCoverageMockTest {
     @Test
     void listError() {
       assertEquals(
-          500, errCall("logs.list_conferences", 500, () -> client.logs().conferences().list()));
+          500,
+          errCall(
+              "logs.list_conferences",
+              500,
+              () -> client.logs().conferences().list(java.util.Map.of())));
     }
   }
 
@@ -297,7 +338,12 @@ class SmallSpecsCoverageMockTest {
     @Test
     void dialSuccess() {
       Map<String, Object> body =
-          client.calling().dial(kw("url", "https://example.com/swml", "to", "+15551234567"));
+          client
+              .calling()
+              .dial(
+                  Calling.DialRequest.builder()
+                      .extras(kw("url", "https://example.com/swml", "to", "+15551234567"))
+                      .build());
       assertNotNull(body);
       MockTest.JournalEntry j = mock.last();
       assertEquals("dial", j.bodyMap().get("command"));
@@ -316,7 +362,10 @@ class SmallSpecsCoverageMockTest {
               () ->
                   client
                       .calling()
-                      .dial(kw("url", "https://example.com/swml", "to", "+15551234567"))));
+                      .dial(
+                          Calling.DialRequest.builder()
+                              .extras(kw("url", "https://example.com/swml", "to", "+15551234567"))
+                              .build())));
     }
   }
 
@@ -331,7 +380,12 @@ class SmallSpecsCoverageMockTest {
     @Test
     void createTokenSuccess() {
       Map<String, Object> body =
-          client.chat().createToken(kw("ttl", 3600, "channels", kw("room", kw("read", true))));
+          client
+              .chat()
+              .createToken(
+                  Chat.CreateTokenRequest.builder()
+                      .extras(kw("ttl", 3600, "channels", kw("room", kw("read", true))))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "chat.create_chat_token",
@@ -342,7 +396,14 @@ class SmallSpecsCoverageMockTest {
     void createTokenError() {
       assertEquals(
           422,
-          errCall("chat.create_chat_token", 422, () -> client.chat().createToken(kw("ttl", 3600))));
+          errCall(
+              "chat.create_chat_token",
+              422,
+              () ->
+                  client
+                      .chat()
+                      .createToken(
+                          Chat.CreateTokenRequest.builder().extras(kw("ttl", 3600)).build())));
     }
   }
 
@@ -357,7 +418,12 @@ class SmallSpecsCoverageMockTest {
     @Test
     void createTokenSuccess() {
       Map<String, Object> body =
-          client.pubSub().createToken(kw("ttl", 3600, "channels", kw("room", kw("read", true))));
+          client
+              .pubsub()
+              .createToken(
+                  PubSub.CreateTokenRequest.builder()
+                      .extras(kw("ttl", 3600, "channels", kw("room", kw("read", true))))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "pubsub.create_token", okJournal("POST", "/api/pubsub/tokens", "pubsub.create_token"));
@@ -367,7 +433,14 @@ class SmallSpecsCoverageMockTest {
     void createTokenError() {
       assertEquals(
           422,
-          errCall("pubsub.create_token", 422, () -> client.pubSub().createToken(kw("ttl", 3600))));
+          errCall(
+              "pubsub.create_token",
+              422,
+              () ->
+                  client
+                      .pubsub()
+                      .createToken(
+                          PubSub.CreateTokenRequest.builder().extras(kw("ttl", 3600)).build())));
     }
   }
 }

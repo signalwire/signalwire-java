@@ -11,8 +11,16 @@ import java.util.Map;
 /**
  * Generic CRUD resource for REST API namespaces.
  *
- * <p>Provides standard list, get, create, update, and delete operations against a base path. Used
- * by namespace classes to avoid repetitive HTTP boilerplate.
+ * <p>Provides standard list, get, create, update, and delete operations against a base path. Serves
+ * as the base for the generated per-resource classes in {@code
+ * com.signalwire.sdk.rest.namespaces.generated} and as a standalone helper.
+ *
+ * <p>Extends {@link BaseResource} for the HTTP plumbing + the low-level {@code
+ * restGet/restPost/restPut/restPatch/restDelete} verb receivers the generated subclasses call;
+ * layers the public CRUD surface on top. The public {@code delete(String id)} and the raw {@code
+ * restDelete(String path)} receiver are DISTINCT methods (different names), so a generated
+ * subclass's declared sub-resource delete (which calls {@code restDelete(fullPath)}) is never
+ * shadowed by the basePath-prepending {@code delete(id)}.
  *
  * <pre>{@code
  * var numbers = new CrudResource(httpClient, "/phone_numbers");
@@ -20,10 +28,8 @@ import java.util.Map;
  * var one = numbers.get("pn-abc-123");
  * }</pre>
  */
-public class CrudResource {
+public class CrudResource extends BaseResource {
 
-  private final HttpClient httpClient;
-  private final String basePath;
   private final UpdateMethod updateMethod;
 
   /** HTTP verb a CRUD resource uses for {@link #update(String, Map)}. */
@@ -53,51 +59,40 @@ public class CrudResource {
    * @param updateMethod HTTP verb used by {@link #update(String, Map)}
    */
   protected CrudResource(HttpClient httpClient, String basePath, UpdateMethod updateMethod) {
-    this.httpClient = httpClient;
-    this.basePath = basePath;
+    super(httpClient, basePath);
     this.updateMethod = updateMethod;
   }
 
   /** List all resources. */
   public Map<String, Object> list() {
-    return httpClient.get(basePath);
+    return restGet(getBasePath(), null);
   }
 
   /** List resources with query parameters (e.g., pagination, filters). */
   public Map<String, Object> list(Map<String, String> queryParams) {
-    return httpClient.get(basePath, queryParams);
+    return restGet(getBasePath(), queryParams);
   }
 
   /** Get a single resource by ID. */
   public Map<String, Object> get(String id) {
-    return httpClient.get(basePath + "/" + id);
+    return restGet(getBasePath() + "/" + id, null);
   }
 
   /** Create a new resource. */
   public Map<String, Object> create(Map<String, Object> body) {
-    return httpClient.post(basePath, body);
+    return restPost(getBasePath(), body);
   }
 
   /** Update an existing resource by ID, using this resource's configured verb (PUT or PATCH). */
   public Map<String, Object> update(String id, Map<String, Object> body) {
     if (updateMethod == UpdateMethod.PATCH) {
-      return httpClient.patch(basePath + "/" + id, body);
+      return restPatch(getBasePath() + "/" + id, body);
     }
-    return httpClient.put(basePath + "/" + id, body);
+    return restPut(getBasePath() + "/" + id, body);
   }
 
   /** Delete a resource by ID. */
   public Map<String, Object> delete(String id) {
-    return httpClient.delete(basePath + "/" + id);
-  }
-
-  /** Get the base path for this resource. */
-  public String getBasePath() {
-    return basePath;
-  }
-
-  /** Get the underlying HTTP client. */
-  public HttpClient getHttpClient() {
-    return httpClient;
+    return restDelete(getBasePath() + "/" + id);
   }
 }

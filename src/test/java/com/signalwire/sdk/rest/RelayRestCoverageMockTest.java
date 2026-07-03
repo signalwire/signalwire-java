@@ -139,7 +139,11 @@ class RelayRestCoverageMockTest {
       Map<String, Object> body =
           client
               .addresses()
-              .create(kw("address_type", "commercial", "first_name", "Ada", "country", "US"));
+              .create(
+                  com.signalwire.sdk.rest.namespaces.generated.Addresses.CreateRequest.builder()
+                      .extras(
+                          kw("address_type", "commercial", "first_name", "Ada", "country", "US"))
+                      .build());
       assertTrue(body.containsKey("id"));
       assertEquals(
           "relay-rest.create_address",
@@ -154,12 +158,19 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.create_address",
               422,
-              () -> client.addresses().create(kw("address_type", "bad"))));
+              () ->
+                  client
+                      .addresses()
+                      .create(
+                          com.signalwire.sdk.rest.namespaces.generated.Addresses.CreateRequest
+                              .builder()
+                              .extras(kw("address_type", "bad"))
+                              .build())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.addresses().get("addr-123");
+      Map<String, Object> body = client.addresses().get("addr-123", qp());
       assertTrue(body.containsKey("id"));
       assertEquals(
           "relay-rest.get_address",
@@ -169,7 +180,8 @@ class RelayRestCoverageMockTest {
     @Test
     void getError() {
       assertEquals(
-          404, errCall("relay-rest.get_address", 404, () -> client.addresses().get("addr-404")));
+          404,
+          errCall("relay-rest.get_address", 404, () -> client.addresses().get("addr-404", qp())));
     }
 
     @Test
@@ -411,12 +423,15 @@ class RelayRestCoverageMockTest {
     void listMembersError() {
       assertEquals(
           500,
-          errCall("relay-rest.list_queue_members", 500, () -> client.queues().listMembers("q-1")));
+          errCall(
+              "relay-rest.list_queue_members",
+              500,
+              () -> client.queues().listMembers("q-1", qp())));
     }
 
     @Test
     void nextMemberSuccess() {
-      Map<String, Object> body = client.queues().getNextMember("q-1");
+      Map<String, Object> body = client.queues().getNextMember("q-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_next_queue_member",
@@ -431,12 +446,12 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.retrieve_next_queue_member",
               404,
-              () -> client.queues().getNextMember("q-404")));
+              () -> client.queues().getNextMember("q-404", qp())));
     }
 
     @Test
     void getMemberSuccess() {
-      Map<String, Object> body = client.queues().getMember("q-1", "mem-7");
+      Map<String, Object> body = client.queues().getMember("q-1", "mem-7", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_queue_member",
@@ -450,7 +465,7 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.retrieve_queue_member",
               404,
-              () -> client.queues().getMember("q-1", "mem-404")));
+              () -> client.queues().getMember("q-1", "mem-404", qp())));
     }
   }
 
@@ -474,12 +489,12 @@ class RelayRestCoverageMockTest {
     @Test
     void listError() {
       assertEquals(
-          500, errCall("relay-rest.list_recordings", 500, () -> client.recordings().list()));
+          500, errCall("relay-rest.list_recordings", 500, () -> client.recordings().list(qp())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.recordings().get("rec-1");
+      Map<String, Object> body = client.recordings().get("rec-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.get_recording",
@@ -489,7 +504,8 @@ class RelayRestCoverageMockTest {
     @Test
     void getError() {
       assertEquals(
-          404, errCall("relay-rest.get_recording", 404, () -> client.recordings().get("rec-404")));
+          404,
+          errCall("relay-rest.get_recording", 404, () -> client.recordings().get("rec-404", qp())));
     }
 
     @Test
@@ -529,12 +545,12 @@ class RelayRestCoverageMockTest {
     @Test
     void listError() {
       assertEquals(
-          500, errCall("relay-rest.list_short_codes", 500, () -> client.shortCodes().list()));
+          500, errCall("relay-rest.list_short_codes", 500, () -> client.shortCodes().list(qp())));
     }
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.shortCodes().get("sc-1");
+      Map<String, Object> body = client.shortCodes().get("sc-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_short_code",
@@ -545,12 +561,22 @@ class RelayRestCoverageMockTest {
     void getError() {
       assertEquals(
           404,
-          errCall("relay-rest.retrieve_short_code", 404, () -> client.shortCodes().get("sc-404")));
+          errCall(
+              "relay-rest.retrieve_short_code",
+              404,
+              () -> client.shortCodes().get("sc-404", qp())));
     }
 
     @Test
     void updateSuccess() {
-      Map<String, Object> body = client.shortCodes().update("sc-1", kw("name", "Marketing"));
+      Map<String, Object> body =
+          client
+              .shortCodes()
+              .update(
+                  "sc-1",
+                  com.signalwire.sdk.rest.namespaces.generated.ShortCodes.UpdateRequest.builder()
+                      .extras(kw("name", "Marketing"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.update_short_code",
@@ -565,7 +591,15 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.update_short_code",
               404,
-              () -> client.shortCodes().update("sc-404", kw("name", "x"))));
+              () ->
+                  client
+                      .shortCodes()
+                      .update(
+                          "sc-404",
+                          com.signalwire.sdk.rest.namespaces.generated.ShortCodes.UpdateRequest
+                              .builder()
+                              .extras(kw("name", "x"))
+                              .build())));
     }
   }
 
@@ -582,7 +616,11 @@ class RelayRestCoverageMockTest {
       Map<String, Object> body =
           client
               .importedNumbers()
-              .create(kw("number", "+15551234567", "sip_proxy", "sip.example.com"));
+              .create(
+                  com.signalwire.sdk.rest.namespaces.generated.ImportedNumbers.CreateRequest
+                      .builder()
+                      .extras(kw("number", "+15551234567", "sip_proxy", "sip.example.com"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.create_imported_phone_number",
@@ -598,7 +636,14 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.create_imported_phone_number",
               422,
-              () -> client.importedNumbers().create(kw("number", "bad"))));
+              () ->
+                  client
+                      .importedNumbers()
+                      .create(
+                          com.signalwire.sdk.rest.namespaces.generated.ImportedNumbers.CreateRequest
+                              .builder()
+                              .extras(kw("number", "bad"))
+                              .build())));
     }
   }
 
@@ -613,7 +658,12 @@ class RelayRestCoverageMockTest {
     @Test
     void callSuccess() {
       Map<String, Object> body =
-          client.mfa().call(kw("to", "+15551234567", "from", "+15559876543"));
+          client
+              .mfa()
+              .call(
+                  com.signalwire.sdk.rest.namespaces.generated.Mfa.CallRequest.builder()
+                      .extras(kw("to", "+15551234567", "from", "+15559876543"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.request_mfa_call",
@@ -624,12 +674,28 @@ class RelayRestCoverageMockTest {
     @Test
     void callError() {
       assertEquals(
-          422, errCall("relay-rest.request_mfa_call", 422, () -> client.mfa().call(kw("to", ""))));
+          422,
+          errCall(
+              "relay-rest.request_mfa_call",
+              422,
+              () ->
+                  client
+                      .mfa()
+                      .call(
+                          com.signalwire.sdk.rest.namespaces.generated.Mfa.CallRequest.builder()
+                              .extras(kw("to", ""))
+                              .build())));
     }
 
     @Test
     void smsSuccess() {
-      Map<String, Object> body = client.mfa().sms(kw("to", "+15551234567"));
+      Map<String, Object> body =
+          client
+              .mfa()
+              .sms(
+                  com.signalwire.sdk.rest.namespaces.generated.Mfa.SmsRequest.builder()
+                      .extras(kw("to", "+15551234567"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.request_mfa_sms",
@@ -639,12 +705,29 @@ class RelayRestCoverageMockTest {
     @Test
     void smsError() {
       assertEquals(
-          422, errCall("relay-rest.request_mfa_sms", 422, () -> client.mfa().sms(kw("to", ""))));
+          422,
+          errCall(
+              "relay-rest.request_mfa_sms",
+              422,
+              () ->
+                  client
+                      .mfa()
+                      .sms(
+                          com.signalwire.sdk.rest.namespaces.generated.Mfa.SmsRequest.builder()
+                              .extras(kw("to", ""))
+                              .build())));
     }
 
     @Test
     void verifySuccess() {
-      Map<String, Object> body = client.mfa().verify("req-1", kw("token", "123456"));
+      Map<String, Object> body =
+          client
+              .mfa()
+              .verify(
+                  "req-1",
+                  com.signalwire.sdk.rest.namespaces.generated.Mfa.VerifyRequest.builder()
+                      .extras(kw("token", "123456"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.verify_mfa_token",
@@ -659,7 +742,14 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.verify_mfa_token",
               404,
-              () -> client.mfa().verify("req-404", kw("token", "000000"))));
+              () ->
+                  client
+                      .mfa()
+                      .verify(
+                          "req-404",
+                          com.signalwire.sdk.rest.namespaces.generated.Mfa.VerifyRequest.builder()
+                              .extras(kw("token", "000000"))
+                              .build())));
     }
   }
 
@@ -681,7 +771,7 @@ class RelayRestCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.sipProfile().get();
+      Map<String, Object> body = client.sipProfile().get(qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_sip_profile",
@@ -691,7 +781,8 @@ class RelayRestCoverageMockTest {
     @Test
     void getError() {
       assertEquals(
-          500, errCall("relay-rest.retrieve_sip_profile", 500, () -> client.sipProfile().get()));
+          500,
+          errCall("relay-rest.retrieve_sip_profile", 500, () -> client.sipProfile().get(qp())));
     }
 
     @Test
@@ -699,7 +790,15 @@ class RelayRestCoverageMockTest {
       Map<String, Object> body =
           client
               .sipProfile()
-              .update(kw("domain", "myco.sip.signalwire.com", "default_codecs", List.of("PCMU")));
+              .update(
+                  com.signalwire.sdk.rest.namespaces.generated.SipProfile.UpdateRequest.builder()
+                      .extras(
+                          kw(
+                              "domain",
+                              "myco.sip.signalwire.com",
+                              "default_codecs",
+                              List.of("PCMU")))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.update_sip_profile",
@@ -714,7 +813,14 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.update_sip_profile",
               422,
-              () -> client.sipProfile().update(kw("domain", ""))));
+              () ->
+                  client
+                      .sipProfile()
+                      .update(
+                          com.signalwire.sdk.rest.namespaces.generated.SipProfile.UpdateRequest
+                              .builder()
+                              .extras(kw("domain", ""))
+                              .build())));
     }
   }
 
@@ -835,13 +941,20 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.list_number_group_memberships",
               500,
-              () -> client.numberGroups().listMemberships("ng-1")));
+              () -> client.numberGroups().listMemberships("ng-1", qp())));
     }
 
     @Test
     void addMembershipSuccess() {
       Map<String, Object> body =
-          client.numberGroups().addMembership("ng-1", kw("phone_number_id", "pn-1"));
+          client
+              .numberGroups()
+              .addMembership(
+                  "ng-1",
+                  com.signalwire.sdk.rest.namespaces.generated.NumberGroups.AddMembershipRequest
+                      .builder()
+                      .extras(kw("phone_number_id", "pn-1"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.create_number_group_membership",
@@ -859,12 +972,20 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.create_number_group_membership",
               422,
-              () -> client.numberGroups().addMembership("ng-1", kw("phone_number_id", ""))));
+              () ->
+                  client
+                      .numberGroups()
+                      .addMembership(
+                          "ng-1",
+                          com.signalwire.sdk.rest.namespaces.generated.NumberGroups
+                              .AddMembershipRequest.builder()
+                              .extras(kw("phone_number_id", ""))
+                              .build())));
     }
 
     @Test
     void getMembershipSuccess() {
-      Map<String, Object> body = client.numberGroups().getMembership("mem-1");
+      Map<String, Object> body = client.numberGroups().getMembership("mem-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_number_group_membership",
@@ -881,7 +1002,7 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.retrieve_number_group_membership",
               404,
-              () -> client.numberGroups().getMembership("mem-404")));
+              () -> client.numberGroups().getMembership("mem-404", qp())));
     }
 
     @Test
@@ -917,7 +1038,7 @@ class RelayRestCoverageMockTest {
 
     @Test
     void listSuccess() {
-      Map<String, Object> body = client.registry().brands().list();
+      Map<String, Object> body = client.registry().brands().list(qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.list_brands", okJournal("GET", R + "/brands", "relay-rest.list_brands"));
@@ -926,7 +1047,7 @@ class RelayRestCoverageMockTest {
     @Test
     void listError() {
       assertEquals(
-          500, errCall("relay-rest.list_brands", 500, () -> client.registry().brands().list()));
+          500, errCall("relay-rest.list_brands", 500, () -> client.registry().brands().list(qp())));
     }
 
     @Test
@@ -951,7 +1072,7 @@ class RelayRestCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.registry().brands().get("brand-77");
+      Map<String, Object> body = client.registry().brands().get("brand-77", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_brand",
@@ -963,12 +1084,14 @@ class RelayRestCoverageMockTest {
       assertEquals(
           404,
           errCall(
-              "relay-rest.retrieve_brand", 404, () -> client.registry().brands().get("brand-404")));
+              "relay-rest.retrieve_brand",
+              404,
+              () -> client.registry().brands().get("brand-404", qp())));
     }
 
     @Test
     void listCampaignsSuccess() {
-      Map<String, Object> body = client.registry().brands().listCampaigns("brand-1");
+      Map<String, Object> body = client.registry().brands().listCampaigns("brand-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.list_campaigns",
@@ -982,7 +1105,7 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.list_campaigns",
               500,
-              () -> client.registry().brands().listCampaigns("brand-1")));
+              () -> client.registry().brands().listCampaigns("brand-1", qp())));
     }
 
     @Test
@@ -1020,7 +1143,7 @@ class RelayRestCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.registry().campaigns().get("camp-1");
+      Map<String, Object> body = client.registry().campaigns().get("camp-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_campaign",
@@ -1034,13 +1157,21 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.retrieve_campaign",
               404,
-              () -> client.registry().campaigns().get("camp-404")));
+              () -> client.registry().campaigns().get("camp-404", qp())));
     }
 
     @Test
     void updateSuccess() {
       Map<String, Object> body =
-          client.registry().campaigns().update("camp-2", kw("description", "Updated"));
+          client
+              .registry()
+              .campaigns()
+              .update(
+                  "camp-2",
+                  com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.UpdateRequest
+                      .builder()
+                      .extras(kw("description", "Updated"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.update_campaign",
@@ -1055,12 +1186,21 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.update_campaign",
               404,
-              () -> client.registry().campaigns().update("camp-404", kw("description", "x"))));
+              () ->
+                  client
+                      .registry()
+                      .campaigns()
+                      .update(
+                          "camp-404",
+                          com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns
+                              .UpdateRequest.builder()
+                              .extras(kw("description", "x"))
+                              .build())));
     }
 
     @Test
     void listNumbersSuccess() {
-      Map<String, Object> body = client.registry().campaigns().listNumbers("camp-3");
+      Map<String, Object> body = client.registry().campaigns().listNumbers("camp-3", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.list_number_assignments",
@@ -1074,12 +1214,12 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.list_number_assignments",
               500,
-              () -> client.registry().campaigns().listNumbers("camp-3")));
+              () -> client.registry().campaigns().listNumbers("camp-3", qp())));
     }
 
     @Test
     void listOrdersSuccess() {
-      Map<String, Object> body = client.registry().campaigns().listOrders("camp-3");
+      Map<String, Object> body = client.registry().campaigns().listOrders("camp-3", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.list_orders",
@@ -1093,7 +1233,7 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.list_orders",
               500,
-              () -> client.registry().campaigns().listOrders("camp-3")));
+              () -> client.registry().campaigns().listOrders("camp-3", qp())));
     }
 
     @Test
@@ -1102,7 +1242,12 @@ class RelayRestCoverageMockTest {
           client
               .registry()
               .campaigns()
-              .createOrder("camp-4", kw("numbers", Arrays.asList("pn-1", "pn-2")));
+              .createOrder(
+                  "camp-4",
+                  com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.CreateOrderRequest
+                      .builder()
+                      .extras(kw("numbers", Arrays.asList("pn-1", "pn-2")))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.create_order",
@@ -1117,7 +1262,16 @@ class RelayRestCoverageMockTest {
           errCall(
               "relay-rest.create_order",
               422,
-              () -> client.registry().campaigns().createOrder("camp-4", kw("numbers", List.of()))));
+              () ->
+                  client
+                      .registry()
+                      .campaigns()
+                      .createOrder(
+                          "camp-4",
+                          com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns
+                              .CreateOrderRequest.builder()
+                              .extras(kw("numbers", List.of()))
+                              .build())));
     }
   }
 
@@ -1127,7 +1281,7 @@ class RelayRestCoverageMockTest {
 
     @Test
     void getSuccess() {
-      Map<String, Object> body = client.registry().orders().get("order-1");
+      Map<String, Object> body = client.registry().orders().get("order-1", qp());
       assertNotNull(body);
       assertEquals(
           "relay-rest.retrieve_order",
@@ -1139,7 +1293,9 @@ class RelayRestCoverageMockTest {
       assertEquals(
           404,
           errCall(
-              "relay-rest.retrieve_order", 404, () -> client.registry().orders().get("order-404")));
+              "relay-rest.retrieve_order",
+              404,
+              () -> client.registry().orders().get("order-404", qp())));
     }
   }
 

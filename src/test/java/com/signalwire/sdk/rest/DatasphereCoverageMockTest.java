@@ -113,7 +113,15 @@ class DatasphereCoverageMockTest {
 
   @Test
   void searchSuccess() {
-    Map<String, Object> body = client.datasphere().documents().search(kw("query", "hello"));
+    Map<String, Object> body =
+        client
+            .datasphere()
+            .documents()
+            .search(
+                com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments.SearchRequest
+                    .builder()
+                    .extras(kw("query", "hello"))
+                    .build());
     assertNotNull(body);
     assertEquals(
         "datasphere.search_documents",
@@ -127,7 +135,15 @@ class DatasphereCoverageMockTest {
         errCall(
             "datasphere.search_documents",
             422,
-            () -> client.datasphere().documents().search(kw("query", "hello"))));
+            () ->
+                client
+                    .datasphere()
+                    .documents()
+                    .search(
+                        com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments
+                            .SearchRequest.builder()
+                            .extras(kw("query", "hello"))
+                            .build())));
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -199,7 +215,8 @@ class DatasphereCoverageMockTest {
 
     @Test
     void listChunksSuccess() {
-      Map<String, Object> body = client.datasphere().documents().listChunks("doc-1");
+      Map<String, Object> body =
+          client.datasphere().documents().listChunks("doc-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertEquals(
@@ -215,12 +232,13 @@ class DatasphereCoverageMockTest {
           errCall(
               "datasphere.list_document_chunks",
               500,
-              () -> client.datasphere().documents().listChunks("doc-1")));
+              () -> client.datasphere().documents().listChunks("doc-1", java.util.Map.of())));
     }
 
     @Test
     void getChunkSuccess() {
-      Map<String, Object> body = client.datasphere().documents().getChunk("doc-1", "chunk-1");
+      Map<String, Object> body =
+          client.datasphere().documents().getChunk("doc-1", "chunk-1", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "datasphere.get_document_chunk",
@@ -237,7 +255,11 @@ class DatasphereCoverageMockTest {
           errCall(
               "datasphere.get_document_chunk",
               404,
-              () -> client.datasphere().documents().getChunk("doc-1", "missing")));
+              () ->
+                  client
+                      .datasphere()
+                      .documents()
+                      .getChunk("doc-1", "missing", java.util.Map.of())));
     }
 
     @Test

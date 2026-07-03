@@ -107,7 +107,15 @@ class ParityGapCoverageMockTest {
     @Test
     void success() {
       Map<String, Object> body =
-          client.fabric().resources().assignPhoneRoute("res-1", kw("phone_number_id", "pn-9"));
+          client
+              .fabric()
+              .resources()
+              .assignPhoneRoute(
+                  "res-1",
+                  com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                      .AssignPhoneRouteRequest.builder()
+                      .extras(kw("phone_number_id", "pn-9"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "fabric.assign_resource_phone_route",
@@ -126,7 +134,12 @@ class ParityGapCoverageMockTest {
                   client
                       .fabric()
                       .resources()
-                      .assignPhoneRoute("res-1", kw("phone_number_id", ""))));
+                      .assignPhoneRoute(
+                          "res-1",
+                          com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                              .AssignPhoneRouteRequest.builder()
+                              .extras(kw("phone_number_id", ""))
+                              .build())));
     }
   }
 
@@ -140,7 +153,7 @@ class ParityGapCoverageMockTest {
 
     @Test
     void success() {
-      Map<String, Object> body = client.numberLookup().lookup("+15551234567");
+      Map<String, Object> body = client.lookup().phoneNumber("+15551234567", java.util.Map.of());
       assertNotNull(body);
       assertEquals(
           "relay-rest.lookup_phone_number",
@@ -155,7 +168,7 @@ class ParityGapCoverageMockTest {
           errCall(
               "relay-rest.lookup_phone_number",
               404,
-              () -> client.numberLookup().lookup("+15550000000")));
+              () -> client.lookup().phoneNumber("+15550000000", java.util.Map.of())));
     }
   }
 
@@ -287,7 +300,14 @@ class ParityGapCoverageMockTest {
     @Test
     void submitVerificationSuccess() {
       Map<String, Object> body =
-          client.verifiedCallers().submitVerification("vc-1", kw("verification_code", "123456"));
+          client
+              .verifiedCallers()
+              .submitVerification(
+                  "vc-1",
+                  com.signalwire.sdk.rest.namespaces.generated.VerifiedCallers
+                      .SubmitVerificationRequest.builder()
+                      .extras(kw("verification_code", "123456"))
+                      .build());
       assertNotNull(body);
       assertEquals(
           "relay-rest.validate_verification_code",
@@ -305,7 +325,12 @@ class ParityGapCoverageMockTest {
               () ->
                   client
                       .verifiedCallers()
-                      .submitVerification("vc-1", kw("verification_code", ""))));
+                      .submitVerification(
+                          "vc-1",
+                          com.signalwire.sdk.rest.namespaces.generated.VerifiedCallers
+                              .SubmitVerificationRequest.builder()
+                              .extras(kw("verification_code", ""))
+                              .build())));
     }
   }
 }

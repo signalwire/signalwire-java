@@ -8,7 +8,16 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.*;
+import com.signalwire.sdk.rest.namespaces.CompatNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+import com.signalwire.sdk.rest.namespaces.generated.Chat;
+import com.signalwire.sdk.rest.namespaces.generated.DatasphereNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.FabricNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers;
+import com.signalwire.sdk.rest.namespaces.generated.PubSub;
+import com.signalwire.sdk.rest.namespaces.generated.Queues;
+import com.signalwire.sdk.rest.namespaces.generated.Recordings;
+import com.signalwire.sdk.rest.namespaces.generated.VideoNamespace;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -86,9 +95,9 @@ class RestTest {
       assertNotNull(client.video());
       assertNotNull(client.compat());
       assertNotNull(client.chat());
-      assertNotNull(client.pubSub());
+      assertNotNull(client.pubsub());
       assertNotNull(client.project());
-      assertNotNull(client.numberLookup());
+      assertNotNull(client.lookup());
       assertNotNull(client.queues());
       assertNotNull(client.recordings());
       assertNotNull(client.registry());
@@ -125,16 +134,15 @@ class RestTest {
     @DisplayName("CallingNamespace is command-dispatch")
     void callingNamespace() {
       // Calling is command-dispatch (POST /api/calling/calls), not CRUD.
-      var ns = new CallingNamespace(httpClient);
+      var ns = new Calling(httpClient);
       assertNotNull(ns);
     }
 
     @Test
     @DisplayName("PhoneNumbersNamespace has correct path")
     void phoneNumbersNamespace() {
-      var ns = new PhoneNumbersNamespace(httpClient);
-      assertNotNull(ns.getResource());
-      assertEquals("/relay/rest/phone_numbers", ns.getResource().getBasePath());
+      var ns = new PhoneNumbers(httpClient);
+      assertEquals("/relay/rest/phone_numbers", ns.getBasePath());
     }
 
     @Test
@@ -151,14 +159,14 @@ class RestTest {
       var ns = new VideoNamespace(httpClient);
       assertNotNull(ns.rooms());
       assertNotNull(ns.roomSessions());
-      assertNotNull(ns.recordings());
+      assertNotNull(ns.roomRecordings());
       assertNotNull(ns.roomTokens());
       assertEquals("/video/rooms", ns.rooms().getBasePath());
       assertEquals("/video/room_sessions", ns.roomSessions().getBasePath());
       // Python parity: VideoRoomTokens is create-only at /video/room_tokens.
       assertEquals("/video/room_tokens", ns.roomTokens().getBasePath());
       // Python parity: VideoRoomRecordings lives at /video/room_recordings.
-      assertEquals("/video/room_recordings", ns.recordings().getBasePath());
+      assertEquals("/video/room_recordings", ns.roomRecordings().getBasePath());
     }
 
     @Test
@@ -178,7 +186,7 @@ class RestTest {
     @DisplayName("ChatNamespace mints tokens only")
     void chatNamespace() {
       // Chat REST = token minting only (matches Python's flat ChatResource).
-      var ns = new ChatNamespace(httpClient);
+      var ns = new Chat(httpClient);
       assertNotNull(ns);
     }
 
@@ -186,14 +194,14 @@ class RestTest {
     @DisplayName("PubSubNamespace mints tokens only")
     void pubSubNamespace() {
       // Pub/Sub REST = token minting only (matches Python's flat PubSubResource).
-      var ns = new PubSubNamespace(httpClient);
+      var ns = new PubSub(httpClient);
       assertNotNull(ns);
     }
 
     @Test
     @DisplayName("QueueNamespace has queues")
     void queueNamespace() {
-      var ns = new QueueNamespace(httpClient);
+      var ns = new Queues(httpClient);
       // Python parity: /api/relay/rest/queues.
       assertEquals("/relay/rest/queues", ns.getBasePath());
     }
@@ -201,7 +209,7 @@ class RestTest {
     @Test
     @DisplayName("RecordingNamespace has recordings")
     void recordingNamespace() {
-      var ns = new RecordingNamespace(httpClient);
+      var ns = new Recordings(httpClient);
       // Python parity: /api/relay/rest/recordings.
       assertEquals("/relay/rest/recordings", ns.getBasePath());
     }

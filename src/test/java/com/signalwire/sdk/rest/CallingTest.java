@@ -2,9 +2,9 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.CallingNamespace;
-import com.signalwire.sdk.rest.namespaces.QueueNamespace;
-import com.signalwire.sdk.rest.namespaces.RecordingNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+import com.signalwire.sdk.rest.namespaces.generated.Queues;
+import com.signalwire.sdk.rest.namespaces.generated.Recordings;
 import org.junit.jupiter.api.Test;
 
 /** Tests for REST calling-related namespaces. */
@@ -14,7 +14,7 @@ class CallingTest {
 
   @Test
   void testCallingNamespaceDispatch() {
-    var ns = new CallingNamespace(httpClient);
+    var ns = new Calling(httpClient);
     // Calling is command-dispatch (POST /api/calling/calls with a "command"
     // field), not a CRUD resource — the namespace exposes the verb methods only.
     assertNotNull(ns);
@@ -22,14 +22,14 @@ class CallingTest {
 
   @Test
   void testQueueNamespacePath() {
-    var ns = new QueueNamespace(httpClient);
+    var ns = new Queues(httpClient);
     // Python parity: client.queues hits /api/relay/rest/queues.
     assertEquals("/relay/rest/queues", ns.getBasePath());
   }
 
   @Test
   void testRecordingNamespacePath() {
-    var ns = new RecordingNamespace(httpClient);
+    var ns = new Recordings(httpClient);
     // Python parity: client.recordings hits /api/relay/rest/recordings.
     assertEquals("/relay/rest/recordings", ns.getBasePath());
   }

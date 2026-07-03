@@ -2,7 +2,13 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.*;
+import com.signalwire.sdk.rest.namespaces.CompatNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.Chat;
+import com.signalwire.sdk.rest.namespaces.generated.DatasphereNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.Lookup;
+import com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers;
+import com.signalwire.sdk.rest.namespaces.generated.PubSub;
+import com.signalwire.sdk.rest.namespaces.generated.VideoNamespace;
 import org.junit.jupiter.api.Test;
 
 /** Tests for all REST namespaces. */
@@ -21,9 +27,9 @@ class NamespacesTest {
     assertNotNull(client.video());
     assertNotNull(client.compat());
     assertNotNull(client.chat());
-    assertNotNull(client.pubSub());
+    assertNotNull(client.pubsub());
     assertNotNull(client.project());
-    assertNotNull(client.numberLookup());
+    assertNotNull(client.lookup());
     assertNotNull(client.queues());
     assertNotNull(client.recordings());
     assertNotNull(client.registry());
@@ -32,8 +38,8 @@ class NamespacesTest {
 
   @Test
   void testPhoneNumbersPath() {
-    var ns = new PhoneNumbersNamespace(httpClient);
-    assertEquals("/relay/rest/phone_numbers", ns.getResource().getBasePath());
+    var ns = new PhoneNumbers(httpClient);
+    assertEquals("/relay/rest/phone_numbers", ns.getBasePath());
   }
 
   @Test
@@ -48,9 +54,6 @@ class NamespacesTest {
     assertEquals("/video/rooms", ns.rooms().getBasePath());
     assertEquals("/video/room_tokens", ns.roomTokens().getBasePath());
     assertEquals("/video/room_sessions", ns.roomSessions().getBasePath());
-    // Python parity: VideoRoomRecordings lives at /video/room_recordings;
-    // recordings() is a legacy alias retained for backwards compat.
-    assertEquals("/video/room_recordings", ns.recordings().getBasePath());
     assertEquals("/video/room_recordings", ns.roomRecordings().getBasePath());
     assertEquals("/video/conferences", ns.conferences().getBasePath());
     assertEquals("/video/streams", ns.streams().getBasePath());
@@ -59,20 +62,20 @@ class NamespacesTest {
   @Test
   void testChatTokenOnly() {
     // Chat REST = token minting only (matches Python's flat ChatResource).
-    var ns = new ChatNamespace(httpClient);
+    var ns = new Chat(httpClient);
     assertNotNull(ns);
   }
 
   @Test
   void testPubSubTokenOnly() {
     // Pub/Sub REST = token minting only (matches Python's flat PubSubResource).
-    var ns = new PubSubNamespace(httpClient);
+    var ns = new PubSub(httpClient);
     assertNotNull(ns);
   }
 
   @Test
   void testNumberLookupNamespace() {
-    var ns = new NumberLookupNamespace(httpClient);
+    var ns = new Lookup(httpClient);
     assertNotNull(ns);
   }
 

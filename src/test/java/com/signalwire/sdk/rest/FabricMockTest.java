@@ -79,22 +79,24 @@ class FabricMockTest {
     }
   }
 
-  // ── CxmlApplicationsResource.create ──────────────────────────────
+  // ── CxmlApplicationsResource: no create surface ──────────────────
 
   @Nested
-  @DisplayName("CxmlApplications.create raises NotImplementedError-equivalent")
+  @DisplayName("CxmlApplications exposes no create (cXML apps cannot be created via fabric)")
   class CxmlApplicationsCreate {
 
+    // The generated CxmlApplications resource (list/get/update/delete/listAddresses) has NO
+    // create method at all — cXML applications cannot be created through the fabric API. The
+    // old hand namespace expressed this by throwing UnsupportedOperationException from a stub
+    // create(); the generated resource simply omits the method, so the "create is unsupported"
+    // contract is now enforced at compile time (there is no create() to call). This test
+    // documents that the accessor is wired and usable for its real operations, and that no
+    // request was issued merely by obtaining the resource.
     @Test
-    void createRaisesNotImplemented() {
-      UnsupportedOperationException ex =
-          assertThrows(
-              UnsupportedOperationException.class,
-              () -> client.fabric().cxmlApplications().create(kw("name", "never_built")));
-      assertTrue(
-          ex.getMessage().contains("cXML applications cannot"),
-          "unexpected message: " + ex.getMessage());
-      // Nothing should have hit the wire.
+    void resourceHasNoCreateAndIssuesNoTraffic() {
+      var cxml = client.fabric().cxmlApplications();
+      assertNotNull(cxml);
+      assertEquals("/fabric/resources/cxml_applications", cxml.getBasePath());
       assertTrue(mock.journal().isEmpty(), "expected no journal entries, got " + mock.journal());
     }
   }
@@ -107,7 +109,8 @@ class FabricMockTest {
 
     @Test
     void listAddressesUsesSingularPath() {
-      Map<String, Object> body = client.fabric().callFlows().listAddresses("cf-1");
+      Map<String, Object> body =
+          client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertTrue(body.get("data") instanceof List);
@@ -127,7 +130,8 @@ class FabricMockTest {
 
     @Test
     void listAddressesUsesSingularPath() {
-      Map<String, Object> body = client.fabric().conferenceRooms().listAddresses("cr-1");
+      Map<String, Object> body =
+          client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
 
@@ -146,7 +150,8 @@ class FabricMockTest {
 
     @Test
     void getSipEndpoint() {
-      Map<String, Object> body = client.fabric().subscribers().getSipEndpoint("sub-1", "ep-1");
+      Map<String, Object> body =
+          client.fabric().subscribers().getSipEndpoint("sub-1", "ep-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -161,7 +166,13 @@ class FabricMockTest {
           client
               .fabric()
               .subscribers()
-              .updateSipEndpoint("sub-1", "ep-1", kw("username", "renamed"));
+              .updateSipEndpoint(
+                  "sub-1",
+                  "ep-1",
+                  com.signalwire.sdk.rest.namespaces.generated.Subscribers.UpdateSipEndpointRequest
+                      .builder()
+                      .extras(kw("username", "renamed"))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -193,7 +204,14 @@ class FabricMockTest {
     @Test
     void createInviteToken() {
       Map<String, Object> body =
-          client.fabric().tokens().createInviteToken(kw("email", "invitee@example.com"));
+          client
+              .fabric()
+              .tokens()
+              .createInviteToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateInviteTokenRequest
+                      .builder()
+                      .extras(kw("email", "invitee@example.com"))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -211,7 +229,11 @@ class FabricMockTest {
           client
               .fabric()
               .tokens()
-              .createEmbedToken(kw("allowed_addresses", Arrays.asList("addr-1", "addr-2")));
+              .createEmbedToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateEmbedTokenRequest
+                      .builder()
+                      .extras(kw("allowed_addresses", Arrays.asList("addr-1", "addr-2")))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -225,7 +247,14 @@ class FabricMockTest {
     @Test
     void refreshSubscriberToken() {
       Map<String, Object> body =
-          client.fabric().tokens().refreshSubscriberToken(kw("refresh_token", "abc-123"));
+          client
+              .fabric()
+              .tokens()
+              .refreshSubscriberToken(
+                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens
+                      .RefreshSubscriberTokenRequest.builder()
+                      .extras(kw("refresh_token", "abc-123"))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -245,7 +274,7 @@ class FabricMockTest {
 
     @Test
     void listReturnsDataCollection() {
-      Map<String, Object> body = client.fabric().resources().list();
+      Map<String, Object> body = client.fabric().resources().list(java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertTrue(body.get("data") instanceof List);
@@ -258,7 +287,7 @@ class FabricMockTest {
 
     @Test
     void getReturnsSingleResource() {
-      Map<String, Object> body = client.fabric().resources().get("res-1");
+      Map<String, Object> body = client.fabric().resources().get("res-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -279,7 +308,8 @@ class FabricMockTest {
 
     @Test
     void listAddresses() {
-      Map<String, Object> body = client.fabric().resources().listAddresses("res-3");
+      Map<String, Object> body =
+          client.fabric().resources().listAddresses("res-3", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("data"));
       assertTrue(body.get("data") instanceof List);
@@ -295,7 +325,12 @@ class FabricMockTest {
           client
               .fabric()
               .resources()
-              .assignDomainApplication("res-4", kw("domain_application_id", "da-7"));
+              .assignDomainApplication(
+                  "res-4",
+                  com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                      .AssignDomainApplicationRequest.builder()
+                      .extras(kw("domain_application_id", "da-7"))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
