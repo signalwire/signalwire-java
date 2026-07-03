@@ -41,8 +41,10 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 try:
@@ -115,6 +117,41 @@ def gjf_format(source: str) -> str:
     if proc.returncode != 0:
         raise SystemExit(f"generate_rest.py: google-java-format failed:\n{proc.stderr}")
     return proc.stdout
+
+
+def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
+    """Format many .java sources in a SINGLE gjf JVM invocation (google-java-format
+    ``-i`` over a batch of temp files), byte-identical to per-file ``gjf_format`` /
+    ``spotlessApply``. The per-file path spawns one JVM per file — fine for the ~60
+    REST resource files, prohibitively slow for the ~1000 generated wire-type files
+    (item A/H + D). Keys are opaque logical names; values are raw java sources. The
+    returned dict has the SAME keys mapped to the formatted source."""
+    global _GJF_CP
+    if not sources:
+        return {}
+    if _GJF_CP is None:
+        _GJF_CP = _resolve_gjf_classpath()
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        # A flat temp dir keyed by index avoids any subdir/name clashes.
+        idx_to_key: dict[str, str] = {}
+        paths: list[str] = []
+        for i, key in enumerate(sources):
+            p = tmp / f"F{i}.java"
+            p.write_text(sources[key])
+            idx_to_key[str(p)] = key
+            paths.append(str(p))
+        # gjf caps its own arg list fine for ~1000 files; if it ever grows past
+        # the OS argv limit, chunk here. Today (~1000) it is well under.
+        proc = subprocess.run(
+            ["java", *_GJF_ADD_EXPORTS, "-cp", _GJF_CP,
+             "com.google.googlejavaformat.java.Main", "-i", *paths],
+            capture_output=True, text=True,
+        )
+        if proc.returncode != 0:
+            raise SystemExit(
+                f"generate_rest.py: batch google-java-format failed:\n{proc.stderr}")
+        return {idx_to_key[p]: Path(p).read_text() for p in paths}
 
 
 # The 12 real REST spec directories (registry has no own dir — its resources
@@ -1115,6 +1152,311 @@ def emit_resource_tree(placed) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Wire-type emitter (item A/H + D — REAL types, not Map<String,Object>).
+#
+# For each schema source (REST components/schemas, SWML $defs, RELAY params/result,
+# SWAIG specs) emit one method-less Java data class per OBJECT schema (public typed
+# nullable fields carrying the snake wire key, NO methods — the Python reference
+# records these as method-less type definitions, so the enumerator surfaces the bare
+# class name with no methods; the signature enumerator projects each public field as
+# a zero-arg accessor member). A public x-sdk-enum (only PhoneCallHandler in
+# relay-rest) becomes a Java enum. Every OTHER schema kind — a scalar/array/union
+# alias, a plain inline enum — is NOT surfaced by the Python reference (its enumerator
+# drops module-level scalar TypeAlias / inline Literal), so nothing is emitted for it
+# (matching the reference surface exactly — verified per module, emit-set == oracle-set).
+#
+# These emit helpers are SHARED, imported by generate_swml_verbs.py /
+# generate_relay_protocol.py / generate_swaig_payloads.py by path, so the four
+# generators never diverge on the object-vs-alias split or the field rendering. The
+# per-generator driver decides the package + on-disk subdir; the emit rule is here.
+# ---------------------------------------------------------------------------
+
+# Hard-reserved Java keywords forbidden as a CLASS/ENUM name. A schema whose
+# sanitised leaf collides gets a ``_`` suffix in the Java class + filename; the
+# surface/signature enumerators rename it back to the bare oracle leaf (the type-name
+# analog of the reserved-word FIELD rename Python does with ``from`` -> ``from_``).
+# Goto/Return/Switch/Unset are also SWML-verb schema names. Kept in sync with
+# JAVA_KEYWORDS above (that set also covers primitives / literals a schema name can
+# never legitimately be).
+JAVA_TYPE_RESERVED = JAVA_KEYWORDS
+
+# ``java.lang.*`` types auto-imported into every compilation unit: a generated class
+# spelled identically (``Record`` — java.lang.Record since JDK 14) triggers Error
+# Prone's JavaLangClash and shadows the built-in. Suffix these with ``_`` (the
+# type-name analog of the TS ``BUILTIN_COLLISION_RENAME`` — ``Record_``/``Set_``);
+# the surface/signature enumerators rename them back to the bare oracle leaf. Only
+# java.lang types (always in scope) need this; java.util (List/Map/Set) is
+# fully-qualified at every use so those names don't clash.
+JAVA_BUILTIN_COLLISION = {
+    "Record", "String", "Integer", "Long", "Double", "Boolean", "Object", "Void",
+    "Number", "Character", "Byte", "Short", "Float", "System", "Thread", "Runnable",
+    "Comparable", "Cloneable", "Iterable", "Error", "Exception", "Class", "Enum",
+    "Math", "Process", "Runtime", "Package", "Module", "Thread", "Override",
+    "Deprecated", "SuppressWarnings", "FunctionalInterface", "SafeVarargs",
+}
+
+
+def type_name(raw: str) -> str:
+    """Sanitise a schema key to a valid Java class identifier, folding every
+    non-identifier rune to ``_`` — matching the go/TS/php/python ref_name so the LEAF
+    the surface diff compares is the identical token across ports
+    (``Types.StatusCodes.StatusCode400`` -> ``Types_StatusCodes_StatusCode400``). A
+    leaf colliding with a hard-reserved Java keyword OR a java.lang built-in type gets
+    a ``_`` suffix (the enumerator renames it back to the bare oracle leaf)."""
+    s = re.sub(r"[^A-Za-z0-9_]", "_", raw).lstrip("_")
+    if not s:
+        return "Schema"
+    if s[0].isdigit():
+        return "Schema_" + s
+    if s in JAVA_TYPE_RESERVED or s in JAVA_BUILTIN_COLLISION:
+        return s + "_"
+    return s
+
+
+def _schema_type(node: dict) -> str | None:
+    t = node.get("type")
+    if isinstance(t, list):
+        return next((x for x in t if x != "null"), None)
+    return t
+
+
+def is_object_schema(node: dict) -> bool:
+    """Mirror the reference is_object test (and php's is_object_schema): type:object
+    (or no type but non-empty properties) AND not a oneOf/anyOf/allOf combinator AND
+    properties non-empty. An empty-object schema (no properties) is an alias the
+    reference drops, so it is NOT an object here."""
+    if not isinstance(node, dict):
+        return False
+    if any(k in node for k in ("oneOf", "anyOf", "allOf")):
+        return False
+    props = node.get("properties")
+    t = _schema_type(node)
+    return (t == "object" or (t is None and props)) and isinstance(props, dict) and len(props) > 0
+
+
+def _resolve_type_ref(schema: dict, schemas: dict, seen: set | None = None) -> dict:
+    """Follow an in-spec ``$ref`` and a single-member ``allOf`` (the '$ref +
+    description' idiom) to the concrete schema so a $ref-to-scalar newtype
+    (uuid/jwt) / $ref-to-enum recovers its underlying scalar. An external ``.json``
+    $ref or an unresolvable ref returns ``{}`` (→ structured/open)."""
+    if not isinstance(schema, dict):
+        return {}
+    if seen is None:
+        seen = set()
+    ref = schema.get("$ref")
+    if ref:
+        if not ref.startswith("#/"):
+            return {}
+        leaf = ref.rsplit("/", 1)[-1]
+        if leaf in seen:
+            return {}
+        seen.add(leaf)
+        return _resolve_type_ref(schemas.get(leaf) or {}, schemas, seen)
+    allof = schema.get("allOf")
+    if allof and len(allof) == 1 and not schema.get("properties") and not schema.get("type"):
+        return _resolve_type_ref(allof[0], schemas, seen)
+    return schema
+
+
+def type_field_type(schema: dict, schemas: dict | None = None) -> str:
+    """The Java field type for a wire-type property (boxed scalars / collections).
+
+    Every field is nullable and defaults to null, so the class is a pure data holder
+    needing no constructor. The type NEVER references another generated class (avoids
+    file-ordering / cross-package collision concerns and keeps the emitter
+    deterministic) — the surface records only the class name, so field types are pure
+    idiom:
+        scalar (incl. $ref-to-scalar-newtype / $ref-to-enum) -> String/Long/Double/Boolean
+        array   -> java.util.List<Object>
+        object / $ref-to-object / union / unknown -> java.util.Map<String, Object>
+    """
+    schemas = schemas or {}
+    if schema.get("$ref") or (
+        schema.get("allOf") and len(schema["allOf"]) == 1
+        and not schema.get("properties") and not schema.get("type")
+    ):
+        schema = _resolve_type_ref(schema, schemas)
+    if schema.get("allOf") or schema.get("oneOf") or schema.get("anyOf") or schema.get("$ref"):
+        return "java.util.Map<String, Object>"
+    t = _schema_type(schema)
+    if t == "string":
+        return "String"
+    if t == "integer":
+        return "Long"
+    if t == "number":
+        return "Double"
+    if t == "boolean":
+        return "Boolean"
+    if t == "array":
+        return "java.util.List<Object>"
+    if t == "object":
+        return "java.util.Map<String, Object>"
+    # No/unknown type → any JSON value.
+    return "Object"
+
+
+def type_field_name(wire_key: str) -> str:
+    """Java field name for a wire key, carrying the wire key VERBATIM where legal
+    (the reference/enumerator records the exact wire field name — SWAIG/allOf/oneOf —
+    NOT snake-folded). Fold anything non-identifier to ``_`` (rare); a leading digit
+    gets a ``_`` prefix; a hard Java keyword gets a ``_`` suffix (the field-name
+    analog of the reserved-word rename — the enumerator strips it back)."""
+    s = re.sub(r"[^A-Za-z0-9_]", "_", wire_key)
+    if not s:
+        s = "field"
+    if s[0].isdigit():
+        s = "_" + s
+    if s in JAVA_KEYWORDS:
+        s = s + "_"
+    return s
+
+
+def _enum_case_name(value: str) -> str:
+    """UPPER_SNAKE case name for a backed-enum wire value (Java enum-constant idiom)."""
+    parts = [p for p in re.split(r"[^A-Za-z0-9]+", value) if p]
+    name = "_".join(p.upper() for p in parts)
+    if not name:
+        name = "VALUE"
+    if name[0].isdigit():
+        name = "V_" + name
+    if name in JAVA_KEYWORDS:
+        name = name + "_"
+    return name
+
+
+def type_gen_header(package: str, desc: str) -> str:
+    return (
+        "// Code generated by scripts/generate_rest.py; DO NOT EDIT.\n"
+        "//\n"
+        "// AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.\n"
+        "//\n"
+        f"// {desc}\n"
+        "\n"
+        f"package {package};\n\n"
+    )
+
+
+def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
+                    schemas: dict | None = None, class_name: str | None = None) -> str:
+    """Emit one method-less Java data class for an object schema. Returns RAW java
+    (not gjf-formatted — the caller batch-formats). ``class_name`` overrides the
+    derived name when a generator computes the class name itself (relay-protocol
+    derives it from x-method + phase, not from a components/schemas key)."""
+    java_name = class_name if class_name is not None else type_name(raw_name)
+    lines: list[str] = []
+    lines.append("/**")
+    lines.append(f" * {java_name} — generated wire type ({source_desc}).")
+    lines.append(" *")
+    lines.append(" * Pure data DTO: public fields carrying the snake wire key; no methods (the")
+    lines.append(" * reference records this as a method-less type definition).")
+    lines.append(" */")
+    lines.append(f"public final class {java_name} {{")
+    props = node.get("properties") or {}
+    used: set[str] = set()
+    for wire_key, psc in props.items():
+        field = type_field_name(wire_key)
+        while field in used:
+            field += "_"
+        used.add(field)
+        jtype = type_field_type(psc if isinstance(psc, dict) else {}, schemas)
+        if field != wire_key:
+            lines.append(f"  /** wire key: {wire_key} */")
+        lines.append(f"  public {jtype} {field};")
+    lines.append("}")
+    return type_gen_header(package, source_desc) + "\n".join(lines) + "\n"
+
+
+def emit_type_enum(package: str, enum_name: str, values: list[str], source_desc: str) -> str:
+    """Emit a Java enum for an x-sdk-enum public enum (only PhoneCallHandler today).
+    Each constant carries its exact wire string. Surfaced as a class by the
+    reference. Returns RAW java (caller batch-formats)."""
+    lines: list[str] = []
+    lines.append("/**")
+    lines.append(f" * {enum_name} — generated public enum ({source_desc}).")
+    lines.append(" *")
+    lines.append(" * Each constant's wire value is the exact wire string.")
+    lines.append(" */")
+    lines.append(f"public enum {enum_name} {{")
+    used: set[str] = set()
+    cases: list[str] = []
+    for v in values:
+        if v == "":
+            continue
+        cname = _enum_case_name(v)
+        while cname in used:
+            cname += "_"
+        used.add(cname)
+        cases.append(f'  {cname}("{v}")')
+    lines.append(",\n".join(cases) + ";")
+    lines.append("")
+    lines.append("  public final String wire;")
+    lines.append("")
+    lines.append(f"  {enum_name}(String wire) {{")
+    lines.append("    this.wire = wire;")
+    lines.append("  }")
+    lines.append("}")
+    return type_gen_header(package, source_desc) + "\n".join(lines) + "\n"
+
+
+# The 13 REST wire-type namespaces: (spec-dir, Java subpackage segment, oracle leaf).
+# swml-webhooks is types-only (no resources / no servers block) and loaded specially.
+# relay-rest folds registry.
+TYPE_NS = [
+    ("relay-rest", "relayrest", "relay_rest"),
+    ("fabric", "fabric", "fabric"),
+    ("calling", "calling", "calling"),
+    ("video", "video", "video"),
+    ("datasphere", "datasphere", "datasphere"),
+    ("logs", "logs", "logs"),
+    ("message", "message", "message"),
+    ("voice", "voice", "voice"),
+    ("fax", "fax", "fax"),
+    ("project", "project", "project"),
+    ("chat", "chat", "chat"),
+    ("pubsub", "pubsub", "pubsub"),
+    ("swml-webhooks", "swmlwebhooks", "swml_webhooks"),
+]
+
+# Generated wire-type classes live under this package + on-disk sub-path.
+TYPES_PACKAGE = "com.signalwire.sdk.rest.namespaces.generated.types"
+TYPES_DIR = "com/signalwire/sdk/rest/namespaces/generated/types"
+
+
+def _load_types_schemas(psdk: Path, spec_dir: str) -> dict:
+    """Load a spec's components/schemas WITHOUT the full Spec model (swml-webhooks
+    has no servers block, so Spec() would fail). Ordered by yaml declaration."""
+    doc = yaml.safe_load((psdk / "rest-apis" / spec_dir / "openapi.yaml").read_text())
+    return ((doc.get("components") or {}).get("schemas")) or {}
+
+
+def emit_types(psdk: Path, outs: dict[str, str]) -> None:
+    """Emit every <ns>_types_generated Java data class / enum into
+    ``types/<sub>/<TypeName>.java`` keys of ``outs`` (relative to the generated dir).
+    Values are RAW java (build_outputs batch-formats)."""
+    for spec_dir, sub, ns_key in TYPE_NS:
+        schemas = _load_types_schemas(psdk, spec_dir)
+        pkg = f"{TYPES_PACKAGE}.{sub}"
+        for raw_name, node in schemas.items():
+            if not isinstance(node, dict):
+                continue
+            xe = node.get("x-sdk-enum")
+            if xe:
+                enum_name = type_name(xe)
+                fn = f"types/{sub}/{enum_name}.java"
+                if fn not in outs:
+                    outs[fn] = emit_type_enum(
+                        pkg, enum_name, list(node.get("enum") or []),
+                        f"x-sdk-enum on {ns_key!r} components/schemas {raw_name!r}")
+            if is_object_schema(node):
+                java_name = type_name(raw_name)
+                fn = f"types/{sub}/{java_name}.java"
+                if fn not in outs:
+                    outs[fn] = emit_type_class(
+                        pkg, raw_name, node,
+                        f"{ns_key!r} spec, components/schemas {raw_name!r}", schemas)
+
+
+# ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
 
@@ -1145,6 +1487,10 @@ def build_outputs(psdk: Path) -> dict[str, str]:
         outs[cls + ".java"] = emit_container(container, by_container[container])
     outs["ResourceTree.java"] = emit_resource_tree(placed)
 
+    # Wire-type surface (item A/H): one method-less data class / enum per
+    # components/schemas OBJECT across the 13 REST namespaces, under types/<sub>/.
+    emit_types(psdk, outs)
+
     import json as _json
     sidecar: dict[str, list[dict]] = {}
     for (cls, java_method) in sorted(_SIDECAR.keys()):
@@ -1162,10 +1508,12 @@ def build_outputs(psdk: Path) -> dict[str, str]:
 
     # Format every emitted .java through google-java-format so the on-disk files
     # are byte-identical to what the FMT gate (spotless) would produce and clean
-    # under the LINT gate (Checkstyle). The JSON sidecar is left as-is.
-    for fn in list(outs):
-        if fn.endswith(".java"):
-            outs[fn] = gjf_format(outs[fn])
+    # under the LINT gate (Checkstyle). The JSON sidecar is left as-is. One BATCH
+    # gjf invocation (not per-file) — the ~700 generated wire-type files make
+    # per-file JVM spawns prohibitively slow.
+    java_srcs = {fn: outs[fn] for fn in outs if fn.endswith(".java")}
+    for fn, formatted in gjf_format_many(java_srcs).items():
+        outs[fn] = formatted
     return outs
 
 

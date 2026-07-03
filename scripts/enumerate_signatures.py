@@ -42,7 +42,24 @@ sys.path.insert(0, str(HERE))
 from enumerate_surface import (  # type: ignore
     _CLASS_RENAMES, _METHOD_RENAMES, _PY_KEYWORDS, build_class_to_module_map,
     camel_to_snake, translate_method_name,
+    _gen_type_module, _gen_type_unrename,
 )
+
+
+# Hard Java keywords generate_rest.type_field_name suffixes with `_` when a wire
+# key collides (``default`` → ``default_``, ``enum`` → ``enum_``). The gen-type
+# field-accessor recording strips that suffix back to the bare wire key the oracle
+# records. Kept in sync with generate_rest.JAVA_KEYWORDS.
+_JAVA_FIELD_KEYWORDS = {
+    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+    "class", "const", "continue", "default", "do", "double", "else", "enum",
+    "extends", "final", "finally", "float", "for", "goto", "if", "implements",
+    "import", "instanceof", "int", "interface", "long", "native", "new",
+    "package", "private", "protected", "public", "return", "short", "static",
+    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
+    "transient", "try", "void", "volatile", "while", "true", "false", "null",
+    "var", "record", "yield",
+}
 
 
 class TypeTranslationError(RuntimeError):
@@ -622,6 +639,55 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         if pkg == _GENERATED_PKG:
             if java_name == "ResourceTree" or java_name.endswith("Request") or java_name == "Builder":
                 continue
+
+        # Generated wire-type / read-side-payload classes (item A/H + D). Route BY
+        # PACKAGE to the oracle <ns>_types_generated / *_generated module (wins over
+        # CLASS_TO_MODULE — a type name recurs / collides with an SDK class). Emit
+        # each PUBLIC FIELD as a zero-arg accessor member carrying the EXACT wire-key
+        # name (verbatim — the reference records the raw wire field name, NOT
+        # snake-folded), returning the field's (loose) type. For the sig-oracle-ABSENT
+        # modules (REST types / relay-proto / swaig_actions) these members are port
+        # extras EXCUSED by the diff's port-state-accessor rule (loose return); for
+        # the sig-oracle-PRESENT gen-payload modules (swml_verbs / post_prompt /
+        # swaig_request) they satisfy the reference's class-typed field accessors (the
+        # gen-payload fold + gen-type return equivalence tolerate loose vs class:).
+        # An ENUM's own constants (static self-typed fields) are NOT data members —
+        # skip them so a class-typed self-ref does not leak as un-excused drift.
+        gen_type_mod = _gen_type_module(pkg)
+        if gen_type_mod is not None:
+            canonical_name = _gen_type_unrename(java_name)
+            members: dict = {}
+            for m in type_entry.get("methods", []):
+                if not m.get("is_field"):
+                    continue
+                if m.get("is_static"):
+                    continue  # enum constants / static tables are not data members
+                wire = m.get("name", "")
+                if not wire or wire.startswith("$"):
+                    continue
+                # Undo the generator's reserved-word field suffix (`default_` →
+                # `default`, `enum_` → `enum`) so the recorded name is the bare wire
+                # key the oracle records. The generator suffixed on a JAVA keyword.
+                recorded = wire[:-1] if (wire.endswith("_") and wire[:-1] in _JAVA_FIELD_KEYWORDS) else wire
+                # The wire-type DTO fields are LOOSELY typed (boxed scalar / Map /
+                # List / Object — never a ref to another generated class, to keep the
+                # emitter deterministic). The reference records the RICH field type
+                # (``class:...AIParams`` / ``union<int,SWMLVar>``). Record the accessor
+                # return as ``any`` — the wire-neutral loose form (mirrors php, whose
+                # ?array/mixed properties translate to ``any``). ``any`` matches the
+                # reference's rich type via the diff's any-rule (for the sig-oracle-
+                # PRESENT gen-payload modules), and is port-state-accessor-excused for
+                # the sig-oracle-ABSENT modules — so no un-excused return-mismatch and
+                # no diff-tool change needed. (The RICH types live in the SURFACE, which
+                # records only the class name; the field-level shape is not compared.)
+                members[recorded] = {"params": [{"name": "self", "kind": "self"}],
+                                     "returns": "any"}
+            if members:
+                out_modules.setdefault(gen_type_mod, {"classes": {}})
+                out_modules[gen_type_mod]["classes"][canonical_name] = {
+                    "methods": dict(sorted(members.items())),
+                }
+            continue
 
         # First check explicit Java module overrides
         full_pkg = f"{pkg}.{java_name}" if pkg else java_name

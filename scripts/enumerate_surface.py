@@ -129,6 +129,85 @@ _GENERATED_CONTAINERS = {
 # on the base module). ReadResource/BaseResource contribute no implicit route.
 _CRUD_LIKE_BASES = {"CrudResource", "FabricResource", "FabricResourcePUT"}
 
+# ---------------------------------------------------------------------------
+# Generated wire-type / read-side-payload surface (item A/H + D). scripts/
+# generate_rest.py emits one method-less Java data class / enum per
+# components/schemas OBJECT into
+# ``com.signalwire.sdk.rest.namespaces.generated.types.<sub>``; the SWML-verbs /
+# RELAY-protocol / SWAIG-payload generators emit into their own packages. The
+# reference records these as method-less type definitions in the
+# ``<ns>_types_generated`` / ``swml_verbs_generated`` / ``protocol_types_generated`` /
+# ``*_generated`` modules. Routing is BY JAVA PACKAGE (not class name) because the
+# same type name recurs across namespaces (AIObject in calling AND fabric; the
+# shared Types_StatusCodes_* in every namespace) and even collides with existing
+# SDK class names (DataMap/Document/Section) — so the package route MUST win over
+# class_to_module for these files (§H item 3). The SURFACE-DIFF gen-type leaf fold
+# collapses the cross-module duplicates to one gen-type.<Leaf> on both ref and port.
+#
+# Each entry maps the Java package to the oracle module. The REST types share a
+# common parent package with a per-namespace leaf segment; the SWML/RELAY/SWAIG
+# groups have a single package each. Kept in sync with generate_rest.TYPE_NS and the
+# three read-side generators.
+_GEN_TYPE_PKG_PREFIX = "com.signalwire.sdk.rest.namespaces.generated.types."
+_GEN_TYPE_REST_SUB_TO_MODULE = {
+    "relayrest": "signalwire.rest.namespaces.relay_rest_types_generated",
+    "fabric": "signalwire.rest.namespaces.fabric_types_generated",
+    "calling": "signalwire.rest.namespaces.calling_types_generated",
+    "video": "signalwire.rest.namespaces.video_types_generated",
+    "datasphere": "signalwire.rest.namespaces.datasphere_types_generated",
+    "logs": "signalwire.rest.namespaces.logs_types_generated",
+    "message": "signalwire.rest.namespaces.message_types_generated",
+    "voice": "signalwire.rest.namespaces.voice_types_generated",
+    "fax": "signalwire.rest.namespaces.fax_types_generated",
+    "project": "signalwire.rest.namespaces.project_types_generated",
+    "chat": "signalwire.rest.namespaces.chat_types_generated",
+    "pubsub": "signalwire.rest.namespaces.pubsub_types_generated",
+    "swmlwebhooks": "signalwire.rest.namespaces.swml_webhooks_types_generated",
+}
+# Single-package read-side generated modules (D2/D1/relay-proto).
+_GEN_TYPE_PKG_TO_MODULE = {
+    "com.signalwire.sdk.swml.generated": "signalwire.core.swml_verbs_generated",
+    "com.signalwire.sdk.relay.generated": "signalwire.relay.protocol_types_generated",
+    "com.signalwire.sdk.swaig.generated.postprompt": "signalwire.core.post_prompt_generated",
+    "com.signalwire.sdk.swaig.generated.swaigrequest": "signalwire.core.swaig_request_generated",
+    "com.signalwire.sdk.swaig.generated.swaigactions": "signalwire.core.swaig_actions_generated",
+}
+# generate_rest.type_name suffixes a class name with `_` when its leaf collides with
+# a hard Java keyword (Goto/Switch/… — actually only lowercase are keywords, so this
+# is rare for PascalCase class names) OR a java.lang built-in type (``Record`` →
+# ``Record_``, JavaLangClash). The gen-type enumerators strip that suffix back to the
+# bare oracle leaf (the type-name analog of the reserved-word field rename / the TS
+# BUILTIN_COLLISION_RENAME). Kept in sync with generate_rest.JAVA_KEYWORDS +
+# JAVA_BUILTIN_COLLISION.
+_GEN_TYPE_COLLISION_NAMES = {
+    # java.lang built-ins that clash (PascalCase class names never hit a lowercase
+    # keyword, so this set is the java.lang collision set generate_rest suffixes).
+    "Record", "String", "Integer", "Long", "Double", "Boolean", "Object", "Void",
+    "Number", "Character", "Byte", "Short", "Float", "System", "Thread", "Runnable",
+    "Comparable", "Cloneable", "Iterable", "Error", "Exception", "Class", "Enum",
+    "Math", "Process", "Runtime", "Package", "Module", "Override", "Deprecated",
+    "SuppressWarnings", "FunctionalInterface", "SafeVarargs",
+}
+
+
+def _gen_type_unrename(name: str) -> str:
+    """A generated-type class name generate_rest suffixed with ``_`` on a builtin
+    collision (``Record_`` → ``Record``) renames back to the bare oracle leaf."""
+    if name.endswith("_") and name[:-1] in _GEN_TYPE_COLLISION_NAMES:
+        return name[:-1]
+    return name
+
+
+def _gen_type_module(java_package: str) -> str | None:
+    """If ``java_package`` is a generated wire-type / read-side-payload package,
+    return its oracle module; else None."""
+    if java_package in _GEN_TYPE_PKG_TO_MODULE:
+        return _GEN_TYPE_PKG_TO_MODULE[java_package]
+    if java_package.startswith(_GEN_TYPE_PKG_PREFIX):
+        sub = java_package[len(_GEN_TYPE_PKG_PREFIX):].split(".", 1)[0]
+        return _GEN_TYPE_REST_SUB_TO_MODULE.get(sub)
+    return None
+
 # ``public class Foo extends Bar {`` header of a generated resource. Read from
 # the RAW source (comments/imports already name ``BaseResource`` etc., so match
 # the class-declaration line specifically).
@@ -554,6 +633,18 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         body, outer_name, known_python_classes,
         java_outer_name=outer_name_raw, native=native,
     )
+
+    # Generated wire-type / read-side-payload files (item A/H + D): a method-less
+    # DTO class (or a public enum) per components/schemas / $defs OBJECT. Route the
+    # file's top-level type BY PACKAGE to its oracle <ns>_types_generated /
+    # *_generated module (winning over class_to_module — a type name recurs across
+    # namespaces / collides with an SDK class). Record it method-less: the reference
+    # records these as method-less type definitions, so drop any nested types and
+    # synthetic members (a generated enum's own values are constants, not methods).
+    gen_type_mod = _gen_type_module(java_package)
+    if gen_type_mod is not None:
+        canonical = _gen_type_unrename(outer_name)
+        return {gen_type_mod: {"classes": {canonical: []}, "functions": []}}
 
     # Generated REST layer projection (§8). The generated resource/container
     # classes live in ``...rest.namespaces.generated`` and carry two kinds of

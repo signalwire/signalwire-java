@@ -150,6 +150,19 @@ run_gate "SURFACE-FRESH" "check_surface_freshness vs committed port_surface.json
 run_gate "GEN-FRESH" "generate_rest.py --check (generated REST files match specs)" \
     python3 scripts/generate_rest.py --check
 
+# Gate 4c/4d/4e: GEN-FRESH for the read-side typed-payload generators (item D).
+# Each is DO-NOT-EDIT and byte-compared to its generator output (via the shared
+# google-java-format so on-disk == spotlessApply):
+#   * SWML-verbs config types    (schema.json $defs → com.…swml.generated)
+#   * RELAY protocol wire types  (relay-protocol/*.json → com.…relay.generated)
+#   * SWAIG read-side payloads    (swaig-specs/*.yaml → com.…swaig.generated)
+run_gate "GEN-FRESH-SWML" "generate_swml_verbs.py --check (SWML-verb types match schema.json)" \
+    python3 scripts/generate_swml_verbs.py --check
+run_gate "GEN-FRESH-RELAY" "generate_relay_protocol.py --check (RELAY types match relay-protocol)" \
+    python3 scripts/generate_relay_protocol.py --check
+run_gate "GEN-FRESH-SWAIG" "generate_swaig_payloads.py --check (SWAIG payloads match swaig-specs)" \
+    python3 scripts/generate_swaig_payloads.py --check
+
 # Gate 5: no-cheat
 run_gate "NO-CHEAT" "audit_no_cheat_tests" \
     python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
@@ -248,6 +261,19 @@ run_gate "SPEC-PARITY" "implemented routes == canonical spec (modulo SPEC_IMPLEM
 run_gate "EMISSION" "diff_port_emission vs python oracle" \
     python3 "$PORTING_SDK_DIR/scripts/diff_port_emission.py" \
         --port java --port-repo "$PORT_ROOT"
+
+# Gate 6b: SWAIG-COVERAGE — every engine response action in the vendored
+# swaig-specs/swaig-response.yaml must be emittable by this port's FunctionResult
+# (SWAIG_PIPELINE §5). The shared checker reads the action vocabulary from the spec
+# and diffs it against what src/main/java/.../swaig/FunctionResult.java can put on
+# the wire (addAction("key", …) + the actions.add(swmlAction) form whose
+# swmlAction.put("transfer", …) top-level key is the action); a non-allowlisted gap
+# fails. Signed-off gaps live in porting-sdk/SWAIG_COVERAGE_ALLOWLIST.md
+# (back_to_back_functions, user_event). The SWAIG analogue of REST-COVERAGE; same
+# gate go/TS run, pointed at the Java FunctionResult source.
+run_gate "SWAIG-COVERAGE" "every engine SWAIG action emittable (modulo allowlist)" \
+    python3 "$PORTING_SDK_DIR/scripts/swaig_coverage.py" --check \
+        --emission "$PORT_ROOT/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
 
 # Gate 7: FMT — the language format gate (java: Spotless + google-java-format).
 # google-java-format is the canonical Java formatter (analogous to gofmt/
