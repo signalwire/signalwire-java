@@ -283,18 +283,30 @@ Guides are also available in the [`docs/`](docs/) directory:
 
 ## Testing
 
+Test / lint / format go through the canonical `scripts/run-*.sh` entry points.
+They self-bootstrap their tool environment (locate the Gradle wrapper, resolve
+`JAVA_HOME`) and run from **any** directory:
+
 ```bash
-# Build the SDK
-./gradlew build
+# Run the full test suite
+bash scripts/run-tests.sh
 
-# Run the test suite
-./gradlew test
+# Run a specific test class (or a glob) — forwarded as gradle --tests
+bash scripts/run-tests.sh "com.signalwire.sdk.AgentBaseTest"
 
-# Run a specific test class
-./gradlew test --tests "com.signalwire.sdk.AgentBaseTest"
+# Format the code (spotless / google-java-format)
+bash scripts/run-format.sh          # apply in place
+bash scripts/run-format.sh --check  # verify-only (what CI runs)
 
-# Build without running tests
-./gradlew build -x test
+# Lint (Error Prone + Checkstyle, zero findings)
+bash scripts/run-lint.sh
+```
+
+For other Gradle tasks, use the wrapper directly:
+
+```bash
+./gradlew build          # build the SDK
+./gradlew build -x test  # build without running tests
 ```
 
 ## License

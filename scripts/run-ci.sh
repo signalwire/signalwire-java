@@ -4,22 +4,24 @@
 # Same script invoked locally (`bash scripts/run-ci.sh`) AND by the
 # GitHub Actions workflow. No drift between local and CI behavior.
 #
+# The FMT / LINT / TEST gates are the canonical scripts/run-format.sh,
+# scripts/run-lint.sh, scripts/run-tests.sh (each self-bootstraps the Gradle
+# wrapper + JAVA_HOME via scripts/_env.sh and runs from any CWD — see
+# porting-sdk/RUN_LINT_FORMAT_SPEC.md). Nothing here invokes spotless/checkstyle/
+# gradle-test directly anymore; those three scripts are the single entry points.
+#
 # Gates (in order, fail-fast):
-#   1. ./gradlew --no-daemon test         — language test runner
+#   1. scripts/run-tests.sh               — language test runner (gradle test)
 #   2. signature regen                    — gradlew build (no test) + python adapter
 #   3. drift gate                         — porting-sdk diff_port_signatures.py
 #   4. surface-fresh gate                 — porting-sdk check_surface_freshness.py
 #   5. no-cheat gate                      — porting-sdk audit_no_cheat_tests.py
 #   6. emission gate                      — porting-sdk diff_port_emission.py
-#   7. fmt gate                           — spotless google-java-format
-#   8. lint gate                          — Error Prone + Checkstyle (zero findings)
+#   7. fmt gate                           — scripts/run-format.sh (spotless; local: apply, CI: --check)
+#   8. lint gate                          — scripts/run-lint.sh (Error Prone + Checkstyle, zero findings)
 #   9. doc-audit gate                     — porting-sdk audit_docs.py
 #  10. surface-diff gate                  — porting-sdk diff_port_surface.py
 #  11. skill-contract gate                — porting-sdk diff_skill_contracts.py
-#   7. fmt gate                           — spotless (local: apply; CI: check)
-#   8. lint gate                          — errorprone + checkstyle, zero findings
-#   9. doc-audit gate                     — porting-sdk audit_docs.py
-#  10. surface-diff gate                  — porting-sdk diff_port_surface.py
 #
 # The SURFACE-FRESH gate closes the Layer-B-not-gated hole: the drift gate
 # only polices Layer A (port_signatures.json), so port_surface.json can
@@ -91,9 +93,13 @@ cd "$PORT_ROOT"
 
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 
-# Gate 1: gradle test
-run_gate "TEST" "./gradlew --no-daemon test" \
-    ./gradlew --no-daemon test
+# Gate 1: gradle test — the tool invocation + its self-bootstrap (Gradle wrapper
+# + JAVA_HOME) live in scripts/run-tests.sh (shared scripts/_env.sh) so the gate
+# works identically whether run by CI or standalone from any CWD
+# (RUN_LINT_FORMAT_SPEC.md). run-tests.sh accepts an optional filter passed
+# through as `gradle test --tests <filter>`; the full-suite gate passes none.
+run_gate "TEST" "run-tests.sh (gradle test)" \
+    bash scripts/run-tests.sh
 
 # Gate 2: signature regen — must rebuild jar first so adapter reflection
 # sees the latest source.
@@ -290,35 +296,28 @@ run_gate "SWAIG-COVERAGE" "every engine SWAIG action emittable (modulo allowlist
 # google-java-format is the canonical Java formatter (analogous to gofmt/
 # rustfmt) — no style to bikeshed. Source-style only and proven surface/
 # emission-neutral (a reformat leaves port_surface.json byte-identical and
-# EMISSION 81/81 — verified during the burndown). Mirrors the go/ruby fmt_gate:
-#   * LOCAL ($CI unset)  → `spotlessApply`: reformats your working tree in place
-#     so you never hand-run it; notes if it changed files.
-#   * CI ($CI=true)      → `spotlessCheck` (read-only): FAILS if any unformatted
-#     source reached CI.
-fmt_gate() {
-    if [ -n "${CI:-}" ]; then
-        ./gradlew --no-daemon -q spotlessCheck
-    else
-        ./gradlew --no-daemon -q spotlessApply
-        if ! git diff --quiet 2>/dev/null; then
-            echo "    (FMT auto-applied formatting to your working tree — review & stage)"
-        fi
-        # A residual issue spotlessApply can't fix must still fail the gate.
-        ./gradlew --no-daemon -q spotlessCheck
-    fi
-}
-run_gate "FMT" "spotless google-java-format (local: apply; CI: check)" fmt_gate
+# EMISSION 81/81 — verified during the burndown). The tool invocation + its
+# self-bootstrap (Gradle wrapper + JAVA_HOME) now live in scripts/run-format.sh
+# (shared scripts/_env.sh) so the gate works identically whether run by CI or
+# standalone from any CWD (RUN_LINT_FORMAT_SPEC.md):
+#   * LOCAL ($CI unset)  → run-format.sh (no flag) → `spotlessApply`: reformats
+#     your working tree in place so you never hand-run it; notes if it changed.
+#   * CI ($CI set)       → run-format.sh --check → `spotlessCheck` (read-only):
+#     FAILS if any unformatted source reached CI.
+run_gate "FMT" "run-format.sh (local: apply; CI: --check)" \
+    bash scripts/run-format.sh ${CI:+--check}
 
 # Gate 8: LINT — the language lint gate (java), two blocking layers burned to
 # zero: Error Prone (compile-time bug patterns, warnings-as-errors) + Checkstyle
 # (config/checkstyle/checkstyle.xml). A check is turned off ONLY when obeying it
 # would force an API/contract change or police LLM-irrelevant javadoc prose —
 # never to hide a wire/type-shape issue; every OFF carries a one-line rationale
-# at its config site. The `build -x test` compile drives Error Prone; the
-# checkstyle{Main,Test} tasks drive Checkstyle. Mirrors the go vet+golangci /
-# ruby rubocop blocking-lint gate.
-run_gate "LINT" "errorprone (warnings-as-errors) + checkstyle, zero findings" \
-    ./gradlew --no-daemon -q clean build -x test checkstyleMain checkstyleTest
+# at its config site. The tool invocation + its self-bootstrap now live in
+# scripts/run-lint.sh (shared scripts/_env.sh) so the gate works identically
+# whether run by CI or standalone from any CWD (RUN_LINT_FORMAT_SPEC.md). Mirrors
+# the go vet+golangci / ruby rubocop blocking-lint gate.
+run_gate "LINT" "run-lint.sh (errorprone warnings-as-errors + checkstyle, zero findings)" \
+    bash scripts/run-lint.sh
 
 # Gate 9: DOC-AUDIT — every method/class referenced in docs/ + examples/ fenced
 # code blocks must resolve to a real symbol in the port surface (catches
