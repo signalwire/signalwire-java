@@ -41,6 +41,7 @@ set -u
 set -o pipefail
 
 PORT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+mkdir -p "$PORT_ROOT/.sw-tmp"  # repo-local CI scratch (never /tmp)
 PORT_NAME="signalwire-java"
 
 resolve_porting_sdk() {
@@ -90,7 +91,7 @@ signatures_gate() {
 # the JAR), byte-compare vs the committed copy modulo the generated_from git-sha,
 # restore unconditionally.
 surface_fresh_gate() {
-    local committed="/tmp/committed_surface_${PORT_NAME}.$$"
+    local committed="$PORT_ROOT/.sw-tmp/committed_surface_${PORT_NAME}.$$"
     git show HEAD:port_surface.json >"$committed" 2>/dev/null \
         || cp port_surface.json "$committed"
     python3 scripts/enumerate_surface.py >port_surface.json
@@ -117,7 +118,7 @@ rest_coverage_gate() {
     local mock_pkg_parent="$PORTING_SDK_DIR/test_harness/mock_signalwire"
     export PYTHONPATH="$mock_pkg_parent${PYTHONPATH:+:$PYTHONPATH}"
     python3 -m mock_signalwire --host 127.0.0.1 --port "$port" --log-level error \
-        >/tmp/rest_cov_mock.$$.log 2>&1 &
+        >"$PORT_ROOT/.sw-tmp/rest_cov_mock.$$.log" 2>&1 &
     local mock_pid=$!
     # shellcheck disable=SC2064
     trap "kill $mock_pid 2>/dev/null" RETURN
@@ -125,7 +126,7 @@ rest_coverage_gate() {
     for i in $(seq 1 60); do
         if ! kill -0 "$mock_pid" 2>/dev/null; then
             echo "mock_signalwire died on port $port — log:" >&2
-            cat "/tmp/rest_cov_mock.$$.log" >&2
+            cat "$PORT_ROOT/.sw-tmp/rest_cov_mock.$$.log" >&2
             return 1
         fi
         if python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:$port/__mock__/health',timeout=1)" 2>/dev/null; then
@@ -170,7 +171,7 @@ spec_parity_gate() {
 
 # SURFACE-DIFF — regenerate the surface in place, diff vs Python, restore.
 surface_diff_gate() {
-    local committed="/tmp/committed_surface_diff_${PORT_NAME}.$$"
+    local committed="$PORT_ROOT/.sw-tmp/committed_surface_diff_${PORT_NAME}.$$"
     git show HEAD:port_surface.json >"$committed" 2>/dev/null \
         || cp port_surface.json "$committed"
     python3 scripts/enumerate_surface.py >port_surface.json
