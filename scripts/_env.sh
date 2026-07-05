@@ -45,13 +45,16 @@ export REPO_ROOT
 GRADLEW="$REPO_ROOT/gradlew"
 export GRADLEW
 
-# Daemon policy: keep a warm JVM locally (the daemon reuses it across run-ci's
-# many gradle invocations — ~3-3.5s saved per call once warm), but force
-# --no-daemon in CI, whose runners are ephemeral one-shots where a daemon buys
-# nothing and only risks a leaked process. Gate on the conventional $CI env var
-# (set by GitHub Actions and every major CI). The daemon is result-neutral: same
-# task inputs produce the same outputs regardless of which JVM ran them.
-GRADLE_DAEMON_FLAG="${CI:+--no-daemon}"
+# Daemon policy: ENABLE the daemon everywhere (local AND CI). run-ci makes ~17
+# separate ./gradlew invocations in one job; the daemon spawns one JVM on the
+# first call and the other ~16 connect to it, skipping a ~3s cold JVM+config
+# start each (measured ~50s of pure startup tax across a run under --no-daemon).
+# The earlier "--no-daemon in CI" was mis-reasoned: the ephemeral-runner argument
+# is about daemons persisting ACROSS jobs, not reuse WITHIN one job — and a leaked
+# daemon on a one-shot runner is harmless (the runner is destroyed after the job).
+# The daemon is result-neutral: same task inputs produce the same outputs
+# regardless of which JVM ran them. Empty flag = gradle's default (daemon on).
+GRADLE_DAEMON_FLAG=""
 export GRADLE_DAEMON_FLAG
 
 # Ensure JAVA_HOME resolves to a usable JDK. Honour an already-set JAVA_HOME; else
