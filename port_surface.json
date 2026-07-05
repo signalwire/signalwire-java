@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 87892930142559877bf6b81b2bed3ced8e88b871",
+  "generated_from": "signalwire-java @ 3d312fbe1af9c9e6df7099ae0e816084c36282ee",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1342,14 +1342,10 @@
           "get_project",
           "get_relay_protocol",
           "get_space",
-          "internal_web_socket",
           "is_connected",
           "on_call",
-          "on_close",
-          "on_error",
           "on_event",
           "on_message",
-          "on_open",
           "receive",
           "run",
           "send_message",

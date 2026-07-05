@@ -676,6 +676,21 @@ _TYPE_HEADER = re.compile(
     r"(?P<name>[A-Z][A-Za-z0-9_]*)"
 )
 
+# A ``private``/``protected``/package-private nested type declaration. Its body
+# is NOT surface (a port-only helper) and — crucially — its members must never
+# leak up to the enclosing class: without this, the walker skips the non-public
+# type HEADER (which _TYPE_HEADER requires ``public``) yet still matches the
+# ``@Override public`` methods inside it with _METHOD_HEADER and attributes them
+# to the enclosing class (Service.asRouter's private RouteCollector extends
+# HttpServer and re-declares bind/createContext/start/... — which then surfaced
+# as bogus SWMLService members). Detect such a header and skip its whole body.
+_NONPUBLIC_TYPE_HEADER = re.compile(
+    r"\b(?:private|protected)\s+"
+    r"(?:static\s+|final\s+|abstract\s+|sealed\s+|non-sealed\s+)*"
+    r"(?P<kind>class|interface|enum|record|@interface)\s+"
+    r"(?P<name>[A-Za-z_$][\w$]*)"
+)
+
 # Matches a ``public ... methodName(...)`` or constructor signature. The type
 # can be arbitrarily complex (generics, arrays, qualified names), so we allow
 # any run of non-special characters up to the identifier + ``(``.
@@ -758,13 +773,27 @@ def parse_type_body(
     while i < len(src):
         m_type = _TYPE_HEADER.search(src, i)
         m_meth = method_re.search(src, i)
+        m_priv = _NONPUBLIC_TYPE_HEADER.search(src, i)
 
         # Pick whichever comes first.
         next_type_pos = m_type.start() if m_type else len(src) + 1
         next_meth_pos = m_meth.start() if m_meth else len(src) + 1
+        next_priv_pos = m_priv.start() if m_priv else len(src) + 1
 
-        if m_type is None and m_meth is None:
+        if m_type is None and m_meth is None and m_priv is None:
             break
+
+        # A non-public nested type reached before the next public type/method:
+        # skip its ENTIRE body so its members (which may be ``@Override public``,
+        # e.g. a private HttpServer-decorator) don't leak up to this class.
+        if m_priv is not None and next_priv_pos < next_type_pos and next_priv_pos < next_meth_pos:
+            body_open = src.find("{", m_priv.end())
+            if body_open < 0:
+                i = m_priv.end()
+                continue
+            body_close = find_matching_brace(src, body_open)
+            i = body_close + 1
+            continue
 
         if next_type_pos <= next_meth_pos:
             # Nested public type. Recurse into its body.

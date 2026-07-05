@@ -4908,7 +4908,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.core.swml_service.SWMLService"
+              "returns": "class:signalwire.core.web.HostAppRouter"
             },
             "enable_debug_routes": {
               "params": [
@@ -8665,7 +8665,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.core.swml_service.SWMLService"
+              "returns": "class:signalwire.core.web.HostAppRouter"
             },
             "close": {
               "params": [

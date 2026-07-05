@@ -505,12 +505,134 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Return a router-style handle for this service. Mirrors SWMLService.as_router — Python returns a
-   * FastAPI APIRouter; Java has no external web framework, so this returns the service itself as
-   * the mountable request handler (its {@link #onRequest} is the route entry point).
+   * Return a mountable request handler that embeds this service's routes into a host application.
+   *
+   * <p>Mirrors {@code SWMLService.as_router} / {@code WebMixin.as_router}: Python returns a FastAPI
+   * {@code APIRouter} (a {@code HostAppRouter}) so a host ASGI/FastAPI app can mount the agent's
+   * routes without running the service's own server. Java has no external web framework, so the
+   * cross-port equivalent of the "embed my routes in a host app" unit is the JDK's {@link
+   * com.sun.net.httpserver.HttpHandler} — the same shape Go's {@code AsRouter} uses with {@code
+   * http.Handler}. The returned handler dispatches an incoming {@link HttpExchange} to the same
+   * route table {@link #serve()} installs (health, ready, {@code /swaig}, subclass extras, and the
+   * main SWML endpoint), selecting the handler whose registered context path is the longest prefix
+   * of the request path — the same longest-prefix rule {@code HttpServer} itself applies.
+   *
+   * @return an {@link com.sun.net.httpserver.HttpHandler} exposing this service's routes for
+   *     mounting under a host {@link HttpServer} (e.g. {@code hostServer.createContext(prefix,
+   *     service.asRouter())}) or invoking directly
    */
-  public Service asRouter() {
-    return this;
+  public com.sun.net.httpserver.HttpHandler asRouter() {
+    // Register this service's routes onto an unbound server purely to reuse its
+    // context table + longest-prefix matching; the server is never started/bound.
+    final HttpServer routes;
+    try {
+      routes = HttpServer.create();
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to build router for service '" + name + "'", e);
+    }
+    // Capture (path, handler) pairs as they're registered — via serve()'s exact
+    // route table — so the returned handler can do its own longest-prefix
+    // dispatch. The RouteCollector wraps the unbound server and records every
+    // createContext call (including subclass extras from registerAdditionalRoutes);
+    // the wrapped server never binds a port.
+    RouteCollector collector = new RouteCollector(routes);
+    registerRoutes(collector);
+    java.util.List<com.sun.net.httpserver.HttpContext> contexts = collector.contexts();
+    return exchange -> {
+      String path = exchange.getRequestURI().getPath();
+      // Longest-prefix match over the registered contexts (HttpServer's own rule).
+      com.sun.net.httpserver.HttpContext best = null;
+      int bestLen = -1;
+      for (com.sun.net.httpserver.HttpContext ctx : contexts) {
+        String p = ctx.getPath();
+        boolean matches = path.equals(p) || path.startsWith(p.endsWith("/") ? p : p + "/");
+        if (matches && p.length() > bestLen) {
+          best = ctx;
+          bestLen = p.length();
+        }
+      }
+      if (best == null) {
+        exchange.sendResponseHeaders(404, -1);
+        exchange.close();
+        return;
+      }
+      best.getHandler().handle(exchange);
+    };
+  }
+
+  /**
+   * Delegating {@link HttpServer} wrapper that records every {@link #createContext} registration so
+   * {@link #asRouter()} can enumerate the routes for its own longest-prefix dispatch (the JDK's
+   * {@code HttpServer} exposes no way to list its contexts). All other operations delegate to the
+   * wrapped (unbound) server; the wrapper is never bound or started.
+   */
+  private static final class RouteCollector extends HttpServer {
+    private final HttpServer delegate;
+    private final java.util.List<com.sun.net.httpserver.HttpContext> contexts =
+        new java.util.ArrayList<>();
+
+    RouteCollector(HttpServer delegate) {
+      this.delegate = delegate;
+    }
+
+    java.util.List<com.sun.net.httpserver.HttpContext> contexts() {
+      return contexts;
+    }
+
+    @Override
+    public com.sun.net.httpserver.HttpContext createContext(
+        String path, com.sun.net.httpserver.HttpHandler handler) {
+      com.sun.net.httpserver.HttpContext ctx = delegate.createContext(path, handler);
+      contexts.add(ctx);
+      return ctx;
+    }
+
+    @Override
+    public com.sun.net.httpserver.HttpContext createContext(String path) {
+      com.sun.net.httpserver.HttpContext ctx = delegate.createContext(path);
+      contexts.add(ctx);
+      return ctx;
+    }
+
+    @Override
+    public void bind(InetSocketAddress addr, int backlog) throws IOException {
+      delegate.bind(addr, backlog);
+    }
+
+    @Override
+    public void start() {
+      delegate.start();
+    }
+
+    @Override
+    public void setExecutor(java.util.concurrent.Executor executor) {
+      delegate.setExecutor(executor);
+    }
+
+    @Override
+    public java.util.concurrent.Executor getExecutor() {
+      return delegate.getExecutor();
+    }
+
+    @Override
+    public void stop(int delay) {
+      delegate.stop(delay);
+    }
+
+    @Override
+    public void removeContext(String path) {
+      delegate.removeContext(path);
+    }
+
+    @Override
+    public void removeContext(com.sun.net.httpserver.HttpContext context) {
+      delegate.removeContext(context);
+    }
+
+    @Override
+    public InetSocketAddress getAddress() {
+      return delegate.getAddress();
+    }
   }
 
   /**
@@ -814,9 +936,23 @@ public class Service implements AutoCloseable {
   public void serve() throws IOException {
     httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
     httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
+    registerRoutes(httpServer);
+    httpServer.start();
+    String basePath = "/".equals(route) ? "" : route;
+    log.info(
+        "Service '%s' listening on %s:%d%s", name, host, port, basePath.isEmpty() ? "/" : basePath);
+  }
 
+  /**
+   * Register this service's routes (health, ready, {@code /swaig}, subclass extras, and the main
+   * SWML endpoint) onto the given {@link HttpServer}. Shared by {@link #serve()} (which binds and
+   * starts its own server) and {@link #asRouter()} (which registers them onto an unbound server it
+   * hands back as a mountable handler). Keeping the route table in one place guarantees the
+   * embedded-in-a-host-app handler serves exactly what the standalone server does.
+   */
+  protected void registerRoutes(HttpServer server) {
     // Health endpoint (no auth)
-    httpServer.createContext(
+    server.createContext(
         "/health",
         exchange -> {
           try {
@@ -827,7 +963,7 @@ public class Service implements AutoCloseable {
         });
 
     // Ready endpoint (no auth)
-    httpServer.createContext(
+    server.createContext(
         "/ready",
         exchange -> {
           try {
@@ -840,7 +976,7 @@ public class Service implements AutoCloseable {
     String basePath = "/".equals(route) ? "" : route;
 
     // SWAIG endpoint (with auth) — GET returns SWML, POST dispatches a tool.
-    httpServer.createContext(
+    server.createContext(
         basePath + "/swaig",
         exchange -> {
           try {
@@ -857,11 +993,11 @@ public class Service implements AutoCloseable {
         });
 
     // Subclass extension hook — AgentBase adds /post_prompt, /mcp here.
-    registerAdditionalRoutes(httpServer);
+    registerAdditionalRoutes(server);
 
     // Main SWML endpoint (with auth)
     String swmlPath = basePath.isEmpty() ? "/" : basePath;
-    httpServer.createContext(
+    server.createContext(
         swmlPath,
         exchange -> {
           try {
@@ -909,9 +1045,6 @@ public class Service implements AutoCloseable {
             exchange.close();
           }
         });
-
-    httpServer.start();
-    log.info("Service '%s' listening on %s:%d%s", name, host, port, swmlPath);
   }
 
   /**
