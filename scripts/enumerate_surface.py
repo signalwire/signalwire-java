@@ -411,6 +411,12 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
         ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
     ("WebhookValidator", "validateRequest"):
         ("signalwire.core.security.webhook_validator", "validate_request"),
+    # WebhookValidator.validate → the framework-free decomposed webhook-validation
+    # core in signalwire.core.security.webhook_middleware (mirrors the same
+    # projection in enumerate_signatures.py). The WebhookFilter servlet wrapper on
+    # top of it stays a PORT_ADDITION idiom.
+    ("WebhookValidator", "validate"):
+        ("signalwire.core.security.webhook_middleware", "validate"),
 }
 
 
@@ -522,6 +528,11 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     # SWAIGFunction handler @FunctionalInterface + ToolRegistry nested tool type.
     "SWAIGFunctionHandler",
     "ToolRegistryTool",
+    # WebhookValidator.validate's reject-triple return record — the Java native
+    # stand-in for the language-neutral (status, headers, body) tuple the
+    # decomposed webhook_middleware.validate core returns (Python uses a plain
+    # tuple; .NET a ValueTuple). Idiom-scaffolding nested value type.
+    "WebhookValidatorWebhookRejection",
 }
 
 

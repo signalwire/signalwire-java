@@ -561,6 +561,16 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
     ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"):
         ("signalwire.core.security.webhook_validator", "validate_request"),
+    # WebhookValidator.validate → the framework-free decomposed webhook-validation
+    # core (signalwire.core.security.webhook_middleware.validate). Java's method
+    # returns a WebhookRejection record (status, headers, body) or null; the oracle
+    # records the language-neutral tuple<int,dict<string,string>,string>? shape, so
+    # this projection's reflected return type is overridden via
+    # FREE_FUNCTION_SIGNATURE_OVERRIDES below to the canonical tuple (same as .NET's
+    # ValueTuple-based WebhookValidationMiddleware.Validate). The WebhookFilter
+    # servlet wrapper on top of it stays a PORT_ADDITION idiom.
+    ("com.signalwire.sdk.security.WebhookValidator", "validate"):
+        ("signalwire.core.security.webhook_middleware", "validate"),
     # SecurityUtils static methods → Python module-level free functions in
     # signalwire.core.security.security_utils. The Python reference exports
     # these as bare module functions (filter_sensitive_headers, redact_url,
@@ -572,6 +582,31 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.security_utils", "redact_url"),
     ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"):
         ("signalwire.core.security.security_utils", "is_valid_hostname"),
+}
+
+
+# Signature overrides for free-function projections whose native Java shape does
+# not translate to the canonical oracle shape via reflection alone. Keyed by the
+# same ``(java_fqcn, java_method)`` as FREE_FUNCTION_PROJECTIONS; the value is the
+# exact canonical signature to emit (params + returns), mirroring the Python
+# reference. Java has no value-tuple type, so the decomposed webhook ``validate``
+# core (which returns a ``WebhookRejection`` record standing in for the
+# language-neutral ``(status, headers, body)`` triple) needs its return type
+# recorded as the oracle's ``tuple<int,dict<string,string>,string>?`` directly —
+# the same shape .NET emits from a ``System.ValueTuple``. The ``signing_key``
+# param is keyword-only in the Python reference (``*, signing_key``); recording
+# it as ``kind: keyword`` keeps the drift compare exact.
+FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    ("com.signalwire.sdk.security.WebhookValidator", "validate"): {
+        "params": [
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "string", "required": True},
+            {"name": "signing_key", "kind": "keyword", "type": "string", "required": True},
+        ],
+        "returns": "optional<tuple<int,dict<string,string>,string>>",
+    },
 }
 
 
@@ -698,6 +733,7 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     "SkillParams",              # package-private skill base-schema helper
     "SWAIGFunctionHandler",     # @FunctionalInterface handler
     "ToolRegistryTool",         # ToolRegistry nested tool value
+    "WebhookRejection",         # WebhookValidator.validate reject-triple record
 }
 
 
@@ -843,6 +879,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             ff_key = (full_pkg, native)
             if ff_key in FREE_FUNCTION_PROJECTIONS:
                 target_mod, target_fn = FREE_FUNCTION_PROJECTIONS[ff_key]
+                override = FREE_FUNCTION_SIGNATURE_OVERRIDES.get(ff_key)
+                if override is not None:
+                    # Native Java shape doesn't translate to the canonical shape
+                    # via reflection (no value-tuple type); emit the recorded
+                    # oracle-exact signature. Deep-copy so later mutation (overload
+                    # collapse) can't corrupt the shared table.
+                    sig = json.loads(json.dumps(override))
+                    free_functions_out.append((target_mod, target_fn, sig))
+                    continue
                 ctx = f"{target_mod}.{target_fn}"
                 try:
                     sig = build_signature(m, aliases, ctx, target_mod, canonical_name)

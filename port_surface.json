@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 3d312fbe1af9c9e6df7099ae0e816084c36282ee",
+  "generated_from": "signalwire-java @ 1948cc49cf10f6554602f6329c4a1e61d788d1c1",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -593,6 +593,12 @@
         ]
       },
       "functions": []
+    },
+    "signalwire.core.security.webhook_middleware": {
+      "classes": {},
+      "functions": [
+        "validate"
+      ]
     },
     "signalwire.core.security.webhook_validator": {
       "classes": {},
@@ -3190,6 +3196,7 @@
     "signalwire.security.webhook_validator": {
       "classes": {
         "WebhookValidator": [
+          "validate",
           "validate_request",
           "validate_webhook_signature"
         ]

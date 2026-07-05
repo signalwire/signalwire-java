@@ -38,7 +38,11 @@ import javax.crypto.spec.SecretKeySpec;
  * <p>Public API:
  *
  * <ul>
- *   <li>{@link #validateWebhookSignature(String, String, String, String)} — combined entry point.
+ *   <li>{@link #validate(String, String, java.util.Map, String, String)} — the framework-free
+ *       decomposed decision core (cross-port contract). Returns a {@code (status, headers, body)}
+ *       reject triple, or {@code null} to let the handler run.
+ *   <li>{@link #validateWebhookSignature(String, String, String, String)} — combined signature
+ *       entry point.
  *   <li>{@link #validateRequest(String, String, String, Object)} — legacy
  *       {@code @signalwire/compatibility-api} drop-in alias.
  * </ul>
@@ -54,8 +58,102 @@ public final class WebhookValidator {
   /** Legacy alias accepted by the cXML/Compatibility surface. */
   public static final String TWILIO_COMPAT_SIGNATURE_HEADER = "X-Twilio-Signature";
 
+  /** HTTP status returned by {@link #validate} when a request is rejected. */
+  private static final int HTTP_FORBIDDEN = 403;
+
   private WebhookValidator() {
     // Static-only utility — no instantiation.
+  }
+
+  /**
+   * Framework-free reject response returned by {@link #validate}: an HTTP {@code status}, response
+   * {@code headers}, and {@code body} string. This is the language-neutral primitive shape every
+   * port's decomposed webhook-validation core returns (the cross-port analog of Python's {@code
+   * (int, dict[str, str], str)} tuple, .NET's {@code (int, Dictionary, string)} value-tuple, and a
+   * Rack/PSGI {@code [status, headers, body]} array).
+   *
+   * @param status HTTP status code (always {@code 403} on rejection).
+   * @param headers response headers (empty — no detail is leaked).
+   * @param body response body (empty — no detail is leaked).
+   */
+  public record WebhookRejection(int status, Map<String, String> headers, String body) {}
+
+  /**
+   * Framework-free webhook-validation decision — the cross-port decomposed core.
+   *
+   * <p>Takes a request decomposed into language-neutral primitives and returns either a {@code
+   * (403, {}, "")} reject triple to short-circuit with, or {@code null} to let the handler run.
+   * Every port implements this same shape (.NET {@code WebhookValidationMiddleware.Validate}, a
+   * Rack/PSGI middleware {@code [status, headers, body]}, a Hono handler, …); the framework wrapper
+   * on top of it (Java's {@link WebhookFilter} servlet filter) is the only idiom. This mirrors
+   * {@code signalwire.core.security.webhook_middleware.validate} in the Python reference.
+   *
+   * <p>The {@code headers} map is consulted for the signature header ({@code
+   * X-SignalWire-Signature} or the {@code X-Twilio-Signature} alias); lookup is case-insensitive.
+   * {@code method} is accepted for signature-shape parity with the cross-port contract but is not
+   * part of the HMAC.
+   *
+   * @param method HTTP method (part of the cross-port contract; not HMAC'd). May be {@code null}.
+   * @param url the public URL SignalWire POSTed to (already reconstructed).
+   * @param headers request headers, looked up case-insensitively for the signature.
+   * @param body the raw request body as a UTF-8 string.
+   * @param signingKey the customer's Signing Key. Required, non-empty.
+   * @return {@code null} if the signature is valid; a {@code (403, {}, "")} {@link
+   *     WebhookRejection} otherwise (missing/bad signature, or a validator error) — no body detail,
+   *     to avoid leaking which branch tripped.
+   * @throws IllegalArgumentException if {@code signingKey} is {@code null} or empty (a programming
+   *     error, not a validation failure).
+   */
+  public static WebhookRejection validate(
+      String method, String url, Map<String, String> headers, String body, String signingKey) {
+    if (signingKey == null || signingKey.isEmpty()) {
+      throw new IllegalArgumentException("signingKey is required");
+    }
+
+    String signature = headerLookup(headers, SIGNALWIRE_SIGNATURE_HEADER);
+    if (signature == null || signature.isEmpty()) {
+      signature = headerLookup(headers, TWILIO_COMPAT_SIGNATURE_HEADER);
+    }
+    if (signature == null || signature.isEmpty()) {
+      return forbidden();
+    }
+
+    boolean ok;
+    try {
+      ok =
+          validateWebhookSignature(
+              signingKey, signature, url == null ? "" : url, body == null ? "" : body);
+    } catch (IllegalArgumentException ex) {
+      return forbidden();
+    }
+    return ok ? null : forbidden();
+  }
+
+  /**
+   * A {@code (403, {}, "")} reject triple — no headers/body detail, to avoid leaking the branch.
+   */
+  private static WebhookRejection forbidden() {
+    return new WebhookRejection(HTTP_FORBIDDEN, Map.of(), "");
+  }
+
+  /**
+   * Case-insensitive header lookup over the decomposed headers map. Returns {@code null} when the
+   * map is {@code null} or the header is absent.
+   */
+  private static String headerLookup(Map<String, String> headers, String name) {
+    if (headers == null) {
+      return null;
+    }
+    String direct = headers.get(name);
+    if (direct != null) {
+      return direct;
+    }
+    for (Map.Entry<String, String> e : headers.entrySet()) {
+      if (e.getKey() != null && e.getKey().equalsIgnoreCase(name)) {
+        return e.getValue();
+      }
+    }
+    return null;
   }
 
   // ------------------------------------------------------------------

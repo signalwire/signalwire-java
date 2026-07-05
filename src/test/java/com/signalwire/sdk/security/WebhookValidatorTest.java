@@ -8,6 +8,8 @@ package com.signalwire.sdk.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -433,5 +435,80 @@ class WebhookValidatorTest {
   void headerConstants() {
     assertEquals("X-SignalWire-Signature", WebhookValidator.SIGNALWIRE_SIGNATURE_HEADER);
     assertEquals("X-Twilio-Signature", WebhookValidator.TWILIO_COMPAT_SIGNATURE_HEADER);
+  }
+
+  /**
+   * The framework-free decomposed decision core ({@link WebhookValidator#validate}) — the
+   * cross-port contract mirroring {@code signalwire.core.security.webhook_middleware.validate}.
+   * Returns {@code null} to pass, or a {@code (403, {}, "")} {@link
+   * WebhookValidator.WebhookRejection} triple to reject.
+   */
+  @Nested
+  @DisplayName("validate — decomposed framework-free core")
+  class DecomposedValidate {
+
+    @Test
+    @DisplayName("valid signature (X-SignalWire-Signature) → null (pass)")
+    void validSignaturePasses() {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put(WebhookValidator.SIGNALWIRE_SIGNATURE_HEADER, VECTOR_A_EXPECTED);
+      WebhookValidator.WebhookRejection reject =
+          WebhookValidator.validate("POST", VECTOR_A_URL, headers, VECTOR_A_BODY, VECTOR_A_KEY);
+      assertNull(reject, "a valid signature must return null (let the handler run)");
+    }
+
+    @Test
+    @DisplayName("bad signature → (403, {}, \"\") reject triple")
+    void badSignatureRejects() {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put(WebhookValidator.SIGNALWIRE_SIGNATURE_HEADER, "deadbeefdeadbeefdeadbeef");
+      WebhookValidator.WebhookRejection reject =
+          WebhookValidator.validate("POST", VECTOR_A_URL, headers, VECTOR_A_BODY, VECTOR_A_KEY);
+      assertNotNull(reject, "a bad signature must return a reject triple");
+      assertEquals(403, reject.status());
+      assertTrue(reject.headers().isEmpty(), "no headers leaked");
+      assertEquals("", reject.body(), "no body detail leaked");
+    }
+
+    @Test
+    @DisplayName("missing signature header → (403, {}, \"\") reject triple")
+    void missingHeaderRejects() {
+      WebhookValidator.WebhookRejection reject =
+          WebhookValidator.validate("POST", VECTOR_A_URL, Map.of(), VECTOR_A_BODY, VECTOR_A_KEY);
+      assertNotNull(reject, "a missing signature header must reject, not throw");
+      assertEquals(403, reject.status());
+    }
+
+    @Test
+    @DisplayName("X-Twilio-Signature alias is honored")
+    void twilioAliasHonored() {
+      // Vector A's hex digest delivered under the legacy alias header must
+      // still validate through the decomposed core.
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put(WebhookValidator.TWILIO_COMPAT_SIGNATURE_HEADER, VECTOR_A_EXPECTED);
+      WebhookValidator.WebhookRejection reject =
+          WebhookValidator.validate("POST", VECTOR_A_URL, headers, VECTOR_A_BODY, VECTOR_A_KEY);
+      assertNull(reject, "the X-Twilio-Signature alias must be accepted");
+    }
+
+    @Test
+    @DisplayName("header lookup is case-insensitive")
+    void caseInsensitiveHeaderLookup() {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put("x-signalwire-signature", VECTOR_A_EXPECTED);
+      WebhookValidator.WebhookRejection reject =
+          WebhookValidator.validate("POST", VECTOR_A_URL, headers, VECTOR_A_BODY, VECTOR_A_KEY);
+      assertNull(reject, "a lower-cased signature header must be found");
+    }
+
+    @Test
+    @DisplayName("empty signing key throws (programming error, not a validation failure)")
+    void emptySigningKeyThrows() {
+      Map<String, String> headers = new LinkedHashMap<>();
+      headers.put(WebhookValidator.SIGNALWIRE_SIGNATURE_HEADER, VECTOR_A_EXPECTED);
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> WebhookValidator.validate("POST", VECTOR_A_URL, headers, VECTOR_A_BODY, ""));
+    }
   }
 }
