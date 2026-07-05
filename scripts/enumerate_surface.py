@@ -89,11 +89,15 @@ _CLASS_RENAMES: dict[str, str] = {
     "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
     "DatetimeSkill": "DateTimeSkill",
     "SwmlTransferSkill": "SWMLTransferSkill",
-    # RELAY action-class folds: Java's ``PlayAndCollectAction`` is the
-    # reference's ``StandaloneCollectAction`` (both carry start_input_timers);
-    # Java's inbound ``ReceiveFaxAction`` is the reference's ``FaxAction``
-    # (SendFaxAction stays a port addition). Rename-not-omission.
-    "PlayAndCollectAction": "StandaloneCollectAction",
+    # RELAY action-class folds. Java's ``PlayAndCollectAction`` (prefix
+    # ``play_and_collect``, control surface stop/pause/resume/volume +
+    # start_input_timers) is the reference's ``CollectAction``; Java's
+    # ``CollectAction`` (prefix ``collect``, stop + start_input_timers) is the
+    # reference's ``StandaloneCollectAction``. Java's inbound ``ReceiveFaxAction``
+    # is the reference's ``FaxAction`` (SendFaxAction stays a port addition).
+    # Rename-not-omission.
+    "PlayAndCollectAction": "CollectAction",
+    "CollectAction": "StandaloneCollectAction",
     "ReceiveFaxAction": "FaxAction",
     "CallDialEvent": "DialEvent",
     "CallPlayEvent": "PlayEvent",
@@ -1183,54 +1187,17 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
                 if not ab_entry.get("classes") and not ab_entry.get("functions"):
                     merged.pop("signalwire.core.agent_base", None)
 
-        _project_relay_action_mixins(merged)
-
     return merged
 
 
-# Relay-action mixin projection (item H). Python's ``signalwire.relay.call``
-# factors the shared call-action control verbs into three small base classes —
-# ``PausableAction`` (pause/resume), ``StoppableAction`` (stop) and
-# ``VolumeAction`` (volume) — from which the concrete action classes
-# (PlayAction/RecordAction/…) inherit. Java has no such bases; each concrete
-# action DECLARES the control methods directly, so the text enumerator sees
-# ``PlayAction.stop`` etc. as port-side extras while the reference records
-# ``stop`` only on ``StoppableAction``. Mirror the reference's inheritance
-# structure: hoist each control method OFF the concrete actions and onto its
-# base-mixin class (creating the three base classes), so the surface compares
-# EQUAL to the oracle (Rule 2 — reconcile idiom in the enumerator, not via an
-# omission). This is the surface analog of the reference's class hierarchy.
-_RELAY_ACTION_MIXINS: dict[str, list[str]] = {
-    "PausableAction": ["pause", "resume"],
-    "StoppableAction": ["stop"],
-    "VolumeAction": ["volume"],
-}
-
-
-def _project_relay_action_mixins(merged: dict[str, dict]) -> None:
-    mod = merged.get("signalwire.relay.call")
-    if not mod:
-        return
-    classes = mod.get("classes", {})
-    method_to_base = {
-        m: base for base, methods in _RELAY_ACTION_MIXINS.items() for m in methods
-    }
-    for cls_name, methods in list(classes.items()):
-        if cls_name in _RELAY_ACTION_MIXINS:
-            continue
-        kept = []
-        for m in methods:
-            base = method_to_base.get(m)
-            if base is None:
-                kept.append(m)
-                continue
-            existing = classes.setdefault(base, [])
-            if m not in existing:
-                existing.append(m)
-        classes[cls_name] = sorted(set(kept))
-    for base in _RELAY_ACTION_MIXINS:
-        if base in classes:
-            classes[base] = sorted(set(classes[base]))
+# NOTE (pass-2 RELAY action-contract reconcile): the oracle no longer factors
+# the call-action control verbs into shared ``StoppableAction`` /
+# ``PausableAction`` / ``VolumeAction`` base classes. It PROJECTS stop / pause /
+# resume / volume directly onto each concrete action (PlayAction, RecordAction,
+# CollectAction, …). Java already declares the control methods directly on each
+# concrete action, so it matches the reference as-is — no base-class hoisting is
+# performed (the former ``_project_relay_action_mixins`` synthesized the three
+# obsolete bases and is removed).
 
 
 def git_sha(repo: Path) -> str:

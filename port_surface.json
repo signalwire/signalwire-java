@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 1948cc49cf10f6554602f6329c4a1e61d788d1c1",
+  "generated_from": "signalwire-java @ 26ba2419277fd9b3e16d0e5856591450a1caab98",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1180,7 +1180,8 @@
     "signalwire.relay.call": {
       "classes": {
         "AIAction": [
-          "__init__"
+          "__init__",
+          "stop"
         ],
         "Action": [
           "__init__",
@@ -1192,6 +1193,7 @@
           "is_done",
           "resolve",
           "set_on_completed",
+          "stop",
           "update_state",
           "wait",
           "wait_for_completion"
@@ -1280,46 +1282,53 @@
         ],
         "CollectAction": [
           "__init__",
-          "start_input_timers"
+          "pause",
+          "resume",
+          "start_input_timers",
+          "stop",
+          "volume"
         ],
         "DetectAction": [
-          "__init__"
+          "__init__",
+          "stop"
         ],
         "FaxAction": [
-          "__init__"
-        ],
-        "PausableAction": [
-          "pause",
-          "resume"
+          "__init__",
+          "stop"
         ],
         "PayAction": [
-          "__init__"
+          "__init__",
+          "stop"
         ],
         "PlayAction": [
-          "__init__"
+          "__init__",
+          "pause",
+          "resume",
+          "stop",
+          "volume"
         ],
         "RecordAction": [
           "__init__",
-          "pause_with_behavior"
+          "pause",
+          "resume",
+          "stop"
         ],
         "StandaloneCollectAction": [
           "__init__",
-          "start_input_timers"
-        ],
-        "StoppableAction": [
+          "start_input_timers",
           "stop"
         ],
         "StreamAction": [
-          "__init__"
+          "__init__",
+          "stop"
         ],
         "TapAction": [
-          "__init__"
+          "__init__",
+          "stop"
         ],
         "TranscribeAction": [
-          "__init__"
-        ],
-        "VolumeAction": [
-          "volume"
+          "__init__",
+          "stop"
         ]
       },
       "functions": []

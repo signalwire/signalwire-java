@@ -59,6 +59,8 @@ public final class Constants {
       "calling.collect.start_input_timers";
   public static final String METHOD_PLAY_AND_COLLECT = "calling.play_and_collect";
   public static final String METHOD_PLAY_AND_COLLECT_STOP = "calling.play_and_collect.stop";
+  public static final String METHOD_PLAY_AND_COLLECT_PAUSE = "calling.play_and_collect.pause";
+  public static final String METHOD_PLAY_AND_COLLECT_RESUME = "calling.play_and_collect.resume";
   public static final String METHOD_PLAY_AND_COLLECT_VOLUME = "calling.play_and_collect.volume";
   public static final String METHOD_PAY = "calling.pay";
   public static final String METHOD_PAY_STOP = "calling.pay.stop";

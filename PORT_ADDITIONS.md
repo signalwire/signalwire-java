@@ -283,6 +283,7 @@ signalwire.relay.call.Action.get_result: idiomatic Java surface extension (build
 signalwire.relay.call.Action.get_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.resolve: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.set_on_completed: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.relay.call.Action.stop: idiomatic Java surface extension — the base Action declares an overridable no-op stop() default so the polymorphic Action type is directly usable; the Python reference base Action has no stop (stop is introduced on StoppableAction). Each concrete action overrides with its real per-prefix stop
 signalwire.relay.call.Action.update_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.wait_for_completion: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Call.collect_digits: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -308,7 +309,6 @@ signalwire.relay.call.Call.set_end_reason: idiomatic Java surface extension (bui
 signalwire.relay.call.Call.set_node_id: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Call.set_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Call.set_tag: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.relay.call.RecordAction.pause_with_behavior: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call_state.CallState: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call_state.CallState.from_wire: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call_state.CallState.get_value: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -725,9 +725,6 @@ signalwire.logging.logging_level.LoggingLevel.warn: idiomatic Java surface exten
 signalwire.pom.pom.PromptObjectModel.sections: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.pom.pom.Section.subsections: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.prefabs.question_callback.QuestionCallback.apply: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.call_play_and_collect_action.CallPlayAndCollectAction.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.call_play_and_collect_action.CallPlayAndCollectAction.volume: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.call_receive_fax_action.CallReceiveFaxAction.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.relay.call_send_fax_action.CallSendFaxAction.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.relay.event.CallingErrorEvent.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.relay.event.DenoiseEvent.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart

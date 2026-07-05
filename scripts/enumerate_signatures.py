@@ -325,13 +325,22 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
     # RestClient.Builder (nested in RestClient.java)
     ("com.signalwire.sdk.rest", "Builder"):
         ("RestClientBuilder", "signalwire.rest.rest_client_builder"),
-    # Action subtypes nested under Call.java's relay package — Java's
-    # ``Call.PlayAndCollectAction`` etc. are exposed at the same path as
-    # the surface, but we keep the symbol stable here for diff continuity.
+    # Action subtypes nested under Call.java's relay package. The reference
+    # projects each concrete action's control methods (stop/pause/resume/volume)
+    # directly onto the action class in ``signalwire.relay.call``, so these must
+    # land there (matching the SURFACE enumerator's folds) rather than in their
+    # own per-class modules. Semantics fix (pass-2 reconcile): Java's
+    # ``PlayAndCollectAction`` (prefix ``play_and_collect``, carries
+    # stop/pause/resume/volume + start_input_timers) IS the reference's
+    # ``CollectAction``; Java's ``CollectAction`` (prefix ``collect``,
+    # stop + start_input_timers) IS the reference's ``StandaloneCollectAction``.
+    # Java's inbound ``ReceiveFaxAction`` is the reference's ``FaxAction``.
     ("com.signalwire.sdk.relay", "PlayAndCollectAction"):
-        ("CallPlayAndCollectAction", "signalwire.relay.call_play_and_collect_action"),
+        ("CollectAction", "signalwire.relay.call"),
+    ("com.signalwire.sdk.relay", "CollectAction"):
+        ("StandaloneCollectAction", "signalwire.relay.call"),
     ("com.signalwire.sdk.relay", "ReceiveFaxAction"):
-        ("CallReceiveFaxAction", "signalwire.relay.call_receive_fax_action"),
+        ("FaxAction", "signalwire.relay.call"),
     ("com.signalwire.sdk.relay", "SendFaxAction"):
         ("CallSendFaxAction", "signalwire.relay.call_send_fax_action"),
     # AuthorizationStateEvent — nested under RelayEvent in Java
@@ -447,6 +456,13 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("FunctionResult", "send_sms"),       # +region
     ("FunctionResult", "rpc_dial"),       # +device_type (was hard-coded "phone")
     ("FunctionResult", "rpc_ai_message"), # +role (was hard-coded "system")
+    # RELAY action pause() exposes the reference's optional ``behavior`` kwarg via
+    # a ``pause(String behavior)`` overload alongside the no-arg convenience
+    # ``pause()``. The full overload is the parity surface (matches the oracle's
+    # ``pause(behavior: str | None)``); the 0-arg form would hide the param.
+    ("PlayAction", "pause"),
+    ("RecordAction", "pause"),
+    ("CollectAction", "pause"),
 }
 
 # Java skill class renames to match Python casing
