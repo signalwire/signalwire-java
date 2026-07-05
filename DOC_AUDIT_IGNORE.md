@@ -268,3 +268,21 @@ phoneNumbers: real ResourceTree.phoneNumbers() accessor; enumerator does not sur
 queues: real ResourceTree.queues() accessor; enumerator does not surface the bare name
 recordings: real ResourceTree.recordings() accessor; enumerator does not surface the bare name
 conferences: real LogsNamespace/VideoNamespace conferences() accessor; enumerator does not surface the bare name
+fabric: real ResourceTree.fabric() top-level namespace accessor; mirrors Python client.fabric attribute (not method-surface in either language)
+video: real ResourceTree.video() top-level namespace accessor; mirrors Python client.video attribute
+calling: real ResourceTree.calling() top-level namespace accessor; mirrors Python client.calling attribute
+datasphere: real ResourceTree.datasphere() top-level namespace accessor; mirrors Python client.datasphere attribute
+registry: real ResourceTree.registry() top-level namespace accessor; mirrors Python client.registry attribute
+resources: real FabricNamespace.resources() sub-resource accessor; mirrors Python client.fabric.resources attribute
+aiAgents: real FabricNamespace.aiAgents() sub-resource accessor; mirrors Python client.fabric.ai_agents attribute
+subscribers: real FabricNamespace.subscribers() sub-resource accessor; mirrors Python client.fabric.subscribers attribute
+addresses: real FabricNamespace.addresses() sub-resource accessor; mirrors Python client.fabric.addresses attribute
+callFlows: real FabricNamespace.callFlows() sub-resource accessor; mirrors Python client.fabric.call_flows attribute
+conferenceRooms: real FabricNamespace.conferenceRooms() sub-resource accessor; mirrors Python client.fabric.conference_rooms attribute
+sipEndpoints: real FabricNamespace.sipEndpoints() sub-resource accessor; mirrors Python client.fabric.sip_endpoints attribute
+swmlScripts: real FabricNamespace.swmlScripts() sub-resource accessor; mirrors Python client.fabric.swml_scripts attribute
+rooms: real VideoNamespace.rooms() sub-resource accessor; mirrors Python client.video.rooms attribute
+roomSessions: real VideoNamespace.roomSessions() sub-resource accessor; mirrors Python client.video.room_sessions attribute
+documents: real DatasphereNamespace.documents() sub-resource accessor; mirrors Python client.datasphere.documents attribute
+brands: real RegistryNamespace.brands() sub-resource accessor; mirrors Python client.registry.brands attribute
+campaigns: real RegistryNamespace.campaigns() sub-resource accessor; mirrors Python client.registry.campaigns attribute

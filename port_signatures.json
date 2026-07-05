@@ -14,7 +14,7 @@
             {
               "name": "kwargs",
               "type": "dict<string,string>",
-              "required": true
+              "required": false
             }
           ],
           "returns": "class:signalwire.rest.client.RestClient"
@@ -4469,7 +4469,7 @@
                 {
                   "name": "llm_params",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
@@ -4483,7 +4483,7 @@
                 {
                   "name": "llm_params",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
@@ -8421,7 +8421,7 @@
                 {
                   "name": "kwargs",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "dict<string,any>"

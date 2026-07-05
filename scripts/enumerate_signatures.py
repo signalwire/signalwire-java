@@ -631,6 +631,55 @@ MIXIN_PROJECTIONS = {
 }
 
 
+# Methods whose Python reference carries a trailing ``**kwargs`` / ``**llm_params``
+# var-keyword tail that the port mirrors as a single trailing open ``Map`` param.
+# Since porting-sdk #58 the oracle STRIPS every var-keyword tail from the extracted
+# signature (the cross-port floor is the ``extras`` door, not a kwargs param — see
+# enumerate_python_signatures.py). Java (static, no ``**kwargs``) still exposes the
+# door as one trailing ``Map<String,Object>`` param; reflection defaults it to
+# ``required: True`` (Java has no defaults), which now reads as a port-side EXTRA
+# required param vs the stripped oracle → param-count-mismatch. The var-keyword door
+# is optional by construction (a caller may pass zero extra keys), so mark that
+# trailing param ``required: false``: the diff's ``extras_all_optional`` rule then
+# excuses it as an optional port extra — the honest shape (an optional kwargs door),
+# not an omission. Keyed by fully-qualified ``(module, class_or_None, method)``; a
+# ``None`` class targets a module-level free function. The tail param is matched by
+# position (last param) so the specific open-map value type doesn't matter.
+KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
+    ("signalwire", None, "RestClient"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_prompt_llm_params"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_post_prompt_llm_params"),
+    ("signalwire.core.swml_handler", "SWMLVerbHandler", "build_config"),
+}
+
+
+def _mark_kwargs_tails_optional(out_modules: dict) -> None:
+    """Flip the trailing var-keyword-door param of each KWARGS_TAIL_OPTIONAL
+    method to ``required: false`` (see the set's docstring). Fail loud if a
+    keyed symbol/param can't be found — a rename would otherwise silently stop
+    excusing it and re-red the drift gate."""
+    for module, cls, method in KWARGS_TAIL_OPTIONAL:
+        mod_entry = out_modules.get(module)
+        if not mod_entry:
+            raise RuntimeError(f"KWARGS_TAIL_OPTIONAL: module {module!r} not found")
+        if cls is None:
+            sig = mod_entry.get("functions", {}).get(method)
+        else:
+            sig = mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+        if not sig:
+            raise RuntimeError(
+                f"KWARGS_TAIL_OPTIONAL: symbol {module}.{cls or ''}.{method} not found"
+            )
+        params = sig.get("params", [])
+        # The tail is the last non-receiver param.
+        tail = [p for p in params if p.get("kind") not in ("self", "cls")]
+        if not tail:
+            raise RuntimeError(
+                f"KWARGS_TAIL_OPTIONAL: {module}.{cls or ''}.{method} has no value param to mark"
+            )
+        tail[-1]["required"] = False
+
+
 # Idiom-scaffolding Java simple names to DROP (mirrors enumerate_surface.py's
 # _SURFACE_EXCLUDED_CLASSES; here keyed by the bare simple name SignatureDump
 # emits for the nested/helper type). All are port-only value/builder types with
@@ -926,6 +975,11 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"].get("classes"):
                 out_modules.pop("signalwire.core.agent_base", None)
+
+    # Mark the trailing var-keyword-door param optional on collapsed-kwargs
+    # methods (post-#58 the oracle strips the tail; keep the port's optional
+    # kwargs door excused as an optional extra, not an omission).
+    _mark_kwargs_tails_optional(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):
