@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ d45f0add210c2e269f0ab1078833e809e3bdb930",
+  "generated_from": "signalwire-java @ 04c4955eec79d90768fbff9ba3766b7e362489ae",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -338,7 +338,8 @@
           "params",
           "purpose",
           "to_swaig_function",
-          "webhook"
+          "webhook",
+          "webhook_expressions"
         ]
       },
       "functions": []

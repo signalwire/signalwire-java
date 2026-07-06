@@ -3001,6 +3001,20 @@
                 }
               ],
               "returns": "class:signalwire.core.data_map.DataMap"
+            },
+            "webhook_expressions": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "expressions",
+                  "type": "list<dict<string,any>>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.data_map.DataMap"
             }
           }
         }

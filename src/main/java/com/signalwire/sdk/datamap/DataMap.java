@@ -156,6 +156,26 @@ public class DataMap {
     return webhook(method, url, null);
   }
 
+  /**
+   * Add a list of expressions that run after the most recent webhook completes.
+   *
+   * <p>Bulk analog of {@link #expression(String, String, FunctionResult, FunctionResult)}: attaches
+   * the whole {@code expressions} list to the most recently added webhook (under the webhook's
+   * {@code expressions} key), producing the same wire shape as building each entry with {@code
+   * expression(...)}. Each entry is a map with {@code string}, {@code pattern}, {@code output} (and
+   * optional {@code nomatch-output}) keys.
+   *
+   * @param expressions expression definitions to check post-webhook
+   * @throws IllegalStateException if no webhook has been added yet
+   */
+  public DataMap webhookExpressions(List<Map<String, Object>> expressions) {
+    if (webhooks.isEmpty()) {
+      throw new IllegalStateException("Must add webhook before setting webhook expressions");
+    }
+    webhooks.getLast().put("expressions", expressions);
+    return this;
+  }
+
   /** Set request body for the last added webhook (POST/PUT requests). */
   public DataMap body(Map<String, Object> data) {
     if (webhooks.isEmpty()) {
