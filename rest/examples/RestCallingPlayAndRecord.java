@@ -13,7 +13,9 @@
 
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
 
+import java.util.List;
 import java.util.Map;
 
 public class RestCallingPlayAndRecord {
@@ -26,11 +28,12 @@ public class RestCallingPlayAndRecord {
         // 1. Dial a number via the calling command API.
         System.out.println("Dialing...");
         try {
-            var result = client.calling().dial(Map.of(
-                    "from", "+15559876543",
-                    "to", "+15551234567",
-                    "timeout", 30
-            ));
+            var result = client.calling().dial(
+                    Calling.DialRequest.builder()
+                            .from("+15559876543")
+                            .to("+15551234567")
+                            .extras(Map.of("timeout", 30))
+                            .build());
             callId = (String) result.get("call_id");
             System.out.println("  Call started: " + callId);
         } catch (RestError e) {
@@ -41,10 +44,13 @@ public class RestCallingPlayAndRecord {
         // 2. Play a TTS prompt via the play command.
         System.out.println("Sending play...");
         try {
-            client.calling().play(callId, Map.of(
-                    "play", Map.of("text", "Please leave a message after the beep."),
-                    "beep", true
-            ));
+            client.calling().play(callId,
+                    Calling.PlayRequest.builder()
+                            .play(List.of(Map.of(
+                                    "type", "tts",
+                                    "params", Map.of("text", "Please leave a message after the beep."))))
+                            .extras(Map.of("beep", true))
+                            .build());
         } catch (RestError e) {
             System.out.println("  Play failed: " + e.getStatusCode());
         }
@@ -52,10 +58,10 @@ public class RestCallingPlayAndRecord {
         // 3. Start recording the call via the record command.
         System.out.println("Starting recording...");
         try {
-            client.calling().record(callId, Map.of(
-                    "format", "mp3",
-                    "stereo", true
-            ));
+            client.calling().record(callId,
+                    Calling.RecordRequest.builder()
+                            .audio(Map.of("format", "mp3", "stereo", true))
+                            .build());
         } catch (RestError e) {
             System.out.println("  Record failed: " + e.getStatusCode());
         }
@@ -63,7 +69,7 @@ public class RestCallingPlayAndRecord {
         // 4. Hang up via the end command.
         System.out.println("Hanging up...");
         try {
-            client.calling().end(callId, Map.of());
+            client.calling().end(callId, Calling.EndRequest.builder().build());
             System.out.println("  Call ended.");
         } catch (RestError e) {
             System.out.println("  Hangup failed: " + e.getStatusCode());

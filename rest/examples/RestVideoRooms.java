@@ -52,7 +52,7 @@ public class RestVideoRooms {
         // 4. List video recordings
         System.out.println("\nListing video recordings...");
         try {
-            var recordings = client.video().recordings().list();
+            var recordings = client.video().roomRecordings().list(Map.of());
             System.out.println("  Recordings: " + recordings);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());

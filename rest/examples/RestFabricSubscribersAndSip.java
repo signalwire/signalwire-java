@@ -15,6 +15,7 @@
 
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
+import com.signalwire.sdk.rest.namespaces.generated.Subscribers;
 
 import java.util.Map;
 
@@ -48,11 +49,12 @@ public class RestFabricSubscribersAndSip {
         // 3. Create a SIP endpoint for the subscriber (Fabric-scoped).
         System.out.println("\nCreating SIP endpoint...");
         try {
-            var sipEndpoint = client.fabric().subscribers().createSipEndpoint("subscriber-id", Map.of(
-                    "name", "office-phone",
-                    "username", "jane.doe",
-                    "password", "secure-password-here"
-            ));
+            var sipEndpoint = client.fabric().subscribers().createSipEndpoint("subscriber-id",
+                    Subscribers.CreateSipEndpointRequest.builder()
+                            .username("jane.doe")
+                            .password("secure-password-here")
+                            .extras(Map.of("name", "office-phone"))
+                            .build());
             System.out.println("  SIP endpoint: " + sipEndpoint);
         } catch (RestError e) {
             System.out.println("  Create failed: " + e.getStatusCode());
@@ -61,7 +63,7 @@ public class RestFabricSubscribersAndSip {
         // 4. List the subscriber's SIP endpoints.
         System.out.println("\nListing SIP endpoints...");
         try {
-            var sipEndpoints = client.fabric().subscribers().listSipEndpoints("subscriber-id");
+            var sipEndpoints = client.fabric().subscribers().listSipEndpoints("subscriber-id", Map.of());
             System.out.println("  SIP endpoints: " + sipEndpoints);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());

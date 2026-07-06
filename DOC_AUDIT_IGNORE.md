@@ -283,6 +283,29 @@ sipEndpoints: real FabricNamespace.sipEndpoints() sub-resource accessor; mirrors
 swmlScripts: real FabricNamespace.swmlScripts() sub-resource accessor; mirrors Python client.fabric.swml_scripts attribute
 rooms: real VideoNamespace.rooms() sub-resource accessor; mirrors Python client.video.rooms attribute
 roomSessions: real VideoNamespace.roomSessions() sub-resource accessor; mirrors Python client.video.room_sessions attribute
+roomRecordings: real VideoNamespace.roomRecordings() sub-resource accessor; mirrors Python client.video.room_recordings attribute
 documents: real DatasphereNamespace.documents() sub-resource accessor; mirrors Python client.datasphere.documents attribute
 brands: real RegistryNamespace.brands() sub-resource accessor; mirrors Python client.registry.brands attribute
 campaigns: real RegistryNamespace.campaigns() sub-resource accessor; mirrors Python client.registry.campaigns attribute
+
+### Typed-REST request-builder setters (Java idiom for Python kwargs)
+
+The generated REST command/resource methods take a closed typed *Request
+object built via a fluent builder (e.g. Calling.DialRequest.builder()
+.from(..).to(..).build()). Each builder setter carries one wire field;
+`extras(Map)` is the escape door for fields outside the closed set. Python
+passes these same wire fields as keyword arguments, so the setter *name* has
+no method-surface analog in either language's enumerated surface — it is the
+Java typed-request idiom for a Python kwarg. Real, compiling public builder
+methods; listed so example references resolve.
+
+extras: Calling.*Request.Builder#extras(Map) etc. — arbitrary-field escape door on every typed *Request builder
+from: Calling.DialRequest.Builder#from(String) — 'from' wire field (dial)
+to: Calling.DialRequest.Builder#to(String) — 'to' wire field (dial)
+url: Calling.DialRequest.Builder#url(String) — 'url' wire field (dial)
+initialTimeout: Calling.CollectRequest.Builder#initialTimeout(Double) — 'initial_timeout' wire field (collect)
+digits: Calling.CollectRequest.Builder#digits(Map) — 'digits' wire field (collect)
+audio: Calling.RecordRequest.Builder#audio(Map) — 'audio' wire field (record)
+queryString: DatasphereDocuments.SearchRequest.Builder#queryString(String) — 'query_string' wire field (document search)
+username: Subscribers.CreateSipEndpointRequest.Builder#username(String) — 'username' wire field (create SIP endpoint)
+password: Subscribers.CreateSipEndpointRequest.Builder#password(String) — 'password' wire field (create SIP endpoint)
