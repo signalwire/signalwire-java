@@ -2133,8 +2133,32 @@ public class AgentBase extends Service {
     }
 
     // Render via AgentBase's SWML pipeline (proxy-base URL when configured).
+    // Apply the per-request dynamic-config callback (multi-tenancy) the same way
+    // the embedded-server renderMainSwml path does: clone the agent, hand the
+    // clone the request's query/body/header context, and render from the clone.
+    // This keeps the served path (which now delegates here) applying dynamic
+    // config, and mirrors Python's _handle_root_request -> _render_swml.
     String baseUrl = proxyUrlBase != null ? proxyUrlBase : "";
-    return new HttpResult(200, new LinkedHashMap<>(), renderSwmlJson(baseUrl));
+    AgentBase renderAgent = this;
+    if (dynamicConfigCallback != null) {
+      renderAgent = this.clone();
+      Map<String, String> queryParams = parseQueryParams(queryStringOf(url));
+      Map<String, List<String>> headerMap = new LinkedHashMap<>();
+      if (headers != null) {
+        headers.forEach((k, v) -> headerMap.put(k, List.of(v)));
+      }
+      dynamicConfigCallback.configure(queryParams, reqBody, headerMap, renderAgent);
+    }
+    return new HttpResult(200, new LinkedHashMap<>(), renderAgent.renderSwmlJson(baseUrl));
+  }
+
+  /** Extract the raw query string (after {@code ?}) from a full or path-only URL, or empty. */
+  private static String queryStringOf(String url) {
+    if (url == null) {
+      return "";
+    }
+    int q = url.indexOf('?');
+    return q >= 0 ? url.substring(q + 1) : "";
   }
 
   @Override

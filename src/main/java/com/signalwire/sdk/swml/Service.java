@@ -1173,43 +1173,102 @@ public class Service implements AutoCloseable {
                 || (basePath + "/mcp").equals(path)) {
               return;
             }
-            if (!validateAuth(exchange)) {
-              sendUnauthorized(exchange);
-              return;
-            }
-            addSecurityHeaders(exchange);
-
-            // For POST requests, capture the body BEFORE rendering so
-            // (a) the signature validator sees the raw bytes, and
-            // (b) downstream renderMainSwml can re-use it without
-            // re-reading the stream. We stash the body on the exchange
-            // attributes so renderMainSwml(exchange) — which already
-            // wants the body for dynamic-config dispatch on AgentBase —
-            // can pull it instead of calling readBody again.
-            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-              String body;
-              try {
-                body = readBody(exchange);
-              } catch (IOException e) {
-                sendPayloadTooLarge(exchange);
-                return;
-              }
-              exchange.setAttribute(REQUEST_BODY_ATTR, body);
-              if (!validateSignedWebhook(exchange, body)) {
-                // No body detail per webhooks.md.
-                exchange.sendResponseHeaders(403, -1);
-                exchange.close();
-                return;
-              }
-            }
-
-            sendJson(exchange, 200, renderMainSwml(exchange));
+            handleSwmlExchange(exchange);
           } catch (Exception e) {
             log.error("SWML handler error", e);
             exchange.sendResponseHeaders(500, -1);
             exchange.close();
           }
         });
+  }
+
+  /**
+   * Thin framework adapter for the served SWML endpoint: it captures the raw request off the {@link
+   * HttpExchange} (body-size limit, signed-webhook validation — the plumbing that genuinely needs
+   * the exchange), then routes the auth / routing-callback / render DECISION through {@link
+   * #handleRequest}, and marshals the returned {@code (status, headers, body)} triple back onto the
+   * exchange. This is what makes {@link #serve()} and {@link #asRouter()} reach the
+   * routing-callback {@code 307} branch (previously the served path re-implemented auth+render
+   * inline and never called the routing callback). Mirrors the .NET {@code DispatchAsync} / {@code
+   * RunHttp} adapters that funnel the served request through {@code HandleRequest}.
+   */
+  protected void handleSwmlExchange(HttpExchange exchange) throws IOException {
+    String method = exchange.getRequestMethod();
+
+    // Raw-body capture is framework plumbing that needs the exchange: enforce the
+    // size limit and the signed-webhook check here, BEFORE the request reaches the
+    // primitive dispatch core (which operates over already-parsed primitives).
+    String rawBody = null;
+    if ("POST".equalsIgnoreCase(method)) {
+      try {
+        rawBody = readBody(exchange);
+      } catch (IOException e) {
+        sendPayloadTooLarge(exchange);
+        return;
+      }
+      // Stash for downstream consumers that pull the body off the exchange.
+      exchange.setAttribute(REQUEST_BODY_ATTR, rawBody);
+      // Signature validation is gated behind auth (handleRequest re-checks auth);
+      // this mirrors the reference where signing is layered on top of basic auth,
+      // and the served path must still 403 an invalid signature before rendering.
+      if (validateAuth(exchange) && !validateSignedWebhook(exchange, rawBody)) {
+        // No body detail per webhooks.md.
+        exchange.sendResponseHeaders(403, -1);
+        exchange.close();
+        return;
+      }
+    }
+
+    // Build the primitive request (method, url, headers, body) from the exchange.
+    String url = fullUrlOf(exchange);
+    java.util.Map<String, String> headers = new java.util.LinkedHashMap<>();
+    exchange.getRequestHeaders().forEach((k, v) -> headers.put(k, v.isEmpty() ? "" : v.get(0)));
+    java.util.Map<String, Object> parsedBody = null;
+    if (rawBody != null && !rawBody.isEmpty()) {
+      try {
+        java.lang.reflect.Type type =
+            new com.google.gson.reflect.TypeToken<java.util.Map<String, Object>>() {}.getType();
+        parsedBody = gson.fromJson(rawBody, type);
+      } catch (Exception e) {
+        log.warn("error_parsing_request_body");
+      }
+    }
+
+    // The DECISION (401 auth / 307 routing / 200 render) comes from handleRequest.
+    HttpResult result = handleRequest(method, url, headers, parsedBody);
+
+    if (result.status() == 401) {
+      sendUnauthorized(exchange);
+      return;
+    }
+    // Authenticated responses carry the security headers.
+    addSecurityHeaders(exchange);
+    for (java.util.Map.Entry<String, String> h : result.headers().entrySet()) {
+      exchange.getResponseHeaders().set(h.getKey(), h.getValue());
+    }
+    if (result.status() == 307) {
+      // Redirect: 307 preserves method+body; no response body.
+      exchange.sendResponseHeaders(307, -1);
+      exchange.close();
+      return;
+    }
+    // 200 (or any other body-bearing status): write the rendered SWML JSON.
+    byte[] bytes = result.body().getBytes(StandardCharsets.UTF_8);
+    exchange.getResponseHeaders().set("Content-Type", "application/json");
+    exchange.sendResponseHeaders(result.status(), bytes.length);
+    try (OutputStream os = exchange.getResponseBody()) {
+      os.write(bytes);
+    }
+  }
+
+  /** Reconstruct the full request URL (scheme://host/path?query) from an {@link HttpExchange}. */
+  private static String fullUrlOf(HttpExchange exchange) {
+    java.net.URI uri = exchange.getRequestURI();
+    String hostHeader = exchange.getRequestHeaders().getFirst("Host");
+    String authority = hostHeader != null ? hostHeader : "localhost";
+    String pathPart = uri.getRawPath() != null ? uri.getRawPath() : "/";
+    String query = uri.getRawQuery();
+    return "http://" + authority + pathPart + (query != null ? "?" + query : "");
   }
 
   /**
