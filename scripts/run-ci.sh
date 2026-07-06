@@ -280,7 +280,13 @@ sched_gate SURFACE-DIFF res=surface desc="diff_port_surface vs python reference"
 sched_gate SKILL-CONTRACT res=gradle desc="diff_skill_contracts vs python reference" \
     --fn skill_contract_gate
 
-sched_gate SWAIG-CLI desc="swaig-test shared mini-contract (verbs/serverless-reject/default-action)" \
+# SWAIG-CLI invokes bin/swaig-test, which needs the compiled SDK jar
+# (build/libs/*.jar). On a fresh CI checkout no jar exists yet, so this gate must
+# wait for SIGNATURES (which runs `./gradlew build`) to produce it — otherwise the
+# launcher prints "No SDK classes found" and every --help verb reads as missing
+# and the serverless-reject probe errors before it can name the bad platform.
+# (Locally a stale jar from a prior build masked this ordering gap.)
+sched_gate SWAIG-CLI deps=SIGNATURES desc="swaig-test shared mini-contract (verbs/serverless-reject/default-action)" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_swaig_cli_contract.py" \
         --port java \
         --cmd "bash $PORT_ROOT/bin/swaig-test" \
