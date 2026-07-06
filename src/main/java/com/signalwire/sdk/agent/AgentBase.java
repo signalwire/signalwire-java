@@ -457,7 +457,12 @@ public class AgentBase extends Service {
 
   public Object getPrompt() {
     if (usePom && !pomSections.isEmpty()) {
-      return Map.of("pom", new ArrayList<>(pomSections));
+      // Normalize the raw section maps through the POM model so the emitted
+      // pom matches Python's PomBuilder.to_dict(): empty `body` is dropped,
+      // empty `bullets` omitted, keys ordered title/body/bullets/subsections
+      // (pom.py Section.to_dict). Emitting the raw pomSections would leak an
+      // empty "body": "" for a bullets-only section — a wire divergence.
+      return Map.of("pom", new PromptObjectModel(new ArrayList<>(pomSections)).toMap());
     } else if (promptText != null) {
       return Map.of("text", promptText);
     }
@@ -914,8 +919,13 @@ public class AgentBase extends Service {
   }
 
   public AgentBase setGlobalData(Map<String, Object> data) {
-    globalData.clear();
-    globalData.putAll(data);
+    // MERGE (not replace) — mirrors Python AIConfigMixin.set_global_data, which
+    // does self._global_data.update(data) so skills and other callers can each
+    // contribute keys without clobbering each other. A clear-then-putAll would
+    // drop keys accumulated by earlier calls (state_global_data_merge divergence).
+    if (data != null) {
+      globalData.putAll(data);
+    }
     return this;
   }
 
@@ -1485,7 +1495,10 @@ public class AgentBase extends Service {
 
   public AgentBase registerSipUsername(String username) {
     if (username != null && SIP_USERNAME_PATTERN.matcher(username).matches()) {
-      sipUsernames.add(username);
+      // Store lowercased — mirrors Python agent_base.register_sip_username,
+      // which does self._sip_usernames.add(sip_username.lower()). The set then
+      // dedups case-insensitively ("Bob"/"BOB"/"bob" collapse to one).
+      sipUsernames.add(username.toLowerCase(Locale.ROOT));
     } else {
       log.warn("Invalid SIP username rejected: %s", username);
     }

@@ -322,9 +322,25 @@ public class AgentServer implements AutoCloseable {
     return this;
   }
 
-  /** Get route for a SIP username. */
+  /**
+   * Get the agent route mapped to a SIP username, or {@code null} if none. The lookup is
+   * case-insensitive — mirrors Python AgentServer._lookup_sip_route, which does
+   * self._sip_username_mapping.get(username.lower()); usernames are stored lowercased by {@link
+   * #registerSipUsername}.
+   */
   public String getSipRoute(String username) {
-    return sipRoutes.get(username);
+    if (username == null) {
+      return null;
+    }
+    return sipRoutes.get(username.toLowerCase(Locale.ROOT));
+  }
+
+  /**
+   * A snapshot of the SIP-username → agent-route mapping (lowercased keys). Mirrors reading Python
+   * AgentServer._sip_username_mapping.
+   */
+  public Map<String, String> getSipUsernameMapping() {
+    return new LinkedHashMap<>(sipRoutes);
   }
 
   /**

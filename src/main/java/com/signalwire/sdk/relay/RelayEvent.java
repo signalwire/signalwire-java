@@ -479,12 +479,28 @@ public class RelayEvent {
       return getStringParam("control_id");
     }
 
+    public String getState() {
+      return getStringParam("state");
+    }
+
     public String getResultType() {
       return getStringParam("type");
     }
 
+    /**
+     * The collect result object ({@code {type, params}}). Mirrors Python CollectEvent.result =
+     * p.get("result", {}) — the nested {@code result} value, NOT the top-level {@code params}.
+     */
     public Map<String, Object> getResult() {
-      return getMap(getParams(), "params");
+      return getMap(getParams(), "result");
+    }
+
+    /**
+     * Whether this is the final collect result. {@code null} when the wire omitted {@code final}.
+     */
+    public Boolean getFinal() {
+      Object v = getParams().get("final");
+      return v instanceof Boolean ? (Boolean) v : null;
     }
   }
 
@@ -743,8 +759,32 @@ public class RelayEvent {
       return getStringParam("call_id");
     }
 
+    public String getControlId() {
+      return getStringParam("control_id");
+    }
+
+    public String getStatus() {
+      return getStringParam("status");
+    }
+
+    /** Queue identifier. RENAMED from the wire {@code id} key (Python: queue_id <- p.id). */
     public String getQueueId() {
-      return getStringParam("queue_id");
+      return getStringParam("id");
+    }
+
+    /** Queue name. RENAMED from the wire {@code name} key (Python: queue_name <- p.name). */
+    public String getQueueName() {
+      return getStringParam("name");
+    }
+
+    public int getPosition() {
+      Object v = getParams().get("position");
+      return v instanceof Number ? ((Number) v).intValue() : 0;
+    }
+
+    public int getSize() {
+      Object v = getParams().get("size");
+      return v instanceof Number ? ((Number) v).intValue() : 0;
     }
   }
 

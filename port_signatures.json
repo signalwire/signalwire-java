@@ -395,6 +395,15 @@
               ],
               "returns": "string"
             },
+            "get_sip_username_mapping": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,string>"
+            },
             "is_tls_enabled": {
               "params": [
                 {
@@ -8602,6 +8611,15 @@
               ],
               "returns": "class:signalwire.core.swml_handler.SWMLVerbHandler"
             },
+            "handler_names": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
             "has_handler": {
               "params": [
                 {
@@ -9426,6 +9444,15 @@
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
+            },
+            "routing_callback_paths": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
             },
             "schema_utils": {
               "params": [
@@ -20697,6 +20724,15 @@
               ],
               "returns": "string"
             },
+            "get_final": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "bool"
+            },
             "get_result": {
               "params": [
                 {
@@ -20707,6 +20743,15 @@
               "returns": "dict<string,any>"
             },
             "get_result_type": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_state": {
               "params": [
                 {
                   "name": "self",
@@ -21668,7 +21713,52 @@
               ],
               "returns": "string"
             },
+            "get_control_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_position": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
             "get_queue_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_queue_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_size": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "get_status": {
               "params": [
                 {
                   "name": "self",
@@ -73552,6 +73642,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "registered_names": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
             },
             "unregister": {
               "params": [

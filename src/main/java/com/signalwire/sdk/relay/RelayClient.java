@@ -474,15 +474,14 @@ public class RelayClient implements AutoCloseable {
     request.put("id", requestId);
     request.put("method", method);
 
-    // Add protocol and project_id to params if we have them
-    Map<String, Object> fullParams = new LinkedHashMap<>();
-    if (protocol != null) {
-      fullParams.put("protocol", protocol);
-    }
-    fullParams.put("project_id", project);
-    if (params != null) {
-      fullParams.putAll(params);
-    }
+    // Send params verbatim. The Python reference's RelayClient.execute forwards
+    // params unchanged to _send_request — project_id/protocol are carried ONLY
+    // in the signalwire.connect handshake (see authenticate()), NOT injected
+    // into every calling.*/messaging.* RPC. Injecting them here was a wire
+    // divergence: the platform correlates a call by node_id/call_id, and the
+    // handshake already scopes the session to the project + protocol.
+    Map<String, Object> fullParams =
+        params != null ? new LinkedHashMap<>(params) : new LinkedHashMap<>();
     request.put("params", fullParams);
 
     CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();

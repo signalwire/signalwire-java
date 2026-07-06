@@ -221,6 +221,54 @@ tasks.register('routeTestPlan', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// ── Layer-D per-surface dump programs ───────────────────────────────
+// Each is a main() entry point in com.signalwire.sdk.tools that runs the
+// shared behavioral corpus against the Java SDK's native API and prints ONE
+// canonical JSON object {case-id -> observable-artifact} to stdout (logs to
+// stderr). The porting-sdk differ (diff_port_<surface>.py) runs the task via
+// `./gradlew --no-daemon -q <task>` and byte-compares each entry against the
+// Python oracle. Mirrors Go's cmd/{wire,swml,wire-relay,http,state}-dump.
+
+// wireDump — WIRE-CRYPTO differ (porting-sdk/scripts/diff_port_wire.py).
+tasks.register('wireDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the wire-crypto corpus observations as JSON (cross-port wire differ).'
+    mainClass = 'com.signalwire.sdk.tools.WireDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// swmlDump — SWML differ (porting-sdk/scripts/diff_port_swml.py).
+tasks.register('swmlDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the SWML render corpus fragments as JSON (cross-port SWML differ).'
+    mainClass = 'com.signalwire.sdk.tools.SwmlDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// stateDump — STATE differ (porting-sdk/scripts/diff_port_state.py).
+tasks.register('stateDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the state-mutation corpus observations as JSON (cross-port state differ).'
+    mainClass = 'com.signalwire.sdk.tools.StateDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// httpDump — HTTP differ (porting-sdk/scripts/diff_port_http.py).
+tasks.register('httpDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the HTTP dispatch corpus observations as JSON (cross-port HTTP differ).'
+    mainClass = 'com.signalwire.sdk.tools.HttpDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// wireRelayDump — RELAY differ (porting-sdk/scripts/diff_port_wire_relay.py).
+tasks.register('wireRelayDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the RELAY frame + event corpus observations as JSON (cross-port relay differ).'
+    mainClass = 'com.signalwire.sdk.tools.WireRelayDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

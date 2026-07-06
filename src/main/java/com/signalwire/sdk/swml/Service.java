@@ -80,6 +80,15 @@ public class Service implements AutoCloseable {
   protected java.util.function.BiFunction<
           java.util.Map<String, Object>, java.util.Map<String, String>, String>
       routingCallback;
+  // Path-keyed routing callbacks. Mirrors Python's _routing_callbacks dict
+  // (web_mixin.register_routing_callback), keyed by the NORMALIZED path
+  // (strip trailing '/', ensure a leading '/'); multiple paths may each carry
+  // their own callback. Insertion-ordered so routingCallbackPaths() is stable.
+  protected final java.util.Map<
+          String,
+          java.util.function.BiFunction<
+              java.util.Map<String, Object>, java.util.Map<String, String>, String>>
+      routingCallbacks = new java.util.LinkedHashMap<>();
   protected boolean schemaValidation = true;
   // Proxy URL base for webhook callbacks (SWMLService.manual_set_proxy_url).
   protected String proxyUrlBase;
@@ -517,8 +526,49 @@ public class Service implements AutoCloseable {
       java.util.function.BiFunction<
               java.util.Map<String, Object>, java.util.Map<String, String>, String>
           callback) {
+    return registerRoutingCallback(callback, "/sip");
+  }
+
+  /**
+   * Register a routing callback at a specific path. Mirrors Python's {@code
+   * register_routing_callback(callback_fn, path="/sip")} (web_mixin): the path is normalized
+   * (trailing {@code /} stripped, a leading {@code /} ensured) and used as the dict key, so
+   * distinct paths each carry their own callback. Re-registering a path replaces its callback.
+   *
+   * @param callback the routing callback, {@code (body, headers) -> route-or-null}.
+   * @param path the path this callback handles (default {@code "/sip"}).
+   * @return this service for chaining.
+   */
+  public Service registerRoutingCallback(
+      java.util.function.BiFunction<
+              java.util.Map<String, Object>, java.util.Map<String, String>, String>
+          callback,
+      String path) {
+    String normalized = normalizeCallbackPath(path);
+    routingCallbacks.put(normalized, callback);
+    // Keep the single-callback field pointing at the most recent registration so
+    // existing single-callback consumers still see a callback.
     this.routingCallback = callback;
     return this;
+  }
+
+  /** Normalize a routing-callback path: strip trailing '/', ensure a leading '/'. */
+  private static String normalizeCallbackPath(String path) {
+    String p = path == null ? "" : path.replaceAll("/+$", "");
+    if (!p.startsWith("/")) {
+      p = "/" + p;
+    }
+    return p;
+  }
+
+  /**
+   * The normalized paths that have a routing callback registered, in registration order. Mirrors
+   * reading the keys of Python's {@code _routing_callbacks} dict.
+   *
+   * @return an unmodifiable list of normalized callback paths.
+   */
+  public java.util.List<String> routingCallbackPaths() {
+    return java.util.List.copyOf(routingCallbacks.keySet());
   }
 
   /**
@@ -719,12 +769,12 @@ public class Service implements AutoCloseable {
 
     // Routing callback: (body, headers) -> route | null. Only runs for a POST
     // with a non-empty parsed body whose callback path has a callback registered.
-    if ("POST".equalsIgnoreCase(method)
-        && !reqBody.isEmpty()
-        && callbackPath != null
-        && routingCallback != null) {
+    java.util.function.BiFunction<
+            java.util.Map<String, Object>, java.util.Map<String, String>, String>
+        cb = callbackPath == null ? null : routingCallbacks.get(callbackPath);
+    if ("POST".equalsIgnoreCase(method) && !reqBody.isEmpty() && cb != null) {
       try {
-        String route = routingCallback.apply(reqBody, headers);
+        String route = cb.apply(reqBody, headers);
         if (route != null) {
           log.info("routing_request route=%s", route);
           // 307 preserves the POST method and its body.
@@ -759,7 +809,7 @@ public class Service implements AutoCloseable {
    * no callback is registered.
    */
   protected String callbackPathForUrl(String url) {
-    if (routingCallback == null || url == null) {
+    if (routingCallbacks.isEmpty() || url == null) {
       return null;
     }
     String path = url;
@@ -773,7 +823,16 @@ public class Service implements AutoCloseable {
       path = path.substring(0, q);
     }
     String trimmed = path.replaceAll("^/+", "").replaceAll("/+$", "");
-    return trimmed.isEmpty() ? "/" : "/" + trimmed;
+    String normalized = trimmed.isEmpty() ? "/" : "/" + trimmed;
+    // Match the URL's normalized path against a registered callback path, by
+    // exact match or suffix (a route-relative callback path like "/sip" matches
+    // the service-rooted URL path "/swml/sip") — mirrors Go's CallbackPathForURL.
+    for (String cbPath : routingCallbacks.keySet()) {
+      if (normalized.equals(cbPath) || normalized.endsWith(cbPath)) {
+        return cbPath;
+      }
+    }
+    return null;
   }
 
   /**
@@ -840,15 +899,30 @@ public class Service implements AutoCloseable {
     if (!(to instanceof String) || ((String) to).isEmpty()) {
       return null;
     }
-    String work = (String) to;
+    String toField = (String) to;
+    // TEL URIs ("tel:+15551234567") -> the phone-number part (no '@' split).
+    // Mirrors Python extract_sip_username's `elif to_field.startswith("tel:")`.
+    for (String telPrefix : new String[] {"tel:", "TEL:"}) {
+      if (toField.startsWith(telPrefix)) {
+        return toField.substring(telPrefix.length());
+      }
+    }
+    // SIP URIs ("sip:username@domain") -> the user part before '@'.
+    String work = toField;
+    boolean isSip = false;
     for (String prefix : new String[] {"sip:", "SIP:", "sips:", "SIPS:"}) {
       if (work.startsWith(prefix)) {
         work = work.substring(prefix.length());
+        isSip = true;
         break;
       }
     }
-    int at = work.indexOf('@');
-    return at >= 0 ? work.substring(0, at) : work;
+    if (isSip) {
+      int at = work.indexOf('@');
+      return at >= 0 ? work.substring(0, at) : work;
+    }
+    // Plain value: return as-is (Python's final `else: return to_field`).
+    return work;
   }
 
   // -------- 38 Schema-Driven Verb Methods --------

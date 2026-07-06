@@ -278,11 +278,17 @@ class AiConfigTest {
   }
 
   @Test
-  void testSetGlobalDataReplacesAll() {
+  void testSetGlobalDataMerges() {
+    // set_global_data MERGES (not replaces) — mirrors Python
+    // AIConfigMixin.set_global_data, which does self._global_data.update(data)
+    // so skills and other callers each contribute keys without clobbering.
     agent.setGlobalData(Map.of("a", "1"));
     agent.setGlobalData(Map.of("b", "2"));
-    assertFalse(agent.getGlobalData().containsKey("a"));
+    assertEquals("1", agent.getGlobalData().get("a"), "sibling key survives the second set");
     assertEquals("2", agent.getGlobalData().get("b"));
+    // An overlapping key is overwritten by the later set.
+    agent.setGlobalData(Map.of("b", "99"));
+    assertEquals("99", agent.getGlobalData().get("b"));
   }
 
   @Test

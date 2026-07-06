@@ -24,6 +24,14 @@ public final class SkillRegistry {
   /** External skill directories registered via {@link #addSkillDirectory(String)}. */
   private final List<String> externalPaths = new ArrayList<>();
 
+  /**
+   * Per-instance skill registrations, keyed by name. Mirrors Python's instance-level {@code
+   * self._skills} dict (skills/registry.py): a fresh {@code SkillRegistry()} starts EMPTY, and
+   * {@link #registerSkill(String, Supplier)} adds to it idempotently. Distinct from the static
+   * built-in {@code registry} (the Java idiom for on-demand built-in lookup). Insertion-ordered.
+   */
+  private final Map<String, Supplier<SkillBase>> instanceSkills = new LinkedHashMap<>();
+
   static {
     // Register all 17 built-in skills
     register("datetime", DatetimeSkill::new);
@@ -191,6 +199,35 @@ public final class SkillRegistry {
       throw new IllegalArgumentException(
           "Cannot register skill " + skillClass.getName() + ": " + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Register a skill factory by name into THIS instance's registry, idempotently. Mirrors Python
+   * {@code SkillRegistry.register_skill}, which skips re-registration of an already-present name
+   * ({@code if skill_class.SKILL_NAME in self._skills: return}). The first registration wins; a
+   * repeat with the same name is a no-op. Returns {@code true} if this call added the name, {@code
+   * false} if it was already present.
+   *
+   * @param name the skill name
+   * @param factory a factory producing a fresh {@link SkillBase} instance
+   * @return whether this call registered a new name
+   */
+  public boolean registerSkill(String name, Supplier<SkillBase> factory) {
+    if (instanceSkills.containsKey(name)) {
+      return false;
+    }
+    instanceSkills.put(name, factory);
+    return true;
+  }
+
+  /**
+   * The names registered into THIS instance via {@link #registerSkill(String, Supplier)}, sorted.
+   * Mirrors reading Python's {@code sorted(self._skills.keys())}.
+   *
+   * @return a sorted list of this instance's registered skill names
+   */
+  public List<String> registeredNames() {
+    return new ArrayList<>(new TreeSet<>(instanceSkills.keySet()));
   }
 
   private static SkillBase newInstance(Class<? extends SkillBase> skillClass) {

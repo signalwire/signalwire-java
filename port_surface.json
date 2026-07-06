@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 04c4955eec79d90768fbff9ba3766b7e362489ae",
+  "generated_from": "signalwire-java @ b35f556bb38e08deb072deebf54ac6293e236b79",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -52,6 +52,7 @@
           "get_agents",
           "get_routes",
           "get_sip_route",
+          "get_sip_username_mapping",
           "is_tls_enabled",
           "register",
           "register_global_routing_callback",
@@ -785,6 +786,7 @@
         "VerbHandlerRegistry": [
           "__init__",
           "get_handler",
+          "handler_names",
           "has_handler",
           "register_handler"
         ]
@@ -859,6 +861,7 @@
           "request",
           "reset_document",
           "return_verb",
+          "routing_callback_paths",
           "schema_utils",
           "send_digits",
           "send_fax",
@@ -1456,8 +1459,10 @@
           "from_payload",
           "get_call_id",
           "get_control_id",
+          "get_final",
           "get_result",
-          "get_result_type"
+          "get_result_type",
+          "get_state"
         ],
         "ConferenceEvent": [
           "__init__",
@@ -1561,7 +1566,12 @@
           "__init__",
           "from_payload",
           "get_call_id",
-          "get_queue_id"
+          "get_control_id",
+          "get_position",
+          "get_queue_id",
+          "get_queue_name",
+          "get_size",
+          "get_status"
         ],
         "RecordEvent": [
           "__init__",
@@ -3456,6 +3466,7 @@
           "list_skills",
           "register",
           "register_skill",
+          "registered_names",
           "unregister"
         ]
       },

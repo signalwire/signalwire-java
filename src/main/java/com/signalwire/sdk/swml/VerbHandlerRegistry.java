@@ -6,8 +6,11 @@
  */
 package com.signalwire.sdk.swml;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * Registry for SWML verb handlers.
@@ -53,5 +56,15 @@ public class VerbHandlerRegistry {
    */
   public boolean hasHandler(String verbName) {
     return handlers.containsKey(verbName);
+  }
+
+  /**
+   * The registered verb names, sorted. Mirrors reading {@code sorted(self._handlers.keys())} on the
+   * Python VerbHandlerRegistry.
+   *
+   * @return a sorted list of registered verb names
+   */
+  public List<String> handlerNames() {
+    return new ArrayList<>(new TreeSet<>(handlers.keySet()));
   }
 }
