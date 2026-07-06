@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 2577344ea71cccfdb56dbabf2d1813a32ba52c97",
+  "generated_from": "signalwire-java @ d45f0add210c2e269f0ab1078833e809e3bdb930",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -3175,6 +3175,22 @@
           "__init__",
           "resolve_base_url"
         ]
+      },
+      "functions": []
+    },
+    "signalwire.runtime.serverless_adapter": {
+      "classes": {
+        "ServerlessAdapter": [
+          "decode_body",
+          "handle_cgi",
+          "handle_gcf"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.runtime.serverless_adapter_response": {
+      "classes": {
+        "ServerlessAdapterResponse": []
       },
       "functions": []
     },

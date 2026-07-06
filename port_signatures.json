@@ -814,6 +814,14 @@
       "classes": {
         "ServerlessSimulatorPlatform": {
           "methods": {
+            "cgi": {
+              "params": [],
+              "returns": "class:signalwire.cli.simulation.ServerlessSimulator"
+            },
+            "gcf": {
+              "params": [],
+              "returns": "class:signalwire.cli.simulation.ServerlessSimulator"
+            },
             "value_of": {
               "params": [
                 {
@@ -71928,6 +71936,84 @@
                 }
               ],
               "returns": "string"
+            }
+          }
+        }
+      }
+    },
+    "signalwire.runtime.serverless_adapter": {
+      "classes": {
+        "ServerlessAdapter": {
+          "methods": {
+            "decode_body": {
+              "params": [
+                {
+                  "name": "body",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "base64",
+                  "type": "bool",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "handle_cgi": {
+              "params": [
+                {
+                  "name": "agent",
+                  "type": "class:signalwire.core.swml_service.SWMLService",
+                  "required": true
+                },
+                {
+                  "name": "env",
+                  "type": "class:signalwire.runtime.EnvProvider",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,string>",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "string"
+            },
+            "handle_gcf": {
+              "params": [
+                {
+                  "name": "agent",
+                  "type": "class:signalwire.core.swml_service.SWMLService",
+                  "required": true
+                },
+                {
+                  "name": "method",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,string>",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.runtime.ServerlessAdapter"
             }
           }
         }

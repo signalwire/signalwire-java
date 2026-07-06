@@ -562,6 +562,11 @@ signalwire.runtime.lambda.lambda_response.LambdaResponse.to_dict: idiomatic Java
 signalwire.runtime.lambda_url_resolver.LambdaUrlResolver: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.runtime.lambda_url_resolver.LambdaUrlResolver.__init__: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.runtime.lambda_url_resolver.LambdaUrlResolver.resolve_base_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.runtime.serverless_adapter.ServerlessAdapter: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.runtime.serverless_adapter.ServerlessAdapter.decode_body: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.runtime.serverless_adapter.ServerlessAdapter.handle_cgi: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.runtime.serverless_adapter.ServerlessAdapter.handle_gcf: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.runtime.serverless_adapter_response.ServerlessAdapterResponse: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.security.security_utils.SecurityUtils: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.security.security_utils.SecurityUtils.filter_sensitive_headers: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.security.security_utils.SecurityUtils.is_valid_hostname: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart

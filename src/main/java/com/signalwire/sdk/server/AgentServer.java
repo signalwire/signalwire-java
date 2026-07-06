@@ -414,27 +414,15 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Extract a SIP username from a SWML/SWAIG request body. Looks for a {@code call.from} field of
-   * the form {@code sip:user@host} (or {@code user@host}) and delegates the username parse to
-   * {@link AgentBase#extractSipUsername(String)}.
+   * Extract a SIP username from a SWML/SWAIG request body for routing. SIP routing keys on the
+   * DESTINATION of the call — the {@code call.to} (or top-level {@code to}) SIP URI — mirroring the
+   * Python reference ({@code AgentServer.server_sip_routing_callback} calls {@code
+   * SWMLService.extract_sip_username}, which reads {@code to}). Delegates to the canonical {@link
+   * com.signalwire.sdk.swml.Service#extractSipUsername(Map)} so the server and the framework-free
+   * dispatch core agree on which field a SIP username is drawn from.
    */
-  @SuppressWarnings("unchecked")
   static String extractSipUsername(Map<String, Object> body) {
-    if (body == null) {
-      return null;
-    }
-    Object call = body.get("call");
-    if (call instanceof Map) {
-      Object from = ((Map<String, Object>) call).get("from");
-      if (from instanceof String s && !s.isEmpty()) {
-        return AgentBase.extractSipUsername(s);
-      }
-    }
-    Object from = body.get("from");
-    if (from instanceof String s && !s.isEmpty()) {
-      return AgentBase.extractSipUsername(s);
-    }
-    return null;
+    return com.signalwire.sdk.swml.Service.extractSipUsername(body);
   }
 
   /**
@@ -622,8 +610,51 @@ public class AgentServer implements AutoCloseable {
         exchange.close();
         return;
       }
+
+      // Route the POST through the agent's framework-free handleRequest core so
+      // the routing callback (installed by setupSipRouting) is CONSULTED — a SIP
+      // username that maps to another agent's route yields a 307 redirect. Auth
+      // is already validated above (validateAuth in the caller); handleRequest
+      // re-checks it, so forward the exchange's Authorization header. Without
+      // this, the SIP mapping would be stored-but-unconsulted and the server
+      // would always render 200 SWML instead of redirecting (#59/#61).
+      java.util.Map<String, String> headers = new java.util.LinkedHashMap<>();
+      exchange.getRequestHeaders().forEach((k, v) -> headers.put(k, v.isEmpty() ? "" : v.get(0)));
+      java.util.Map<String, Object> parsedBody = null;
+      if (body != null && !body.isEmpty()) {
+        try {
+          Type type = new TypeToken<Map<String, Object>>() {}.getType();
+          parsedBody = gson.fromJson(body, type);
+        } catch (Exception e) {
+          log.warn("error_parsing_request_body");
+        }
+      }
+      String url = fullUrlOf(exchange);
+      com.signalwire.sdk.swml.Service.HttpResult result =
+          agent.handleRequest(exchange.getRequestMethod(), url, headers, parsedBody);
+
+      if (result.status() == 307) {
+        for (Map.Entry<String, String> h : result.headers().entrySet()) {
+          exchange.getResponseHeaders().set(h.getKey(), h.getValue());
+        }
+        exchange.sendResponseHeaders(307, -1);
+        exchange.close();
+        return;
+      }
+      // Any non-307 (200 render / modified doc): fall through to the standard
+      // render below so behaviour is unchanged for the non-routing case.
     }
     sendJson(exchange, 200, agent.renderSwml(baseUrl));
+  }
+
+  /** Reconstruct the full request URL (scheme://host/path?query) from an {@link HttpExchange}. */
+  private static String fullUrlOf(HttpExchange exchange) {
+    java.net.URI uri = exchange.getRequestURI();
+    String hostHeader = exchange.getRequestHeaders().getFirst("Host");
+    String authority = hostHeader != null ? hostHeader : "localhost";
+    String pathPart = uri.getRawPath() != null ? uri.getRawPath() : "/";
+    String query = uri.getRawQuery();
+    return "http://" + authority + pathPart + (query != null ? "?" + query : "");
   }
 
   @SuppressWarnings("unchecked")

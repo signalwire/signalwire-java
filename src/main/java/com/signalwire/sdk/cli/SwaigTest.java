@@ -461,6 +461,8 @@ public class SwaigTest {
 
       switch (platform) {
         case LAMBDA -> runLambdaSimulation(agent, simEnv);
+        case CGI -> runCgiSimulation(agent, simEnv);
+        case GCF -> runGcfSimulation(agent);
         default ->
             throw new IllegalArgumentException("No adapter wired up for platform: " + platform);
       }
@@ -493,6 +495,84 @@ public class SwaigTest {
     if (verbose) System.err.println("[verbose] Dispatching SWML render: GET " + path);
     LambdaResponse response = handler.handle(event);
     emitResponse(response);
+  }
+
+  /**
+   * Dispatch the requested action through the Google Cloud Functions adapter ({@link
+   * com.signalwire.sdk.runtime.ServerlessAdapter#handleGcf}), the same framework-free {@code
+   * handleRequest} core the in-process server uses.
+   */
+  private void runGcfSimulation(AgentBase agent) throws Exception {
+    String route = normaliseAgentRoute(agent);
+    String path = route.isEmpty() ? "/" : route;
+
+    if (execTool != null) {
+      String body = buildSwaigRequestJson(execTool, params);
+      if (verbose) System.err.println("[verbose] Dispatching SWAIG (gcf): " + body);
+      var resp =
+          com.signalwire.sdk.runtime.ServerlessAdapter.handleGcf(
+              agent, "POST", route + "/swaig", basicAuthHeader(agent), body);
+      emitBody(resp.status(), resp.body());
+      return;
+    }
+
+    if (verbose) System.err.println("[verbose] Dispatching SWML render (gcf): GET " + path);
+    var resp =
+        com.signalwire.sdk.runtime.ServerlessAdapter.handleGcf(
+            agent, "GET", path, basicAuthHeader(agent), null);
+    emitBody(resp.status(), resp.body());
+  }
+
+  /**
+   * Dispatch the requested action through the CGI adapter ({@link
+   * com.signalwire.sdk.runtime.ServerlessAdapter#handleCgi}). The CGI env is derived from the
+   * simulated {@link EnvProvider}, augmented with the request method/path for this invocation; the
+   * adapter returns the full CGI payload (status line + headers + blank line + body).
+   */
+  private void runCgiSimulation(AgentBase agent, EnvProvider simEnv) throws Exception {
+    String route = normaliseAgentRoute(agent);
+    String path = route.isEmpty() ? "/" : route;
+
+    boolean exec = execTool != null;
+    String body = exec ? buildSwaigRequestJson(execTool, params) : null;
+    String reqPath = exec ? route + "/swaig" : path;
+    String method = exec ? "POST" : "GET";
+
+    // Overlay the per-request CGI meta-variables (REQUEST_METHOD / PATH_INFO) on
+    // top of the simulated env so the adapter reads this invocation's method+path.
+    EnvProvider cgiEnv =
+        name -> {
+          if ("REQUEST_METHOD".equals(name)) return method;
+          if ("PATH_INFO".equals(name)) return reqPath;
+          return simEnv.get(name);
+        };
+
+    if (verbose) System.err.println("[verbose] Dispatching (cgi): " + method + " " + reqPath);
+    String cgiResponse =
+        com.signalwire.sdk.runtime.ServerlessAdapter.handleCgi(
+            agent, cgiEnv, basicAuthHeader(agent), body);
+
+    // The CGI payload is "Status: <code> <text>\r\n<headers>\r\n\r\n<body>";
+    // print the body (or the whole payload in --raw mode).
+    if (raw) {
+      System.out.println(cgiResponse);
+      return;
+    }
+    int sep = cgiResponse.indexOf("\r\n\r\n");
+    String cgiBody = sep >= 0 ? cgiResponse.substring(sep + 4) : cgiResponse;
+    System.out.println(prettyPrintJson(cgiBody));
+  }
+
+  private void emitBody(int status, String body) {
+    if (status >= 400) {
+      System.err.println("[warning] serverless adapter returned HTTP " + status);
+    }
+    String b = body == null ? "" : body;
+    if (raw) {
+      System.out.println(b);
+    } else {
+      System.out.println(prettyPrintJson(b));
+    }
   }
 
   private void emitResponse(LambdaResponse response) {

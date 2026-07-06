@@ -33,7 +33,11 @@ public final class ServerlessSimulator {
   /** Platforms the Java port supports simulating today. */
   public enum Platform {
     /** AWS Lambda. */
-    LAMBDA
+    LAMBDA,
+    /** CGI / FastCGI. */
+    CGI,
+    /** Google Cloud Functions. */
+    GCF
   }
 
   /**
@@ -76,15 +80,22 @@ public final class ServerlessSimulator {
       throw new IllegalArgumentException("--simulate-serverless requires a platform name");
     }
     String normalised = s.trim().toLowerCase(java.util.Locale.ROOT);
-    if ("lambda".equals(normalised)) {
-      return Platform.LAMBDA;
+    switch (normalised) {
+      case "lambda":
+        return Platform.LAMBDA;
+      case "cgi":
+        return Platform.CGI;
+      case "gcf":
+      case "google_cloud_function":
+        return Platform.GCF;
+      default:
+        throw new IllegalArgumentException(
+            "Unsupported platform for --simulate-serverless: '"
+                + s
+                + "'. "
+                + "This Java port supports: lambda, cgi, gcf. "
+                + "(azure is not yet implemented — no silent fallback.)");
     }
-    throw new IllegalArgumentException(
-        "Unsupported platform for --simulate-serverless: '"
-            + s
-            + "'. "
-            + "This Java port only supports: lambda. "
-            + "(gcf / azure / cgi are not yet implemented — no silent fallback.)");
   }
 
   /**
@@ -142,6 +153,18 @@ public final class ServerlessSimulator {
       m.put("AWS_REGION", "us-east-1");
       m.put("LAMBDA_TASK_ROOT", "/var/task");
       m.put("_HANDLER", "lambda_function.lambda_handler");
+    } else if (platform == Platform.CGI) {
+      // GATEWAY_INTERFACE is the CGI meta-variable ExecutionMode.detect() keys on.
+      m.put("GATEWAY_INTERFACE", "CGI/1.1");
+      m.put("REQUEST_METHOD", "GET");
+      m.put("PATH_INFO", "/");
+      m.put("HTTP_HOST", "example.com");
+      m.put("SERVER_NAME", "example.com");
+    } else if (platform == Platform.GCF) {
+      // FUNCTION_TARGET / K_SERVICE are what ExecutionMode.detect() keys on for GCF.
+      m.put("FUNCTION_TARGET", "handler");
+      m.put("K_SERVICE", "test-agent-function");
+      m.put("GOOGLE_CLOUD_PROJECT", "test-project");
     }
     return m;
   }

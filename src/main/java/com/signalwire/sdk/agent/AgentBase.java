@@ -1008,13 +1008,16 @@ public class AgentBase extends Service {
   }
 
   public AgentBase setPromptLlmParams(Map<String, Object> llmParams) {
-    promptLlmParams.clear();
+    // MERGE (not replace) — mirrors Python's self._prompt_llm_params.update(params)
+    // (ai_config_mixin.py). Successive calls with distinct keys accumulate; a
+    // repeated key overwrites. A clear-then-putAll would drop earlier params.
     promptLlmParams.putAll(llmParams);
     return this;
   }
 
   public AgentBase setPostPromptLlmParams(Map<String, Object> llmParams) {
-    postPromptLlmParams.clear();
+    // MERGE (not replace) — mirrors Python's
+    // self._post_prompt_llm_params.update(params) (ai_config_mixin.py).
     postPromptLlmParams.putAll(llmParams);
     return this;
   }

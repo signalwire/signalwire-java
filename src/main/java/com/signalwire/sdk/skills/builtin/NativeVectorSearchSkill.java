@@ -10,6 +10,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -21,6 +22,12 @@ public class NativeVectorSearchSkill implements SkillBase {
   private static final Logger log = Logger.getLogger(NativeVectorSearchSkill.class);
 
   private String remoteUrl;
+  // Base URL the /search endpoint is appended to (auth stripped from the URL,
+  // path preserved) — mirrors Python's self.remote_base_url.
+  private String remoteBaseUrl;
+  // "user:pass" Basic-auth credentials parsed out of the remote_url userinfo,
+  // or null. Mirrors Python's self.remote_auth = (username, password).
+  private String remoteAuth;
   private String indexName;
   private String toolName = "search_knowledge";
   private String description = "Search the local knowledge base for information";
@@ -55,6 +62,28 @@ public class NativeVectorSearchSkill implements SkillBase {
     if (params.containsKey("count")) this.count = ((Number) params.get("count")).intValue();
     if (params.containsKey("hints")) this.customHints = (List<String>) params.get("hints");
     if (params.containsKey("index_file")) this.indexFile = (String) params.get("index_file");
+    // Parse userinfo (user:pass@) out of the remote_url for Basic auth and keep
+    // the auth-free base URL that the "/search" endpoint is appended to.
+    // Mirrors Python native_vector_search/skill.py setup().
+    this.remoteBaseUrl = remoteUrl;
+    this.remoteAuth = null;
+    if (remoteUrl != null && !remoteUrl.isEmpty()) {
+      try {
+        URI parsed = URI.create(remoteUrl);
+        String userInfo = parsed.getUserInfo();
+        if (userInfo != null && userInfo.contains(":")) {
+          this.remoteAuth = userInfo;
+          StringBuilder base = new StringBuilder();
+          base.append(parsed.getScheme()).append("://").append(parsed.getHost());
+          if (parsed.getPort() != -1) base.append(':').append(parsed.getPort());
+          if (parsed.getPath() != null) base.append(parsed.getPath());
+          this.remoteBaseUrl = base.toString();
+        }
+      } catch (IllegalArgumentException e) {
+        // Leave remoteBaseUrl = remoteUrl; the request will fail loudly at send time.
+        log.warn("Could not parse remote_url for auth extraction: %s", remoteUrl);
+      }
+    }
     return remoteUrl != null && !remoteUrl.isEmpty();
   }
 
@@ -83,16 +112,27 @@ public class NativeVectorSearchSkill implements SkillBase {
               try {
                 Map<String, Object> body = new LinkedHashMap<>();
                 body.put("query", query);
+                body.put("index_name", indexName);
                 body.put("count", resultCount);
-                if (indexName != null) body.put("index_name", indexName);
 
+                // POST to <remote_base_url>/search — matches Python
+                // native_vector_search/skill.py _search_remote (NOT the bare
+                // remote_url). remote_base_url has any user:pass@ stripped.
+                String searchUrl = remoteBaseUrl + "/search";
                 HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request =
+                HttpRequest.Builder builder =
                     HttpRequest.newBuilder()
-                        .uri(URI.create(remoteUrl))
+                        .uri(URI.create(searchUrl))
                         .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(body)))
-                        .build();
+                        .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(body)));
+                if (remoteAuth != null) {
+                  builder.header(
+                      "Authorization",
+                      "Basic "
+                          + Base64.getEncoder()
+                              .encodeToString(remoteAuth.getBytes(StandardCharsets.UTF_8)));
+                }
+                HttpRequest request = builder.build();
                 HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
 
