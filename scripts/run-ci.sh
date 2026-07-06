@@ -258,6 +258,41 @@ sched_gate SPEC-PARITY res=gradle defer=1 desc="implemented routes == canonical 
 sched_gate EMISSION res=gradle desc="diff_port_emission vs python oracle" \
     --fn emission_gate
 
+# BEHAVIORAL-* (Layer D) — each runs a fixed behavioral corpus through this port's
+# Gradle dump task and structurally byte-compares the JSON against the golden
+# signalwire-python oracle the differ builds from `import signalwire`. The dumps use
+# `--quiet --console=plain` so ONLY JSON reaches stdout (Gradle log noise → stderr).
+# The SDK Logger writes to stderr, so stdout stays pure JSON even with ambient
+# SIGNALWIRE_LOG_LEVEL=debug / LOG_MODE=on — the gate does not depend on the caller's
+# env. --python-sdk is intentionally omitted: the
+# oracle is imported from the pip-installed signalwire-python (same as EMISSION), so CI
+# resolves it via the installed package, not a hardcoded path. res=gradle: the dumps
+# shell out to ./gradlew and must be mutually exclusive with the other Gradle gates.
+sched_gate BEHAVIORAL-WIRE res=gradle desc="diff_port_wire vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wire.py" \
+        --port java \
+        --dump-cmd "./gradlew --quiet --console=plain wireDump"
+
+sched_gate BEHAVIORAL-SWML res=gradle desc="diff_port_swml vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_swml.py" \
+        --port java \
+        --dump-cmd "./gradlew --quiet --console=plain swmlDump"
+
+sched_gate BEHAVIORAL-STATE res=gradle desc="diff_port_state vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_state.py" \
+        --port java \
+        --dump-cmd "./gradlew --quiet --console=plain stateDump"
+
+sched_gate BEHAVIORAL-HTTP res=gradle desc="diff_port_http vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_http.py" \
+        --port java \
+        --dump-cmd "./gradlew --quiet --console=plain httpDump"
+
+sched_gate BEHAVIORAL-WIRE-RELAY res=gradle desc="diff_port_wire_relay vs python oracle (Layer D)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wire_relay.py" \
+        --port java \
+        --dump-cmd "./gradlew --quiet --console=plain wireRelayDump"
+
 sched_gate SWAIG-COVERAGE desc="every engine SWAIG action emittable (modulo allowlist)" \
     -- python3 "$PORTING_SDK_DIR/scripts/swaig_coverage.py" --check \
         --emission "$PORT_ROOT/src/main/java/com/signalwire/sdk/swaig/FunctionResult.java"
