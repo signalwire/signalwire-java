@@ -118,8 +118,8 @@ public class AgentServer implements AutoCloseable {
   }
 
   /** The unified server-level SIP routing callback (resolves a SIP username to a target route). */
-  private BiFunction<String, Map<String, Object>, String> serverSipRoutingCallback() {
-    return (callbackPath, body) -> {
+  private BiFunction<Map<String, Object>, Map<String, String>, String> serverSipRoutingCallback() {
+    return (body, headers) -> {
       String sipUsername = extractSipUsername(body);
       if (sipUsername != null) {
         String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
@@ -355,7 +355,8 @@ public class AgentServer implements AutoCloseable {
     }
 
     // Unified routing callback: resolve the SIP username in the body to a target route.
-    BiFunction<String, Map<String, Object>, String> sipRoutingCallback = serverSipRoutingCallback();
+    BiFunction<Map<String, Object>, Map<String, String>, String> sipRoutingCallback =
+        serverSipRoutingCallback();
     for (AgentBase agent : agents.values()) {
       agent.registerRoutingCallback(sipRoutingCallback);
     }
@@ -438,16 +439,15 @@ public class AgentServer implements AutoCloseable {
 
   /**
    * Register a routing callback across all registered agents at a shared path. Ported from Python
-   * AgentServer.register_global_routing_callback: installs the same {@code (callbackPath, body) ->
+   * AgentServer.register_global_routing_callback: installs the same {@code (body, headers) ->
    * targetRoute} callback on every agent so unified routing logic applies uniformly.
    *
-   * @param callback the routing callback (returns a target route, or {@code null} for no
-   *     redirection)
+   * @param callback the routing callback, {@code (body, headers) -> route-or-null}
    * @param path the routing path to register the callback at (normalized)
    * @return this server for chaining
    */
   public AgentServer registerGlobalRoutingCallback(
-      BiFunction<String, Map<String, Object>, String> callback, String path) {
+      BiFunction<Map<String, Object>, Map<String, String>, String> callback, String path) {
     String normalizedPath = normalizeRoute(path);
     for (AgentBase agent : agents.values()) {
       agent.registerRoutingCallback(callback);

@@ -598,6 +598,19 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.security_utils", "redact_url"),
     ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"):
         ("signalwire.core.security.security_utils", "is_valid_hostname"),
+    # TypeInference static methods → Python module-level free functions in
+    # signalwire.core.agent.tools.type_inference. Python reflects a handler's
+    # signature; Java has no runtime lambda-parameter reflection, so the typed
+    # params are supplied via the ParameterSchema typed-params builder and
+    # inferSchema decomposes that built schema into the canonical tuple (the
+    # static-port idiom — mirrors .NET/Ruby building from a types override).
+    # Java groups both on a static-only utility class; lift them back to the
+    # canonical free-function home. Native shapes are recorded canonically via
+    # FREE_FUNCTION_SIGNATURE_OVERRIDES below.
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"):
+        ("signalwire.core.agent.tools.type_inference", "infer_schema"),
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"):
+        ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
 }
 
 
@@ -622,6 +635,70 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "signing_key", "kind": "keyword", "type": "string", "required": True},
         ],
         "returns": "optional<tuple<int,dict<string,string>,string>>",
+    },
+    # infer_schema(func) -> (parameters, required, description, is_typed, has_raw_data).
+    # Java's inferSchema takes the built ParameterSchema (a typed-params-builder
+    # Map) + a description and returns an InferredSchema record; the oracle records
+    # the language-neutral (func) -> 5-tuple shape (the callable param is the typed
+    # handler the schema describes — mirrors .NET/Ruby recording `func`).
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"): {
+        "params": [
+            {"name": "func", "type": "callable<list<any>,any>", "required": True},
+        ],
+        "returns":
+            "tuple<dict<string,dict<string,any>>,list<string>,optional<string>,bool,bool>",
+    },
+    # create_typed_handler_wrapper(func, has_raw_data) -> callable. Java's method
+    # takes a ToolHandler + boolean and returns a ToolHandler; recorded as the
+    # canonical callable shape.
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"): {
+        "params": [
+            {"name": "func", "type": "callable<list<any>,any>", "required": True},
+            {"name": "has_raw_data", "type": "bool", "required": True},
+        ],
+        "returns": "callable<list<any>,any>",
+    },
+}
+
+
+# Method-level signature overrides for regular (non-free-function) methods whose
+# native Java shape does not translate to the canonical oracle shape via
+# reflection alone. Keyed by ``(canonical_class, method_canonical)`` — the
+# canonical class name (post-rename, e.g. ``SWMLService``) and the canonical
+# (snake_case) method name. The value is the exact canonical signature to emit
+# (params + returns), mirroring the Python reference.
+#
+# ``handle_request`` is the framework-free dispatch core: Java has no value-tuple
+# type, so it returns an ``HttpResult`` record standing in for the language-neutral
+# ``(status, headers, body)`` triple. Reflection resolves that record to a bare
+# ``class:`` ref; record the oracle's ``tuple<int,dict<string,string>,string>``
+# return directly (the same shape .NET emits from its ``(int, Dictionary, string)``
+# ValueTuple). The trailing ``body`` param is optional in the reference
+# (``body=None``); mark it non-required so the drift compare is exact. It lives on
+# both SWMLService (the base core) and AgentBase (the render-override), matching the
+# reference which declares it on both.
+METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    ("SWMLService", "handle_request"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
+             "default": None},
+        ],
+        "returns": "tuple<int,dict<string,string>,string>",
+    },
+    ("AgentBase", "handle_request"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
+             "default": None},
+        ],
+        "returns": "tuple<int,dict<string,string>,string>",
     },
 }
 
@@ -750,6 +827,8 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     "SWAIGFunctionHandler",     # @FunctionalInterface handler
     "ToolRegistryTool",         # ToolRegistry nested tool value
     "WebhookRejection",         # WebhookValidator.validate reject-triple record
+    "HttpResult",               # Service.handleRequest (status, headers, body) triple record
+    "InferredSchema",           # TypeInference.inferSchema 5-tuple stand-in record
 }
 
 
@@ -925,6 +1004,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             except TypeTranslationError as e:
                 failures.append(str(e))
                 continue
+            # Method-level signature override (regular methods whose native Java
+            # shape — e.g. a value-tuple stand-in record return — doesn't
+            # translate via reflection alone). Replace the reflected signature
+            # with the canonical one keyed by (canonical_class, method).
+            mo = METHOD_SIGNATURE_OVERRIDES.get((canonical_name, method_canonical))
+            if mo is not None:
+                sig = {"params": [dict(p) for p in mo["params"]], "returns": mo["returns"]}
+                methods_out[method_canonical] = sig
+                continue
             # Generated-REST typed-input unfold (L10). Java reflection sees a
             # write/command/set method as a single builder-``request`` param;
             # the generator's sidecar records the canonical flat keyword set the
@@ -1032,6 +1120,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         # Drop projected methods from AgentBase only.
         for n in projected:
             ab_methods.pop(n, None)
+        # ``handle_request`` is declared on both Java classes (SWMLService is the
+        # framework-free dispatch core; AgentBase overrides it to render via its
+        # own SWML pipeline). The SIGNATURE oracle records it only once — on the
+        # base SWMLService — so drop AgentBase's identical override copy here to
+        # avoid a spurious port-only signature (the SURFACE oracle DOES list it on
+        # both, and the surface enumerator keeps both). Only drop when the base
+        # already carries it, so this never hides a genuinely AgentBase-only method.
+        if "handle_request" in svc_methods:
+            ab_methods.pop("handle_request", None)
         if ab_entry and not ab_methods:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"].get("classes"):

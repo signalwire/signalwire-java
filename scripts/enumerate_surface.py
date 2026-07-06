@@ -421,6 +421,14 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     # top of it stays a PORT_ADDITION idiom.
     ("WebhookValidator", "validate"):
         ("signalwire.core.security.webhook_middleware", "validate"),
+    # TypeInference static helpers → signalwire.core.agent.tools.type_inference
+    # free functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py).
+    # Java has no runtime lambda reflection; the typed params come from the
+    # ParameterSchema builder and inferSchema decomposes that built schema.
+    ("TypeInference", "inferSchema"):
+        ("signalwire.core.agent.tools.type_inference", "infer_schema"),
+    ("TypeInference", "createTypedHandlerWrapper"):
+        ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
 }
 
 
@@ -537,6 +545,25 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     # decomposed webhook_middleware.validate core returns (Python uses a plain
     # tuple; .NET a ValueTuple). Idiom-scaffolding nested value type.
     "WebhookValidatorWebhookRejection",
+    # Service.handleRequest's (status, headers, body) return record — the Java
+    # native stand-in for the language-neutral (status, headers, body) tuple the
+    # framework-free handle_request dispatch core returns (Python uses a plain
+    # tuple; .NET a ValueTuple). Idiom-scaffolding nested value type. (Named
+    # SWMLServiceHttpResult after the Service→SWMLService class rename.)
+    "SWMLServiceHttpResult",
+    # TypeInference.inferSchema's (parameters, required, description, isTyped,
+    # hasRawData) return record — the Java native stand-in for the language-neutral
+    # 5-tuple Python's infer_schema returns. Idiom-scaffolding nested value type.
+    "TypeInferenceInferredSchema",
+    # TypeInference static-utility host class — its two methods (inferSchema /
+    # createTypedHandlerWrapper) are projected to the module-level free functions
+    # signalwire.core.agent.tools.type_inference.{infer_schema,create_typed_handler_wrapper}
+    # via _FREE_FUNCTION_SURFACE_PROJECTIONS. Unlike SecurityUtils/WebhookValidator
+    # (whose Java package maps to a DIFFERENT module than the projection target),
+    # TypeInference's package IS the canonical module, so the host class would
+    # otherwise leak into that module alongside the projected functions. Python has
+    # only the free functions (classes: {}); drop the host class.
+    "TypeInference",
 }
 
 

@@ -426,7 +426,7 @@
                 },
                 {
                   "name": "callback",
-                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "type": "callable<list<dict<string,any>,dict<string,string>>,string>",
                   "required": true
                 },
                 {
@@ -1160,6 +1160,35 @@
               "returns": "bool"
             }
           }
+        }
+      }
+    },
+    "signalwire.core.agent.tools.type_inference": {
+      "functions": {
+        "create_typed_handler_wrapper": {
+          "params": [
+            {
+              "name": "func",
+              "type": "callable<list<any>,any>",
+              "required": true
+            },
+            {
+              "name": "has_raw_data",
+              "type": "bool",
+              "required": true
+            }
+          ],
+          "returns": "callable<list<any>,any>"
+        },
+        "infer_schema": {
+          "params": [
+            {
+              "name": "func",
+              "type": "callable<list<any>,any>",
+              "required": true
+            }
+          ],
+          "returns": "tuple<dict<string,dict<string,any>>,list<string>,optional<string>,bool,bool>"
         }
       }
     },
@@ -4988,7 +5017,7 @@
                 },
                 {
                   "name": "callback",
-                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "type": "callable<list<dict<string,any>,dict<string,string>>,string>",
                   "required": true
                 }
               ],
@@ -8942,6 +8971,36 @@
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
             },
+            "handle_request": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "method",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "headers",
+                  "type": "dict<string,string>",
+                  "required": true
+                },
+                {
+                  "name": "body",
+                  "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "default": null
+                }
+              ],
+              "returns": "tuple<int,dict<string,string>,string>"
+            },
             "hangup": {
               "params": [
                 {
@@ -9212,7 +9271,7 @@
                 },
                 {
                   "name": "callback",
-                  "type": "callable<list<string,dict<string,any>>,string>",
+                  "type": "callable<list<dict<string,any>,dict<string,string>>,string>",
                   "required": true
                 }
               ],

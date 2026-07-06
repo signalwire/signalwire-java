@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 26ba2419277fd9b3e16d0e5856591450a1caab98",
+  "generated_from": "signalwire-java @ 2577344ea71cccfdb56dbabf2d1813a32ba52c97",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -153,6 +153,13 @@
       },
       "functions": []
     },
+    "signalwire.core.agent.tools.type_inference": {
+      "classes": {},
+      "functions": [
+        "create_typed_handler_wrapper",
+        "infer_schema"
+      ]
+    },
     "signalwire.core.agent_base": {
       "classes": {
         "AgentBase": [
@@ -190,6 +197,7 @@
           "get_skill_manager",
           "get_tools",
           "handle_mcp_request",
+          "handle_request",
           "has_tool",
           "is_mcp_server_enabled",
           "is_sip_routing_enabled",
@@ -823,6 +831,7 @@
           "get_registered_swaig_functions",
           "get_registered_tools",
           "goto_label",
+          "handle_request",
           "hangup",
           "has_function",
           "join_conference",

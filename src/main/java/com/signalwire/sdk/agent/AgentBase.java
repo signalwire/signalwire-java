@@ -2088,6 +2088,55 @@ public class AgentBase extends Service {
     return renderAgent.renderSwml(baseUrl);
   }
 
+  /**
+   * Framework-free request-dispatch core for AgentBase.
+   *
+   * <p>Overrides {@link com.signalwire.sdk.swml.Service#handleRequest} so the primitive dispatch
+   * surface renders SWML via AgentBase's 5-phase pipeline ({@link #renderSwml}) — mirroring the
+   * embedded server's {@code renderMainSwml} path — instead of the base {@code renderDocument}.
+   * Performs basic-auth and the routing-callback check over plain primitives, returning a {@code
+   * (status, headers, body)} triple with the 401-auth and 307-redirect behavior preserved (parity
+   * with the Python reference {@code AgentBase.handle_request}).
+   *
+   * @param method HTTP method, e.g. {@code "GET"} or {@code "POST"}.
+   * @param url the full request URL.
+   * @param headers request headers as a plain map.
+   * @param body the already-parsed JSON body for POST requests, or {@code null}.
+   * @return a {@code (status, headers, body)} triple.
+   */
+  @Override
+  public HttpResult handleRequest(
+      String method, String url, Map<String, String> headers, Map<String, Object> body) {
+    Map<String, Object> reqBody = body != null ? body : new LinkedHashMap<>();
+    String callbackPath = callbackPathForUrl(url);
+
+    // Auth
+    if (!checkBasicAuthHeaders(headers)) {
+      return new HttpResult(
+          401, Map.of("WWW-Authenticate", "Basic"), gson.toJson(Map.of("error", "Unauthorized")));
+    }
+
+    // Routing callback: (body, headers) -> route | null (POST with a non-empty body only).
+    if ("POST".equalsIgnoreCase(method)
+        && !reqBody.isEmpty()
+        && callbackPath != null
+        && routingCallback != null) {
+      try {
+        String route = routingCallback.apply(reqBody, headers);
+        if (route != null) {
+          log.info("routing_request route=%s", route);
+          return new HttpResult(307, Map.of("Location", route), "");
+        }
+      } catch (Exception e) {
+        log.error("error_in_routing_callback", e);
+      }
+    }
+
+    // Render via AgentBase's SWML pipeline (proxy-base URL when configured).
+    String baseUrl = proxyUrlBase != null ? proxyUrlBase : "";
+    return new HttpResult(200, new LinkedHashMap<>(), renderSwmlJson(baseUrl));
+  }
+
   @Override
   protected void registerAdditionalRoutes(com.sun.net.httpserver.HttpServer server) {
     String basePath = route.equals("/") ? "" : route;

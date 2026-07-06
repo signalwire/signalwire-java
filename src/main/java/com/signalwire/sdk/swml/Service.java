@@ -72,7 +72,13 @@ public class Service implements AutoCloseable {
   // callback, and schema-validation toggle). Built/registered lazily via the
   // reference-API delegators below.
   protected VerbHandlerRegistry verbHandlerRegistry;
-  protected java.util.function.BiFunction<String, java.util.Map<String, Object>, String>
+  // Routing callback: (body, headers) -> route | null. Mirrors the Python
+  // reference's decomposed callback_fn(body, headers) shape (the framework-free
+  // dispatch core in handleRequest consults it). Cross-port parity: the callback
+  // receives the parsed request body dict and the request headers dict, and
+  // returns a redirect route string or null to continue normal processing.
+  protected java.util.function.BiFunction<
+          java.util.Map<String, Object>, java.util.Map<String, String>, String>
       routingCallback;
   protected boolean schemaValidation = true;
   // Proxy URL base for webhook callbacks (SWMLService.manual_set_proxy_url).
@@ -496,10 +502,21 @@ public class Service implements AutoCloseable {
 
   /**
    * Register a routing callback invoked to resolve dynamic routes. Mirrors
-   * SWMLService.register_routing_callback. Java stores the callback for the HTTP layer to consult.
+   * SWMLService.register_routing_callback. Java stores the callback for the HTTP layer (and the
+   * framework-free {@link #handleRequest} dispatch core) to consult.
+   *
+   * <p>The callback receives the parsed request body dict and the request headers dict — {@code
+   * callback(body, headers)} — and returns a redirect route string, or {@code null} to continue
+   * normal processing. This is the decomposed {@code (body, headers) -> String} shape the Python
+   * reference and the other SDK ports share.
+   *
+   * @param callback the routing callback, {@code (body, headers) -> route-or-null}.
+   * @return this service for chaining.
    */
   public Service registerRoutingCallback(
-      java.util.function.BiFunction<String, java.util.Map<String, Object>, String> callback) {
+      java.util.function.BiFunction<
+              java.util.Map<String, Object>, java.util.Map<String, String>, String>
+          callback) {
     this.routingCallback = callback;
     return this;
   }
@@ -650,6 +667,154 @@ public class Service implements AutoCloseable {
   public Service manualSetProxyUrl(String proxyUrl) {
     this.proxyUrlBase = proxyUrl;
     return this;
+  }
+
+  /**
+   * The {@code (status, headers, body)} triple returned by the framework-free {@link
+   * #handleRequest} dispatch core. Mirrors the language-neutral {@code tuple<int,
+   * dict<string,string>, string>} the Python reference {@code handle_request} returns and the
+   * {@code (int, Dictionary, string)} .NET {@code HandleRequest} returns — Java has no value-tuple
+   * type, so this record stands in for it (the enumerator records the canonical tuple shape).
+   *
+   * @param status the HTTP status code (200, 307, 401, …).
+   * @param headers the response headers (e.g. {@code Location} for a 307 redirect, {@code
+   *     WWW-Authenticate} for a 401).
+   * @param body the response body string (a JSON SWML document for 200; empty for a redirect).
+   */
+  public record HttpResult(int status, java.util.Map<String, String> headers, String body) {}
+
+  /**
+   * Framework-free request-dispatch core.
+   *
+   * <p>This is the primitive dispatch surface the SDK ports share (mirrors the Python reference
+   * {@code SWMLService.handle_request(method, url, headers, body) -> (status, headers, body)} and
+   * the .NET {@code (int, Dictionary, string) HandleRequest(method, path, headers, body)}). It
+   * performs basic-auth, the routing-callback check, and the {@code onRequest} modification over
+   * plain primitives instead of a {@link HttpExchange}, so the same dispatch behavior (identical
+   * status codes, headers, and body) is reachable without the embedded HTTP server.
+   *
+   * @param method HTTP method, e.g. {@code "GET"} or {@code "POST"}.
+   * @param url the full request URL (used to derive the routing-callback path).
+   * @param headers request headers as a plain map.
+   * @param body the already-parsed JSON body for POST requests, or {@code null}.
+   * @return a {@code (status, headers, body)} triple. 200 with a JSON SWML body for normal
+   *     rendering; 307 with a {@code Location} header for a routing redirect; 401 with a {@code
+   *     WWW-Authenticate: Basic} header for an auth failure.
+   */
+  public HttpResult handleRequest(
+      String method,
+      String url,
+      java.util.Map<String, String> headers,
+      java.util.Map<String, Object> body) {
+    java.util.Map<String, Object> reqBody = body != null ? body : new java.util.LinkedHashMap<>();
+    String callbackPath = callbackPathForUrl(url);
+
+    // Auth
+    if (!checkBasicAuthHeaders(headers)) {
+      return new HttpResult(
+          401,
+          java.util.Map.of("WWW-Authenticate", "Basic"),
+          gson.toJson(java.util.Map.of("error", "Unauthorized")));
+    }
+
+    // Routing callback: (body, headers) -> route | null. Only runs for a POST
+    // with a non-empty parsed body whose callback path has a callback registered.
+    if ("POST".equalsIgnoreCase(method)
+        && !reqBody.isEmpty()
+        && callbackPath != null
+        && routingCallback != null) {
+      try {
+        String route = routingCallback.apply(reqBody, headers);
+        if (route != null) {
+          log.info("routing_request route=%s", route);
+          // 307 preserves the POST method and its body.
+          return new HttpResult(307, java.util.Map.of("Location", route), "");
+        }
+      } catch (Exception e) {
+        log.error("error_in_routing_callback", e);
+      }
+    }
+
+    // Subclass request modification (mirrors on_request(body, callback_path)).
+    java.util.Map<String, Object> modifications = onRequest(reqBody, callbackPath);
+    if (modifications != null && !modifications.isEmpty()) {
+      java.util.Map<String, Object> doc = new java.util.LinkedHashMap<>(getDocument().toMap());
+      for (java.util.Map.Entry<String, Object> e : modifications.entrySet()) {
+        if (doc.containsKey(e.getKey())) {
+          doc.put(e.getKey(), e.getValue());
+        }
+      }
+      return new HttpResult(200, new java.util.LinkedHashMap<>(), gson.toJson(doc));
+    }
+
+    // Default: the current SWML document.
+    return new HttpResult(200, new java.util.LinkedHashMap<>(), renderDocument());
+  }
+
+  /**
+   * Derive the registered routing-callback path (if any) that a given URL targets — the primitive
+   * {@link #handleRequest} recovers the equivalent of the FastAPI router's {@code
+   * request.state.callback_path} by matching the URL's normalized path against the single
+   * registered callback (Java stores one routing callback per service). Returns {@code null} when
+   * no callback is registered.
+   */
+  protected String callbackPathForUrl(String url) {
+    if (routingCallback == null || url == null) {
+      return null;
+    }
+    String path = url;
+    int scheme = url.indexOf("://");
+    if (scheme >= 0) {
+      int slash = url.indexOf('/', scheme + 3);
+      path = slash >= 0 ? url.substring(slash) : "/";
+    }
+    int q = path.indexOf('?');
+    if (q >= 0) {
+      path = path.substring(0, q);
+    }
+    String trimmed = path.replaceAll("^/+", "").replaceAll("/+$", "");
+    return trimmed.isEmpty() ? "/" : "/" + trimmed;
+  }
+
+  /**
+   * Basic-auth check over a plain header map (the framework-free counterpart of {@link
+   * #validateAuth(HttpExchange)}). Reads the {@code Authorization} header case-insensitively and
+   * compares credentials timing-safely.
+   */
+  protected boolean checkBasicAuthHeaders(java.util.Map<String, String> headers) {
+    if (headers == null) {
+      return false;
+    }
+    String authHeader = null;
+    for (java.util.Map.Entry<String, String> e : headers.entrySet()) {
+      if ("Authorization".equalsIgnoreCase(e.getKey())) {
+        authHeader = e.getValue();
+        break;
+      }
+    }
+    if (authHeader == null || !authHeader.startsWith("Basic ")) {
+      return false;
+    }
+    byte[] decoded;
+    try {
+      decoded = Base64.getDecoder().decode(authHeader.substring(6));
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    String credentials = new String(decoded, StandardCharsets.UTF_8);
+    int colonIdx = credentials.indexOf(':');
+    if (colonIdx < 0) {
+      return false;
+    }
+    String user = credentials.substring(0, colonIdx);
+    String pass = credentials.substring(colonIdx + 1);
+    boolean userMatch =
+        MessageDigest.isEqual(
+            user.getBytes(StandardCharsets.UTF_8), authUser.getBytes(StandardCharsets.UTF_8));
+    boolean passMatch =
+        MessageDigest.isEqual(
+            pass.getBytes(StandardCharsets.UTF_8), authPassword.getBytes(StandardCharsets.UTF_8));
+    return userMatch && passMatch;
   }
 
   /**
