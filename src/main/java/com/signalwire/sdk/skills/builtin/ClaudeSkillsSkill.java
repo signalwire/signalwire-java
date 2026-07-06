@@ -42,6 +42,11 @@ public class ClaudeSkillsSkill implements SkillBase {
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
+    // Python parity: setup() gates on validate_packages() first.
+    if (!validatePackages()) {
+      return false;
+    }
+
     this.skillsPath = (String) params.get("skills_path");
     if (params.containsKey("tool_prefix")) this.toolPrefix = (String) params.get("tool_prefix");
 
@@ -50,72 +55,156 @@ public class ClaudeSkillsSkill implements SkillBase {
       return false;
     }
 
+    // Load-path validation (Python parity: skills_path must exist AND be a directory).
     Path path = Paths.get(skillsPath);
+    if (!Files.exists(path)) {
+      log.error("skills_path does not exist: %s", skillsPath);
+      return false;
+    }
     if (!Files.isDirectory(path)) {
       log.error("skills_path is not a directory: %s", skillsPath);
       return false;
     }
 
-    try (Stream<Path> stream = Files.walk(path)) {
-      List<Path> mdFiles =
-          stream
-              .filter(p -> p.toString().endsWith(".md") || p.toString().endsWith(".MD"))
-              .collect(Collectors.toList());
+    // Primary discovery model (Python parity): each immediate SUBDIRECTORY that
+    // declares a SKILL.md is one discovered skill. Mirrors registry
+    // SkillRegistry._discover_skills / claude_skills._discover_skills.
+    int discovered = discoverSkillMdDirectories(path);
 
-      for (Path mdFile : mdFiles) {
-        try {
-          String content = Files.readString(mdFile);
-          String fileName = mdFile.getFileName().toString();
-          String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
-          String sanitized =
-              baseName.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]", "_");
-          String toolName = toolPrefix + sanitized;
+    // Back-compat: also register top-level *.md files placed directly in
+    // skills_path (a skill declared as a single markdown file, no subdirectory).
+    discovered += discoverTopLevelMdFiles(path);
 
-          // Extract description from first line or frontmatter
-          String desc = "Execute " + baseName + " skill";
-          String[] lines = content.split("\n", 3);
-          if (lines.length > 0 && lines[0].startsWith("# ")) {
-            desc = lines[0].substring(2).trim();
-          }
+    if (discovered == 0) {
+      log.warn("claude_skills: no skills found in %s", skillsPath);
+    }
+    return !discoveredTools.isEmpty();
+  }
 
-          Map<String, Object> toolParams = new LinkedHashMap<>();
-          toolParams.put("type", "object");
-          toolParams.put(
-              "properties",
-              Map.of(
-                  "arguments", Map.of("type", "string", "description", "Arguments for the skill")));
-          toolParams.put("required", List.of("arguments"));
-
-          String skillContent = content;
-          discoveredTools.add(
-              new ToolDefinition(
-                  toolName,
-                  desc,
-                  toolParams,
-                  (args, raw) ->
-                      new FunctionResult("Skill content for " + baseName + ":\n" + skillContent)));
-
-          // Add prompt section
-          Map<String, Object> section = new LinkedHashMap<>();
-          section.put("title", baseName);
-          section.put("body", desc);
-          discoveredSections.add(section);
-
-          // Add hints from name
-          for (String word : baseName.split("[-_]", 0)) {
-            if (!word.isEmpty()) discoveredHints.add(word.toLowerCase(java.util.Locale.ROOT));
-          }
-
-        } catch (IOException e) {
-          log.error("Error reading skill file: %s", mdFile);
+  /**
+   * Walk the immediate subdirectories of {@code root}; each subdirectory that declares a {@code
+   * SKILL.md} is registered as one skill (its directory name is the skill name). Mirrors Python's
+   * {@code _discover_skills}, which iterates {@code skills_path.iterdir()} and requires a {@code
+   * SKILL.md} in each candidate directory. Returns the number of valid skills discovered.
+   */
+  private int discoverSkillMdDirectories(Path root) {
+    int count = 0;
+    try (Stream<Path> children = Files.list(root)) {
+      List<Path> dirs = children.filter(Files::isDirectory).sorted().collect(Collectors.toList());
+      for (Path dir : dirs) {
+        Path skillFile = dir.resolve("SKILL.md");
+        // Case-insensitive SKILL.md match (Python compares name.upper() == "SKILL.MD").
+        if (!Files.exists(skillFile)) {
+          skillFile = findCaseInsensitive(dir, "SKILL.MD");
+        }
+        if (skillFile == null || !Files.exists(skillFile)) {
+          // A subdirectory WITHOUT a SKILL.md is not a valid skill declaration — skip (warn).
+          log.warn("claude_skills: %s has no SKILL.md — not a valid skill, skipping", dir);
+          continue;
+        }
+        String skillName = dir.getFileName().toString();
+        if (registerSkillFromFile(skillName, skillFile)) {
+          count++;
         }
       }
     } catch (IOException e) {
-      log.error("Error scanning skills directory", e);
+      log.error("Error scanning skills directory: %s", root);
+    }
+    return count;
+  }
+
+  /**
+   * Register top-level {@code *.md} files placed directly in {@code root} (single-file skill
+   * declaration). This is the port's back-compat convenience alongside the Python subdirectory
+   * model. Returns the number of skills registered.
+   */
+  private int discoverTopLevelMdFiles(Path root) {
+    int count = 0;
+    try (Stream<Path> children = Files.list(root)) {
+      List<Path> mdFiles =
+          children
+              .filter(Files::isRegularFile)
+              .filter(
+                  p -> {
+                    String n = p.getFileName().toString().toLowerCase(java.util.Locale.ROOT);
+                    return n.endsWith(".md");
+                  })
+              .sorted()
+              .collect(Collectors.toList());
+      for (Path mdFile : mdFiles) {
+        String fileName = mdFile.getFileName().toString();
+        String baseName = fileName.substring(0, fileName.lastIndexOf('.'));
+        if (registerSkillFromFile(baseName, mdFile)) {
+          count++;
+        }
+      }
+    } catch (IOException e) {
+      log.error("Error scanning skills directory: %s", root);
+    }
+    return count;
+  }
+
+  /** Find a file in {@code dir} whose name matches {@code upperName} case-insensitively. */
+  private Path findCaseInsensitive(Path dir, String upperName) {
+    try (Stream<Path> children = Files.list(dir)) {
+      return children
+          .filter(Files::isRegularFile)
+          .filter(
+              p -> p.getFileName().toString().toUpperCase(java.util.Locale.ROOT).equals(upperName))
+          .findFirst()
+          .orElse(null);
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Parse a single SKILL.md (or single-file skill) and register its tool, prompt section, and
+   * hints. The tool name is {@code toolPrefix + sanitized(skillName)}. Returns {@code true} on
+   * success.
+   */
+  private boolean registerSkillFromFile(String skillName, Path skillFile) {
+    try {
+      String content = Files.readString(skillFile);
+      String sanitized = skillName.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]", "_");
+      String toolName = toolPrefix + sanitized;
+
+      // Extract description from the first "# " heading line (else a default).
+      String desc = "Execute " + skillName + " skill";
+      String[] lines = content.split("\n", 3);
+      if (lines.length > 0 && lines[0].startsWith("# ")) {
+        desc = lines[0].substring(2).trim();
+      }
+
+      Map<String, Object> toolParams = new LinkedHashMap<>();
+      toolParams.put("type", "object");
+      toolParams.put(
+          "properties",
+          Map.of("arguments", Map.of("type", "string", "description", "Arguments for the skill")));
+      toolParams.put("required", List.of("arguments"));
+
+      String skillContent = content;
+      discoveredTools.add(
+          new ToolDefinition(
+              toolName,
+              desc,
+              toolParams,
+              (args, raw) ->
+                  new FunctionResult("Skill content for " + skillName + ":\n" + skillContent)));
+
+      Map<String, Object> section = new LinkedHashMap<>();
+      section.put("title", skillName);
+      section.put("body", desc);
+      discoveredSections.add(section);
+
+      for (String word : skillName.split("[-_]", 0)) {
+        if (!word.isEmpty()) discoveredHints.add(word.toLowerCase(java.util.Locale.ROOT));
+      }
+      return true;
+    } catch (IOException e) {
+      log.error("Error reading skill file: %s", skillFile);
       return false;
     }
-
-    return !discoveredTools.isEmpty();
   }
 
   @Override

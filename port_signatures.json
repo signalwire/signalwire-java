@@ -4287,6 +4287,31 @@
                   "name": "voice",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "speech_fillers",
+                  "type": "list<string>",
+                  "required": true
+                },
+                {
+                  "name": "function_fillers",
+                  "type": "list<string>",
+                  "required": true
+                },
+                {
+                  "name": "engine",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "model",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
@@ -4312,8 +4337,23 @@
                   "kind": "self"
                 },
                 {
+                  "name": "hint",
+                  "type": "string",
+                  "required": true
+                },
+                {
                   "name": "pattern",
                   "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "replace",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "ignore_case",
+                  "type": "bool",
                   "required": true
                 }
               ],

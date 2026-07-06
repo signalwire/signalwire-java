@@ -463,6 +463,16 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("PlayAction", "pause"),
     ("RecordAction", "pause"),
     ("CollectAction", "pause"),
+    # AgentBase.addPatternHint now exposes the full Python
+    # add_pattern_hint(hint, pattern, replace, ignore_case) — a STRUCTURED hint,
+    # not a bare string (contract #74). AgentBase.addLanguage now exposes the
+    # full add_language(name, code, voice, speech_fillers, function_fillers,
+    # engine, model, params) carrying engine/model/fillers. The convenience
+    # overloads (bare string / (name,code,voice)) delegate; the full overload is
+    # the parity surface. (The PORT_SIGNATURE_OMISSIONS entries that excused the
+    # old collapsed shapes are removed — these are now drift-0 parity.)
+    ("AgentBase", "add_pattern_hint"),
+    ("AgentBase", "add_language"),
 }
 
 # Java skill class renames to match Python casing

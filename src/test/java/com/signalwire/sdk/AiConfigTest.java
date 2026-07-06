@@ -46,10 +46,15 @@ class AiConfigTest {
   @Test
   @SuppressWarnings("unchecked")
   void testAddPatternHint() {
-    agent.addPatternHint("*signalwire*");
+    agent.addPatternHint("signalwire", "sig.*wire", "SignalWire", true);
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
-    List<String> hints = (List<String>) ai.get("hints");
-    assertTrue(hints.contains("*signalwire*"));
+    List<Object> hints = (List<Object>) ai.get("hints");
+    // Contract #74: a pattern hint is a STRUCTURED object, not a bare string.
+    Map<String, Object> structured = (Map<String, Object>) hints.get(0);
+    assertEquals("signalwire", structured.get("hint"));
+    assertEquals("sig.*wire", structured.get("pattern"));
+    assertEquals("SignalWire", structured.get("replace"));
+    assertEquals(true, structured.get("ignore_case"));
   }
 
   @Test
@@ -76,13 +81,23 @@ class AiConfigTest {
   @Test
   @SuppressWarnings("unchecked")
   void testAddLanguageWithOptionalParams() {
-    agent.addLanguage("Spanish", "es-ES", "jorge", "nova-2", "um", "google");
+    // Python parity (contract #74): explicit engine + model + fillers all survive.
+    agent.addLanguage(
+        "Spanish",
+        "es-ES",
+        "jorge",
+        List.of("Um,", "Let me see,"),
+        List.of("One moment,"),
+        "elevenlabs",
+        "eleven_turbo_v2_5");
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
     List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
     Map<String, Object> lang = langs.get(0);
-    assertEquals("nova-2", lang.get("speech_model"));
-    assertEquals("um", lang.get("filler_word"));
-    assertEquals("google", lang.get("engine"));
+    assertEquals("jorge", lang.get("voice"));
+    assertEquals("elevenlabs", lang.get("engine"));
+    assertEquals("eleven_turbo_v2_5", lang.get("model"));
+    assertEquals(List.of("Um,", "Let me see,"), lang.get("speech_fillers"));
+    assertEquals(List.of("One moment,"), lang.get("function_fillers"));
   }
 
   @Test
@@ -112,7 +127,7 @@ class AiConfigTest {
     Map<String, Object> p = new LinkedHashMap<>();
     p.put("stability", 0.5);
     p.put("similarity_boost", 0.75);
-    agent.addLanguage("English", "en-US", "josh", null, null, "elevenlabs", p);
+    agent.addLanguage("English", "en-US", "josh", null, null, "elevenlabs", null, p);
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
     List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
     Map<String, Object> emitted = (Map<String, Object>) langs.get(0).get("params");
@@ -132,7 +147,7 @@ class AiConfigTest {
   @Test
   @SuppressWarnings("unchecked")
   void testAddLanguageWithEmptyParamsOmitsKey() {
-    agent.addLanguage("French", "fr-FR", "v", null, null, null, new LinkedHashMap<>());
+    agent.addLanguage("French", "fr-FR", "v", null, null, null, null, new LinkedHashMap<>());
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
     List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
     assertFalse(langs.get(0).containsKey("params"));
@@ -142,7 +157,7 @@ class AiConfigTest {
   void testGetLanguageParamsReturnsSetDict() {
     Map<String, Object> p = new LinkedHashMap<>();
     p.put("a", 1);
-    agent.addLanguage("English", "en-US", "v", null, null, null, p);
+    agent.addLanguage("English", "en-US", "v", null, null, null, null, p);
     assertEquals(Map.of("a", 1), agent.getLanguageParams("en-US"));
   }
 
@@ -161,7 +176,7 @@ class AiConfigTest {
   void testSetLanguageParamsReplacesExisting() {
     Map<String, Object> p1 = new LinkedHashMap<>();
     p1.put("a", 1);
-    agent.addLanguage("English", "en-US", "v", null, null, null, p1);
+    agent.addLanguage("English", "en-US", "v", null, null, null, null, p1);
     agent.setLanguageParams("en-US", Map.of("b", 2));
     assertEquals(Map.of("b", 2), agent.getLanguageParams("en-US"));
   }
@@ -178,7 +193,7 @@ class AiConfigTest {
   void testSetLanguageParamsEmptyDictRemovesKey() {
     Map<String, Object> p = new LinkedHashMap<>();
     p.put("a", 1);
-    agent.addLanguage("English", "en-US", "v", null, null, null, p);
+    agent.addLanguage("English", "en-US", "v", null, null, null, null, p);
     agent.setLanguageParams("en-US", new LinkedHashMap<>());
     assertNull(agent.getLanguageParams("en-US"));
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
@@ -398,7 +413,7 @@ class AiConfigTest {
         agent
             .addHint("test")
             .addHints(List.of("a", "b"))
-            .addPatternHint("*x*")
+            .addPatternHint("x", "x.*", "X")
             .addLanguage("English", "en-US", "rachel")
             .addPronunciation("SW", "SignalWire", true)
             .setParam("temperature", 0.5)
@@ -412,6 +427,77 @@ class AiConfigTest {
             .setPromptLlmParams(Map.of("temperature", 0.3))
             .setPostPromptLlmParams(Map.of("temperature", 0.1));
     assertSame(agent, result);
+  }
+
+  // ======== Contract #74 — AI/LLM structured add_pattern_hint / add_language ========
+
+  /**
+   * Behavioral-contract #8: set a pattern hint WITH replacements + a language WITH engine + model +
+   * fillers, render the SWML, and assert every field survives into the {@code ai} block. A
+   * bare-string / degraded impl (the pre-fix Java body) would drop the structure, the engine/model,
+   * and the fillers.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testContract8StructuredHintAndLanguageFillersRender() {
+    agent.addPatternHint("gonna", "\\bgonna\\b", "going to", true);
+    agent.addLanguage(
+        "English",
+        "en-US",
+        "josh",
+        List.of("Um,", "Let me think,"),
+        List.of("One moment,", "Checking,"),
+        "elevenlabs",
+        "eleven_turbo_v2_5");
+
+    Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+
+    // Structured pattern hint survived (not a bare string).
+    List<Object> hints = (List<Object>) ai.get("hints");
+    Map<String, Object> hint = (Map<String, Object>) hints.get(0);
+    assertEquals("gonna", hint.get("hint"));
+    assertEquals("\\bgonna\\b", hint.get("pattern"));
+    assertEquals("going to", hint.get("replace"));
+    assertEquals(true, hint.get("ignore_case"));
+
+    // Language carries engine + model + both filler lists.
+    List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+    Map<String, Object> lang = langs.get(0);
+    assertEquals("English", lang.get("name"));
+    assertEquals("en-US", lang.get("code"));
+    assertEquals("josh", lang.get("voice"));
+    assertEquals("elevenlabs", lang.get("engine"));
+    assertEquals("eleven_turbo_v2_5", lang.get("model"));
+    assertEquals(List.of("Um,", "Let me think,"), lang.get("speech_fillers"));
+    assertEquals(List.of("One moment,", "Checking,"), lang.get("function_fillers"));
+  }
+
+  /**
+   * Only one filler kind provided → the deprecated combined {@code fillers} key (Python parity).
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testAddLanguageSingleFillerKindUsesDeprecatedFillersKey() {
+    agent.addLanguage("English", "en-US", "josh", List.of("Um,"), null, null, null);
+    Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+    List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+    Map<String, Object> lang = langs.get(0);
+    assertEquals(List.of("Um,"), lang.get("fillers"));
+    assertFalse(lang.containsKey("speech_fillers"));
+    assertFalse(lang.containsKey("function_fillers"));
+  }
+
+  /** Combined "engine.voice:model" voice string is parsed into engine/voice/model keys. */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testAddLanguageCombinedVoiceStringParsed() {
+    agent.addLanguage("English", "en-US", "elevenlabs.josh:eleven_turbo_v2_5");
+    Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+    List<Map<String, Object>> langs = (List<Map<String, Object>>) ai.get("languages");
+    Map<String, Object> lang = langs.get(0);
+    assertEquals("josh", lang.get("voice"));
+    assertEquals("elevenlabs", lang.get("engine"));
+    assertEquals("eleven_turbo_v2_5", lang.get("model"));
   }
 
   // ======== Helper ========

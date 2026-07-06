@@ -62,7 +62,7 @@ class AuthTest {
     SessionManager sm = new SessionManager();
     String token = sm.createToken("func", "call");
     assertNotNull(token);
-    assertTrue(token.contains("."));
+    assertFalse(token.isEmpty());
     assertTrue(sm.validateToken(token, "func", "call"));
   }
 

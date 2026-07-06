@@ -21,11 +21,20 @@ import javax.crypto.spec.SecretKeySpec;
  * get/set_session_metadata}); this port keeps a real per-call metadata store (like the Ruby and
  * TypeScript ports) so the getter/setter pair round-trips, while activation stays a stateless
  * success hook.
+ *
+ * <p><b>Token wire format (contract #70/#7 parity).</b> A minted token is the URL-safe Base64
+ * encoding of the DECODED 5-field, dot-joined string {@code
+ * call_id.function_name.expiry.nonce.signature}. The HMAC-SHA256 signed message is {@code
+ * call_id:function_name:expiry:nonce} (colon-joined, call_id FIRST). The nonce is 16 hex characters
+ * (8 random bytes) drawn from {@link SecureRandom}, so two mints for the SAME (function_name,
+ * call_id, expiry) produce DIFFERENT tokens. The signature comparison uses {@link
+ * MessageDigest#isEqual} (constant-time).
  */
 public class SessionManager {
 
   private final byte[] secret;
   private final int defaultExpiry;
+  private final SecureRandom random = new SecureRandom();
 
   /** Per-session metadata store: call_id -&gt; (key -&gt; value). */
   private final ConcurrentHashMap<String, Map<String, Object>> sessionMetadata =
@@ -41,7 +50,38 @@ public class SessionManager {
   public SessionManager(int defaultExpiry) {
     this.defaultExpiry = defaultExpiry;
     this.secret = new byte[32];
-    new SecureRandom().nextBytes(this.secret);
+    this.random.nextBytes(this.secret);
+  }
+
+  /**
+   * Construct a manager with an explicit signing secret. Mirrors Python's {@code
+   * SessionManager(secret_key=...)}: the secret is what the HMAC signature is keyed on, so callers
+   * that need cross-instance / cross-language interop (a token minted elsewhere with the SAME
+   * secret must validate here) supply it explicitly. Python's secret is a hex string; this port
+   * accepts the raw secret bytes. The Java constructor overloads collapse to the no-arg form in the
+   * signature audit (covered by the {@code SessionManager.__init__} omission — "secret is injected
+   * via a constructor/setter"), so this adds no drift.
+   */
+  public SessionManager(byte[] secretKey, int defaultExpiry) {
+    this.defaultExpiry = defaultExpiry;
+    this.secret = secretKey.clone();
+  }
+
+  /**
+   * The raw HMAC signing secret. Package-private so the security tests can construct a token in the
+   * exact Python wire format keyed on this manager's secret and assert it validates here (the
+   * cross-port interop leg of contract #70). Not part of the public API.
+   */
+  byte[] secretBytes() {
+    return secret.clone();
+  }
+
+  /**
+   * HMAC-SHA256 sign {@code data} with this manager's secret, hex-encoded. Package-private so the
+   * security tests can build a Python-format token keyed on the same secret.
+   */
+  String sign(String data) {
+    return hmacSign(data);
   }
 
   /** Create a signed token for a function + callID. */
@@ -51,68 +91,75 @@ public class SessionManager {
 
   public String createToken(String functionName, String callId, int expirySeconds) {
     long expiry = System.currentTimeMillis() / 1000 + expirySeconds;
-    String payload = functionName + ":" + callId + ":" + expiry;
-    String encoded =
-        Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(payload.getBytes(StandardCharsets.UTF_8));
-    String signature = hmacSign(payload);
-    return encoded + "." + signature;
+    String nonce = randomNonce();
+
+    // Signed message: call_id:function_name:expiry:nonce (call_id FIRST).
+    String message = callId + ":" + functionName + ":" + expiry + ":" + nonce;
+    String signature = hmacSign(message);
+
+    // Decoded token: call_id.function_name.expiry.nonce.signature (5 dot-fields).
+    String token = callId + "." + functionName + "." + expiry + "." + nonce + "." + signature;
+
+    // Base64url-encode the whole token for URL safety.
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(token.getBytes(StandardCharsets.UTF_8));
   }
 
   /** Validate a signed token. */
   public boolean validateToken(String token, String functionName, String callId) {
     if (token == null || token.isEmpty()) return false;
-    int dotIdx = token.indexOf('.');
-    if (dotIdx < 0) return false;
 
-    String encodedPart = token.substring(0, dotIdx);
-    String signaturePart = token.substring(dotIdx + 1);
-
-    String payload;
+    String decoded;
     try {
-      payload = new String(Base64.getUrlDecoder().decode(encodedPart), StandardCharsets.UTF_8);
+      decoded = new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
     } catch (Exception e) {
       return false;
     }
 
-    String[] parts = payload.split(":", 0);
-    if (parts.length != 3) return false;
+    String[] parts = decoded.split("\\.", -1);
+    if (parts.length != 5) return false;
 
-    String tokenFunc = parts[0];
-    String tokenCallId = parts[1];
+    String tokenCallId = parts[0];
+    String tokenFunc = parts[1];
     long tokenExpiry;
     try {
       tokenExpiry = Long.parseLong(parts[2]);
     } catch (NumberFormatException e) {
       return false;
     }
+    String tokenNonce = parts[3];
+    String tokenSignature = parts[4];
 
-    // Timing-safe comparison
-    boolean funcMatch =
-        MessageDigest.isEqual(
-            tokenFunc.getBytes(StandardCharsets.UTF_8),
-            functionName.getBytes(StandardCharsets.UTF_8));
-    boolean callMatch =
-        MessageDigest.isEqual(
-            tokenCallId.getBytes(StandardCharsets.UTF_8), callId.getBytes(StandardCharsets.UTF_8));
+    // Reject validation if call_id is not provided (Python parity).
+    if (callId == null || callId.isEmpty()) return false;
+
+    // Verify the function matches.
+    if (!tokenFunc.equals(functionName)) return false;
+
+    // Check if the token has expired.
+    long now = System.currentTimeMillis() / 1000;
+    if (tokenExpiry < now) return false;
+
+    // Recreate the message and verify the signature (constant-time compare).
+    String message = tokenCallId + ":" + tokenFunc + ":" + tokenExpiry + ":" + tokenNonce;
+    String expectedSignature = hmacSign(message);
     boolean sigMatch =
         MessageDigest.isEqual(
-            signaturePart.getBytes(StandardCharsets.UTF_8),
-            hmacSign(payload).getBytes(StandardCharsets.UTF_8));
+            tokenSignature.getBytes(StandardCharsets.UTF_8),
+            expectedSignature.getBytes(StandardCharsets.UTF_8));
+    if (!sigMatch) return false;
 
-    if (!funcMatch || !callMatch || !sigMatch) return false;
-
-    long now = System.currentTimeMillis() / 1000;
-    return now < tokenExpiry;
+    // Finally verify the call_id matches (done last so the token is otherwise valid).
+    return tokenCallId.equals(callId);
   }
 
   // ── Python-surface token aliases ─────────────────────────────────
   //
   // The reference exposes generate_token / create_tool_token as the minting
   // names and validate_tool_token as a back-compat alias of validate_token.
-  // Java keeps the existing createToken/validateToken wire format untouched
-  // and projects the reference names onto them (matching Ruby's alias set).
+  // Java keeps the existing createToken/validateToken names and projects the
+  // reference names onto them (matching Ruby's alias set).
 
   /** Alias of {@link #createToken(String, String)} — Python's {@code generate_token}. */
   public String generateToken(String functionName, String callId) {
@@ -147,7 +194,7 @@ public class SessionManager {
     }
     // secrets.token_urlsafe(16): 16 random bytes, URL-safe Base64 without padding.
     byte[] buf = new byte[16];
-    new SecureRandom().nextBytes(buf);
+    random.nextBytes(buf);
     return Base64.getUrlEncoder().withoutPadding().encodeToString(buf);
   }
 
@@ -208,7 +255,7 @@ public class SessionManager {
    * Decode a token's components for inspection WITHOUT validating it. Requires {@link
    * #setDebugMode(boolean)} to have been set {@code true}; otherwise returns {@code {"error":
    * "debug mode not enabled"}}, matching the reference. Decodes this port's token format ({@code
-   * base64(function:call_id:expiry).signature}).
+   * base64url(call_id.function_name.expiry.nonce.signature)}).
    */
   public Map<String, Object> debugToken(String token) {
     if (!debugMode) {
@@ -217,28 +264,28 @@ public class SessionManager {
       return err;
     }
     try {
-      int dotIdx = token == null ? -1 : token.indexOf('.');
-      if (dotIdx < 0) {
-        return malformedDebug(token, 0);
-      }
-      String encodedPart = token.substring(0, dotIdx);
-      String signaturePart = token.substring(dotIdx + 1);
-      String payload =
-          new String(Base64.getUrlDecoder().decode(encodedPart), StandardCharsets.UTF_8);
-      String[] parts = payload.split(":", 0);
-      if (parts.length != 3) {
+      String decoded = new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
+      String[] parts = decoded.split("\\.", -1);
+      if (parts.length != 5) {
         return malformedDebug(token, parts.length);
       }
 
-      Map<String, Object> status = expiryStatus(parts[2]);
+      String tokenCallId = parts[0];
+      String tokenFunc = parts[1];
+      String tokenExpiry = parts[2];
+      String tokenNonce = parts[3];
+      String tokenSignature = parts[4];
+
+      Map<String, Object> status = expiryStatus(tokenExpiry);
       String expiryDate = (String) status.remove("expiry_date");
 
       Map<String, Object> components = new LinkedHashMap<>();
-      components.put("function", parts[0]);
-      components.put("call_id", truncate(parts[1]));
-      components.put("expiry", parts[2]);
+      components.put("call_id", truncate(tokenCallId));
+      components.put("function", tokenFunc);
+      components.put("expiry", tokenExpiry);
       components.put("expiry_date", expiryDate);
-      components.put("signature", truncate(signaturePart));
+      components.put("nonce", tokenNonce);
+      components.put("signature", truncate(tokenSignature));
 
       Map<String, Object> out = new LinkedHashMap<>();
       out.put("valid_format", true);
@@ -285,6 +332,17 @@ public class SessionManager {
       return null;
     }
     return s.length() > 8 ? s.substring(0, 8) + "..." : s;
+  }
+
+  /** 16 hex characters (8 random bytes), matching Python's {@code secrets.token_hex(8)}. */
+  private String randomNonce() {
+    byte[] buf = new byte[8];
+    random.nextBytes(buf);
+    StringBuilder hex = new StringBuilder(16);
+    for (byte b : buf) {
+      hex.append(String.format("%02x", b));
+    }
+    return hex.toString();
   }
 
   private String hmacSign(String data) {

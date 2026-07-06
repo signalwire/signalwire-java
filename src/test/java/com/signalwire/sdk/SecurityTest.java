@@ -21,7 +21,7 @@ class SecurityTest {
     String token = sm.createToken("get_weather", "call-123");
 
     assertNotNull(token);
-    assertTrue(token.contains("."));
+    assertFalse(token.isEmpty());
     assertTrue(sm.validateToken(token, "get_weather", "call-123"));
   }
 
@@ -76,9 +76,18 @@ class SecurityTest {
     var sm = new SessionManager();
     String token = sm.createToken("get_weather", "call-123");
 
-    // Tamper with the signature
-    int dotIdx = token.indexOf('.');
-    String tampered = token.substring(0, dotIdx + 1) + "0000000000000000";
+    // Decode the base64url-wrapped 5-field token, replace the signature field, re-encode.
+    String decoded =
+        new String(
+            java.util.Base64.getUrlDecoder().decode(token),
+            java.nio.charset.StandardCharsets.UTF_8);
+    String[] parts = decoded.split("\\.", -1);
+    parts[4] = "0000000000000000";
+    String tampered =
+        java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                String.join(".", parts).getBytes(java.nio.charset.StandardCharsets.UTF_8));
     assertFalse(sm.validateToken(tampered, "get_weather", "call-123"));
   }
 
@@ -87,9 +96,18 @@ class SecurityTest {
     var sm = new SessionManager();
     String token = sm.createToken("get_weather", "call-123");
 
-    // Replace payload but keep signature
-    int dotIdx = token.indexOf('.');
-    String tampered = "dGFtcGVyZWQ" + token.substring(dotIdx);
+    // Decode, tamper the call_id field but keep the signature, re-encode.
+    String decoded =
+        new String(
+            java.util.Base64.getUrlDecoder().decode(token),
+            java.nio.charset.StandardCharsets.UTF_8);
+    String[] parts = decoded.split("\\.", -1);
+    parts[0] = "tampered-call-id";
+    String tampered =
+        java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                String.join(".", parts).getBytes(java.nio.charset.StandardCharsets.UTF_8));
     assertFalse(sm.validateToken(tampered, "get_weather", "call-123"));
   }
 
@@ -112,22 +130,31 @@ class SecurityTest {
   }
 
   @Test
-  void testTokenContainsDotSeparator() {
+  void testTokenDecodesToFiveDotFields() {
     var sm = new SessionManager();
     String token = sm.createToken("func", "call");
-    assertTrue(token.contains("."));
-
-    String[] parts = token.split("\\.", 2);
-    assertEquals(2, parts.length);
-    assertTrue(parts[0].length() > 0);
-    assertTrue(parts[1].length() > 0);
+    // The token is base64url-wrapped; the DECODED form is 5 dot-fields
+    // (call_id.function_name.expiry.nonce.signature).
+    String decoded =
+        new String(
+            java.util.Base64.getUrlDecoder().decode(token),
+            java.nio.charset.StandardCharsets.UTF_8);
+    String[] parts = decoded.split("\\.", -1);
+    assertEquals(5, parts.length);
+    for (String p : parts) {
+      assertTrue(p.length() > 0);
+    }
   }
 
   @Test
   void testTokenSignatureIsHex() {
     var sm = new SessionManager();
     String token = sm.createToken("func", "call");
-    String sig = token.substring(token.indexOf('.') + 1);
+    String decoded =
+        new String(
+            java.util.Base64.getUrlDecoder().decode(token),
+            java.nio.charset.StandardCharsets.UTF_8);
+    String sig = decoded.split("\\.", -1)[4];
     // HMAC-SHA256 produces 64 hex chars
     assertEquals(64, sig.length());
     assertTrue(sig.matches("[0-9a-f]+"));

@@ -63,7 +63,9 @@ public class AgentBase extends Service {
   private final List<Map<String, Object>> pomSections = new ArrayList<>();
 
   // --- AI Config ---
-  private final List<String> hints = new ArrayList<>();
+  // Hints are either bare strings (addHint/addHints) or structured pattern-hint objects
+  // (addPatternHint → {hint, pattern, replace, ignore_case}); both render into ai.hints.
+  private final List<Object> hints = new ArrayList<>();
   private final List<Map<String, Object>> languages = new ArrayList<>();
   // ASR-driven multilingual mode (set_multilingual). When set, emitted as the
   // top-level ``multilingual`` object on the AI verb (mutually exclusive with
@@ -707,46 +709,120 @@ public class AgentBase extends Service {
     return this;
   }
 
-  public AgentBase addPatternHint(String pattern) {
-    hints.add(pattern);
+  /** Convenience overload — a pattern hint with case-sensitive matching. */
+  public AgentBase addPatternHint(String hint, String pattern, String replace) {
+    return addPatternHint(hint, pattern, replace, false);
+  }
+
+  /**
+   * Add a complex hint with pattern matching. Mirrors Python {@code
+   * AIConfigMixin.add_pattern_hint(hint, pattern, replace, ignore_case=False)}: appends a
+   * STRUCTURED hint object {@code {hint, pattern, replace, ignore_case}} to the hints list (NOT a
+   * bare string), which renders into the SWML {@code ai.hints} array. All three of {@code
+   * hint}/{@code pattern}/{@code replace} must be non-empty or the call is a no-op (Python parity).
+   *
+   * @param hint the hint text to match
+   * @param pattern regular-expression pattern
+   * @param replace text to replace the hint with
+   * @param ignoreCase whether to ignore case when matching
+   * @return this agent, for chaining
+   */
+  public AgentBase addPatternHint(String hint, String pattern, String replace, boolean ignoreCase) {
+    if (hint != null
+        && !hint.isEmpty()
+        && pattern != null
+        && !pattern.isEmpty()
+        && replace != null
+        && !replace.isEmpty()) {
+      Map<String, Object> structured = new LinkedHashMap<>();
+      structured.put("hint", hint);
+      structured.put("pattern", pattern);
+      structured.put("replace", replace);
+      structured.put("ignore_case", ignoreCase);
+      hints.add(structured);
+    }
     return this;
   }
 
   public AgentBase addLanguage(String name, String code, String voice) {
-    return addLanguage(name, code, voice, null, null, null, null);
-  }
-
-  public AgentBase addLanguage(
-      String name,
-      String code,
-      String voice,
-      String speechModel,
-      String fillerWord,
-      String engine) {
-    return addLanguage(name, code, voice, speechModel, fillerWord, engine, null);
+    return addLanguage(name, code, voice, null, null, null, null, null);
   }
 
   /**
-   * Add a language configuration with an optional per-language ``params`` dict (engine-specific
-   * tuning, voice settings, etc.). The ``params`` key is only emitted into SWML when non-empty so
-   * existing language entries stay byte-identical when no params are passed. Mirrors Python's
-   * add_language(params=...) addition.
+   * Add a language configuration carrying speech/function fillers plus an explicit engine and
+   * model. Mirrors Python's {@code add_language(name, code, voice, speech_fillers,
+   * function_fillers, engine, model, params)}.
    */
   public AgentBase addLanguage(
       String name,
       String code,
       String voice,
-      String speechModel,
-      String fillerWord,
+      List<String> speechFillers,
+      List<String> functionFillers,
       String engine,
+      String model) {
+    return addLanguage(name, code, voice, speechFillers, functionFillers, engine, model, null);
+  }
+
+  /**
+   * Add a language configuration to support multilingual conversations. Mirrors Python {@code
+   * AIConfigMixin.add_language(name, code, voice, speech_fillers=None, function_fillers=None,
+   * engine=None, model=None, params=None)} exactly, including:
+   *
+   * <ul>
+   *   <li><b>Voice parsing</b>: when {@code engine}/{@code model} are given they win; otherwise a
+   *       combined {@code "engine.voice:model"} string is split into the {@code engine}/{@code
+   *       voice}/{@code model} keys; a plain voice string is used as-is.
+   *   <li><b>Fillers</b>: both speech + function fillers emit {@code speech_fillers} and {@code
+   *       function_fillers}; only one emits the deprecated combined {@code fillers} key.
+   *   <li><b>params</b>: emitted only when non-empty.
+   * </ul>
+   *
+   * <p>Every field survives into the rendered SWML {@code ai.languages} entry (contract #74
+   * parity).
+   */
+  public AgentBase addLanguage(
+      String name,
+      String code,
+      String voice,
+      List<String> speechFillers,
+      List<String> functionFillers,
+      String engine,
+      String model,
       Map<String, Object> params) {
     Map<String, Object> lang = new LinkedHashMap<>();
     lang.put("name", name);
     lang.put("code", code);
-    lang.put("voice", voice);
-    if (speechModel != null) lang.put("speech_model", speechModel);
-    if (fillerWord != null) lang.put("filler_word", fillerWord);
-    if (engine != null) lang.put("engine", engine);
+
+    // Voice formatting: explicit engine/model win; else parse a combined "engine.voice:model".
+    if ((engine != null && !engine.isEmpty()) || (model != null && !model.isEmpty())) {
+      lang.put("voice", voice);
+      if (engine != null && !engine.isEmpty()) lang.put("engine", engine);
+      if (model != null && !model.isEmpty()) lang.put("model", model);
+    } else if (voice != null && voice.contains(".") && voice.contains(":")) {
+      try {
+        String[] engineVoiceModel = voice.split(":", 2);
+        String[] engineVoice = engineVoiceModel[0].split("\\.", 2);
+        lang.put("voice", engineVoice[1]);
+        lang.put("engine", engineVoice[0]);
+        lang.put("model", engineVoiceModel[1]);
+      } catch (RuntimeException e) {
+        lang.put("voice", voice);
+      }
+    } else {
+      lang.put("voice", voice);
+    }
+
+    // Fillers: both → speech_fillers + function_fillers; only one → deprecated combined "fillers".
+    boolean hasSpeech = speechFillers != null && !speechFillers.isEmpty();
+    boolean hasFunction = functionFillers != null && !functionFillers.isEmpty();
+    if (hasSpeech && hasFunction) {
+      lang.put("speech_fillers", new ArrayList<>(speechFillers));
+      lang.put("function_fillers", new ArrayList<>(functionFillers));
+    } else if (hasSpeech || hasFunction) {
+      lang.put("fillers", new ArrayList<>(hasSpeech ? speechFillers : functionFillers));
+    }
+
     if (params != null && !params.isEmpty()) {
       lang.put("params", new LinkedHashMap<>(params));
     }
