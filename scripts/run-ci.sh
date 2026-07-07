@@ -169,6 +169,27 @@ spec_parity_gate() {
     return $rc
 }
 
+# ROUTE-COLLISION — the routeRegistry Gradle task supplies the operation→(method,
+# path) map; the gate cross-references it with the surface to find split routes /
+# duplicated CRUD bases / consumerless generated types. Java HAS a registry (same
+# task SPEC-PARITY uses), so the gate runs with --registry-json. Approved
+# allowlist entries (ROUTE_COLLISION_ALLOW.md) are honored by the gate.
+route_collision_gate() {
+    local registry
+    registry="$(mktemp)"
+    # shellcheck disable=SC2086
+    if ! ./gradlew $GRADLE_DAEMON_FLAG --build-cache -q routeRegistry >"$registry" 2>/dev/null; then
+        rm -f "$registry"
+        return 1
+    fi
+    python3 "$PORTING_SDK_DIR/scripts/route_collision.py" \
+        --port java --repo . \
+        --registry-json "$registry"
+    local rc=$?
+    rm -f "$registry"
+    return $rc
+}
+
 # SURFACE-DIFF — regenerate the surface in place, diff vs Python, restore.
 surface_diff_gate() {
     local committed="$PORT_ROOT/.sw-tmp/committed_surface_diff_${PORT_NAME}.$$"
@@ -354,12 +375,30 @@ sched_gate DOC-LINKS res=dayone desc="every relative markdown link resolves to a
     -- python3 "$PORTING_SDK_DIR/scripts/doc_links.py" --port java --repo .
 sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at repo root (allowlist ROOT_HYGIENE_ALLOW.md)" \
     -- python3 "$PORTING_SDK_DIR/scripts/root_hygiene.py" --port java --repo .
-sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
+# IGNORE-LEDGER-VERIFY READS port_surface.json → res=surface (mutex with the
+# SURFACE-* regenerators that truncate the file in place while enumerating; a
+# res=dayone slot could read it mid-truncation → empty-file JSONDecodeError).
+sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
     -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo .
 sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port java --repo .
 sched_gate ARTIFACT-DENY res=gradle desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
     --fn dayone_artifact_deny
+
+# Expansion gates (Tier 5 / release) — enforced (non-report-only). Backlog burned
+# to zero + GEN_TYPE_DEGENERACY_ALLOW.md / ROUTE_COLLISION_ALLOW.md user-approved,
+# so each passes enforcing. ROUTE-COLLISION consumes the routeRegistry task (java
+# has a registry) → res=gradle via route_collision_gate.
+sched_gate GEN-TYPE-DEGENERACY res=dayone desc="generated types are not bare loose escape hatches (allowlist GEN_TYPE_DEGENERACY_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/gen_type_degeneracy.py" --port java --repo .
+sched_gate PUBLIC-JARGON res=dayone desc="no internal porting jargon in public doc comments" \
+    -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port java --repo .
+sched_gate ROUTE-COLLISION res=gradle desc="no split routes / duplicated CRUD bases (routeRegistry × surface; allowlist ROUTE_COLLISION_ALLOW.md)" \
+    --fn route_collision_gate
+sched_gate GEN-IDIOM res=dayone desc="generated code is not lint-excluded (idiom linter runs over it)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/gen_idiom.py" --port java --repo .
+sched_gate RELEASE-FRESH res=dayone desc="publish workflow runs gates BEFORE publishing" \
+    -- python3 "$PORTING_SDK_DIR/scripts/release_fresh.py" --port java --repo .
 
 sched_run
 rc=$?
