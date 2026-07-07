@@ -288,12 +288,8 @@ if (loader.hasConfig()) {
 var agent = builder.build();
 ```
 
-The MCP Gateway service is a standalone process configured with its own
-`config.json` (see the [MCP Gateway reference](mcp_gateway_reference.md)):
-
-```bash
-mcp-gateway -c mcp_config.json
-```
+To integrate external MCP servers with an agent, or expose the agent's tools as an
+MCP server, see [MCP Integration](mcp_integration.md).
 
 ## Troubleshooting
 
