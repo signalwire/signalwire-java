@@ -212,4 +212,76 @@ class SwaigTestCliTest {
     assertNotEquals(0, code, "--class with no value should error");
     assertTrue(err.contains("--class"), "error should mention --class. err=" + err);
   }
+
+  // -----------------------------------------------------------------
+  // --parse-only / --dry-run: validate args + exit without loading
+  // the agent or touching the network (canonical cross-port contract).
+  // -----------------------------------------------------------------
+
+  @Test
+  void parseOnlyValidatesWithoutNetworkAndPrintsParseOk() {
+    // A bogus, unreachable --url that would fail (or hang) if the CLI
+    // actually made the HTTP call. With --parse-only it must return
+    // instantly, print exactly "parse OK", and never touch the network.
+    long start = System.nanoTime();
+    int code =
+        SwaigTest.run(
+            new String[] {
+              "--url", "http://user:pass@127.0.0.1:1/nope", "--exec", "get_weather", "--parse-only"
+            });
+    long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+    String out = stdout.toString(StandardCharsets.UTF_8);
+    String snap = streamsSnapshot();
+
+    assertEquals(0, code, "parse-only on valid args should exit 0. " + snap);
+    assertTrue(out.contains("parse OK"), "should print 'parse OK'. " + snap);
+    assertTrue(
+        elapsedMs < 2_000,
+        "parse-only must not make a network call (took " + elapsedMs + " ms). " + snap);
+  }
+
+  @Test
+  void parseOnlyIsPositionIndependentTrailingExec() {
+    // --parse-only appears AFTER --exec (which otherwise consumes the
+    // following token as a function argument) — it must still be honored.
+    int code =
+        SwaigTest.run(
+            new String[] {
+              "--url",
+              "http://user:pass@127.0.0.1:1/nope",
+              "--parse-only",
+              "--exec",
+              "foo",
+              "--param",
+              "bar=1"
+            });
+    String out = stdout.toString(StandardCharsets.UTF_8);
+    String snap = streamsSnapshot();
+    assertEquals(0, code, "parse-only should exit 0 regardless of position. " + snap);
+    assertTrue(out.contains("parse OK"), "should print 'parse OK'. " + snap);
+  }
+
+  @Test
+  void dryRunAliasWorks() {
+    int code =
+        SwaigTest.run(
+            new String[] {
+              "--class", StandaloneServiceFixture.class.getName(), "--list-tools", "--dry-run"
+            });
+    String out = stdout.toString(StandardCharsets.UTF_8);
+    String snap = streamsSnapshot();
+    assertEquals(0, code, "--dry-run alias should exit 0 on valid args. " + snap);
+    assertTrue(out.contains("parse OK"), "should print 'parse OK'. " + snap);
+  }
+
+  @Test
+  void parseOnlyRejectsInvalidArgsWithoutParseOk() {
+    // An invalid invocation (unknown option) must exit non-zero and NOT
+    // print "parse OK".
+    int code = SwaigTest.run(new String[] {"--parse-only", "--bogus-flag"});
+    String out = stdout.toString(StandardCharsets.UTF_8);
+    String snap = streamsSnapshot();
+    assertNotEquals(0, code, "invalid args under parse-only should exit non-zero. " + snap);
+    assertFalse(out.contains("parse OK"), "must NOT print 'parse OK' on the error path. " + snap);
+  }
 }

@@ -86,6 +86,40 @@ public class SwaigTest {
    */
   public static int run(String[] args) {
     var cli = new SwaigTest();
+    // Detect --parse-only / --dry-run FIRST and strip it from argv, so it is
+    // position-independent — honored whether it precedes OR follows other
+    // flags, including trailing an `--exec <tool>` (which otherwise consumes
+    // the following token as a function argument). It only validates the
+    // invocation's arguments: on success it prints "parse OK" and exits 0
+    // WITHOUT loading the agent, touching the filesystem, or making any
+    // network call. This is the canonical cross-port contract mirrored from
+    // the python reference (signalwire/cli/test_swaig.py).
+    boolean parseOnly = false;
+    for (String a : args) {
+      if ("--parse-only".equals(a) || "--dry-run".equals(a)) {
+        parseOnly = true;
+        break;
+      }
+    }
+    if (parseOnly) {
+      String[] filtered =
+          Arrays.stream(args)
+              .filter(a -> !"--parse-only".equals(a) && !"--dry-run".equals(a))
+              .toArray(String[]::new);
+      try {
+        cli.parseArgs(filtered);
+      } catch (HelpRequested e) {
+        return 0;
+      } catch (IllegalArgumentException e) {
+        System.err.println("Error: " + e.getMessage());
+        if (filtered.length == 0 || argsContainHelp(filtered)) printUsage();
+        return 1;
+      }
+      // Args parsed into a valid invocation. Do NOT run() — no agent load,
+      // no network. Emit the one canonical line and exit 0.
+      System.out.println("parse OK");
+      return 0;
+    }
     try {
       cli.parseArgs(args);
       cli.run();
@@ -946,6 +980,9 @@ public class SwaigTest {
                   --exec NAME                     Execute a SWAIG tool by name
                   --param key=value               Pass a parameter to the tool (repeatable)
                   --raw                           Output raw JSON without pretty-printing
+                  --parse-only, --dry-run         Validate the arguments and exit (prints 'parse OK')
+                                                  without loading the agent or making any network call.
+                                                  Position-independent; honored even trailing an --exec.
                   --verbose                       Show verbose debug output
                   --help, -h                      Show this help message
 
