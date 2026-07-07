@@ -140,17 +140,37 @@ Function Call → Template Expansion → HTTP Request → Response Processing �
 | **Development Speed** | Slower (code + deploy) | Faster (configuration only) |
 
 **Traditional Webhook Example:**
-```python
-def search_knowledge(args, post_data):
-    # Custom HTTP request logic
-    response = requests.post("https://api.example.com/search", 
-                           json={"query": args["query"]})
-    # Custom error handling
-    if response.status_code != 200:
-        return {"error": "API request failed"}
-    # Custom response processing
-    data = response.json()
-    return {"response": f"Found: {data['results'][0]['text']}"}
+```java
+agent.defineTool(
+    "search_knowledge",
+    "Search the knowledge base",
+    Map.of(
+        "type", "object",
+        "properties", Map.of("query", Map.of("type", "string")),
+        "required", List.of("query")),
+    (args, rawData) -> {
+      // Custom HTTP request logic
+      HttpResponse<String> response = httpClient.send(
+          HttpRequest.newBuilder()
+              .uri(URI.create("https://api.example.com/search"))
+              .header("Content-Type", "application/json")
+              .POST(HttpRequest.BodyPublishers.ofString(
+                  gson.toJson(Map.of("query", args.get("query")))))
+              .build(),
+          HttpResponse.BodyHandlers.ofString());
+
+      // Custom error handling
+      if (response.statusCode() != 200) {
+        return new FunctionResult("API request failed");
+      }
+
+      // Custom response processing
+      @SuppressWarnings("unchecked")
+      Map<String, Object> data = gson.fromJson(response.body(), Map.class);
+      @SuppressWarnings("unchecked")
+      List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+      return new FunctionResult("Found: " + results.get(0).get("text"));
+    });
 ```
 
 **DataMap Equivalent:**
@@ -2287,45 +2307,48 @@ DataMap functions can be debugged using various tools:
 
 ### 12.0 Helper Functions
 
-For common patterns, convenience functions simplify DataMap creation:
+For common patterns, the fluent `DataMap` builder simplifies DataMap creation. (Java has no `create_simple_api_tool` / `create_expression_tool` module functions; the builder covers both patterns directly.)
 
 #### Simple API Tool
 
-```python
-from signalwire_agents.core.data_map import create_simple_api_tool
+Chain `parameter` → `webhook` (with headers) → `output` → `errorKeys`, then register the resulting SWAIG function:
 
-weather = create_simple_api_tool(
-    name='get_weather',
-    url='https://api.weather.com/v1/current?key=API_KEY&q=${location}',
-    response_template='Weather: ${response.current.condition.text}, ${response.current.temp_f}°F',
-    parameters={
-        'location': {
-            'type': 'string',
-            'description': 'City name',
-            'required': True
-        }
-    },
-    headers={'X-API-Key': 'your-api-key'},
-    error_keys=['error']
-)
+```java
+import com.signalwire.sdk.datamap.DataMap;
+import com.signalwire.sdk.swaig.FunctionResult;
+import java.util.List;
+import java.util.Map;
+
+DataMap weather = new DataMap("get_weather")
+    .purpose("Get current weather")
+    .parameter("location", "string", "City name", true)
+    .webhook(
+        "GET",
+        "https://api.weather.com/v1/current?key=API_KEY&q=${args.location}",
+        Map.of("X-API-Key", "your-api-key"))
+    .output(new FunctionResult(
+        "Weather: ${response.current.condition.text}, ${response.current.temp_f}°F"))
+    .errorKeys(List.of("error"));
+
+agent.registerSwaigFunction(weather.toSwaigFunction());
 ```
 
 #### Expression Tool
 
-```python
-from signalwire_agents.core.data_map import create_expression_tool
+Use `expression(testValue, pattern, output)` for each pattern branch. Each output is a `FunctionResult` (with actions via `addAction`):
 
-control = create_expression_tool(
-    name='media_control',
-    patterns={
-        r'start|play|begin': SwaigFunctionResult().add_action('start', True),
-        r'stop|end|pause': SwaigFunctionResult().add_action('stop', True),
-        r'next|skip': SwaigFunctionResult().add_action('next', True)
-    },
-    parameters={
-        'command': {'type': 'string', 'description': 'Control command'}
-    }
-)
+```java
+DataMap control = new DataMap("media_control")
+    .purpose("Control media playback")
+    .parameter("command", "string", "Control command", true)
+    .expression("${args.command}", "start|play|begin",
+        new FunctionResult().addAction("start", true))
+    .expression("${args.command}", "stop|end|pause",
+        new FunctionResult().addAction("stop", true))
+    .expression("${args.command}", "next|skip",
+        new FunctionResult().addAction("next", true));
+
+agent.registerSwaigFunction(control.toSwaigFunction());
 ```
 
 ### 12.1 Multiple Webhook Fallback Chains

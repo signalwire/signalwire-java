@@ -6,13 +6,16 @@ The MCP-SWAIG Gateway bridges Model Context Protocol (MCP) servers with SignalWi
 
 ## Installation
 
-The MCP Gateway is included in the SignalWire Agents SDK. Install with the gateway dependencies:
+The MCP Gateway skill is included in the SignalWire Agents SDK. Add the SDK to your build:
 
-```bash
-pip install "signalwire-agents[mcp-gateway]"
+```groovy
+// build.gradle
+dependencies {
+    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+}
 ```
 
-Once installed, the `mcp-gateway` CLI command is available:
+The gateway service itself is a standalone process started via the `mcp-gateway` CLI:
 
 ```bash
 mcp-gateway -c config.json
@@ -265,27 +268,30 @@ Each service can have its own sandbox configuration:
 
 ### Skill Configuration
 
-```python
-agent.add_skill("mcp_gateway", {
-    "gateway_url": "https://localhost:8080",
-    "auth_user": "admin",
-    "auth_password": "changeme",
-    "services": [
-        {
-            "name": "todo",
-            "tools": ["add_todo", "list_todos"]  # Specific tools only
-        },
-        {
-            "name": "calculator",
-            "tools": "*"  # All tools
-        }
-    ],
-    "session_timeout": 300,     # Override default timeout
-    "tool_prefix": "mcp_",      # Prefix for SWAIG function names
-    "retry_attempts": 3,        # Gateway connection retries
-    "request_timeout": 30,      # Individual request timeout
-    "verify_ssl": True         # SSL certificate verification
-})
+```java
+import java.util.List;
+import java.util.Map;
+
+agent.addSkill("mcp_gateway", Map.of(
+    "gateway_url", "https://localhost:8080",
+    "auth_user", "admin",
+    "auth_password", "changeme",
+    "services", List.of(
+        Map.of(
+            "name", "todo",
+            "tools", List.of("add_todo", "list_todos")   // Specific tools only
+        ),
+        Map.of(
+            "name", "calculator",
+            "tools", "*"                                  // All tools
+        )
+    ),
+    "session_timeout", 300,     // Override default timeout
+    "tool_prefix", "mcp_",      // Prefix for SWAIG function names
+    "retry_attempts", 3,        // Gateway connection retries
+    "request_timeout", 30,      // Individual request timeout
+    "verify_ssl", true          // SSL certificate verification
+));
 ```
 
 ## API Endpoints
@@ -445,24 +451,28 @@ swaig-test test/test_agent.py --dump-swml
 
 ### 3. End-to-End Testing
 
-```python
-# test/test_agent.py
-from signalwire_agents import AgentBase
+```java
+// TestMcpAgent.java
+import com.signalwire.sdk.agent.AgentBase;
 
-class TestMCPAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="MCP Test Agent")
-        
-        self.add_skill("mcp_gateway", {
-            "gateway_url": "http://localhost:8080",
-            "auth_user": "admin",
-            "auth_password": "changeme",
-            "services": [{"name": "todo"}]
-        })
+import java.util.List;
+import java.util.Map;
 
-if __name__ == "__main__":
-    agent = TestMCPAgent()
-    agent.run()
+public class TestMcpAgent {
+
+    public static void main(String[] args) throws Exception {
+        var agent = AgentBase.builder().name("MCP Test Agent").build();
+
+        agent.addSkill("mcp_gateway", Map.of(
+            "gateway_url", "http://localhost:8080",
+            "auth_user", "admin",
+            "auth_password", "changeme",
+            "services", List.of(Map.of("name", "todo"))
+        ));
+
+        agent.run();
+    }
+}
 ```
 
 ## Deployment
@@ -637,7 +647,7 @@ Enable debug logging:
 
 ## Examples
 
-- `examples/mcp_gateway_demo.py` - Agent connecting to MCP servers through the `mcp_gateway` skill
+- `examples/McpGatewayDemo.java` - Agent connecting to MCP servers through the `mcp_gateway` skill
 
 ## Future Enhancements
 

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -34,9 +35,16 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 PORT_ROOT = HERE.parent
-PSDK = (PORT_ROOT.parent / "porting-sdk").resolve()
-if not PSDK.is_dir():
-    PSDK = Path("/usr/local/home/devuser/src/porting-sdk")
+# Locate porting-sdk without a machine-specific hardcode:
+# $PORTING_SDK -> adjacency (sibling of this repo, the CI + local layout) ->
+# legacy ~/src fallback.
+_psdk_candidates = [
+    Path(os.environ["PORTING_SDK"]) if os.environ.get("PORTING_SDK") else None,
+    PORT_ROOT.parent / "porting-sdk",
+    Path.home() / "src" / "porting-sdk",
+]
+PSDK = next((c.resolve() for c in _psdk_candidates if c and c.is_dir()),
+            (PORT_ROOT.parent / "porting-sdk").resolve())
 
 sys.path.insert(0, str(HERE))
 from enumerate_surface import (  # type: ignore

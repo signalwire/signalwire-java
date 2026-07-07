@@ -68,7 +68,6 @@ _sw_resolve_java_home() {
     for candidate in \
         /opt/homebrew/opt/openjdk@21 \
         /usr/local/opt/openjdk@21 \
-        /home/devuser/jdk-21 \
         /usr/lib/jvm/java-21-openjdk \
         /usr/lib/jvm/java-21-openjdk-amd64 \
         /Library/Java/JavaVirtualMachines/*/Contents/Home; do

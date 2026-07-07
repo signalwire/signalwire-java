@@ -1,6 +1,6 @@
 # Skills Parameter Schema System
 
-This guide explains the parameter schema system for SignalWire AI Agents SDK skills, which enables GUI configuration tools and programmatic skill discovery.
+This guide explains the parameter schema system for the SignalWire AI Agents SDK skills, which enables GUI configuration tools and programmatic skill discovery.
 
 ## Overview
 
@@ -16,54 +16,73 @@ The parameter schema system allows skills to declare their configurable paramete
 
 ### Getting All Skills Schema
 
-Use the `list_skills_with_params()` function to get a complete schema of all available skills:
+Enumerate the `SkillRegistry` and call `getParameterSchema()` on each registered skill to get a complete schema of all available skills:
 
-```python
-from signalwire_agents import list_skills_with_params
+```java
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-# Get complete schema for all skills
-schema = list_skills_with_params()
+// Build a complete schema for all registered skills
+Map<String, Map<String, Object>> allSchemas = new LinkedHashMap<>();
+var registry = new SkillRegistry();
+for (Map<String, Object> meta : registry.listSkills()) {
+    String name = (String) meta.get("name");
+    SkillBase skill = SkillRegistry.get(name);
+    Map<String, Object> entry = new LinkedHashMap<>();
+    entry.put("name", skill.getName());
+    entry.put("description", skill.getDescription());
+    entry.put("version", skill.getVersion());
+    entry.put("supports_multiple_instances", skill.supportsMultipleInstances());
+    entry.put("required_packages", skill.getRequiredPackages());
+    entry.put("required_env_vars", skill.getRequiredEnvVars());
+    entry.put("parameters", skill.getParameterSchema());
+    allSchemas.put(name, entry);
+}
+```
 
-# Example output structure:
+Each entry has this structure (shown here as JSON):
+
+```json
 {
     "web_search": {
         "name": "web_search",
         "description": "Search the web for information using Google Custom Search API",
         "version": "1.0.0",
-        "supports_multiple_instances": True,
+        "supports_multiple_instances": true,
         "required_packages": ["bs4", "requests"],
         "required_env_vars": [],
         "parameters": {
             "api_key": {
                 "type": "string",
                 "description": "Google Custom Search API key",
-                "required": True,
-                "hidden": True,
+                "required": true,
+                "hidden": true,
                 "env_var": "GOOGLE_SEARCH_API_KEY"
             },
             "search_engine_id": {
                 "type": "string",
                 "description": "Google Custom Search Engine ID",
-                "required": True,
-                "hidden": True,
+                "required": true,
+                "hidden": true,
                 "env_var": "GOOGLE_SEARCH_ENGINE_ID"
             },
             "num_results": {
                 "type": "integer",
                 "description": "Default number of search results to return",
                 "default": 1,
-                "required": False,
+                "required": false,
                 "min": 1,
                 "max": 10
-            },
-            ...
+            }
         }
     },
     "datetime": {
         "name": "datetime",
         "description": "Get current date, time, and timezone information",
         "version": "1.0.0",
-        "supports_multiple_instances": False,
+        "supports_multiple_instances": false,
         "required_packages": ["pytz"],
         "required_env_vars": [],
         "parameters": {
@@ -71,11 +90,10 @@ schema = list_skills_with_params()
                 "type": "object",
                 "description": "Additional SWAIG function metadata to merge into tool definitions",
                 "default": {},
-                "required": False
+                "required": false
             }
         }
-    },
-    ...
+    }
 }
 ```
 
@@ -83,89 +101,107 @@ schema = list_skills_with_params()
 
 Here's an example of how to use the schema to generate a configuration form:
 
-```python
-import json
-from signalwire_agents import list_skills_with_params, AgentBase
+```java
+import com.signalwire.sdk.skills.SkillRegistry;
+import java.util.Map;
 
-# Get skills schema
-schema = list_skills_with_params()
+// Get the web_search skill schema
+var webSearchSchema = SkillRegistry.get("web_search").getParameterSchema();
 
-# Example: Generate HTML form for web_search skill
-web_search_schema = schema['web_search']
+// Generate an HTML form field based on a parameter schema
+static String generateFormField(String paramName, Map<String, Object> info) {
+    StringBuilder field = new StringBuilder("<div class=\"form-group\">\n");
+    field.append("  <label for=\"").append(paramName).append("\">")
+         .append(info.get("description")).append("</label>\n");
 
-def generate_form_field(param_name, param_info):
-    """Generate HTML form field based on parameter schema"""
-    field_html = f'<div class="form-group">\n'
-    field_html += f'  <label for="{param_name}">{param_info["description"]}</label>\n'
-    
-    # Mark required fields
-    required = "required" if param_info.get("required", False) else ""
-    
-    # Hide sensitive fields
-    input_type = "password" if param_info.get("hidden", False) else "text"
-    
-    # Handle different types
-    if param_info["type"] == "string":
-        default = param_info.get("default", "")
-        field_html += f'  <input type="{input_type}" id="{param_name}" name="{param_name}" '
-        field_html += f'value="{default}" {required}>\n'
-    
-    elif param_info["type"] == "integer":
-        default = param_info.get("default", 0)
-        min_val = f'min="{param_info["min"]}"' if "min" in param_info else ""
-        max_val = f'max="{param_info["max"]}"' if "max" in param_info else ""
-        field_html += f'  <input type="number" id="{param_name}" name="{param_name}" '
-        field_html += f'value="{default}" {min_val} {max_val} {required}>\n'
-    
-    elif param_info["type"] == "boolean":
-        default = param_info.get("default", False)
-        checked = "checked" if default else ""
-        field_html += f'  <input type="checkbox" id="{param_name}" name="{param_name}" {checked}>\n'
-    
-    # Show environment variable hint
-    if "env_var" in param_info:
-        field_html += f'  <small>Can also be set via {param_info["env_var"]} environment variable</small>\n'
-    
-    field_html += '</div>\n'
-    return field_html
+    // Mark required fields
+    String required = Boolean.TRUE.equals(info.get("required")) ? "required" : "";
 
-# Generate form fields for web_search skill
-print("<form>")
-for param_name, param_info in web_search_schema["parameters"].items():
-    print(generate_form_field(param_name, param_info))
-print("</form>")
+    // Hide sensitive fields
+    String inputType = Boolean.TRUE.equals(info.get("hidden")) ? "password" : "text";
+
+    String type = (String) info.get("type");
+    switch (type) {
+        case "string" -> {
+            Object def = info.getOrDefault("default", "");
+            field.append("  <input type=\"").append(inputType).append("\" id=\"")
+                 .append(paramName).append("\" name=\"").append(paramName).append("\" ")
+                 .append("value=\"").append(def).append("\" ").append(required).append(">\n");
+        }
+        case "integer" -> {
+            Object def = info.getOrDefault("default", 0);
+            String minVal = info.containsKey("min") ? "min=\"" + info.get("min") + "\"" : "";
+            String maxVal = info.containsKey("max") ? "max=\"" + info.get("max") + "\"" : "";
+            field.append("  <input type=\"number\" id=\"").append(paramName)
+                 .append("\" name=\"").append(paramName).append("\" ")
+                 .append("value=\"").append(def).append("\" ")
+                 .append(minVal).append(" ").append(maxVal).append(" ")
+                 .append(required).append(">\n");
+        }
+        case "boolean" -> {
+            boolean def = Boolean.TRUE.equals(info.getOrDefault("default", false));
+            String checked = def ? "checked" : "";
+            field.append("  <input type=\"checkbox\" id=\"").append(paramName)
+                 .append("\" name=\"").append(paramName).append("\" ")
+                 .append(checked).append(">\n");
+        }
+        default -> { }
+    }
+
+    // Show environment variable hint
+    if (info.containsKey("env_var")) {
+        field.append("  <small>Can also be set via ").append(info.get("env_var"))
+             .append(" environment variable</small>\n");
+    }
+
+    field.append("</div>\n");
+    return field.toString();
+}
+
+// Generate form fields for the web_search skill
+System.out.println("<form>");
+@SuppressWarnings("unchecked")
+var params = (Map<String, Map<String, Object>>) (Map<?, ?>) webSearchSchema;
+for (var e : params.entrySet()) {
+    System.out.println(generateFormField(e.getKey(), e.getValue()));
+}
+System.out.println("</form>");
 ```
 
 ### Programmatic Skill Configuration
 
 Use the schema to validate and configure skills programmatically:
 
-```python
-from signalwire_agents import AgentBase, list_skills_with_params
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import java.util.Map;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-        
-        # Get schema to validate configuration
-        schema = list_skills_with_params()
-        
-        # Configure web_search skill with validation
-        web_search_params = {
-            "api_key": "your-api-key",
-            "search_engine_id": "your-engine-id",
-            "num_results": 3,
-            "max_content_length": 3000
-        }
-        
-        # Validate required parameters
-        web_search_schema = schema["web_search"]["parameters"]
-        for param, info in web_search_schema.items():
-            if info.get("required", False) and param not in web_search_params:
-                raise ValueError(f"Missing required parameter: {param}")
-        
-        # Add skill with validated parameters
-        self.add_skill("web_search", web_search_params)
+var agent = AgentBase.builder().name("my-agent").build();
+
+// Get schema to validate configuration
+@SuppressWarnings("unchecked")
+var webSearchSchema =
+    (Map<String, Map<String, Object>>) (Map<?, ?>)
+        SkillRegistry.get("web_search").getParameterSchema();
+
+// Configure web_search skill with validation
+Map<String, Object> webSearchParams = Map.of(
+    "api_key", "your-api-key",
+    "search_engine_id", "your-engine-id",
+    "num_results", 3,
+    "max_content_length", 3000);
+
+// Validate required parameters
+for (var e : webSearchSchema.entrySet()) {
+    if (Boolean.TRUE.equals(e.getValue().get("required"))
+            && !webSearchParams.containsKey(e.getKey())) {
+        throw new IllegalArgumentException("Missing required parameter: " + e.getKey());
+    }
+}
+
+// Add skill with validated parameters
+agent.addSkill("web_search", webSearchParams);
 ```
 
 ## Parameter Schema Reference
@@ -186,81 +222,99 @@ Each parameter in the schema can have the following properties:
 
 ## Implementing Parameter Schema in Skills
 
-To add parameter schema support to a skill, override the `get_parameter_schema()` class method:
+To add parameter schema support to a skill, override `getParameterSchema()`:
 
-```python
-from signalwire_agents.core.skill_base import SkillBase
-from typing import Dict, Any
+```java
+package com.example.skills;
 
-class MyCustomSkill(SkillBase):
-    SKILL_NAME = "my_custom_skill"
-    SKILL_DESCRIPTION = "My custom skill"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = []
-    REQUIRED_ENV_VARS = []
-    
-    @classmethod
-    def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
-        """Get parameter schema for this skill"""
-        # Get base schema from parent (includes common parameters)
-        schema = super().get_parameter_schema()
-        
-        # Add skill-specific parameters
-        schema.update({
-            "api_endpoint": {
-                "type": "string",
-                "description": "API endpoint URL",
-                "required": True,
-                "default": "https://api.example.com"
-            },
-            "api_key": {
-                "type": "string",
-                "description": "API authentication key",
-                "required": True,
-                "hidden": True,  # Mark as sensitive
-                "env_var": "MY_API_KEY"  # Can be set via environment
-            },
-            "timeout": {
-                "type": "integer",
-                "description": "Request timeout in seconds",
-                "default": 30,
-                "required": False,
-                "min": 1,
-                "max": 300
-            },
-            "retry_count": {
-                "type": "integer",
-                "description": "Number of retries on failure",
-                "default": 3,
-                "required": False,
-                "min": 0,
-                "max": 10
-            },
-            "output_format": {
-                "type": "string",
-                "description": "Output format for results",
-                "default": "json",
-                "required": False,
-                "enum": ["json", "xml", "text"]  # Allowed values
-            },
-            "enable_cache": {
-                "type": "boolean",
-                "description": "Enable response caching",
-                "default": True,
-                "required": False
-            }
-        })
-        
-        return schema
-    
-    def setup(self) -> bool:
-        """Setup the skill using parameters"""
-        # Access parameters via self.params
-        self.api_endpoint = self.params.get('api_endpoint')
-        self.api_key = self.params.get('api_key')
-        self.timeout = self.params.get('timeout', 30)
-        # ... etc
-        return True
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.swaig.ToolDefinition;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public class MyCustomSkill implements SkillBase {
+
+    private Map<String, Object> params;
+
+    @Override
+    public String getName() {
+        return "my_custom_skill";
+    }
+
+    @Override
+    public String getDescription() {
+        return "My custom skill";
+    }
+
+    @Override
+    public Map<String, Object> getParameterSchema() {
+        // Start from the base schema (swaig_fields, skip_prompt, and tool_name
+        // for multi-instance skills), then add skill-specific parameters.
+        Map<String, Object> schema = SkillBase.super.getParameterSchema();
+        schema = new LinkedHashMap<>(schema);
+
+        schema.put("api_endpoint", Map.of(
+            "type", "string",
+            "description", "API endpoint URL",
+            "required", true,
+            "default", "https://api.example.com"));
+
+        schema.put("api_key", Map.of(
+            "type", "string",
+            "description", "API authentication key",
+            "required", true,
+            "hidden", true,             // Mark as sensitive
+            "env_var", "MY_API_KEY"));   // Can be set via environment
+
+        schema.put("timeout", Map.of(
+            "type", "integer",
+            "description", "Request timeout in seconds",
+            "default", 30,
+            "required", false,
+            "min", 1,
+            "max", 300));
+
+        schema.put("retry_count", Map.of(
+            "type", "integer",
+            "description", "Number of retries on failure",
+            "default", 3,
+            "required", false,
+            "min", 0,
+            "max", 10));
+
+        schema.put("output_format", Map.of(
+            "type", "string",
+            "description", "Output format for results",
+            "default", "json",
+            "required", false,
+            "enum", List.of("json", "xml", "text")));  // Allowed values
+
+        schema.put("enable_cache", Map.of(
+            "type", "boolean",
+            "description", "Enable response caching",
+            "default", true,
+            "required", false));
+
+        return schema;
+    }
+
+    @Override
+    public boolean setup(Map<String, Object> params) {
+        // Access parameters via the passed map
+        this.params = params;
+        Object apiEndpoint = params.get("api_endpoint");
+        Object apiKey = params.get("api_key");
+        int timeout = (int) params.getOrDefault("timeout", 30);
+        // ... etc
+        return true;
+    }
+
+    @Override
+    public List<ToolDefinition> registerTools() {
+        return List.of();
+    }
+}
 ```
 
 ## Common Parameter Patterns
@@ -269,56 +323,52 @@ class MyCustomSkill(SkillBase):
 
 Always mark sensitive parameters as `hidden` and provide an `env_var` option:
 
-```python
-"api_key": {
-    "type": "string",
-    "description": "API key for authentication",
-    "required": True,
-    "hidden": True,
-    "env_var": "SERVICE_API_KEY"
-}
+```java
+schema.put("api_key", Map.of(
+    "type", "string",
+    "description", "API key for authentication",
+    "required", true,
+    "hidden", true,
+    "env_var", "SERVICE_API_KEY"));
 ```
 
 ### Numeric Parameters with Constraints
 
 Use `min` and `max` to enforce valid ranges:
 
-```python
-"port": {
-    "type": "integer",
-    "description": "Server port number",
-    "default": 8080,
-    "required": False,
-    "min": 1,
-    "max": 65535
-}
+```java
+schema.put("port", Map.of(
+    "type", "integer",
+    "description", "Server port number",
+    "default", 8080,
+    "required", false,
+    "min", 1,
+    "max", 65535));
 ```
 
 ### Enumerated Values
 
 Use `enum` to restrict to specific values:
 
-```python
-"log_level": {
-    "type": "string",
-    "description": "Logging level",
-    "default": "info",
-    "required": False,
-    "enum": ["debug", "info", "warning", "error"]
-}
+```java
+schema.put("log_level", Map.of(
+    "type", "string",
+    "description", "Logging level",
+    "default", "info",
+    "required", false,
+    "enum", List.of("debug", "info", "warning", "error")));
 ```
 
 ### Optional Features
 
 Use boolean parameters for optional features:
 
-```python
-"enable_analytics": {
-    "type": "boolean",
-    "description": "Enable analytics tracking",
-    "default": False,
-    "required": False
-}
+```java
+schema.put("enable_analytics", Map.of(
+    "type", "boolean",
+    "description", "Enable analytics tracking",
+    "default", false,
+    "required", false));
 ```
 
 ## Base Parameters
@@ -326,49 +376,46 @@ Use boolean parameters for optional features:
 All skills automatically inherit these base parameters from `SkillBase`:
 
 - **`swaig_fields`** (object) - Additional SWAIG function metadata to merge into tool definitions
-- **`tool_name`** (string) - Custom name for skill instances (only for skills with `SUPPORTS_MULTIPLE_INSTANCES = True`)
+- **`skip_prompt`** (boolean) - If true, the skill does not inject its default prompt section into the POM
+- **`tool_name`** (string) - Custom name for skill instances (only for skills where `supportsMultipleInstances()` returns `true`)
 
 ## Examples
 
 ### Simple Skill (No Parameters)
 
-Skills like `datetime` and `math` that don't need configuration:
+Skills like `datetime` and `math` that don't need configuration just return the base schema:
 
-```python
-@classmethod
-def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
-    # Just return base schema
-    return super().get_parameter_schema()
+```java
+@Override
+public Map<String, Object> getParameterSchema() {
+    // Just return the base schema
+    return SkillBase.super.getParameterSchema();
+}
 ```
 
 ### Complex Skill (Many Parameters)
 
-Skills like `web_search` with multiple configuration options:
+Skills like `web_search` with multiple configuration options add to the base schema:
 
-```python
-@classmethod
-def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
-    schema = super().get_parameter_schema()
-    
-    schema.update({
-        # API credentials (hidden)
-        "api_key": {...},
-        "api_secret": {...},
-        
-        # Configuration options
-        "timeout": {...},
-        "retry_count": {...},
-        
-        # Feature flags
-        "enable_cache": {...},
-        "debug_mode": {...},
-        
-        # Customization
-        "response_template": {...},
-        "error_messages": {...}
-    })
-    
-    return schema
+```java
+@Override
+public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = new LinkedHashMap<>(SkillBase.super.getParameterSchema());
+
+    // API credentials (hidden)
+    schema.put("api_key", Map.of(/* ... */));
+    schema.put("api_secret", Map.of(/* ... */));
+
+    // Configuration options
+    schema.put("timeout", Map.of(/* ... */));
+    schema.put("retry_count", Map.of(/* ... */));
+
+    // Feature flags
+    schema.put("enable_cache", Map.of(/* ... */));
+    schema.put("debug_mode", Map.of(/* ... */));
+
+    return schema;
+}
 ```
 
 ## Best Practices

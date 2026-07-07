@@ -1,201 +1,229 @@
 # Third-Party Skills Integration Guide
 
-This guide explains how to create and integrate third-party skills with the SignalWire AI Agents SDK. The SDK supports multiple methods for loading external skills, making it easy to extend agent capabilities without modifying the core SDK.
+This guide explains how to create and integrate third-party skills with the SignalWire AI Agents SDK for Java. The SDK supports multiple methods for registering external skills, making it easy to extend agent capabilities without modifying the core SDK.
 
 ## Overview
 
-Third-party skills can be integrated using four different methods:
+Third-party skills can be integrated using these methods:
 
-1. **Direct Registration** - Register skill classes programmatically
-2. **Directory Registration** - Add directories containing skill collections
-3. **Python Entry Points** - Install skills as Python packages
-4. **Environment Variables** - Configure skill paths via environment
+1. **Direct Registration** - Register a skill class or factory with `SkillRegistry`
+2. **Directory Registration** - Point the registry at directories containing skill collections
+3. **Environment Variables** - Configure skill paths via `SIGNALWIRE_SKILL_PATHS`
 
-All third-party skills are discovered and indexed the same way as built-in skills, appearing in `list_skills_with_params()` output with their parameter schemas.
+Java has no Python-entry-point mechanism; where Python auto-discovers packaged skills via `setuptools` entry points, Java registers a `Supplier<SkillBase>` factory (or a `Class<? extends SkillBase>`) with `SkillRegistry`. All registered skills are enumerated the same way as built-in skills through `SkillRegistry.listSkills()` / `getAllSkillsSchema()`.
 
 ## Creating a Third-Party Skill
 
-Third-party skills follow the same structure as built-in skills. Here's a minimal example:
+Third-party skills follow the same structure as built-in skills: implement the `SkillBase` interface. Here's a minimal example:
 
-```python
-# my_weather_skill/skill.py
-from signalwire_agents.core.skill_base import SkillBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
-from typing import Dict, Any, List
+```java
+package com.example.skills;
 
-class WeatherSkill(SkillBase):
-    """Custom weather information skill"""
-    
-    SKILL_NAME = "weather"
-    SKILL_DESCRIPTION = "Get weather information for any location"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = ["requests"]
-    REQUIRED_ENV_VARS = []
-    
-    @classmethod
-    def get_parameter_schema(cls) -> Dict[str, Dict[str, Any]]:
-        """Define configuration parameters"""
-        schema = super().get_parameter_schema()
-        
-        schema.update({
-            "api_key": {
-                "type": "string",
-                "description": "Weather API key",
-                "required": True,
-                "hidden": True,
-                "env_var": "WEATHER_API_KEY"
-            },
-            "units": {
-                "type": "string",
-                "description": "Temperature units",
-                "default": "celsius",
-                "required": False,
-                "enum": ["celsius", "fahrenheit", "kelvin"]
-            },
-            "cache_timeout": {
-                "type": "integer",
-                "description": "Cache timeout in seconds",
-                "default": 300,
-                "required": False,
-                "min": 0,
-                "max": 3600
-            }
-        })
-        
-        return schema
-    
-    def setup(self) -> bool:
-        """Initialize the skill"""
-        if not self.validate_packages():
-            return False
-            
-        self.api_key = self.params.get('api_key')
-        if not self.api_key:
-            self.logger.error("Weather API key is required")
-            return False
-            
-        self.units = self.params.get('units', 'celsius')
-        self.cache_timeout = self.params.get('cache_timeout', 300)
-        
-        return True
-    
-    def register_tools(self) -> None:
-        """Register weather tools with the agent"""
-        self.define_tool(
-            name="get_weather",
-            description="Get current weather for a location",
-            parameters={
-                "location": {
-                    "type": "string",
-                    "description": "City name or coordinates"
-                }
-            },
-            handler=self._get_weather_handler
-        )
-    
-    def _get_weather_handler(self, args, raw_data):
-        """Handle weather requests"""
-        location = args.get('location', '').strip()
-        
-        if not location:
-            return SwaigFunctionResult("Please provide a location")
-        
-        # Implementation would call weather API here
-        # This is just an example
-        return SwaigFunctionResult(
-            f"The weather in {location} is sunny and 22°{self.units[0].upper()}"
-        )
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+import java.util.*;
+
+/** Custom weather information skill. */
+public class WeatherSkill implements SkillBase {
+
+  private String apiKey;
+  private String units = "celsius";
+  private int cacheTimeout = 300;
+
+  @Override
+  public String getName() {
+    return "weather";
+  }
+
+  @Override
+  public String getDescription() {
+    return "Get weather information for any location";
+  }
+
+  @Override
+  public String getVersion() {
+    return "1.0.0";
+  }
+
+  @Override
+  public List<String> getRequiredPackages() {
+    // Informational only. Java resolves dependencies at build time (Gradle/Maven).
+    return List.of("com.google.code.gson:gson");
+  }
+
+  /** Define configuration parameters (for GUI tooling). */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = new LinkedHashMap<>();
+
+    Map<String, Object> apiKeyField = new LinkedHashMap<>();
+    apiKeyField.put("type", "string");
+    apiKeyField.put("description", "Weather API key");
+    apiKeyField.put("required", true);
+    apiKeyField.put("hidden", true);
+    apiKeyField.put("env_var", "WEATHER_API_KEY");
+    schema.put("api_key", apiKeyField);
+
+    Map<String, Object> unitsField = new LinkedHashMap<>();
+    unitsField.put("type", "string");
+    unitsField.put("description", "Temperature units");
+    unitsField.put("default", "celsius");
+    unitsField.put("required", false);
+    unitsField.put("enum", List.of("celsius", "fahrenheit", "kelvin"));
+    schema.put("units", unitsField);
+
+    Map<String, Object> cacheField = new LinkedHashMap<>();
+    cacheField.put("type", "integer");
+    cacheField.put("description", "Cache timeout in seconds");
+    cacheField.put("default", 300);
+    cacheField.put("required", false);
+    cacheField.put("min", 0);
+    cacheField.put("max", 3600);
+    schema.put("cache_timeout", cacheField);
+
+    return schema;
+  }
+
+  /** Initialize the skill. Return false to abort loading. */
+  @Override
+  public boolean setup(Map<String, Object> params) {
+    this.apiKey = (String) params.get("api_key");
+    if (apiKey == null || apiKey.isEmpty()) {
+      return false; // API key is required
+    }
+    if (params.containsKey("units")) {
+      this.units = (String) params.get("units");
+    }
+    if (params.containsKey("cache_timeout")) {
+      this.cacheTimeout = ((Number) params.get("cache_timeout")).intValue();
+    }
+    return true;
+  }
+
+  /** Register weather tools with the agent. */
+  @Override
+  public List<ToolDefinition> registerTools() {
+    ToolDefinition tool =
+        defineTool(
+            "get_weather",
+            "Get current weather for a location",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "location",
+                        Map.of("type", "string", "description", "City name or coordinates"))),
+            (args, rawData) -> {
+              String location = String.valueOf(args.getOrDefault("location", "")).trim();
+              if (location.isEmpty()) {
+                return new FunctionResult("Please provide a location");
+              }
+              // Implementation would call the weather API here. This is just an example.
+              String unit = units.substring(0, 1).toUpperCase();
+              return new FunctionResult(
+                  "The weather in " + location + " is sunny and 22°" + unit);
+            });
+    return List.of(tool);
+  }
+}
 ```
+
+`defineTool(name, description, parameters, handler)` is a helper on `SkillBase` that builds a `ToolDefinition` and merges the skill's `getExtraFields()` (swaig_fields). Skills return their tools from `registerTools()`; the `SkillManager` registers them with the agent.
 
 ## Integration Methods
 
 ### Method 1: Direct Registration
 
-Register individual skill classes programmatically:
+Register a skill factory or class with `SkillRegistry`, then add it to any agent by name:
 
-```python
-from signalwire_agents import AgentBase, register_skill
-from my_weather_skill import WeatherSkill
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import com.example.skills.WeatherSkill;
+import java.util.Map;
 
-# Register the skill globally
-register_skill(WeatherSkill)
+// Register the skill globally (factory form)
+SkillRegistry.register("weather", WeatherSkill::new);
 
-# Now use it in any agent
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-        
-        # Add the registered skill
-        self.add_skill("weather", {
-            "api_key": "your-api-key",
-            "units": "fahrenheit"
-        })
+// ...or register by class (name is read from getName())
+new SkillRegistry().registerSkill(WeatherSkill.class);
+
+// Now use it in any agent
+var agent = AgentBase.builder().name("my-agent").route("/").port(3000).build();
+agent.addSkill("weather", Map.of(
+    "api_key", "your-api-key",
+    "units", "fahrenheit"));
 ```
 
 ### Method 2: Directory Registration
 
-Register directories containing multiple skills:
+Register directories containing multiple skills. A directory must exist and be a directory, or `addSkillDirectory` throws `IllegalArgumentException`:
 
-```python
-from signalwire_agents import add_skill_directory
+```java
+import com.signalwire.sdk.skills.SkillRegistry;
 
-# Add a directory of custom skills
-add_skill_directory('/opt/custom_skills')
+var registry = new SkillRegistry();
 
-# Directory structure should be:
-# /opt/custom_skills/
-#   weather/
-#     skill.py      # Contains WeatherSkill class
-#   stock_market/
-#     skill.py      # Contains StockMarketSkill class
-#   translation/
-#     skill.py      # Contains TranslationSkill class
+// Add a directory of custom skills
+registry.addSkillDirectory("/opt/custom_skills");
 
-# Now use any skill from the directory
-agent.add_skill("weather", {"api_key": "..."})
-agent.add_skill("stock_market", {"api_key": "..."})
+// Directory structure should be:
+// /opt/custom_skills/
+//   weather/
+//     Skill.java      # Contains a WeatherSkill class
+//   stock_market/
+//     Skill.java      # Contains a StockMarketSkill class
+//   translation/
+//     Skill.java      # Contains a TranslationSkill class
+
+// External paths are reported alongside built-ins
+System.out.println(registry.getExternalPaths());
 ```
 
-### Method 3: Python Entry Points
+Java resolves classes on the classpath rather than at runtime from source files, so the directory paths are recorded (and surfaced via `getExternalPaths()` / `listAllSkillSources()`) for tooling; the skill classes themselves must be on the application classpath and registered as in Method 1.
 
-Create installable skill packages using setuptools entry points:
+### Method 3: Programmatic Registration in Place of Python Entry Points
 
-```python
-# setup.py for your skill package
-from setuptools import setup, find_packages
+Python packages advertise skills via `setuptools` entry points. Java has no equivalent auto-discovery, so a distributable skill library registers its skills programmatically — typically from a small bootstrap method that callers invoke once:
 
-setup(
-    name="my-signalwire-skills",
-    version="1.0.0",
-    packages=find_packages(),
-    install_requires=[
-        "signalwire-agents",
-        "requests",
-    ],
-    entry_points={
-        'signalwire_agents.skills': [
-            'weather = my_skills.weather:WeatherSkill',
-            'stock = my_skills.stock:StockMarketSkill',
-            'translate = my_skills.translate:TranslationSkill',
-        ]
-    }
-)
+```java
+package com.example.skills;
+
+import com.signalwire.sdk.skills.SkillRegistry;
+
+/** Call once at startup to register every skill this library provides. */
+public final class SkillsBootstrap {
+  private SkillsBootstrap() {}
+
+  public static void registerAll() {
+    SkillRegistry.register("weather", WeatherSkill::new);
+    SkillRegistry.register("stock", StockMarketSkill::new);
+    SkillRegistry.register("translate", TranslationSkill::new);
+  }
+}
 ```
 
-After installation, skills are automatically available:
+Consumers add the library as a Gradle/Maven dependency:
 
-```bash
-pip install my-signalwire-skills
+```groovy
+// build.gradle
+dependencies {
+    implementation 'com.example:my-signalwire-skills:1.0.0'
+    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+}
 ```
 
-```python
-# Skills are automatically discovered
-agent.add_skill("weather", {"api_key": "..."})
+Then bootstrap and use:
+
+```java
+com.example.skills.SkillsBootstrap.registerAll();
+agent.addSkill("weather", Map.of("api_key", "..."));
 ```
 
 ### Method 4: Environment Variable
 
-Set the `SIGNALWIRE_SKILL_PATHS` environment variable:
+Set the `SIGNALWIRE_SKILL_PATHS` environment variable to seed external skill directories:
 
 ```bash
 # Single directory
@@ -205,108 +233,95 @@ export SIGNALWIRE_SKILL_PATHS=/opt/my_skills
 export SIGNALWIRE_SKILL_PATHS=/opt/my_skills:/home/user/custom_skills
 ```
 
-Skills in these directories are automatically discovered:
+Read the paths and register them with the registry at startup:
 
-```python
-# No registration needed - skills are found automatically
-agent.add_skill("weather", {"api_key": "..."})
+```java
+String paths = System.getenv("SIGNALWIRE_SKILL_PATHS");
+if (paths != null && !paths.isEmpty()) {
+  var registry = new SkillRegistry();
+  for (String path : paths.split(":")) {
+    registry.addSkillDirectory(path);
+  }
+}
+agent.addSkill("weather", Map.of("api_key", "..."));
 ```
 
 ## Directory Structure
 
-Skills loaded from directories must follow this structure:
+Skills organized on disk mirror the built-in layout — one directory per skill, matching `getName()`:
 
 ```
 my_skills_directory/
-├── weather/                 # Skill directory (matches SKILL_NAME)
-│   ├── skill.py            # Required: Contains skill class
-│   ├── __init__.py         # Optional: Makes it a package
-│   └── README.md           # Optional: Documentation
+├── weather/                 # Skill directory (matches getName())
+│   ├── WeatherSkill.java    # Contains the skill class
+│   └── README.md            # Optional: documentation
 ├── translation/
-│   ├── skill.py
-│   └── resources/          # Optional: Additional files
+│   ├── TranslationSkill.java
+│   └── resources/           # Optional: additional files
 │       └── languages.json
 └── stock_market/
-    └── skill.py
+    └── StockMarketSkill.java
 ```
 
 ## Skill Discovery and Schema
 
-Third-party skills are fully integrated with the SDK's discovery system:
+Registered skills are enumerated through the registry:
 
-```python
-from signalwire_agents import list_skills_with_params
+```java
+var registry = new SkillRegistry();
 
-# Get all skills including third-party ones
-all_skills = list_skills_with_params()
+// Metadata for every registered skill (name, description, version, packages, env vars)
+List<Map<String, Object>> allSkills = registry.listSkills();
 
-# Third-party skills include source information
-print(all_skills['weather'])
-# Output:
-{
-    "name": "weather",
-    "description": "Get weather information for any location",
-    "version": "1.0.0",
-    "supports_multiple_instances": False,
-    "required_packages": ["requests"],
-    "required_env_vars": [],
-    "parameters": {
-        "api_key": {
-            "type": "string",
-            "description": "Weather API key",
-            "required": True,
-            "hidden": True,
-            "env_var": "WEATHER_API_KEY"
-        },
-        "units": {
-            "type": "string",
-            "description": "Temperature units",
-            "default": "celsius",
-            "required": False,
-            "enum": ["celsius", "fahrenheit", "kelvin"]
-        }
-    },
-    "source": "external"  # Shows it's a third-party skill
-}
+// Full parameter schema keyed by skill name
+Map<String, Map<String, Object>> schema = registry.getAllSkillsSchema();
+System.out.println(schema.get("weather"));
+// Output shape:
+// {
+//   "name": "weather",
+//   "description": "Get weather information for any location",
+//   "version": "1.0.0",
+//   "parameters": { ... }
+// }
 ```
 
 ## Best Practices
 
 ### 1. Skill Naming
 
-- Use lowercase, underscore-separated names
+- Use lowercase, underscore-separated names (returned from `getName()`)
 - Choose unique names to avoid conflicts with built-in skills
-- Match directory name to `SKILL_NAME` for directory-based loading
+- Match the directory name to `getName()` for directory-based organization
 
 ### 2. Parameter Design
 
-- Always implement `get_parameter_schema()` for GUI compatibility
+- Implement `getParameterSchema()` for GUI compatibility
 - Mark sensitive parameters as `hidden`
 - Provide sensible defaults
-- Use `env_var` for parameters that can come from environment
+- Use `env_var` for parameters that can come from the environment
 
 ### 3. Error Handling
 
-```python
-def setup(self) -> bool:
-    """Proper setup with error handling"""
-    # Validate packages
-    if not self.validate_packages():
-        return False
-    
-    # Validate required parameters
-    if not self.params.get('api_key'):
-        self.logger.error("API key is required")
-        return False
-    
-    # Test connectivity
-    try:
-        self._test_api_connection()
-    except Exception as e:
-        self.logger.error(f"Failed to connect to API: {e}")
-        return False
-    
-    return True
+`setup` returns `false` to abort loading. Validate required params and connectivity there:
+
+```java
+@Override
+public boolean setup(Map<String, Object> params) {
+  // Validate required parameters
+  this.apiKey = (String) params.get("api_key");
+  if (apiKey == null || apiKey.isEmpty()) {
+    return false; // API key is required
+  }
+
+  // Test connectivity
+  try {
+    testApiConnection();
+  } catch (Exception e) {
+    return false;
+  }
+
+  return true;
+}
 ```
 
 ### 4. Documentation
@@ -326,108 +341,125 @@ Provides weather information for any location.
 
 ## Usage
 
-```python
-agent.add_skill("weather", {
-    "api_key": "your-api-key",
-    "units": "fahrenheit"
-})
-```
+    agent.addSkill("weather", Map.of(
+        "api_key", "your-api-key",
+        "units", "fahrenheit"));
 ```
 
 ## Advanced Features
 
 ### Multiple Instances
 
-Support multiple instances of your skill:
+Support multiple instances of your skill by overriding `supportsMultipleInstances()` and `getInstanceKey()`:
 
-```python
-class WeatherSkill(SkillBase):
-    SKILL_NAME = "weather"
-    SUPPORTS_MULTIPLE_INSTANCES = True  # Enable multiple instances
-    
-    def get_instance_key(self) -> str:
-        """Create unique key for this instance"""
-        service = self.params.get('service', 'default')
-        return f"{self.SKILL_NAME}_{service}"
+```java
+public class WeatherSkill implements SkillBase {
+  private Map<String, Object> params;
+
+  @Override
+  public String getName() {
+    return "weather";
+  }
+
+  @Override
+  public boolean supportsMultipleInstances() {
+    return true; // Enable multiple instances
+  }
+
+  @Override
+  public String getInstanceKey() {
+    Object service = params.getOrDefault("service", "default");
+    return getName() + "_" + service;
+  }
+}
 ```
 
 Usage:
 
-```python
-# Add multiple weather services
-agent.add_skill("weather", {
-    "tool_name": "openweather",
-    "service": "openweathermap",
-    "api_key": "key1"
-})
+```java
+// Add multiple weather services
+agent.addSkill("weather", Map.of(
+    "tool_name", "openweather",
+    "service", "openweathermap",
+    "api_key", "key1"));
 
-agent.add_skill("weather", {
-    "tool_name": "weatherapi", 
-    "service": "weatherapi",
-    "api_key": "key2"
-})
+agent.addSkill("weather", Map.of(
+    "tool_name", "weatherapi",
+    "service", "weatherapi",
+    "api_key", "key2"));
 ```
 
 ### Dynamic Tool Names
 
-Customize tool names for better agent prompts:
+Customize tool names for better agent prompts. Read the name in `setup` and use it in `registerTools`:
 
-```python
-def register_tools(self) -> None:
-    tool_name = self.params.get('tool_name', 'get_weather')
-    
-    self.define_tool(
-        name=tool_name,
-        description=f"Get weather using {self.params.get('service', 'default')}",
-        parameters={...},
-        handler=self._weather_handler
-    )
+```java
+@Override
+public List<ToolDefinition> registerTools() {
+  String toolName = (String) params.getOrDefault("tool_name", "get_weather");
+  String service = (String) params.getOrDefault("service", "default");
+
+  return List.of(
+      defineTool(
+          toolName,
+          "Get weather using " + service,
+          Map.of("type", "object", "properties", Map.of()),
+          this::weatherHandler));
+}
 ```
 
 ### Skill Dependencies
 
-Load skills that depend on other skills:
+Load skills that depend on other skills by checking the agent's skill manager in `setup`:
 
-```python
-def setup(self) -> bool:
-    # Check if required skill is available
-    if not self.agent.skill_manager.has_skill("translation"):
-        self.logger.error("This skill requires the translation skill")
-        return False
-    
-    return True
+```java
+@Override
+public boolean setup(Map<String, Object> params) {
+  // Check if the required skill is available
+  if (!agent.getSkillManager().hasSkill("translation")) {
+    return false; // This skill requires the translation skill
+  }
+  return true;
+}
 ```
 
 ## Testing Third-Party Skills
 
-Test your skills before distribution:
+Test your skills before distribution with JUnit 5:
 
-```python
-# test_my_skill.py
-import unittest
-from signalwire_agents import AgentBase
-from my_weather_skill import WeatherSkill
+```java
+import static org.junit.jupiter.api.Assertions.*;
 
-class TestWeatherSkill(unittest.TestCase):
-    def setUp(self):
-        self.agent = AgentBase(name="test-agent")
-        
-    def test_skill_registration(self):
-        # Test direct registration
-        from signalwire_agents import register_skill
-        register_skill(WeatherSkill)
-        
-        # Test adding skill
-        success, error = self.agent.add_skill("weather", {
-            "api_key": "test-key"
-        })
-        self.assertTrue(success)
-        
-    def test_parameter_schema(self):
-        schema = WeatherSkill.get_parameter_schema()
-        self.assertIn("api_key", schema)
-        self.assertTrue(schema["api_key"]["required"])
-        self.assertTrue(schema["api_key"]["hidden"])
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import com.example.skills.WeatherSkill;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+
+class WeatherSkillTest {
+
+  @Test
+  void skillRegistration() {
+    // Register and add the skill
+    SkillRegistry.register("weather", WeatherSkill::new);
+
+    var agent = AgentBase.builder().name("test-agent").build();
+    agent.addSkill("weather", Map.of("api_key", "test-key"));
+
+    assertTrue(agent.listSkills().contains("weather"));
+  }
+
+  @Test
+  void parameterSchema() {
+    Map<String, Object> schema = new WeatherSkill().getParameterSchema();
+    assertTrue(schema.containsKey("api_key"));
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> apiKey = (Map<String, Object>) schema.get("api_key");
+    assertEquals(Boolean.TRUE, apiKey.get("required"));
+    assertEquals(Boolean.TRUE, apiKey.get("hidden"));
+  }
+}
 ```
 
 ## Troubleshooting
@@ -436,98 +468,83 @@ class TestWeatherSkill(unittest.TestCase):
 
 If your skill isn't being discovered:
 
-1. Check the skill directory structure
-2. Verify `SKILL_NAME` matches the directory name
-3. Ensure `skill.py` exists and contains a valid skill class
-4. Check logs for loading errors
+1. Verify the skill class is on the application classpath
+2. Verify it was registered (`SkillRegistry.has("weather")` returns true)
+3. Confirm `getName()` returns the exact name you pass to `addSkill`
+4. Check logs for setup failures (a `setup` returning `false` aborts loading)
 
-### Import Errors
+### Registration Errors
 
-For skills with relative imports:
+`registerSkill(Class)` requires a public no-arg constructor and a non-empty `getName()`; otherwise it throws `IllegalArgumentException`:
 
-```python
-# Use absolute imports in skill.py
-from my_skills.weather.utils import parse_temperature
-
-# Or handle import errors gracefully
-try:
-    from .utils import parse_temperature
-except ImportError:
-    from utils import parse_temperature
+```java
+try {
+  new SkillRegistry().registerSkill(WeatherSkill.class);
+} catch (IllegalArgumentException e) {
+  System.err.println("Cannot register skill: " + e.getMessage());
+}
 ```
 
 ### Environment Variables
 
 Debug environment variable loading:
 
-```python
-import os
-print(f"Skill paths: {os.environ.get('SIGNALWIRE_SKILL_PATHS', 'Not set')}")
+```java
+System.out.println("Skill paths: "
+    + System.getenv().getOrDefault("SIGNALWIRE_SKILL_PATHS", "Not set"));
 
-from signalwire_agents.skills.registry import skill_registry
-sources = skill_registry.list_all_skill_sources()
-print(f"External skills: {sources['external_paths']}")
+var registry = new SkillRegistry();
+Map<String, List<String>> sources = registry.listAllSkillSources();
+System.out.println("External skills: " + sources.get("external_paths"));
 ```
 
-## Example: Complete Third-Party Skill Package
+## Example: Complete Third-Party Skill Library
 
-Here's a complete example of a distributable skill package:
+Here's a complete example of a distributable skill library (a standard Gradle module):
 
 ```
 my-signalwire-skills/
-├── setup.py
+├── build.gradle
 ├── README.md
-├── requirements.txt
-├── my_signalwire_skills/
-│   ├── __init__.py
-│   ├── weather/
-│   │   ├── __init__.py
-│   │   ├── skill.py
-│   │   └── utils.py
-│   └── translation/
-│       ├── __init__.py
-│       └── skill.py
-└── tests/
-    ├── __init__.py
-    ├── test_weather.py
-    └── test_translation.py
+└── src/main/java/com/example/skills/
+    ├── SkillsBootstrap.java
+    ├── weather/
+    │   ├── WeatherSkill.java
+    │   └── WeatherUtils.java
+    └── translation/
+        └── TranslationSkill.java
 ```
 
-```python
-# setup.py
-from setuptools import setup, find_packages
+```groovy
+// build.gradle
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
 
-setup(
-    name="my-signalwire-skills",
-    version="1.0.0",
-    author="Your Name",
-    description="Custom skills for SignalWire AI Agents",
-    packages=find_packages(),
-    install_requires=[
-        "signalwire-agents>=1.0.12",
-        "requests>=2.25.0",
-    ],
-    entry_points={
-        'signalwire_agents.skills': [
-            'weather = my_signalwire_skills.weather.skill:WeatherSkill',
-            'translate = my_signalwire_skills.translation.skill:TranslationSkill',
-        ]
-    },
-    python_requires='>=3.7',
-)
+group = 'com.example'
+version = '1.0.0'
+
+dependencies {
+    api 'com.signalwire:signalwire-sdk:2.0.2'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
 ```
 
-Install and use:
+Add the library as a dependency and use it:
 
-```bash
-pip install git+https://github.com/yourname/my-signalwire-skills.git
-```
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import java.util.Map;
 
-```python
-from signalwire_agents import AgentBase
+// One-time: register every skill the library provides
+com.example.skills.SkillsBootstrap.registerAll();
 
-agent = AgentBase(name="my-agent")
-agent.add_skill("weather", {"api_key": "..."})
-agent.add_skill("translate", {"api_key": "..."})
-agent.run()
+var agent = AgentBase.builder().name("my-agent").route("/").port(3000).build();
+agent.addSkill("weather", Map.of("api_key", "..."));
+agent.addSkill("translate", Map.of("api_key", "..."));
+agent.run();
 ```

@@ -1125,16 +1125,18 @@ The CLI tool supports testing three types of webhook functions:
 
 External webhook functions are automatically detected when a function has a `webhook_url` parameter and are tested by making HTTP requests to the external service:
 
-```python
-@AgentBase.tool(
-    name="get_weather",
-    description="Get weather from external service",
-    parameters={"location": {"type": "string"}},
-    webhook_url="https://weather-api.example.com/current"
-)
-def get_weather_external(self, args, raw_data):
-    # This function body is never called for external webhooks
-    pass
+```java
+// An external webhook tool: the handler is never invoked locally — the SWML
+// carries the external `web_hook_url`, so SignalWire calls that service instead.
+var getWeather = new ToolDefinition(
+        "get_weather",
+        "Get weather from external service",
+        Map.of("type", "object", "properties", Map.of(
+                "location", Map.of("type", "string"))),
+        (args, raw) -> new FunctionResult("unused for external webhooks"))
+        .setExtraFields(Map.of("web_hook_url", "https://weather-api.example.com/current"));
+
+agent.defineTool(getWeather);
 ```
 
 **Testing External Webhooks:**

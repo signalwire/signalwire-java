@@ -15,91 +15,89 @@
 
 ## Introduction
 
-The `SWMLService` class provides a foundation for creating and serving SignalWire Markup Language (SWML) documents. It serves as the base class for all SignalWire services, including AI Agents, and handles common tasks such as:
+The `Service` class (`com.signalwire.sdk.swml.Service`) provides a foundation for creating and serving SignalWire Markup Language (SWML) documents. It serves as the base class for all SignalWire services, including AI Agents (`AgentBase` extends `Service`), and handles common tasks such as:
 
 - SWML document creation and manipulation
-- Schema validation
-- Web service functionality
+- Schema-driven verb validation
+- Web service functionality (JDK `HttpServer`, virtual threads)
 - Authentication
 - Centralized logging
 
-The class is designed to be extended for specific use cases, while providing a full set of capabilities out of the box.
+The class is designed to be used directly or extended for specific use cases, while providing a full set of capabilities out of the box.
 
 ## Installation
 
-The `SWMLService` class is part of the SignalWire AI Agent SDK. Install it using pip:
+The `Service` class is part of the SignalWire AI Agents SDK for Java. Add the dependency to your build:
 
-```bash
-pip install signalwire-agents
+```groovy
+// build.gradle
+dependencies {
+    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+}
+```
+
+```xml
+<!-- Maven pom.xml -->
+<dependency>
+  <groupId>com.signalwire</groupId>
+  <artifactId>signalwire-sdk</artifactId>
+  <version>2.0.2</version>
+</dependency>
 ```
 
 ## Basic Usage
 
-Here's a simple example of creating an SWML service:
+Here's a simple example of creating an SWML service. Construct a `Service` directly, add verbs with the shortcut methods, and call `serve()`:
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
+```java
+import com.signalwire.sdk.swml.Service;
+import java.util.Map;
 
-class SimpleVoiceService(SWMLService):
-    def __init__(self, host="0.0.0.0", port=3000):
-        super().__init__(
-            name="voice-service",
-            route="/voice",
-            host=host,
-            port=port
-        )
-        
-        # Build the SWML document
-        self.build_document()
-    
-    def build_document(self):
-        # Reset the document to start fresh
-        self.reset_document()
-        
-        # Add answer verb
-        self.add_verb("answer", {})
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": "say:Hello, thank you for calling our service."
-        })
-        
-        # Add hangup verb
-        self.add_verb("hangup", {})
+var service = new Service("voice-service", "/voice");
 
-# Create and start the service
-service = SimpleVoiceService()
-service.run()
+// Build the SWML document
+service.answer(null);
+service.play(Map.of("url", "say:Hello, thank you for calling our service."));
+service.hangup();
+
+// Start the service (blocks, serving GET/POST /voice)
+service.serve();
 ```
+
+You can also subclass `Service` and generate the document per request by overriding `onSwmlRequest` (see [Dynamic SWML Generation](#dynamic-swml-generation)).
 
 ## Centralized Logging System
 
-The `SWMLService` class includes a centralized logging system based on `structlog` that provides structured, JSON-formatted logs. This logging system is automatically set up when you import the module, so you don't need to configure it in each service or example.
+The SDK includes a centralized logging system (`com.signalwire.sdk.logging.Logger`) that provides level-controlled, environment-driven logging. It is configured automatically; you don't need to set it up in each service.
 
 ### How It Works
 
-1. When `swml_service.py` is imported, it configures `structlog` (if not already configured)
-2. Each `SWMLService` instance gets a logger bound to its service name
-3. All logs include contextual information like service name, timestamp, and log level
-4. Logs are formatted as JSON for easy parsing and analysis
+1. `Logger` reads its level once from the environment when first used
+2. Each class obtains a logger via `Logger.getLogger(MyClass.class)`
+3. Log calls below the configured level are dropped
+4. Output honors `SIGNALWIRE_LOG_LEVEL` and `SIGNALWIRE_LOG_MODE`
 
 ### Using the Logger
 
-Every `SWMLService` instance has a `log` attribute that can be used for logging:
+Obtain a logger and use its level methods:
 
-```python
-# Basic logging
-self.log.info("service_started")
+```java
+import com.signalwire.sdk.logging.Logger;
 
-# Logging with context
-self.log.debug("document_created", size=len(document))
+private static final Logger log = Logger.getLogger(MyService.class);
 
-# Error logging
-try:
-    # Some operation
-    pass
-except Exception as e:
-    self.log.error("operation_failed", error=str(e))
+// Basic logging
+log.info("service_started");
+
+// Logging with context (printf-style formatting)
+log.debug("document_created size=%d", document.length());
+
+// Error logging
+try {
+  // Some operation
+} catch (Exception e) {
+  log.error("operation_failed error=%s", e.getMessage());
+}
 ```
 
 ### Log Levels
@@ -107,31 +105,26 @@ except Exception as e:
 The following log levels are available (in increasing order of severity):
 - `debug`: Detailed information for debugging
 - `info`: General information about operation
-- `warning`: Warning about potential issues
+- `warn`: Warning about potential issues
 - `error`: Error information when operations fail
-- `critical`: Critical error that might cause the application to terminate
+
+Levels map to the `Logger.Level` enum (`DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`).
 
 ### Suppressing Logs
 
-To suppress logs when running a service, you can set the log level:
+Control the level with environment variables:
 
-```python
-import logging
-logging.getLogger().setLevel(logging.WARNING)  # Only show warnings and above
-```
+```bash
+# Only show warnings and above
+export SIGNALWIRE_LOG_LEVEL=warn
 
-You can also pass `suppress_logs=True` when initializing an agent or service:
-
-```python
-service = SWMLService(
-    name="my-service",
-    suppress_logs=True
-)
+# Suppress all output
+export SIGNALWIRE_LOG_MODE=off
 ```
 
 ## SWML Document Creation
 
-The `SWMLService` class provides methods for creating and manipulating SWML documents.
+The `Service` class provides methods for creating and manipulating SWML documents.
 
 ### Document Structure
 
@@ -154,63 +147,70 @@ SWML documents have the following basic structure:
 
 ### Document Methods
 
-- `reset_document()`: Reset the document to an empty state
-- `add_verb(verb_name, config)`: Add a verb to the main section
-- `add_section(section_name)`: Add a new section
-- `add_verb_to_section(section_name, verb_name, config)`: Add a verb to a specific section
-- `get_document()`: Get the current document as a dictionary
-- `render_document()`: Get the current document as a JSON string
+- `resetDocument()`: Reset the document to an empty state
+- `addVerb(verbName, config)`: Add a verb to the main section
+- `addSection(sectionName)`: Add a new section
+- `addVerbToSection(sectionName, verbName, config)`: Add a verb to a specific section
+- `getDocument()`: Get the current document (`Document`)
+- `renderDocument()`: Get the current document as a JSON string
 
 ### Common Verb Shortcuts
 
-- `add_verb(verb_name, config)`: Add any SWML verb with configuration
+In addition to the generic `addVerb(verbName, config)`, `Service` exposes schema-driven shortcut methods for common verbs — e.g. `answer(...)`, `play(...)`, `record(...)`, `recordCall(...)`, `connect(...)`, `prompt(...)`, `sleep(...)`, `hangup(...)`.
 
 ## Verb Handling
 
-The `SWMLService` class provides validation for SWML verbs using the SignalWire schema.
+The `Service` class validates SWML verbs against the SignalWire schema.
 
 ### Verb Validation
 
 When adding a verb, the service validates it against the schema to ensure it has the correct structure and parameters.
 
-```python
-# This will validate the configuration against the schema
-self.add_verb("play", {
-    "url": "say:Hello, world!",
-    "volume": 5
-})
+```java
+// This validates the configuration against the schema
+service.addVerb("play", Map.of(
+    "url", "say:Hello, world!",
+    "volume", 5));
 
-# This would fail validation (invalid parameter)
-self.add_verb("play", {
-    "invalid_param": "value"
-})
+// This would fail validation (invalid parameter)
+service.addVerb("play", Map.of(
+    "invalid_param", "value"));
 ```
 
 ### Custom Verb Handlers
 
-You can register custom verb handlers for specialized verb processing:
+You can register custom verb handlers for specialized verb processing by extending `SWMLVerbHandler`:
 
-```python
-from signalwire_agents.core.swml_handler import SWMLVerbHandler
+```java
+import com.signalwire.sdk.swml.SWMLVerbHandler;
+import java.util.List;
+import java.util.Map;
 
-class CustomPlayHandler(SWMLVerbHandler):
-    def __init__(self):
-        super().__init__("play")
-    
-    def validate_config(self, config):
-        # Custom validation logic
-        return True, []
-    
-    def build_config(self, **kwargs):
-        # Custom configuration building
-        return kwargs
+class CustomPlayHandler extends SWMLVerbHandler {
+  @Override
+  public String getVerbName() {
+    return "play";
+  }
 
-service.register_verb_handler(CustomPlayHandler())
+  @Override
+  public ValidationResult validateConfig(Map<String, Object> config) {
+    // Custom validation logic
+    return new ValidationResult(true, List.of());
+  }
+
+  @Override
+  public Map<String, Object> buildConfig(Map<String, Object> kwargs) {
+    // Custom configuration building
+    return kwargs;
+  }
+}
+
+service.registerVerbHandler(new CustomPlayHandler());
 ```
 
 ## Web Service Features
 
-The `SWMLService` class includes built-in web service capabilities for serving SWML documents.
+The `Service` class includes built-in web service capabilities for serving SWML documents (JDK `com.sun.net.httpserver.HttpServer`, no external web framework).
 
 ### Endpoints
 
@@ -225,78 +225,80 @@ Where `route` is the route path specified when creating the service.
 
 ### Authentication
 
-Basic authentication is automatically set up for all endpoints. Credentials are generated if not provided, or can be specified:
+Basic authentication is automatically set up for all endpoints. Credentials are generated if not provided (via `SecureRandom`), or can be specified through the full constructor:
 
-```python
-service = SWMLService(
-    name="my-service",
-    basic_auth=("username", "password")
-)
+```java
+var service = new Service(
+    "my-service", "/", "0.0.0.0", 3000, "username", "password");
 ```
 
 You can also set credentials using environment variables:
 - `SWML_BASIC_AUTH_USER`
 - `SWML_BASIC_AUTH_PASSWORD`
 
+Credential comparison uses `MessageDigest.isEqual()` for a timing-safe check.
+
 ### Dynamic SWML Generation
 
-You can override the `on_swml_request` method to customize SWML documents based on request data:
+You can override the `onSwmlRequest` method to customize SWML documents based on request data. Return a map of overrides, or `null` to serve the document as built:
 
-```python
-def on_swml_request(self, request_data=None):
-    if not request_data:
-        return None
-        
-    # Customize document based on request_data
-    self.reset_document()
-    self.add_answer_verb()
-    
-    # Add custom verbs based on request_data
-    if request_data.get("caller_type") == "vip":
-        self.add_verb("play", {
-            "url": "say:Welcome VIP caller!"
-        })
-    else:
-        self.add_verb("play", {
-            "url": "say:Welcome caller!"
-        })
-    
-    # Return modifications to the document
-    # or None to use the document we've built without modifications
-    return None
+```java
+import com.signalwire.sdk.swml.Service;
+import java.util.Map;
+
+class VipGreetingService extends Service {
+  VipGreetingService() {
+    super("greeting", "/greeting");
+    answer(null);
+    play(Map.of("url", "say:Welcome caller!"));
+    hangup();
+  }
+
+  @Override
+  public Map<String, Object> onSwmlRequest(
+      Map<String, Object> requestData, String callbackPath) {
+    if (requestData == null) {
+      return null;
+    }
+
+    // Customize the document based on requestData
+    resetDocument();
+    answer(null);
+
+    if ("vip".equals(requestData.get("caller_type"))) {
+      addVerb("play", Map.of("url", "say:Welcome VIP caller!"));
+    } else {
+      addVerb("play", Map.of("url", "say:Welcome caller!"));
+    }
+
+    // Return modifications to the document,
+    // or null to use the document we've built without modifications
+    return null;
+  }
+}
 ```
 
 ## Custom Routing Callbacks
 
-The `SWMLService` class allows you to register custom routing callbacks that can examine incoming requests and determine where they should be routed.
+The `Service` class allows you to register custom routing callbacks that examine incoming requests and determine where they should be routed.
 
 ### Registering a Routing Callback
 
-You can use the `register_routing_callback` method to register a function that will be called to process requests to a specific path:
+Use `registerRoutingCallback` to register a function called for requests to a specific path. The callback is a `BiFunction<Map<String,Object> body, Map<String,String> headers, String>` — return a URL string to redirect, or `null` to process normally:
 
-```python
-def my_routing_callback(request, body):
-    """
-    Process incoming requests and determine routing
-    
-    Args:
-        request: FastAPI Request object
-        body: Parsed JSON body as a dictionary
-        
-    Returns:
-        Optional[str]: If a string is returned, the request will be redirected to that URL.
-                      If None is returned, the request will be processed normally.
-    """
-    # Example: Route based on a field in the request body
-    if "customer_id" in body:
-        customer_id = body["customer_id"]
-        return f"/customer/{customer_id}"
-    
-    # Process request normally
-    return None
+```java
+import java.util.Map;
 
-# Register the callback for a specific path
-service.register_routing_callback(my_routing_callback, path="/customer")
+// Route based on a field in the request body
+service.registerRoutingCallback(
+    (body, headers) -> {
+      if (body.containsKey("customer_id")) {
+        return "/customer/" + body.get("customer_id");
+      }
+      // Process request normally
+      return null;
+    },
+    "/customer"); // path this callback handles
 ```
 
 ### How Routing Works
@@ -304,297 +306,260 @@ service.register_routing_callback(my_routing_callback, path="/customer")
 1. When a request is received at the registered path, the routing callback is executed
 2. The callback inspects the request and can decide whether to redirect it
 3. If the callback returns a URL string, the request is redirected with HTTP 307 (temporary redirect)
-4. If the callback returns `None`, the request is processed normally by the `on_request` method
+4. If the callback returns `null`, the request is processed normally by `onRequest`
 
 ### Serving Different Content for Different Paths
 
-You can use the `callback_path` parameter passed to `on_request` to serve different content for different paths:
+You can use the `callbackPath` parameter passed to `onRequest` / `onSwmlRequest` to serve different content for different paths:
 
-```python
-def on_request(self, request_data=None, callback_path=None):
-    """
-    Called when SWML is requested
-    
-    Args:
-        request_data: Optional dictionary containing the parsed POST body
-        callback_path: Optional callback path from the request
-        
-    Returns:
-        Optional dict to modify/augment the SWML document
-    """
-    # Serve different content based on the callback path
-    if callback_path == "/customer":
-        return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to customer service!"}}
-                ]
-            }
-        }
-    elif callback_path == "/product":
-        return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to product support!"}}
-                ]
-            }
-        }
-    
-    # Default content
-    return None
+```java
+@Override
+public Map<String, Object> onRequest(
+    Map<String, Object> requestData, String callbackPath) {
+  // Serve different content based on the callback path
+  if ("/customer".equals(callbackPath)) {
+    return Map.of("sections", Map.of("main", List.of(
+        Map.of("answer", Map.of()),
+        Map.of("play", Map.of("url", "say:Welcome to customer service!")))));
+  } else if ("/product".equals(callbackPath)) {
+    return Map.of("sections", Map.of("main", List.of(
+        Map.of("answer", Map.of()),
+        Map.of("play", Map.of("url", "say:Welcome to product support!")))));
+  }
+
+  // Default content
+  return null;
+}
 ```
 
 ### Example: Multi-Section Service
 
-Here's an example of a service that uses routing callbacks to handle different types of requests:
+Here's a service that uses routing callbacks to handle different types of requests:
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
-from fastapi import Request
-from typing import Dict, Any, Optional
+```java
+import com.signalwire.sdk.swml.Service;
+import java.util.List;
+import java.util.Map;
 
-class MultiSectionService(SWMLService):
-    def __init__(self):
-        super().__init__(
-            name="multi-section",
-            route="/main"
-        )
-        
-        # Create the main document
-        self.reset_document()
-        self.add_verb("answer", {})
-        self.add_verb("play", {"url": "say:Hello from the main service!"})
-        self.add_verb("hangup", {})
-        
-        # Register customer and product routes
-        self.register_customer_route()
-        self.register_product_route()
-    
-    def register_customer_route(self):
-        def customer_callback(request: Request, body: Dict[str, Any]) -> Optional[str]:
-            # Check if we need to route to a specific customer ID
-            if "customer_id" in body:
-                customer_id = body["customer_id"]
-                # In a real implementation, you might redirect to another service
-                # Here we just log it and process normally
-                print(f"Processing request for customer ID: {customer_id}")
-            return None
-            
-        # Register the callback at the /customer path
-        self.register_routing_callback(customer_callback, path="/customer")
-        
-        # Create the customer SWML section
-        self.add_section("customer_section")
-        self.add_verb_to_section("customer_section", "answer", {})
-        self.add_verb_to_section("customer_section", "play", 
-                                {"url": "say:Welcome to customer service!"})
-        self.add_verb_to_section("customer_section", "hangup", {})
-    
-    def register_product_route(self):
-        def product_callback(request: Request, body: Dict[str, Any]) -> Optional[str]:
-            # Check if we need to route to a specific product ID
-            if "product_id" in body:
-                product_id = body["product_id"]
-                print(f"Processing request for product ID: {product_id}")
-            return None
-            
-        # Register the callback at the /product path
-        self.register_routing_callback(product_callback, path="/product")
-        
-        # Create the product SWML section
-        self.add_section("product_section")
-        self.add_verb_to_section("product_section", "answer", {})
-        self.add_verb_to_section("product_section", "play", 
-                               {"url": "say:Welcome to product support!"})
-        self.add_verb_to_section("product_section", "hangup", {})
-    
-    def on_request(self, request_data=None, callback_path=None):
-        # Serve different content based on the callback path
-        if callback_path == "/customer":
-            return {
-                "sections": {
-                    "main": self.get_document()["sections"]["customer_section"]
-                }
-            }
-        elif callback_path == "/product":
-            return {
-                "sections": {
-                    "main": self.get_document()["sections"]["product_section"]
-                }
-            }
-        return None
+class MultiSectionService extends Service {
+
+  MultiSectionService() {
+    super("multi-section", "/main");
+
+    // Create the main document
+    resetDocument();
+    addVerb("answer", Map.of());
+    addVerb("play", Map.of("url", "say:Hello from the main service!"));
+    addVerb("hangup", Map.of());
+
+    // Register customer and product routes
+    registerCustomerRoute();
+    registerProductRoute();
+  }
+
+  private void registerCustomerRoute() {
+    registerRoutingCallback(
+        (body, headers) -> {
+          if (body.containsKey("customer_id")) {
+            // In a real implementation you might redirect to another service.
+            // Here we just log it and process normally.
+            System.out.println("Processing request for customer ID: " + body.get("customer_id"));
+          }
+          return null;
+        },
+        "/customer");
+
+    // Create the customer SWML section
+    addSection("customer_section");
+    addVerbToSection("customer_section", "answer", Map.of());
+    addVerbToSection("customer_section", "play",
+        Map.of("url", "say:Welcome to customer service!"));
+    addVerbToSection("customer_section", "hangup", Map.of());
+  }
+
+  private void registerProductRoute() {
+    registerRoutingCallback(
+        (body, headers) -> {
+          if (body.containsKey("product_id")) {
+            System.out.println("Processing request for product ID: " + body.get("product_id"));
+          }
+          return null;
+        },
+        "/product");
+
+    // Create the product SWML section
+    addSection("product_section");
+    addVerbToSection("product_section", "answer", Map.of());
+    addVerbToSection("product_section", "play",
+        Map.of("url", "say:Welcome to product support!"));
+    addVerbToSection("product_section", "hangup", Map.of());
+  }
+
+  @Override
+  public Map<String, Object> onRequest(
+      Map<String, Object> requestData, String callbackPath) {
+    // Serve different content based on the callback path
+    if ("/customer".equals(callbackPath)) {
+      return Map.of("sections", Map.of(
+          "main", getDocument().getSectionVerbs("customer_section")));
+    } else if ("/product".equals(callbackPath)) {
+      return Map.of("sections", Map.of(
+          "main", getDocument().getSectionVerbs("product_section")));
+    }
+    return null;
+  }
+}
 ```
 
 In this example:
 1. The service registers two custom route paths: `/customer` and `/product`
-2. Each path has its own callback function to handle routing decisions
-3. The `on_request` method uses the `callback_path` to determine which content to serve
+2. Each path has its own callback to handle routing decisions
+3. `onRequest` uses the `callbackPath` to determine which content to serve
 4. Different SWML sections are served for different paths
 
 ## Advanced Usage
 
-### Creating a FastAPI Router
+### Hosting Multiple Services
 
-You can get a FastAPI router for the service to include in a larger application:
+Java uses the built-in JDK HTTP server rather than a FastAPI router. To host several services in one process, register them by route with `AgentServer` (which accepts any `Service`, including plain SWML services and `AgentBase` agents):
 
-```python
-from fastapi import FastAPI
+```java
+import com.signalwire.sdk.server.AgentServer;
 
-app = FastAPI()
-service = SWMLService(name="my-service")
-router = service.as_router()
-app.include_router(router, prefix="/voice")
+AgentServer server = new AgentServer("0.0.0.0", 3000);
+server.register(voiceService, "/voice");
+server.register(routerService, "/router");
+server.run();
 ```
 
-### Schema Path Customization
+### Custom Verb Schema
 
-You can specify a custom path to the schema file:
-
-```python
-service = SWMLService(
-    name="my-service",
-    schema_path="/path/to/schema.json"
-)
-```
+Verb validation is driven by the bundled SWML schema and the registered `SWMLVerbHandler`s. To customize validation for a verb, register a custom handler (see [Custom Verb Handlers](#custom-verb-handlers)) rather than swapping a schema file.
 
 ## API Reference
 
 ### Constructor Parameters
 
-- `name`: Service name/identifier (required)
-- `route`: HTTP route path (default: "/")
-- `host`: Host to bind to (default: "0.0.0.0")
-- `port`: Port to bind to (default: 3000)
-- `basic_auth`: Optional tuple of (username, password)
-- `schema_path`: Optional path to schema.json
-- `suppress_logs`: Whether to suppress structured logs (default: False)
+- `new Service(name)` — service name, default route `/`, host `0.0.0.0`, port from `PORT` env or 3000
+- `new Service(name, route)` — as above with an explicit route
+- `new Service(name, route, host, port, authUser, authPassword)` — full form; pass `null` for `authUser`/`authPassword` to auto-resolve from env or generate
 
 ### Document Methods
 
-- `reset_document()`
-- `add_verb(verb_name, config)`
-- `add_section(section_name)`
-- `add_verb_to_section(section_name, verb_name, config)`
-- `get_document()`
-- `render_document()`
+- `resetDocument()`
+- `addVerb(verbName, config)`
+- `addSection(sectionName)`
+- `addVerbToSection(sectionName, verbName, config)`
+- `getDocument()`
+- `renderDocument()`
 
 ### Service Methods
 
-- `as_router()`: Get a FastAPI router for the service
-- `run()`: Start the service
+- `serve()`: Start the service (binds the HTTP server; throws `IOException`)
 - `stop()`: Stop the service
-- `get_basic_auth_credentials(include_source=False)`: Get the basic auth credentials
-- `on_swml_request(request_data=None)`: Called when SWML is requested
-- `register_routing_callback(callback_fn, path="/sip")`: Register a callback for request routing
+- `getBasicAuthCredentials()`: Get the basic auth credentials as a `String[2]`
+- `validateBasicAuth(user, password)`: Timing-safe credential check
+- `onSwmlRequest(requestData, callbackPath)`: Called when SWML is requested
+- `registerRoutingCallback(callback)` / `registerRoutingCallback(callback, path)`: Register a routing callback (default path `/sip`)
+- `registerVerbHandler(handler)`: Register a custom `SWMLVerbHandler`
 
 ### Verb Helper Methods
 
-- `add_verb(verb_name, config)`: Add any SWML verb with configuration
+- `addVerb(verbName, config)`: Add any SWML verb with configuration
+- Shortcut methods for common verbs: `answer`, `play`, `record`, `recordCall`, `connect`, `prompt`, `sleep`, `hangup`, and more
 
 ## Examples
 
 ### Basic Voicemail Service
 
-```python
-from signalwire_agents.core.swml_service import SWMLService
+```java
+import com.signalwire.sdk.swml.Service;
+import java.util.Map;
 
-class VoicemailService(SWMLService):
-    def __init__(self, host="0.0.0.0", port=3000):
-        super().__init__(
-            name="voicemail",
-            route="/voicemail",
-            host=host,
-            port=port
-        )
-        
-        # Build the SWML document
-        self.build_voicemail_document()
-    
-    def build_voicemail_document(self):
-        """Build the voicemail SWML document"""
-        # Reset the document
-        self.reset_document()
-        
-        # Add answer verb
-        self.add_verb("answer", {})
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": "say:Hello, you've reached the voicemail service. Please leave a message after the beep."
-        })
-        
-        # Play a beep
-        self.add_verb("play", {
-            "url": "https://example.com/beep.wav"
-        })
-        
-        # Record the message
-        self.add_verb("record", {
-            "format": "mp3",
-            "stereo": False,
-            "max_length": 120,  # 2 minutes max
-            "terminators": "#"
-        })
-        
-        # Thank the caller
-        self.add_verb("play", {
-            "url": "say:Thank you for your message. Goodbye!"
-        })
-        
-        # Hang up
-        self.add_verb("hangup", {})
-        
-        self.log.debug("voicemail_document_built")
+var service = new Service("voicemail", "/voicemail");
+
+// Add answer verb
+service.answer(null);
+
+// Greeting
+service.play(Map.of("url",
+    "say:Hello, you've reached the voicemail service. Please leave a message after the beep."));
+
+// Play a beep
+service.play(Map.of("url", "https://example.com/beep.wav"));
+
+// Record the message (2 minutes max)
+service.record(Map.of(
+    "format", "mp3",
+    "stereo", false,
+    "max_length", 120,
+    "terminators", "#"));
+
+// Thank the caller
+service.play(Map.of("url", "say:Thank you for your message. Goodbye!"));
+
+// Hang up
+service.hangup();
+
+service.serve();
 ```
 
 ### Dynamic Call Routing Service
 
-```python
-class CallRouterService(SWMLService):
-    def on_swml_request(self, request_data=None):
-        # If there's no request data, use default routing
-        if not request_data:
-            self.log.debug("no_request_data_using_default")
-            return None
-        
-        # Create a new document
-        self.reset_document()
-        self.add_verb("answer", {})
-        
-        # Get routing parameters
-        department = request_data.get("department", "").lower()
-        
-        # Add play verb for greeting
-        self.add_verb("play", {
-            "url": f"say:Thank you for calling our {department} department. Please hold."
-        })
-        
-        # Route based on department
-        phone_numbers = {
-            "sales": "+15551112222",
-            "support": "+15553334444",
-            "billing": "+15555556666"
-        }
-        
-        # Get the appropriate number or use default
-        to_number = phone_numbers.get(department, "+15559990000")
-        
-        # Connect to the department
-        self.add_verb("connect", {
-            "to": to_number,
-            "timeout": 30,
-            "answer_on_bridge": True
-        })
-        
-        # Add fallback message and hangup
-        self.add_verb("play", {
-            "url": "say:We're sorry, but all of our agents are currently busy. Please try again later."
-        })
-        self.add_verb("hangup", {})
-        
-        return None  # Use the document we've built
+```java
+import com.signalwire.sdk.swml.Service;
+import com.signalwire.sdk.logging.Logger;
+import java.util.Map;
+
+class CallRouterService extends Service {
+  private static final Logger log = Logger.getLogger(CallRouterService.class);
+
+  CallRouterService() {
+    super("call-router", "/router");
+  }
+
+  @Override
+  public Map<String, Object> onSwmlRequest(
+      Map<String, Object> requestData, String callbackPath) {
+    // If there's no request data, use default routing
+    if (requestData == null) {
+      log.debug("no_request_data_using_default");
+      return null;
+    }
+
+    // Create a new document
+    resetDocument();
+    answer(null);
+
+    // Get routing parameters
+    String department =
+        String.valueOf(requestData.getOrDefault("department", "")).toLowerCase();
+
+    // Greeting
+    play(Map.of("url",
+        "say:Thank you for calling our " + department + " department. Please hold."));
+
+    // Route based on department
+    Map<String, String> phoneNumbers = Map.of(
+        "sales", "+15551112222",
+        "support", "+15553334444",
+        "billing", "+15555556666");
+    String toNumber = phoneNumbers.getOrDefault(department, "+15559990000");
+
+    // Connect to the department
+    connect(Map.of(
+        "to", toNumber,
+        "timeout", 30,
+        "answer_on_bridge", true));
+
+    // Fallback message and hangup
+    play(Map.of("url",
+        "say:We're sorry, but all of our agents are currently busy. Please try again later."));
+    hangup();
+
+    return null; // Use the document we've built
+  }
+}
 ```
 
-For more examples, see the `examples` directory in the SignalWire AI Agent SDK repository. 
+For more examples, see the `examples/` directory in the SignalWire AI Agents SDK for Java repository (`SwmlServiceExample.java`, `DynamicSwmlService.java`, `BasicSwmlService.java`, `AutoVivifiedExample.java`).

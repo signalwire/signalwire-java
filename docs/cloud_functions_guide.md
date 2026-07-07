@@ -21,36 +21,74 @@ The agent automatically detects Google Cloud Functions environment using these v
 
 ### Deployment Steps
 
-1. **Create your agent file** (`main.py`):
-```python
-import functions_framework
-from your_agent_module import YourAgent
+1. **Create your Cloud Function handler.** The SDK provides
+   `ServerlessAdapter.handleGcf(...)`, which dispatches a request through the
+   agent and returns a `(status, headers, body)` envelope:
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.runtime.ServerlessAdapter;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-# Create agent instance
-agent = YourAgent(
-    name="my-agent",
-    # Configure your agent parameters
-)
+import com.google.cloud.functions.HttpFunction;
+import com.google.cloud.functions.HttpRequest;
+import com.google.cloud.functions.HttpResponse;
 
-@functions_framework.http
-def agent_handler(request):
-    """HTTP Cloud Function entry point"""
-    return agent.handle_serverless_request(event=request)
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class AgentFunction implements HttpFunction {
+
+    // Built once on cold start and reused across warm invocations.
+    private static final AgentBase AGENT = buildAgent();
+
+    private static AgentBase buildAgent() {
+        var agent = AgentBase.builder().name("my-agent").route("/").build();
+        agent.promptAddSection("Role", "You are a helpful assistant.");
+        return agent;
+    }
+
+    @Override
+    public void service(HttpRequest request, HttpResponse response) throws Exception {
+        // Collect headers into a plain map for the adapter.
+        Map<String, String> headers = new LinkedHashMap<>();
+        request.getHeaders().forEach((k, v) -> headers.put(k, String.join(",", v)));
+
+        String body;
+        try (BufferedReader reader = request.getReader()) {
+            body = reader.lines().collect(Collectors.joining("\n"));
+        }
+
+        ServerlessAdapter.Response result = ServerlessAdapter.handleGcf(
+            AGENT, request.getMethod(), request.getPath(), headers, body);
+
+        response.setStatusCode(result.status());
+        result.headers().forEach(response::appendHeader);
+        try (PrintWriter writer = response.getWriter()) {
+            writer.write(result.body());
+        }
+    }
+}
 ```
 
-2. **Create requirements.txt**:
-```
-functions-framework==3.*
-signalwire-agents
-# Add your other dependencies
+2. **Declare the dependency** (`build.gradle`):
+```groovy
+dependencies {
+    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    // GCF Java runtime API (provided at deploy time):
+    compileOnly 'com.google.cloud.functions:functions-framework-api:1.1.0'
+}
 ```
 
-3. **Deploy using gcloud**:
+3. **Deploy using gcloud** (build a shaded/fat JAR first):
 ```bash
 gcloud functions deploy my-agent \
-    --runtime python39 \
+    --runtime java21 \
     --trigger-http \
-    --entry-point agent_handler \
+    --entry-point com.example.AgentFunction \
     --allow-unauthenticated
 ```
 
@@ -103,23 +141,61 @@ my-agent-function/
 └── requirements.txt
 ```
 
-2. **Create `__init__.py`**:
-```python
-import azure.functions as func
-from your_agent_module import YourAgent
+2. **Create your Azure Function handler.** Azure's Java runtime hands you an
+   `HttpRequestMessage`; forward its method/path/headers/body through the same
+   `ServerlessAdapter.handleGcf(...)` dispatch (the SDK's serverless dispatch is
+   platform-neutral):
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.runtime.ServerlessAdapter;
 
-# Create agent instance
-agent = YourAgent(
-    name="my-agent",
-    # Configure your agent parameters
-)
+import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.HttpMethod;
+import com.microsoft.azure.functions.HttpRequestMessage;
+import com.microsoft.azure.functions.HttpResponseMessage;
+import com.microsoft.azure.functions.HttpStatus;
+import com.microsoft.azure.functions.annotation.AuthorizationLevel;
+import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-def main(req: func.HttpRequest) -> func.HttpResponse:
-    """Azure Function entry point"""
-    return agent.handle_serverless_request(event=req)
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class AgentFunction {
+
+    // Built once on cold start and reused across warm invocations.
+    private static final AgentBase AGENT = buildAgent();
+
+    private static AgentBase buildAgent() {
+        var agent = AgentBase.builder().name("my-agent").route("/").build();
+        agent.promptAddSection("Role", "You are a helpful assistant.");
+        return agent;
+    }
+
+    @FunctionName("agent")
+    public HttpResponseMessage run(
+            @HttpTrigger(name = "req",
+                    methods = {HttpMethod.GET, HttpMethod.POST},
+                    authLevel = AuthorizationLevel.ANONYMOUS)
+                    HttpRequestMessage<Optional<String>> request,
+            ExecutionContext context) {
+
+        Map<String, String> headers = new LinkedHashMap<>(request.getHeaders());
+        String body = request.getBody().orElse(null);
+
+        ServerlessAdapter.Response result = ServerlessAdapter.handleGcf(
+            AGENT, request.getHttpMethod().name(), request.getUri().getPath(), headers, body);
+
+        var builder = request.createResponseBuilder(HttpStatus.valueOf(result.status()));
+        result.headers().forEach(builder::header);
+        return builder.body(result.body()).build();
+    }
+}
 ```
 
-3. **Create `function.json`**:
+3. **Create `function.json`** (only needed for the script-based model; the
+   annotation model above generates it during the Maven/Gradle build):
 ```json
 {
   "scriptFile": "__init__.py",
@@ -140,11 +216,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 }
 ```
 
-4. **Create `requirements.txt`**:
-```
-azure-functions
-signalwire-agents
-# Add your other dependencies
+4. **Declare the dependency** (`build.gradle`):
+```groovy
+dependencies {
+    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    // Azure Functions Java library (provided by the runtime):
+    compileOnly 'com.microsoft.azure.functions:azure-functions-java-library:3.1.0'
+}
 ```
 
 5. **Deploy using Azure CLI**:
@@ -153,14 +231,14 @@ signalwire-agents
 az functionapp create \
     --resource-group myResourceGroup \
     --consumption-plan-location westus \
-    --runtime python \
-    --runtime-version 3.9 \
+    --runtime java \
+    --runtime-version 21 \
     --functions-version 4 \
     --name my-agent-function \
     --storage-account mystorageaccount
 
-# Deploy code
-func azure functionapp publish my-agent-function
+# Deploy code (Maven plugin, or the Gradle azurefunctions plugin)
+mvn azure-functions:deploy
 ```
 
 ### Environment Variables
@@ -198,14 +276,16 @@ https://username:password@{function-app-name}.azurewebsites.net/api/{function-na
 Both platforms support HTTP Basic Authentication:
 
 ### Automatic Authentication
-The agent automatically validates credentials in cloud function environments:
+The agent automatically validates credentials in cloud function environments. Set
+them on the builder, or via the `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD`
+environment variables:
 
-```python
-agent = YourAgent(
-    name="my-agent",
-    username="your-username",
-    password="your-password"
-)
+```java
+var agent = AgentBase.builder()
+    .name("my-agent")
+    .authUser("your-username")
+    .authPassword("your-password")
+    .build();
 ```
 
 ### Authentication Flow
@@ -412,18 +492,21 @@ curl -u username:password \
 ### Common Issues
 
 **Environment Detection:**
-```python
-# Check detected mode
-from signalwire_agents.core.logging_config import get_execution_mode
-print(f"Detected mode: {get_execution_mode()}")
+```java
+// Check detected mode
+import com.signalwire.sdk.runtime.ExecutionMode;
+
+System.out.println("Detected mode: " + ExecutionMode.getExecutionMode());
+// One of: "cgi", "lambda", "google_cloud_function", "azure_function", "server"
 ```
 
 **URL Generation:**
-```python
-# Check generated URLs
-agent = YourAgent(name="test")
-print(f"Base URL: {agent.get_full_url()}")
-print(f"Auth URL: {agent.get_full_url(include_auth=True)}")
+```java
+// Check the resolved webhook base URL (Lambda Function URL / SWML_PROXY_URL_BASE)
+import com.signalwire.sdk.runtime.LambdaUrlResolver;
+
+var resolver = new LambdaUrlResolver();
+System.out.println("Base URL: " + resolver.resolveBaseUrl());
 ```
 
 **Authentication Issues:**
@@ -433,18 +516,18 @@ print(f"Auth URL: {agent.get_full_url(include_auth=True)}")
 
 ### Debugging
 
-Enable debug logging:
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
+Enable debug logging (the SDK's `Logger` reads `SIGNALWIRE_LOG_LEVEL`):
+```bash
+export SIGNALWIRE_LOG_LEVEL=debug
 ```
 
 Check environment variables:
-```python
-import os
-for key, value in os.environ.items():
-    if 'FUNCTION' in key or 'AZURE' in key or 'GOOGLE' in key:
-        print(f"{key}: {value}")
+```java
+System.getenv().forEach((key, value) -> {
+    if (key.contains("FUNCTION") || key.contains("AZURE") || key.contains("GOOGLE")) {
+        System.out.println(key + ": " + value);
+    }
+});
 ```
 
 ## Migration from Other Platforms
@@ -462,7 +545,7 @@ for key, value in os.environ.items():
 
 ## Examples
 
-See `examples/lambda_agent.py` for a complete AWS Lambda deployment example.
+See `examples/LambdaAgent.java` for a complete AWS Lambda deployment example (uses `com.signalwire.sdk.runtime.lambda.LambdaAgentHandler`).
 
 ## Support
 

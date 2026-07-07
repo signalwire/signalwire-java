@@ -1,285 +1,325 @@
 # All Namespaces
 
-Reference for every namespace beyond Fabric and Calling (which have their own pages).
+Reference for every namespace beyond Fabric and Calling (which have their own pages). Every namespace is reached through a fluent accessor on the `RestClient` (e.g. `client.phoneNumbers()`, `client.video().rooms()`). CRUD methods take a `Map<String, Object>` body for create/update; some resources use a typed request builder (shown below).
 
 ## Phone Numbers
 
-```python
-# List your phone numbers
-numbers = client.phone_numbers.list()
-numbers = client.phone_numbers.list(name="Main")
+```java
+// List your phone numbers
+Map<String, Object> numbers = client.phoneNumbers().list();
+numbers = client.phoneNumbers().list(Map.of("name", "Main"));
 
-# Search available numbers to purchase
-available = client.phone_numbers.search(area_code="512", number_type="local")
+// Search available numbers to purchase
+Map<String, Object> available = client.phoneNumbers().search(
+    Map.of("area_code", "512", "number_type", "local"));
 
-# Purchase a number
-number = client.phone_numbers.create(number="+15551234567")
+// Purchase a number
+Map<String, Object> number = client.phoneNumbers().create(
+    Map.of("number", "+15551234567"));
 
-# Get / update / release
-number = client.phone_numbers.get("pn-uuid")
-client.phone_numbers.update("pn-uuid", name="Support Line")
-client.phone_numbers.delete("pn-uuid")
+// Get / update / release
+number = client.phoneNumbers().get("pn-uuid");
+client.phoneNumbers().update("pn-uuid", Map.of("name", "Support Line"));
+client.phoneNumbers().delete("pn-uuid");
 ```
 
 ## Addresses
 
-```python
-addresses = client.addresses.list()
-address = client.addresses.create(label="Office", street="123 Main St", city="Austin", state="TX")
-address = client.addresses.get("addr-uuid")
-client.addresses.delete("addr-uuid")
+```java
+Map<String, Object> addresses = client.addresses().list();
+Map<String, Object> address = client.addresses().create(Map.of(
+    "label", "Office", "street", "123 Main St", "city", "Austin", "state", "TX"));
+address = client.addresses().get("addr-uuid");
+client.addresses().delete("addr-uuid");
 ```
 
 ## Queues
 
-```python
-queues = client.queues.list()
-queue = client.queues.create(name="Support")
-queue = client.queues.get("q-uuid")
-client.queues.update("q-uuid", name="VIP Support")
-client.queues.delete("q-uuid")
+```java
+Map<String, Object> queues = client.queues().list();
+Map<String, Object> queue = client.queues().create(Map.of("name", "Support"));
+queue = client.queues().get("q-uuid");
+client.queues().update("q-uuid", Map.of("name", "VIP Support"));
+client.queues().delete("q-uuid");
 
-# Members
-members = client.queues.list_members("q-uuid")
-next_member = client.queues.get_next_member("q-uuid")
-member = client.queues.get_member("q-uuid", "member-uuid")
+// Members (the trailing map holds query parameters)
+Map<String, Object> members = client.queues().listMembers("q-uuid", Map.of());
+Map<String, Object> nextMember = client.queues().getNextMember("q-uuid", Map.of());
+Map<String, Object> member = client.queues().getMember("q-uuid", "member-uuid", Map.of());
 ```
 
 ## Recordings
 
-```python
-recordings = client.recordings.list()
-recording = client.recordings.get("rec-uuid")
-client.recordings.delete("rec-uuid")
+```java
+Map<String, Object> recordings = client.recordings().list();
+Map<String, Object> recording = client.recordings().get("rec-uuid");
+client.recordings().delete("rec-uuid");
 ```
 
 ## Number Groups
 
-```python
-groups = client.number_groups.list()
-group = client.number_groups.create(name="Marketing")
-group = client.number_groups.get("ng-uuid")
-client.number_groups.update("ng-uuid", name="Sales")
-client.number_groups.delete("ng-uuid")
+```java
+Map<String, Object> groups = client.numberGroups().list();
+Map<String, Object> group = client.numberGroups().create(Map.of("name", "Marketing"));
+group = client.numberGroups().get("ng-uuid");
+client.numberGroups().update("ng-uuid", Map.of("name", "Sales"));
+client.numberGroups().delete("ng-uuid");
 
-# Memberships
-memberships = client.number_groups.list_memberships("ng-uuid")
-client.number_groups.add_membership("ng-uuid", phone_number_id="pn-uuid")
-membership = client.number_groups.get_membership("mem-uuid")
-client.number_groups.delete_membership("mem-uuid")
+// Memberships (addMembership takes a typed request builder)
+Map<String, Object> memberships = client.numberGroups().listMemberships("ng-uuid", Map.of());
+client.numberGroups().addMembership("ng-uuid",
+    NumberGroups.AddMembershipRequest.builder().phoneNumberId("pn-uuid").build());
+Map<String, Object> membership = client.numberGroups().getMembership("mem-uuid", Map.of());
+client.numberGroups().deleteMembership("mem-uuid");
 ```
 
 ## Verified Caller IDs
 
-```python
-callers = client.verified_callers.list()
-caller = client.verified_callers.create(phone_number="+15551234567", name="Office")
-caller = client.verified_callers.get("vc-uuid")
-client.verified_callers.update("vc-uuid", name="Main Office")
-client.verified_callers.delete("vc-uuid")
+```java
+Map<String, Object> callers = client.verifiedCallers().list();
+Map<String, Object> caller = client.verifiedCallers().create(
+    Map.of("phone_number", "+15551234567", "name", "Office"));
+caller = client.verifiedCallers().get("vc-uuid");
+client.verifiedCallers().update("vc-uuid", Map.of("name", "Main Office"));
+client.verifiedCallers().delete("vc-uuid");
 
-# Verification flow
-client.verified_callers.redial_verification("vc-uuid")
-client.verified_callers.submit_verification("vc-uuid", code="123456")
+// Verification flow (submitVerification takes a typed request builder)
+client.verifiedCallers().redialVerification("vc-uuid");
+client.verifiedCallers().submitVerification("vc-uuid",
+    VerifiedCallers.SubmitVerificationRequest.builder().verificationCode("123456").build());
 ```
 
 ## SIP Profile
 
-Singleton resource -- no ID needed:
+Singleton resource -- no ID needed. `update` takes a typed request builder:
 
-```python
-profile = client.sip_profile.get()
-client.sip_profile.update(username="myproject", password="newsecret")
+```java
+Map<String, Object> profile = client.sipProfile().get(Map.of());
+client.sipProfile().update(
+    SipProfile.UpdateRequest.builder().domainIdentifier("myproject").build());
 ```
 
 ## Phone Number Lookup
 
-```python
-info = client.lookup.phone_number("+15551234567")
-info = client.lookup.phone_number("+15551234567", include="carrier,cnam")
+```java
+Map<String, Object> info = client.lookup().phoneNumber("+15551234567", Map.of());
+info = client.lookup().phoneNumber("+15551234567", Map.of("include", "carrier,cnam"));
 ```
 
 Note: carrier and CNAM lookups are billable.
 
 ## Short Codes
 
-```python
-codes = client.short_codes.list()
-code = client.short_codes.get("sc-uuid")
-client.short_codes.update("sc-uuid", name="Alerts")
+```java
+Map<String, Object> codes = client.shortCodes().list(Map.of());
+Map<String, Object> code = client.shortCodes().get("sc-uuid", Map.of());
+client.shortCodes().update("sc-uuid",
+    ShortCodes.UpdateRequest.builder().name("Alerts").build());
 ```
 
 ## Imported Phone Numbers
 
-```python
-client.imported_numbers.create(number="+15559999999", carrier="external")
+`create` takes a typed request builder:
+
+```java
+client.importedNumbers().create(
+    ImportedNumbers.CreateRequest.builder().number("+15559999999").build());
 ```
 
 ## MFA (Multi-Factor Authentication)
 
-```python
-# Request a verification code via SMS
-result = client.mfa.sms(
-    to="+15551234567",
-    from_="+15559876543",
-    message="Your code is {code}",
-)
-request_id = result["id"]
+Each method takes a typed request builder:
 
-# Or via phone call
-result = client.mfa.call(
-    to="+15551234567",
-    from_="+15559876543",
-)
+```java
+// Request a verification code via SMS
+Map<String, Object> result = client.mfa().sms(
+    Mfa.SmsRequest.builder()
+        .to("+15551234567")
+        .from("+15559876543")
+        .message("Your code is {code}")
+        .build());
+String requestId = (String) result.get("id");
 
-# Verify the code
-result = client.mfa.verify(request_id, token="123456")
+// Or via phone call
+result = client.mfa().call(
+    Mfa.CallRequest.builder()
+        .to("+15551234567")
+        .from("+15559876543")
+        .build());
+
+// Verify the code
+result = client.mfa().verify(requestId,
+    Mfa.VerifyRequest.builder().token("123456").build());
 ```
 
 ## 10DLC Campaign Registry
 
-```python
-# Brands
-brands = client.registry.brands.list()
-brand = client.registry.brands.create(name="My Brand", ein="12-3456789")
-brand = client.registry.brands.get("brand-uuid")
+```java
+// Brands
+Map<String, Object> brands = client.registry().brands().list(Map.of());
+Map<String, Object> brand = client.registry().brands().create(
+    Map.of("name", "My Brand", "ein", "12-3456789"));
+brand = client.registry().brands().get("brand-uuid", Map.of());
 
-# Campaigns under a brand
-campaigns = client.registry.brands.list_campaigns("brand-uuid")
-campaign = client.registry.brands.create_campaign("brand-uuid", description="Alerts")
+// Campaigns under a brand
+Map<String, Object> campaigns = client.registry().brands().listCampaigns("brand-uuid", Map.of());
+Map<String, Object> campaign = client.registry().brands().createCampaign(
+    "brand-uuid", Map.of("description", "Alerts"));
 
-# Campaign management
-campaign = client.registry.campaigns.get("camp-uuid")
-client.registry.campaigns.update("camp-uuid", description="Updated alerts")
+// Campaign management (update takes a typed request builder)
+campaign = client.registry().campaigns().get("camp-uuid", Map.of());
+client.registry().campaigns().update("camp-uuid",
+    RegistryCampaigns.UpdateRequest.builder().name("Updated alerts").build());
 
-# Number assignments
-numbers = client.registry.campaigns.list_numbers("camp-uuid")
-orders = client.registry.campaigns.list_orders("camp-uuid")
-order = client.registry.campaigns.create_order("camp-uuid", phone_number_ids=["pn-1"])
-order = client.registry.orders.get("order-uuid")
-client.registry.numbers.delete("number-assignment-uuid")
+// Number assignments
+Map<String, Object> numbers = client.registry().campaigns().listNumbers("camp-uuid", Map.of());
+Map<String, Object> orders = client.registry().campaigns().listOrders("camp-uuid", Map.of());
+Map<String, Object> order = client.registry().campaigns().createOrder("camp-uuid",
+    RegistryCampaigns.CreateOrderRequest.builder()
+        .phoneNumbers(List.of("pn-1"))
+        .build());
+order = client.registry().orders().get("order-uuid", Map.of());
+client.registry().numbers().delete("number-assignment-uuid");
 ```
 
 ## Datasphere
 
-```python
-# Documents
-docs = client.datasphere.documents.list()
-doc = client.datasphere.documents.create(url="https://example.com/doc.pdf", tags=["support"])
-doc = client.datasphere.documents.get("doc-uuid")
-client.datasphere.documents.update("doc-uuid", tags=["support", "billing"])
-client.datasphere.documents.delete("doc-uuid")
+```java
+// Documents
+Map<String, Object> docs = client.datasphere().documents().list();
+Map<String, Object> doc = client.datasphere().documents().create(
+    Map.of("url", "https://example.com/doc.pdf", "tags", List.of("support")));
+doc = client.datasphere().documents().get("doc-uuid");
+client.datasphere().documents().update("doc-uuid",
+    Map.of("tags", List.of("support", "billing")));
+client.datasphere().documents().delete("doc-uuid");
 
-# Semantic search
-results = client.datasphere.documents.search(
-    query_string="How do I reset my password?",
-    tags=["support"],
-    count=5,
-)
+// Semantic search (typed request builder)
+Map<String, Object> results = client.datasphere().documents().search(
+    DatasphereDocuments.SearchRequest.builder()
+        .queryString("How do I reset my password?")
+        .tags(List.of("support"))
+        .count(5L)
+        .build());
 
-# Chunks
-chunks = client.datasphere.documents.list_chunks("doc-uuid")
-chunk = client.datasphere.documents.get_chunk("doc-uuid", "chunk-uuid")
-client.datasphere.documents.delete_chunk("doc-uuid", "chunk-uuid")
+// Chunks
+Map<String, Object> chunks = client.datasphere().documents().listChunks("doc-uuid", Map.of());
+Map<String, Object> chunk = client.datasphere().documents().getChunk("doc-uuid", "chunk-uuid", Map.of());
+client.datasphere().documents().deleteChunk("doc-uuid", "chunk-uuid");
 ```
 
 ## Video
 
-```python
-# Rooms
-rooms = client.video.rooms.list()
-room = client.video.rooms.create(name="standup", max_members=10)
-room = client.video.rooms.get("room-uuid")
-client.video.rooms.update("room-uuid", max_members=20)
-client.video.rooms.delete("room-uuid")
-client.video.rooms.list_streams("room-uuid")
-client.video.rooms.create_stream("room-uuid", url="rtmp://example.com/live")
+```java
+// Rooms
+Map<String, Object> rooms = client.video().rooms().list();
+Map<String, Object> room = client.video().rooms().create(
+    Map.of("name", "standup", "max_members", 10));
+room = client.video().rooms().get("room-uuid");
+client.video().rooms().update("room-uuid", Map.of("max_members", 20));
+client.video().rooms().delete("room-uuid");
+client.video().rooms().listStreams("room-uuid", Map.of());
+client.video().rooms().createStream("room-uuid",
+    VideoRooms.CreateStreamRequest.builder().url("rtmp://example.com/live").build());
 
-# Room tokens
-token = client.video.room_tokens.create(room_name="standup", user_name="alice")
+// Room tokens
+Map<String, Object> token = client.video().roomTokens().create(
+    Map.of("room_name", "standup", "user_name", "alice"));
 
-# Room sessions
-sessions = client.video.room_sessions.list(room_name="standup")
-session = client.video.room_sessions.get("session-uuid")
-events = client.video.room_sessions.list_events("session-uuid")
-members = client.video.room_sessions.list_members("session-uuid")
-recordings = client.video.room_sessions.list_recordings("session-uuid")
+// Room sessions
+Map<String, Object> sessions = client.video().roomSessions().list(Map.of("room_name", "standup"));
+Map<String, Object> session = client.video().roomSessions().get("session-uuid");
+Map<String, Object> events = client.video().roomSessions().listEvents("session-uuid", Map.of());
+Map<String, Object> members = client.video().roomSessions().listMembers("session-uuid", Map.of());
+Map<String, Object> recordings = client.video().roomSessions().listRecordings("session-uuid", Map.of());
 
-# Room recordings
-recs = client.video.room_recordings.list()
-rec = client.video.room_recordings.get("rec-uuid")
-client.video.room_recordings.delete("rec-uuid")
-events = client.video.room_recordings.list_events("rec-uuid")
+// Room recordings
+Map<String, Object> recs = client.video().roomRecordings().list();
+Map<String, Object> rec = client.video().roomRecordings().get("rec-uuid");
+client.video().roomRecordings().delete("rec-uuid");
 
-# Conferences
-confs = client.video.conferences.list()
-conf = client.video.conferences.create(name="all-hands", quality="720p")
-conf = client.video.conferences.get("conf-uuid")
-client.video.conferences.update("conf-uuid", quality="1080p")
-client.video.conferences.delete("conf-uuid")
-tokens = client.video.conferences.list_conference_tokens("conf-uuid")
-client.video.conferences.list_streams("conf-uuid")
-client.video.conferences.create_stream("conf-uuid", url="rtmp://example.com/live")
+// Conferences
+Map<String, Object> confs = client.video().conferences().list();
+Map<String, Object> conf = client.video().conferences().create(
+    Map.of("name", "all-hands", "quality", "720p"));
+conf = client.video().conferences().get("conf-uuid");
+client.video().conferences().update("conf-uuid", Map.of("quality", "1080p"));
+client.video().conferences().delete("conf-uuid");
+Map<String, Object> tokens = client.video().conferences().listConferenceTokens("conf-uuid", Map.of());
+client.video().conferences().listStreams("conf-uuid", Map.of());
+client.video().conferences().createStream("conf-uuid",
+    VideoConferences.CreateStreamRequest.builder().url("rtmp://example.com/live").build());
 
-# Conference tokens
-token = client.video.conference_tokens.get("token-uuid")
-client.video.conference_tokens.reset("token-uuid")
+// Conference tokens
+Map<String, Object> conferenceToken = client.video().conferenceTokens().get("token-uuid", Map.of());
+client.video().conferenceTokens().reset("token-uuid");
 
-# Streams
-stream = client.video.streams.get("stream-uuid")
-client.video.streams.update("stream-uuid", url="rtmp://example.com/new")
-client.video.streams.delete("stream-uuid")
+// Streams (update takes a typed request builder)
+Map<String, Object> stream = client.video().streams().get("stream-uuid", Map.of());
+client.video().streams().update("stream-uuid",
+    VideoStreams.UpdateRequest.builder().url("rtmp://example.com/new").build());
+client.video().streams().delete("stream-uuid");
 ```
 
 ## Logs
 
 All log endpoints are read-only.
 
-```python
-# Message logs
-logs = client.logs.messages.list(include_deleted=True)
-log = client.logs.messages.get("log-uuid")
+```java
+// Message logs
+Map<String, Object> logs = client.logs().messages().list(Map.of("include_deleted", "true"));
+Map<String, Object> log = client.logs().messages().get("log-uuid");
 
-# Voice logs (with events)
-logs = client.logs.voice.list()
-log = client.logs.voice.get("log-uuid")
-events = client.logs.voice.list_events("log-uuid")
+// Voice logs (with events)
+logs = client.logs().voice().list();
+log = client.logs().voice().get("log-uuid");
+Map<String, Object> events = client.logs().voice().listEvents("log-uuid", Map.of());
 
-# Fax logs
-logs = client.logs.fax.list()
-log = client.logs.fax.get("log-uuid")
+// Fax logs
+logs = client.logs().fax().list();
+log = client.logs().fax().get("log-uuid");
 
-# Conference logs
-logs = client.logs.conferences.list()
+// Conference logs
+logs = client.logs().conferences().list(Map.of());
 ```
 
 ## Project Tokens
 
-```python
-token = client.project.tokens.create(
-    name="ci-token",
-    permissions=["calling", "messaging", "numbers"],
-)
-client.project.tokens.update("token-uuid", name="renamed-token")
-client.project.tokens.delete("token-uuid")
+Each mutating method takes a typed request builder:
+
+```java
+Map<String, Object> token = client.project().tokens().create(
+    ProjectTokens.CreateRequest.builder()
+        .name("ci-token")
+        .permissions(List.of("calling", "messaging", "numbers"))
+        .build());
+client.project().tokens().update("token-uuid",
+    ProjectTokens.UpdateRequest.builder().name("renamed-token").build());
+client.project().tokens().delete("token-uuid");
 ```
 
 ## PubSub Tokens
 
-```python
-token = client.pubsub.create_token(
-    ttl=60,
-    channels=[{"name": "updates", "read": True, "write": False}],
-    member_id="user-123",
-)
+`createToken` takes a typed request builder:
+
+```java
+Map<String, Object> token = client.pubsub().createToken(
+    PubSub.CreateTokenRequest.builder()
+        .ttl(60L)
+        .channels(Map.of("updates", Map.of("read", true, "write", false)))
+        .memberId("user-123")
+        .build());
 ```
 
 ## Chat Tokens
 
-```python
-token = client.chat.create_token(
-    ttl=60,
-    channels=[{"name": "support", "read": True, "write": True}],
-    member_id="user-123",
-)
+`createToken` takes a typed request builder:
+
+```java
+Map<String, Object> token = client.chat().createToken(
+    Chat.CreateTokenRequest.builder()
+        .ttl(60L)
+        .channels(Map.of("support", Map.of("read", true, "write", true)))
+        .memberId("user-123")
+        .build());
 ```

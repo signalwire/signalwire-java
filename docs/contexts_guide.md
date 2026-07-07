@@ -73,13 +73,13 @@ When entering a context, these parameters control conversation behavior:
 
 Contexts can have their own prompts (separate from entry parameters):
 
-```python
-# Simple string prompt
-context.set_prompt("Context-specific guidance")
+```java
+// Simple string prompt
+context.setPrompt("Context-specific guidance");
 
-# POM-style sections  
-context.add_section("Department", "Billing Department")
-context.add_bullets("Services", ["Payments", "Refunds", "Account inquiries"])
+// POM-style sections
+context.addSection("Department", "Billing Department");
+context.addBullets("Services", List.of("Payments", "Refunds", "Account inquiries"));
 ```
 
 Context prompts provide guidance that applies to all steps within that context, creating a prompt hierarchy: Base Agent Prompt → Context Prompt → Step Prompt.
@@ -106,107 +106,107 @@ The system provides fine-grained control over conversation flow:
 
 ### Basic Single-Context Workflow
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class OnboardingAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Onboarding Assistant", route="/onboarding")
-        
-        # Define contexts (replaces traditional prompt setup)
-        contexts = self.define_contexts()
-        
-        # Single context must be named "default"
-        workflow = contexts.add_context("default")
-        
-        # Step 1: Welcome
-        workflow.add_step("welcome") \
-            .set_text("Welcome to our service! Let's get you set up. What's your name?") \
-            .set_step_criteria("User has provided their name") \
-            .set_valid_steps(["collect_email"])
-        
-        # Step 2: Collect Email
-        workflow.add_step("collect_email") \
-            .set_text("Thanks! Now I need your email address to create your account.") \
-            .set_step_criteria("Valid email address has been provided") \
-            .set_valid_steps(["confirm_details"])
-        
-        # Step 3: Confirmation
-        workflow.add_step("confirm_details") \
-            .set_text("Perfect! Let me confirm your details before we proceed.") \
-            .set_step_criteria("User has confirmed their information") \
-            .set_valid_steps(["complete"])
-        
-        # Step 4: Completion
-        workflow.add_step("complete") \
-            .set_text("All set! Your account has been created successfully.")
-            # No valid_steps = end of workflow
+import java.util.List;
 
-agent = OnboardingAgent()
-agent.run()
+var agent = AgentBase.builder()
+        .name("Onboarding Assistant")
+        .route("/onboarding")
+        .build();
 
-if __name__ == "__main__":
-    main()
+// Define contexts (replaces traditional prompt setup)
+var contexts = agent.defineContexts();
+
+// Single context must be named "default"
+var workflow = contexts.addContext("default");
+
+// Step 1: Welcome
+workflow.addStep("welcome")
+        .setText("Welcome to our service! Let's get you set up. What's your name?")
+        .setStepCriteria("User has provided their name")
+        .setValidSteps(List.of("collect_email"));
+
+// Step 2: Collect Email
+workflow.addStep("collect_email")
+        .setText("Thanks! Now I need your email address to create your account.")
+        .setStepCriteria("Valid email address has been provided")
+        .setValidSteps(List.of("confirm_details"));
+
+// Step 3: Confirmation
+workflow.addStep("confirm_details")
+        .setText("Perfect! Let me confirm your details before we proceed.")
+        .setStepCriteria("User has confirmed their information")
+        .setValidSteps(List.of("complete"));
+
+// Step 4: Completion
+workflow.addStep("complete")
+        .setText("All set! Your account has been created successfully.");
+        // No setValidSteps() = end of workflow
+
+agent.run();
 ```
 
 ### Multi-Context Workflow
 
-```python
-class CustomerServiceAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Customer Service", route="/service")
-        
-        # Add skills for enhanced capabilities
-        self.add_skill("datetime")
-        self.add_skill("web_search", {
-            "api_key": "your-api-key",
-            "search_engine_id": "your-engine-id"
-        })
-        
-        contexts = self.define_contexts()
-        
-        # Main triage context
-        triage = contexts.add_context("triage")
-        triage.add_step("greeting") \
-            .add_section("Current Task", "Understand the customer's need and route appropriately") \
-            .add_bullets("Required Information", [
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillName;
+
+import java.util.List;
+import java.util.Map;
+
+var agent = AgentBase.builder()
+        .name("Customer Service")
+        .route("/service")
+        .build();
+
+// Add skills for enhanced capabilities
+agent.addSkill(SkillName.DATETIME, Map.of());
+agent.addSkill(SkillName.WEB_SEARCH, Map.of(
+        "api_key", "your-api-key",
+        "search_engine_id", "your-engine-id"));
+
+var contexts = agent.defineContexts();
+
+// Main triage context
+var triage = contexts.addContext("triage");
+triage.addStep("greeting")
+        .addSection("Current Task", "Understand the customer's need and route appropriately")
+        .addBullets("Required Information", List.of(
                 "Type of issue they're experiencing",
-                "Urgency level of the problem", 
-                "Previous troubleshooting attempts"
-            ]) \
-            .set_step_criteria("Customer's need has been identified") \
-            .set_valid_contexts(["technical", "billing", "general"])
-        
-        # Technical support context
-        tech = contexts.add_context("technical")
-        tech.add_step("technical_help") \
-            .add_section("Current Task", "Help diagnose and resolve technical issues") \
-            .add_section("Available Tools", "Use web search and datetime functions for technical solutions") \
-            .set_functions(["web_search", "datetime"]) \
-            .set_step_criteria("Issue is resolved or escalated") \
-            .set_valid_contexts(["triage"])
-        
-        # Billing context (restricted functions for security)
-        billing = contexts.add_context("billing")
-        billing.add_step("billing_help") \
-            .set_text("I'll help with your billing question. For security, please provide your account verification.") \
-            .set_functions("none") \
-            .set_step_criteria("Billing issue is addressed") \
-            .set_valid_contexts(["triage"])
-        
-        # General inquiries context
-        general = contexts.add_context("general")
-        general.add_step("general_help") \
-            .set_text("I'm here to help with general questions. What can I assist you with?") \
-            .set_functions(["web_search", "datetime"]) \
-            .set_step_criteria("Question has been answered") \
-            .set_valid_contexts(["triage"])
+                "Urgency level of the problem",
+                "Previous troubleshooting attempts"))
+        .setStepCriteria("Customer's need has been identified")
+        .setValidContexts(List.of("technical", "billing", "general"));
 
-agent = CustomerServiceAgent()
-agent.run()
+// Technical support context
+var tech = contexts.addContext("technical");
+tech.addStep("technical_help")
+        .addSection("Current Task", "Help diagnose and resolve technical issues")
+        .addSection("Available Tools", "Use web search and datetime functions for technical solutions")
+        .setFunctions(List.of("web_search", "datetime"))
+        .setStepCriteria("Issue is resolved or escalated")
+        .setValidContexts(List.of("triage"));
 
-if __name__ == "__main__":
-    main()
+// Billing context (restricted functions for security)
+var billing = contexts.addContext("billing");
+billing.addStep("billing_help")
+        .setText("I'll help with your billing question. For security, please provide your account verification.")
+        .setFunctions("none")
+        .setStepCriteria("Billing issue is addressed")
+        .setValidContexts(List.of("triage"));
+
+// General inquiries context
+var general = contexts.addContext("general");
+general.addStep("general_help")
+        .setText("I'm here to help with general questions. What can I assist you with?")
+        .setFunctions(List.of("web_search", "datetime"))
+        .setStepCriteria("Question has been answered")
+        .setValidContexts(List.of("triage"));
+
+agent.run();
 ```
 
 ## API Reference
@@ -215,172 +215,130 @@ if __name__ == "__main__":
 
 The main entry point for defining contexts and steps.
 
-```python
-# Get the builder
-contexts = self.define_contexts()
+```java
+// Get the builder
+var contexts = agent.defineContexts();
 
-# Create contexts
-context = contexts.add_context(name: str) -> Context
+// Create contexts
+Context context = contexts.addContext("name");
 ```
 
 ### Context
 
 Represents a conversation context or workflow state.
 
-```python
-class Context:
-    def add_step(self, name: str) -> Step
-        """Create a new step in this context"""
-    
-    def set_valid_contexts(self, contexts: List[str]) -> Context
-        """Set which contexts can be accessed from this context"""
-        
-    # Context entry parameters
-    def set_post_prompt(self, post_prompt: str) -> Context
-        """Override post prompt for this context"""
-    
-    def set_system_prompt(self, system_prompt: str) -> Context
-        """Trigger context switch with new system prompt"""
-        
-    def set_consolidate(self, consolidate: bool) -> Context
-        """Consolidate conversation history when entering"""
-        
-    def set_full_reset(self, full_reset: bool) -> Context
-        """Full system prompt replacement vs injection"""
-        
-    def set_user_prompt(self, user_prompt: str) -> Context
-        """Inject user message for context"""
-    
-    # Context prompts
-    def set_prompt(self, prompt: str) -> Context
-        """Set simple string prompt for context"""
+```java
+class Context {
+    Step addStep(String name);                          // Create a new step in this context
+    Context setValidContexts(List<String> contexts);    // Which contexts can be accessed from this context
 
-    def add_section(self, title: str, body: str) -> Context
-        """Add POM section to context prompt"""
+    // Context entry parameters
+    Context setPostPrompt(String postPrompt);           // Override post prompt for this context
+    Context setSystemPrompt(String systemPrompt);       // Trigger context switch with new system prompt
+    Context setConsolidate(boolean consolidate);        // Consolidate conversation history when entering
+    Context setFullReset(boolean fullReset);            // Full system prompt replacement vs injection
+    Context setUserPrompt(String userPrompt);           // Inject user message for context
 
-    def add_bullets(self, title: str, bullets: List[str]) -> Context
-        """Add POM bullet section to context prompt"""
+    // Context prompts
+    Context setPrompt(String prompt);                   // Simple string prompt for context
+    Context addSection(String title, String body);      // Add POM section to context prompt
+    Context addBullets(String title, List<String> bullets); // Add POM bullet section to context prompt
 
-    # Context isolation and fillers
-    def set_isolated(self, isolated: bool) -> Context
-        """Mark context as isolated (independent conversation state)"""
-
-    def set_enter_fillers(self, fillers: Dict[str, List[str]]) -> Context
-        """Set fillers spoken when entering this context"""
-
-    def set_exit_fillers(self, fillers: Dict[str, List[str]]) -> Context
-        """Set fillers spoken when exiting this context"""
-
-    def add_enter_filler(self, language_code: str, fillers: List[str]) -> Context
-        """Add enter fillers for a specific language"""
-
-    def add_exit_filler(self, language_code: str, fillers: List[str]) -> Context
-        """Add exit fillers for a specific language"""
+    // Context isolation and fillers
+    Context setIsolated(boolean isolated);              // Mark context as isolated (independent state)
+    Context setEnterFillers(Map<String, List<String>> fillers); // Fillers spoken when entering
+    Context setExitFillers(Map<String, List<String>> fillers);  // Fillers spoken when exiting
+    Context addEnterFiller(String languageCode, List<String> fillers); // Enter fillers for one language
+    Context addExitFiller(String languageCode, List<String> fillers);  // Exit fillers for one language
+}
 ```
 
 #### Methods
 
-- `add_step(name)`: Create and return a new Step
-- `set_valid_contexts(contexts)`: Allow navigation to specified contexts
-- `set_post_prompt(prompt)`: Override agent's post prompt for this context
-- `set_system_prompt(prompt)`: Trigger context switch behavior (makes this a Context Switch Context)
-- `set_consolidate(bool)`: Whether to consolidate conversation when entering
-- `set_full_reset(bool)`: Complete vs partial context reset
-- `set_user_prompt(prompt)`: User message to inject when entering context
-- `set_prompt(text)`: Simple string prompt for context
-- `add_section(title, body)`: Add POM section to context prompt
-- `add_bullets(title, list)`: Add POM bullet section to context prompt
-- `set_isolated(bool)`: Mark context as isolated (independent conversation state)
-- `set_enter_fillers(dict)`: Set all enter fillers by language code
-- `set_exit_fillers(dict)`: Set all exit fillers by language code
-- `add_enter_filler(lang, list)`: Add enter fillers for a specific language
-- `add_exit_filler(lang, list)`: Add exit fillers for a specific language
+- `addStep(name)`: Create and return a new Step
+- `setValidContexts(contexts)`: Allow navigation to specified contexts
+- `setPostPrompt(prompt)`: Override agent's post prompt for this context
+- `setSystemPrompt(prompt)`: Trigger context switch behavior (makes this a Context Switch Context)
+- `setConsolidate(bool)`: Whether to consolidate conversation when entering
+- `setFullReset(bool)`: Complete vs partial context reset
+- `setUserPrompt(prompt)`: User message to inject when entering context
+- `setPrompt(text)`: Simple string prompt for context
+- `addSection(title, body)`: Add POM section to context prompt
+- `addBullets(title, list)`: Add POM bullet section to context prompt
+- `setIsolated(bool)`: Mark context as isolated (independent conversation state)
+- `setEnterFillers(map)`: Set all enter fillers by language code
+- `setExitFillers(map)`: Set all exit fillers by language code
+- `addEnterFiller(lang, list)`: Add enter fillers for a specific language
+- `addExitFiller(lang, list)`: Add exit fillers for a specific language
 
 ### Step
 
 Represents a single step within a context workflow.
 
-```python
-class Step:
-    # Content definition (choose one approach)
-    def set_text(self, text: str) -> Step
-        """Set direct text prompt (mutually exclusive with POM sections)"""
-    
-    def add_section(self, title: str, body: str = "") -> Step
-        """Add a POM-style section (mutually exclusive with set_text)"""
-    
-    def add_bullets(self, bullets: List[str], numbered: bool = False) -> Step
-        """Add bullets to the current or most recent section"""
-    
-    # Flow control
-    def set_step_criteria(self, criteria: str) -> Step
-        """Define completion criteria for this step"""
-    
-    def set_valid_steps(self, steps: List[str]) -> Step
-        """Set which steps can be accessed next in same context"""
-    
-    def set_valid_contexts(self, contexts: List[str]) -> Step
-        """Set which contexts can be accessed from this step"""
+```java
+class Step {
+    // Content definition (choose one approach)
+    Step setText(String text);                          // Direct text prompt (mutually exclusive with sections)
+    Step addSection(String title, String body);         // Add a POM-style section (mutually exclusive with setText)
+    Step addBullets(String title, List<String> bullets);// Add a titled bullet section
 
-    # Function restrictions
-    def set_functions(self, functions: Union[List[str], str]) -> Step
-        """Restrict available functions ('none' or list of function names)"""
+    // Flow control
+    Step setStepCriteria(String criteria);              // Completion criteria for this step
+    Step setValidSteps(List<String> steps);             // Which steps can be accessed next in same context
+    Step setValidContexts(List<String> contexts);       // Which contexts can be accessed from this step
 
-    # Reset behavior when entering step
-    def set_reset_system_prompt(self) -> Step
-        """Reset system prompt when entering this step"""
+    // Function restrictions ("none" or a List<String> of function names)
+    Step setFunctions(Object functions);
 
-    def set_reset_user_prompt(self) -> Step
-        """Reset user prompt when entering this step"""
-
-    def set_reset_consolidate(self) -> Step
-        """Consolidate conversation when entering this step"""
-
-    def set_reset_full_reset(self) -> Step
-        """Full conversation reset when entering this step"""
+    // Reset behavior when entering step
+    Step setResetSystemPrompt(String systemPrompt);     // Reset system prompt when entering this step
+    Step setResetUserPrompt(String userPrompt);         // Reset user prompt when entering this step
+    Step setResetConsolidate(boolean consolidate);      // Consolidate conversation when entering this step
+    Step setResetFullReset(boolean fullReset);          // Full conversation reset when entering this step
+}
 ```
 
 #### Content Methods
 
 **Option 1: Direct Text**
-```python
-step.set_text("Direct prompt text for the AI")
+```java
+step.setText("Direct prompt text for the AI");
 ```
 
 **Option 2: POM-Style Sections**
-```python
-step.add_section("Role", "You are a helpful assistant") \
-    .add_section("Instructions", "Help users with their questions") \
-    .add_bullets(["Be friendly", "Ask clarifying questions"])
+```java
+step.addSection("Role", "You are a helpful assistant")
+    .addSection("Instructions", "Help users with their questions")
+    .addBullets("Guidelines", List.of("Be friendly", "Ask clarifying questions"));
 ```
 
-**Note**: You cannot mix `set_text()` with `add_section()` in the same step.
+**Note**: You cannot mix `setText()` with `addSection()` in the same step.
 
 #### Navigation Methods
 
-```python
-# Control step progression within context
-step.set_valid_steps(["step1", "step2"])  # Can go to step1 or step2
-step.set_valid_steps([])                   # Cannot progress (dead end)
-# No set_valid_steps() call = implicit "next" step
+```java
+// Control step progression within context
+step.setValidSteps(List.of("step1", "step2"));  // Can go to step1 or step2
+step.setValidSteps(List.of());                  // Cannot progress (dead end)
+// No setValidSteps() call = implicit "next" step
 
-# Control context switching
-step.set_valid_contexts(["context1", "context2"])  # Can switch contexts
-step.set_valid_contexts([])                         # Trapped in current context
-# No set_valid_contexts() call = inherit from context level
+// Control context switching
+step.setValidContexts(List.of("context1", "context2"));  // Can switch contexts
+step.setValidContexts(List.of());                        // Trapped in current context
+// No setValidContexts() call = inherit from context level
 ```
 
 #### Function Restriction Methods
 
-```python
-# Allow specific functions only
-step.set_functions(["datetime", "math"])
+```java
+// Allow specific functions only
+step.setFunctions(List.of("datetime", "math"));
 
-# Block all functions
-step.set_functions("none")
+// Block all functions
+step.setFunctions("none");
 
-# No restriction (default - all agent functions available)
-# step.set_functions()  # Don't call this method
+// No restriction (default - all agent functions available)
+// step.setFunctions(...)  // Don't call this method
 ```
 
 ## Navigation and Flow Control
@@ -389,74 +347,74 @@ step.set_functions("none")
 
 The `set_valid_steps()` method controls movement within a context:
 
-```python
-# Explicit step list - can only go to these steps
-step.set_valid_steps(["review", "edit", "cancel"])
+```java
+// Explicit step list - can only go to these steps
+step.setValidSteps(List.of("review", "edit", "cancel"));
 
-# Empty list - dead end, cannot progress
-step.set_valid_steps([])
+// Empty list - dead end, cannot progress
+step.setValidSteps(List.of());
 
-# Not called - implicit "next" step progression
-# (will go to the next step defined in the context)
+// Not called - implicit "next" step progression
+// (will go to the next step defined in the context)
 ```
 
 ### Context Navigation Rules
 
 The `set_valid_contexts()` method controls switching between contexts:
 
-```python
-# Can switch to these contexts
-step.set_valid_contexts(["billing", "technical", "general"])
+```java
+// Can switch to these contexts
+step.setValidContexts(List.of("billing", "technical", "general"));
 
-# Trapped in current context
-step.set_valid_contexts([])
+// Trapped in current context
+step.setValidContexts(List.of());
 
-# Not called - inherit from context-level settings
+// Not called - inherit from context-level settings
 ```
 
 ### Navigation Inheritance
 
 Context-level navigation settings are inherited by steps:
 
-```python
-# Set at context level
-context.set_valid_contexts(["main", "help"])
+```java
+// Set at context level
+context.setValidContexts(List.of("main", "help"));
 
-# All steps in this context can access main and help contexts
-# unless overridden at step level
-step.set_valid_contexts(["main"])  # Override - only main allowed
+// All steps in this context can access main and help contexts
+// unless overridden at step level
+step.setValidContexts(List.of("main"));  // Override - only main allowed
 ```
 
 ### Complete Navigation Example
 
-```python
-contexts = self.define_contexts()
+```java
+var contexts = agent.defineContexts();
 
-# Main context
-main = contexts.add_context("main")
-main.set_valid_contexts(["help", "settings"])  # Context-level setting
+// Main context
+var main = contexts.addContext("main");
+main.setValidContexts(List.of("help", "settings"));  // Context-level setting
 
-main.add_step("welcome") \
-    .set_text("Welcome! How can I help you?") \
-    .set_valid_steps(["menu"])  # Must go to menu
-    # Inherits context-level valid_contexts
+main.addStep("welcome")
+    .setText("Welcome! How can I help you?")
+    .setValidSteps(List.of("menu"));  // Must go to menu
+    // Inherits context-level validContexts
 
-main.add_step("menu") \
-    .set_text("Choose an option: 1) Help 2) Settings 3) Continue") \
-    .set_valid_contexts(["help", "settings", "main"])  # Override context setting
-    # No valid_steps = this is a branching point
+main.addStep("menu")
+    .setText("Choose an option: 1) Help 2) Settings 3) Continue")
+    .setValidContexts(List.of("help", "settings", "main"));  // Override context setting
+    // No setValidSteps() = this is a branching point
 
-# Help context  
-help_ctx = contexts.add_context("help")
-help_ctx.add_step("help_info") \
-    .set_text("Here's how to use the system...") \
-    .set_valid_contexts(["main"])  # Can return to main
+// Help context
+var helpCtx = contexts.addContext("help");
+helpCtx.addStep("help_info")
+    .setText("Here's how to use the system...")
+    .setValidContexts(List.of("main"));  // Can return to main
 
-# Settings context
-settings = contexts.add_context("settings")
-settings.add_step("settings_menu") \
-    .set_text("Choose a setting to modify...") \
-    .set_valid_contexts(["main"])  # Can return to main
+// Settings context
+var settings = contexts.addContext("settings");
+settings.addStep("settings_menu")
+    .setText("Choose a setting to modify...")
+    .setValidContexts(List.of("main"));  // Can return to main
 ```
 
 ## Function Restrictions
@@ -465,65 +423,66 @@ Control which AI tools/functions are available in each step for enhanced securit
 
 ### Function Restriction Levels
 
-```python
-# No restrictions (default) - all agent functions available
-step  # Don't call set_functions()
+```java
+// No restrictions (default) - all agent functions available
+step;  // Don't call setFunctions()
 
-# Allow specific functions only
-step.set_functions(["datetime", "math", "web_search"])
+// Allow specific functions only
+step.setFunctions(List.of("datetime", "math", "web_search"));
 
-# Block all functions
-step.set_functions("none")
+// Block all functions
+step.setFunctions("none");
 ```
 
 ### Security-Focused Example
 
-```python
-class SecureBankingAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Banking Assistant", route="/banking")
-        
-        # Add potentially sensitive functions
-        self.add_skill("web_search", {"api_key": "key", "search_engine_id": "id"})
-        self.add_skill("datetime")
-        
-        contexts = self.define_contexts()
-        
-        # Public context - full access
-        public = contexts.add_context("public")
-        public.add_step("welcome") \
-            .set_text("Welcome to banking support. Are you an existing customer?") \
-            .set_functions(["datetime", "web_search"])  # Safe functions only \
-            .set_valid_contexts(["authenticated", "public"])
-        
-        # Authenticated context - restricted for security
-        auth = contexts.add_context("authenticated")
-        auth.add_step("account_access") \
-            .set_text("I can help with your account. What do you need assistance with?") \
-            .set_functions("none")  # No external functions for account data \
-            .set_valid_contexts(["public"])  # Can log out
+```java
+var agent = AgentBase.builder()
+        .name("Banking Assistant")
+        .route("/banking")
+        .build();
+
+// Add potentially sensitive functions
+agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
+agent.addSkill(SkillName.DATETIME, Map.of());
+
+var contexts = agent.defineContexts();
+
+// Public context - full access
+var public_ = contexts.addContext("public");
+public_.addStep("welcome")
+        .setText("Welcome to banking support. Are you an existing customer?")
+        .setFunctions(List.of("datetime", "web_search"))  // Safe functions only
+        .setValidContexts(List.of("authenticated", "public"));
+
+// Authenticated context - restricted for security
+var auth = contexts.addContext("authenticated");
+auth.addStep("account_access")
+        .setText("I can help with your account. What do you need assistance with?")
+        .setFunctions("none")  // No external functions for account data
+        .setValidContexts(List.of("public"));  // Can log out
 ```
 
 ### Function Access Patterns
 
-```python
-# Progressive function access based on trust level
-contexts = self.define_contexts()
+```java
+// Progressive function access based on trust level
+var contexts = agent.defineContexts();
 
-# Low trust - limited functions
-public = contexts.add_context("public")
-public.add_step("initial_contact") \
-    .set_functions(["datetime"])  # Only safe functions
+// Low trust - limited functions
+var public_ = contexts.addContext("public");
+public_.addStep("initial_contact")
+        .setFunctions(List.of("datetime"));  // Only safe functions
 
-# Medium trust - more functions  
-verified = contexts.add_context("verified")
-verified.add_step("verified_user") \
-    .set_functions(["datetime", "web_search"])  # Add search capability
+// Medium trust - more functions
+var verified = contexts.addContext("verified");
+verified.addStep("verified_user")
+        .setFunctions(List.of("datetime", "web_search"));  // Add search capability
 
-# High trust - full access
-authenticated = contexts.add_context("authenticated")
-authenticated.add_step("full_access") \
-    # No set_functions() call = all functions available
+// High trust - full access
+var authenticated = contexts.addContext("authenticated");
+authenticated.addStep("full_access");
+        // No setFunctions() call = all functions available
 ```
 
 ## Step Modes
@@ -553,14 +512,13 @@ The step text supports `${variable}` expansion from `global_data` and prompt var
 
 Step criteria tell the AI when a step is done. The AI evaluates the criteria and calls `next_step` when they're met:
 
-```python
-ctx.add_step("verify") \
-    .set_text("Verify the caller's identity.") \
-    .set_step_criteria(
+```java
+ctx.addStep("verify")
+    .setText("Verify the caller's identity.")
+    .setStepCriteria(
         "The caller has provided their account number "
-        "AND confirmed their date of birth."
-    ) \
-    .set_valid_steps(["handle_request"])
+        + "AND confirmed their date of birth.")
+    .setValidSteps(List.of("handle_request"));
 ```
 
 ### Gather Info Mode
@@ -603,13 +561,13 @@ No tool_call/tool_result entries anywhere. Clean conversation history.
 
 #### Basic Gather Example
 
-```python
-ctx.add_step("collect_info") \
-    .set_text("Help the caller with their request.") \
-    .set_gather_info(output_key="caller_info") \
-    .add_gather_question("first_name", "What is your first name?") \
-    .add_gather_question("last_name", "What is your last name?") \
-    .add_gather_question("email", "What is your email address?")
+```java
+ctx.addStep("collect_info")
+    .setText("Help the caller with their request.")
+    .setGatherInfo("caller_info", null, null)
+    .addGatherQuestion("first_name", "What is your first name?")
+    .addGatherQuestion("last_name", "What is your last name?")
+    .addGatherQuestion("email", "What is your email address?");
 ```
 
 This collects three pieces of information, stores them under `caller_info` in global_data, then returns to normal step mode with the step text "Help the caller with their request."
@@ -618,17 +576,17 @@ This collects three pieces of information, stores them under `caller_info` in gl
 
 The gather `prompt` is injected once as a persistent message when the first question begins:
 
-```python
-ctx.add_step("collect_profile") \
-    .set_text("Use the profile to recommend products.") \
-    .set_gather_info(
-        output_key="profile",
-        prompt="Welcome the caller and introduce yourself as a product specialist. "
-               "Explain that you need to ask a few quick questions to find the "
-               "best products for them. Be friendly and conversational."
-    ) \
-    .add_gather_question("name", "What is your name?") \
-    .add_gather_question("budget", "What is your budget?", type="number")
+```java
+ctx.addStep("collect_profile")
+    .setText("Use the profile to recommend products.")
+    .setGatherInfo(
+        "profile",  // outputKey
+        null,       // completionAction
+        "Welcome the caller and introduce yourself as a product specialist. "
+        + "Explain that you need to ask a few quick questions to find the "
+        + "best products for them. Be friendly and conversational.")
+    .addGatherQuestion("name", "What is your name?")
+    .addGatherQuestion("budget", "What is your budget?", "number", false, null, null);
 ```
 
 Without a gather `prompt`, the AI jumps straight into asking the first question with no introduction.
@@ -637,31 +595,32 @@ Without a gather `prompt`, the AI jumps straight into asking the first question 
 
 Each question has a `type` that controls the JSON schema of the `answer` parameter in `gather_submit`:
 
-```python
-# String (default) - free text
-.add_gather_question("name", "What is your name?", type="string")
+```java
+// String (default) - free text (the 2-arg overload defaults type to "string")
+.addGatherQuestion("name", "What is your name?")
 
-# Integer - whole numbers
-.add_gather_question("age", "How old are you?", type="integer")
+// Integer - whole numbers
+.addGatherQuestion("age", "How old are you?", "integer", false, null, null)
 
-# Number - decimal values
-.add_gather_question("budget", "What is your budget in dollars?", type="number")
+// Number - decimal values
+.addGatherQuestion("budget", "What is your budget in dollars?", "number", false, null, null)
 
-# Boolean - yes/no questions
-.add_gather_question("has_passport", "Do you have a valid passport?", type="boolean")
+// Boolean - yes/no questions
+.addGatherQuestion("has_passport", "Do you have a valid passport?", "boolean", false, null, null)
 ```
 
 #### Confirmation Flow
 
 When `confirm=True`, the AI must read the answer back to the caller and get explicit confirmation before submitting:
 
-```python
-.add_gather_question(
+```java
+.addGatherQuestion(
     "last_name",
     "What is your last name?",
-    type="string",
-    confirm=True
-)
+    "string",  // type
+    true,      // confirm
+    null,      // prompt
+    null)      // functions
 ```
 
 How it works:
@@ -675,16 +634,15 @@ How it works:
 
 Each question can have additional instructions and specific functions made available:
 
-```python
-.add_gather_question(
+```java
+.addGatherQuestion(
     "home_airport",
     "What is your home airport or nearest major city for departure?",
-    type="string",
-    confirm=True,
-    prompt="Use the resolve_airport function to validate the airport code "
-           "before submitting. If the airport is ambiguous, clarify with the user.",
-    functions=["resolve_airport"]
-)
+    "string",  // type
+    true,      // confirm
+    "Use the resolve_airport function to validate the airport code "
+    + "before submitting. If the airport is ambiguous, clarify with the user.",  // prompt
+    List.of("resolve_airport"))  // functions
 ```
 
 The `resolve_airport` function must already be registered on the agent. The `functions` array activates those functions for this question only, alongside `gather_submit`. When the next question begins, they're deactivated again.
@@ -693,84 +651,81 @@ The `resolve_airport` function must already be registered on the agent. The `fun
 
 Answers are stored in `global_data`, which is available in prompt variable expansion via `${key}`:
 
-```python
-# Store under a namespace
-.set_gather_info(output_key="profile")
-# Results in: global_data.profile.first_name, global_data.profile.last_name, etc.
-# Accessible in prompts as: ${profile}
+```java
+// Store under a namespace
+.setGatherInfo("profile", null, null)
+// Results in: global_data.profile.first_name, global_data.profile.last_name, etc.
+// Accessible in prompts as: ${profile}
 
-# Store at top level (no output_key)
-.set_gather_info()
-# Results in: global_data.first_name, global_data.last_name, etc.
+// Store at top level (null outputKey)
+.setGatherInfo(null, null, null)
+// Results in: global_data.first_name, global_data.last_name, etc.
 ```
 
 After gathering, `global_data` is refreshed so subsequent step prompts can reference the collected values:
 
-```python
-ctx.add_step("plan_trip") \
-    .set_text(
+```java
+ctx.addStep("plan_trip")
+    .setText(
         "The caller's travel profile is: ${profile}. "
-        "Use their name, budget, and preferences to suggest destinations."
-    )
+        + "Use their name, budget, and preferences to suggest destinations.");
 ```
 
 #### Auto-Advancing After Gather
 
 With `completion_action`, the step automatically advances when the last question is answered. You can advance to the next sequential step or jump to a specific named step:
 
-```python
-# Advance to the next sequential step
-ctx.add_step("collect_profile") \
-    .set_text("Collect the caller's profile.") \
-    .set_gather_info(
-        output_key="profile",
-        completion_action="next_step",
-        prompt="Welcome the caller. You need to collect a few details."
-    ) \
-    .add_gather_question("name", "What is your name?") \
-    .add_gather_question("email", "What is your email?")
+```java
+// Advance to the next sequential step
+ctx.addStep("collect_profile")
+    .setText("Collect the caller's profile.")
+    .setGatherInfo(
+        "profile",      // outputKey
+        "next_step",    // completionAction
+        "Welcome the caller. You need to collect a few details.")
+    .addGatherQuestion("name", "What is your name?")
+    .addGatherQuestion("email", "What is your email?");
 
-# This step runs immediately after the last question is answered
-ctx.add_step("process") \
-    .set_text("You have the caller's profile in ${profile}. Help them with their request.")
+// This step runs immediately after the last question is answered
+ctx.addStep("process")
+    .setText("You have the caller's profile in ${profile}. Help them with their request.");
 ```
 
 You can also jump to a specific step by name:
 
-```python
-ctx.add_step("collect_info") \
-    .set_text("Collect caller info.") \
-    .set_gather_info(
-        output_key="info",
-        completion_action="review",  # Jump directly to "review" step
-    ) \
-    .add_gather_question("name", "What is your name?") \
-    .add_gather_question("issue", "What is your issue?")
+```java
+ctx.addStep("collect_info")
+    .setText("Collect caller info.")
+    .setGatherInfo(
+        "info",      // outputKey
+        "review",    // completionAction — jump directly to "review" step
+        null)
+    .addGatherQuestion("name", "What is your name?")
+    .addGatherQuestion("issue", "What is your issue?");
 
-ctx.add_step("other_step") \
-    .set_text("This step is skipped when coming from collect_info.")
+ctx.addStep("other_step")
+    .setText("This step is skipped when coming from collect_info.");
 
-ctx.add_step("review") \
-    .set_text("Review the collected info in ${info} and help the caller.")
+ctx.addStep("review")
+    .setText("Review the collected info in ${info} and help the caller.");
 ```
 
-> **Note**: The target step is validated at build time. Using `"next_step"` on the last step in a context, or naming a step that doesn't exist, will raise a `ValueError`.
+> **Note**: The target step is validated at build time. Using `"next_step"` on the last step in a context, or naming a step that doesn't exist, will throw an `IllegalStateException`.
 
 #### Combining Gather with Normal Step Mode
 
 Without `completion_action` (or when set to None), the step returns to normal mode after all questions are answered:
 
-```python
-ctx.add_step("intake") \
-    .set_text(
+```java
+ctx.addStep("intake")
+    .setText(
         "Review the caller's information in ${intake_data}. "
-        "Confirm everything looks correct, then proceed to scheduling."
-    ) \
-    .set_gather_info(output_key="intake_data") \
-    .add_gather_question("name", "What is your name?") \
-    .add_gather_question("dob", "What is your date of birth?") \
-    .add_gather_question("reason", "What is the reason for your visit?") \
-    .set_valid_steps(["schedule"])
+        + "Confirm everything looks correct, then proceed to scheduling.")
+    .setGatherInfo("intake_data", null, null)
+    .addGatherQuestion("name", "What is your name?")
+    .addGatherQuestion("dob", "What is your date of birth?")
+    .addGatherQuestion("reason", "What is the reason for your visit?")
+    .setValidSteps(List.of("schedule"));
 ```
 
 Flow:
@@ -782,260 +737,245 @@ Flow:
 
 #### Gather Info API Reference
 
-**`set_gather_info()` Parameters:**
+**`setGatherInfo(String outputKey, String completionAction, String prompt)` Parameters:**
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `outputKey` | `String` | Key in global_data to store answers under. If `null`, answers stored at top level. |
+| `completionAction` | `String` | Where to go when all questions are answered: `"next_step"` to advance sequentially, or a specific step name (e.g. `"process_results"`) to jump to that step. If `null`, returns to normal step mode. The target is validated — `"next_step"` requires a following step, and named steps must exist in the context. |
+| `prompt` | `String` | Preamble text injected once as a persistent message when entering the gather step. `null` to omit. |
+
+**`addGatherQuestion(...)` Parameters:** the 2-arg overload `addGatherQuestion(key, question)` defaults `type` to `"string"`, `confirm` to `false`, and `prompt`/`functions` to `null`; the 6-arg overload exposes all of them.
+
+| Parameter | Type | Default (2-arg overload) | Description |
 |-----------|------|---------|-------------|
-| `output_key` | str | None | Key in global_data to store answers under. If None, answers stored at top level. |
-| `completion_action` | str | None | Where to go when all questions are answered: `"next_step"` to advance sequentially, or a specific step name (e.g. `"process_results"`) to jump to that step. If None, returns to normal step mode. The target is validated — `"next_step"` requires a following step, and named steps must exist in the context. |
-| `prompt` | str | None | Preamble text injected once as a persistent message when entering the gather step. |
-
-**`add_gather_question()` Parameters:**
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `key` | str | required | Key name for storing the answer in global_data |
-| `question` | str | required | The question text presented to the AI |
-| `type` | str | `"string"` | JSON schema type: `"string"`, `"integer"`, `"number"`, `"boolean"` |
-| `confirm` | bool | `False` | If True, AI must confirm answer with user before submitting |
-| `prompt` | str | None | Additional instruction text for this question |
-| `functions` | list | None | Function names to make visible for this question only |
+| `key` | `String` | required | Key name for storing the answer in global_data |
+| `question` | `String` | required | The question text presented to the AI |
+| `type` | `String` | `"string"` | JSON schema type: `"string"`, `"integer"`, `"number"`, `"boolean"` |
+| `confirm` | `boolean` | `false` | If true, AI must confirm answer with user before submitting |
+| `prompt` | `String` | `null` | Additional instruction text for this question |
+| `functions` | `List<String>` | `null` | Function names to make visible for this question only |
 
 ## Real-World Examples
 
 ### Example 1: Technical Support Troubleshooting
 
-```python
-class TechnicalSupportAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Tech Support", route="/tech-support")
-        
-        # Add diagnostic tools
-        self.add_skill("web_search", {"api_key": "key", "search_engine_id": "id"})
-        self.add_skill("datetime")
-        
-        contexts = self.define_contexts()
-        
-        # Initial triage
-        triage = contexts.add_context("triage")
-        triage.add_step("problem_identification") \
-            .add_section("Current Task", "Identify the type of technical issue") \
-            .add_bullets("Information to Gather", [
+```java
+var agent = AgentBase.builder()
+        .name("Tech Support")
+        .route("/tech-support")
+        .build();
+
+// Add diagnostic tools
+agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
+agent.addSkill(SkillName.DATETIME, Map.of());
+
+var contexts = agent.defineContexts();
+
+// Initial triage
+var triage = contexts.addContext("triage");
+triage.addStep("problem_identification")
+        .addSection("Current Task", "Identify the type of technical issue")
+        .addBullets("Information to Gather", List.of(
                 "Description of the specific problem",
                 "When did the issue start occurring?",
                 "What steps has the customer already tried?",
-                "Rate the severity level (critical/high/medium/low)"
-            ]) \
-            .set_step_criteria("Issue type and severity determined") \
-            .set_valid_contexts(["hardware", "software", "network"])
-        
-        # Hardware troubleshooting
-        hardware = contexts.add_context("hardware")
-        hardware.add_step("hardware_diagnosis") \
-            .add_section("Current Task", "Guide user through hardware diagnostics") \
-            .add_section("Available Tools", "Use web search to find hardware specifications and troubleshooting guides") \
-            .set_functions(["web_search"])  # Can search for hardware info \
-            .set_step_criteria("Hardware issue diagnosed") \
-            .set_valid_steps(["hardware_solution"])
-        
-        hardware.add_step("hardware_solution") \
-            .set_text("Based on the diagnosis, here's how to resolve the hardware issue...") \
-            .set_step_criteria("Solution provided and tested") \
-            .set_valid_contexts(["triage"])  # Can start over if needed
-        
-        # Software troubleshooting
-        software = contexts.add_context("software")
-        software.add_step("software_diagnosis") \
-            .add_section("Current Task", "Diagnose software-related issues") \
-            .add_section("Available Tools", "Use web search for software updates and datetime to check for recent changes") \
-            .set_functions(["web_search", "datetime"])  # Can check for updates \
-            .set_step_criteria("Software issue identified") \
-            .set_valid_steps(["software_fix", "escalation"])
-        
-        software.add_step("software_fix") \
-            .set_text("Let's try these software troubleshooting steps...") \
-            .set_step_criteria("Fix attempted and result confirmed") \
-            .set_valid_steps(["escalation", "resolution"])
-        
-        software.add_step("escalation") \
-            .set_text("I'll escalate this to our specialist team.") \
-            .set_functions("none")  # No tools needed for escalation \
-            .set_step_criteria("Escalation ticket created")
-        
-        software.add_step("resolution") \
-            .set_text("Great! The issue has been resolved.") \
-            .set_step_criteria("Customer confirms resolution") \
-            .set_valid_contexts(["triage"])
-        
-        # Network troubleshooting
-        network = contexts.add_context("network")
-        network.add_step("network_diagnosis") \
-            .add_section("Current Task", "Diagnose network and connectivity issues") \
-            .add_section("Available Tools", "Use web search to check service status and datetime for outage windows") \
-            .set_functions(["web_search", "datetime"])  # Check service status \
-            .set_step_criteria("Network issue diagnosed") \
-            .set_valid_steps(["network_fix"])
-        
-        network.add_step("network_fix") \
-            .set_text("Let's resolve your connectivity issue with these steps...") \
-            .set_step_criteria("Network connectivity restored") \
-            .set_valid_contexts(["triage"])
+                "Rate the severity level (critical/high/medium/low)"))
+        .setStepCriteria("Issue type and severity determined")
+        .setValidContexts(List.of("hardware", "software", "network"));
 
-agent = TechnicalSupportAgent()
-agent.run()
+// Hardware troubleshooting
+var hardware = contexts.addContext("hardware");
+hardware.addStep("hardware_diagnosis")
+        .addSection("Current Task", "Guide user through hardware diagnostics")
+        .addSection("Available Tools", "Use web search to find hardware specifications and troubleshooting guides")
+        .setFunctions(List.of("web_search"))  // Can search for hardware info
+        .setStepCriteria("Hardware issue diagnosed")
+        .setValidSteps(List.of("hardware_solution"));
 
-if __name__ == "__main__":
-    main()
+hardware.addStep("hardware_solution")
+        .setText("Based on the diagnosis, here's how to resolve the hardware issue...")
+        .setStepCriteria("Solution provided and tested")
+        .setValidContexts(List.of("triage"));  // Can start over if needed
+
+// Software troubleshooting
+var software = contexts.addContext("software");
+software.addStep("software_diagnosis")
+        .addSection("Current Task", "Diagnose software-related issues")
+        .addSection("Available Tools", "Use web search for software updates and datetime to check for recent changes")
+        .setFunctions(List.of("web_search", "datetime"))  // Can check for updates
+        .setStepCriteria("Software issue identified")
+        .setValidSteps(List.of("software_fix", "escalation"));
+
+software.addStep("software_fix")
+        .setText("Let's try these software troubleshooting steps...")
+        .setStepCriteria("Fix attempted and result confirmed")
+        .setValidSteps(List.of("escalation", "resolution"));
+
+software.addStep("escalation")
+        .setText("I'll escalate this to our specialist team.")
+        .setFunctions("none")  // No tools needed for escalation
+        .setStepCriteria("Escalation ticket created");
+
+software.addStep("resolution")
+        .setText("Great! The issue has been resolved.")
+        .setStepCriteria("Customer confirms resolution")
+        .setValidContexts(List.of("triage"));
+
+// Network troubleshooting
+var network = contexts.addContext("network");
+network.addStep("network_diagnosis")
+        .addSection("Current Task", "Diagnose network and connectivity issues")
+        .addSection("Available Tools", "Use web search to check service status and datetime for outage windows")
+        .setFunctions(List.of("web_search", "datetime"))  // Check service status
+        .setStepCriteria("Network issue diagnosed")
+        .setValidSteps(List.of("network_fix"));
+
+network.addStep("network_fix")
+        .setText("Let's resolve your connectivity issue with these steps...")
+        .setStepCriteria("Network connectivity restored")
+        .setValidContexts(List.of("triage"));
+
+agent.run();
 ```
 
 ### Example 2: Multi-Step Application Process
 
-```python
-class LoanApplicationAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Loan Application", route="/loan-app")
-        
-        # Add verification tools
-        self.add_skill("datetime")  # For date validation
-        
-        contexts = self.define_contexts()
-        
-        # Single workflow context
-        application = contexts.add_context("default")
-        
-        # Step 1: Introduction and eligibility
-        application.add_step("introduction") \
-            .add_section("Current Task", "Guide customers through the loan application process") \
-            .add_bullets("Information to Provide", [
+```java
+var agent = AgentBase.builder()
+        .name("Loan Application")
+        .route("/loan-app")
+        .build();
+
+// Add verification tools
+agent.addSkill(SkillName.DATETIME, Map.of());  // For date validation
+
+var contexts = agent.defineContexts();
+
+// Single workflow context
+var application = contexts.addContext("default");
+
+// Step 1: Introduction and eligibility
+application.addStep("introduction")
+        .addSection("Current Task", "Guide customers through the loan application process")
+        .addBullets("Information to Provide", List.of(
                 "Explain the process clearly",
                 "Outline what information will be needed",
-                "Set expectations for timeline and next steps"
-            ]) \
-            .set_step_criteria("Customer understands process and wants to continue") \
-            .set_valid_steps(["personal_info"])
-        
-        # Step 2: Personal information
-        application.add_step("personal_info") \
-            .add_section("Instructions", "Collect personal information") \
-            .add_bullets([
+                "Set expectations for timeline and next steps"))
+        .setStepCriteria("Customer understands process and wants to continue")
+        .setValidSteps(List.of("personal_info"));
+
+// Step 2: Personal information
+application.addStep("personal_info")
+        .addSection("Instructions", "Collect personal information")
+        .addBullets("Information to Collect", List.of(
                 "Full legal name",
                 "Date of birth",
                 "Social Security Number",
-                "Phone number and email"
-            ]) \
-            .set_functions(["datetime"])  # Can validate dates \
-            .set_step_criteria("All personal information collected and verified") \
-            .set_valid_steps(["employment_info", "personal_info"])  # Can review/edit
-        
-        # Step 3: Employment information  
-        application.add_step("employment_info") \
-            .set_text("Now I need information about your employment and income.") \
-            .set_step_criteria("Employment and income information complete") \
-            .set_valid_steps(["financial_info", "personal_info"])  # Can go back
-        
-        # Step 4: Financial information
-        application.add_step("financial_info") \
-            .set_text("Let's review your financial situation including assets and debts.") \
-            .set_step_criteria("Financial information complete") \
-            .set_valid_steps(["review", "employment_info"])  # Can go back
-        
-        # Step 5: Review all information
-        application.add_step("review") \
-            .add_section("Instructions", "Review all collected information") \
-            .add_bullets([
+                "Phone number and email"))
+        .setFunctions(List.of("datetime"))  // Can validate dates
+        .setStepCriteria("All personal information collected and verified")
+        .setValidSteps(List.of("employment_info", "personal_info"));  // Can review/edit
+
+// Step 3: Employment information
+application.addStep("employment_info")
+        .setText("Now I need information about your employment and income.")
+        .setStepCriteria("Employment and income information complete")
+        .setValidSteps(List.of("financial_info", "personal_info"));  // Can go back
+
+// Step 4: Financial information
+application.addStep("financial_info")
+        .setText("Let's review your financial situation including assets and debts.")
+        .setStepCriteria("Financial information complete")
+        .setValidSteps(List.of("review", "employment_info"));  // Can go back
+
+// Step 5: Review all information
+application.addStep("review")
+        .addSection("Instructions", "Review all collected information")
+        .addBullets("Review Checklist", List.of(
                 "Confirm personal details",
-                "Verify employment information", 
+                "Verify employment information",
                 "Review financial data",
-                "Ensure accuracy before submission"
-            ]) \
-            .set_step_criteria("Customer has reviewed and confirmed all information") \
-            .set_valid_steps(["submit", "personal_info", "employment_info", "financial_info"])
-        
-        # Step 6: Submission
-        application.add_step("submit") \
-            .set_text("Thank you! Your loan application has been submitted successfully. You'll receive a decision within 2-3 business days.") \
-            .set_functions("none")  # No tools needed for final message \
-            .set_step_criteria("Application submitted and confirmation provided")
-            # No valid_steps = end of process
+                "Ensure accuracy before submission"))
+        .setStepCriteria("Customer has reviewed and confirmed all information")
+        .setValidSteps(List.of("submit", "personal_info", "employment_info", "financial_info"));
 
-agent = LoanApplicationAgent()
-agent.run()
+// Step 6: Submission
+application.addStep("submit")
+        .setText("Thank you! Your loan application has been submitted successfully. You'll receive a decision within 2-3 business days.")
+        .setFunctions("none")  // No tools needed for final message
+        .setStepCriteria("Application submitted and confirmation provided");
+        // No setValidSteps() = end of process
 
-if __name__ == "__main__":
-    main()
+agent.run();
 ```
 
 ### Example 3: E-commerce Customer Service
 
-```python
-class EcommerceServiceAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="E-commerce Support", route="/ecommerce")
-        
-        # Add tools for order management
-        self.add_skill("web_search", {"api_key": "key", "search_engine_id": "id"})
-        self.add_skill("datetime")
-        
-        contexts = self.define_contexts()
-        
-        # Main service menu
-        main = contexts.add_context("main")
-        main.add_step("service_menu") \
-            .add_section("Current Task", "Help customers with their orders and questions") \
-            .add_bullets("Service Areas Available", [
+```java
+var agent = AgentBase.builder()
+        .name("E-commerce Support")
+        .route("/ecommerce")
+        .build();
+
+// Add tools for order management
+agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
+agent.addSkill(SkillName.DATETIME, Map.of());
+
+var contexts = agent.defineContexts();
+
+// Main service menu
+var main = contexts.addContext("main");
+main.addStep("service_menu")
+        .addSection("Current Task", "Help customers with their orders and questions")
+        .addBullets("Service Areas Available", List.of(
                 "Order status, modifications, and tracking",
                 "Returns and refunds",
                 "Product information and specifications",
-                "Account-related questions"
-            ]) \
-            .set_step_criteria("Customer's need has been identified") \
-            .set_valid_contexts(["orders", "returns", "products", "account"])
-        
-        # Order management context
-        orders = contexts.add_context("orders")
-        orders.add_step("order_assistance") \
-            .add_section("Current Task", "Help with order status, modifications, and tracking") \
-            .add_section("Available Tools", "Use datetime to check delivery dates and processing times") \
-            .set_functions(["datetime"])  # Can check delivery dates \
-            .set_step_criteria("Order issue resolved or escalated") \
-            .set_valid_contexts(["main"])
-        
-        # Returns and refunds context
-        returns = contexts.add_context("returns")
-        returns.add_step("return_process") \
-            .add_section("Current Task", "Guide customers through return process") \
-            .add_bullets("Return Process Steps", [
+                "Account-related questions"))
+        .setStepCriteria("Customer's need has been identified")
+        .setValidContexts(List.of("orders", "returns", "products", "account"));
+
+// Order management context
+var orders = contexts.addContext("orders");
+orders.addStep("order_assistance")
+        .addSection("Current Task", "Help with order status, modifications, and tracking")
+        .addSection("Available Tools", "Use datetime to check delivery dates and processing times")
+        .setFunctions(List.of("datetime"))  // Can check delivery dates
+        .setStepCriteria("Order issue resolved or escalated")
+        .setValidContexts(List.of("main"));
+
+// Returns and refunds context
+var returns = contexts.addContext("returns");
+returns.addStep("return_process")
+        .addSection("Current Task", "Guide customers through return process")
+        .addBullets("Return Process Steps", List.of(
                 "Verify return eligibility",
-                "Explain return policy", 
+                "Explain return policy",
                 "Provide return instructions",
-                "Process refund if applicable"
-            ]) \
-            .set_functions("none")  # Sensitive financial operations \
-            .set_step_criteria("Return request processed") \
-            .set_valid_contexts(["main"])
-        
-        # Product information context
-        products = contexts.add_context("products")
-        products.add_step("product_help") \
-            .add_section("Current Task", "Help customers with product questions") \
-            .add_section("Available Tools", "Use web search to find detailed product information and specifications") \
-            .set_functions(["web_search"])  # Can search for product info \
-            .set_step_criteria("Product question answered") \
-            .set_valid_contexts(["main"])
-        
-        # Account management context
-        account = contexts.add_context("account")
-        account.add_step("account_help") \
-            .set_text("I can help with account-related questions. Please verify your identity first.") \
-            .set_functions("none")  # Security-sensitive context \
-            .set_step_criteria("Account issue resolved") \
-            .set_valid_contexts(["main"])
+                "Process refund if applicable"))
+        .setFunctions("none")  // Sensitive financial operations
+        .setStepCriteria("Return request processed")
+        .setValidContexts(List.of("main"));
 
-agent = EcommerceServiceAgent()
-agent.run()
+// Product information context
+var products = contexts.addContext("products");
+products.addStep("product_help")
+        .addSection("Current Task", "Help customers with product questions")
+        .addSection("Available Tools", "Use web search to find detailed product information and specifications")
+        .setFunctions(List.of("web_search"))  // Can search for product info
+        .setStepCriteria("Product question answered")
+        .setValidContexts(List.of("main"));
 
-if __name__ == "__main__":
-    main()
+// Account management context
+var account = contexts.addContext("account");
+account.addStep("account_help")
+        .setText("I can help with account-related questions. Please verify your identity first.")
+        .setFunctions("none")  // Security-sensitive context
+        .setStepCriteria("Account issue resolved")
+        .setValidContexts(List.of("main"));
+
+agent.run();
 ```
 
 ## Best Practices
@@ -1044,107 +984,107 @@ if __name__ == "__main__":
 
 Use descriptive step names that indicate purpose:
 
-```python
-# Good
-.add_step("collect_shipping_address")
-.add_step("verify_payment_method")
-.add_step("confirm_order_details")
+```java
+// Good
+.addStep("collect_shipping_address")
+.addStep("verify_payment_method")
+.addStep("confirm_order_details")
 
-# Avoid
-.add_step("step1")
-.add_step("next")
-.add_step("continue")
+// Avoid
+.addStep("step1")
+.addStep("next")
+.addStep("continue")
 ```
 
 ### 2. Meaningful Completion Criteria
 
 Define clear, testable completion criteria:
 
-```python
-# Good - specific and measurable
-.set_step_criteria("User has provided valid email address and confirmed subscription preferences")
-.set_step_criteria("All required fields completed and payment method verified")
+```java
+// Good - specific and measurable
+.setStepCriteria("User has provided valid email address and confirmed subscription preferences")
+.setStepCriteria("All required fields completed and payment method verified")
 
-# Avoid - vague or subjective
-.set_step_criteria("User is ready")
-.set_step_criteria("Everything is good")
+// Avoid - vague or subjective
+.setStepCriteria("User is ready")
+.setStepCriteria("Everything is good")
 ```
 
 ### 3. Logical Navigation Flow
 
 Design intuitive navigation that matches user expectations:
 
-```python
-# Allow users to go back and review
-.set_valid_steps(["review_info", "edit_details", "confirm_submission"])
+```java
+// Allow users to go back and review
+.setValidSteps(List.of("review_info", "edit_details", "confirm_submission"))
 
-# Provide escape routes
-.set_valid_contexts(["main_menu", "help"])
+// Provide escape routes
+.setValidContexts(List.of("main_menu", "help"))
 
-# Consider dead ends carefully
-.set_valid_steps([])  # Only if this is truly the end
+// Consider dead ends carefully
+.setValidSteps(List.of())  // Only if this is truly the end
 ```
 
 ### 4. Progressive Function Access
 
 Restrict functions based on security and context needs:
 
-```python
-# Public areas - limited functions
-public_step.set_functions(["datetime", "web_search"])
+```java
+// Public areas - limited functions
+publicStep.setFunctions(List.of("datetime", "web_search"));
 
-# Authenticated areas - more functions allowed
-auth_step.set_functions(["datetime", "web_search", "user_profile"])
+// Authenticated areas - more functions allowed
+authStep.setFunctions(List.of("datetime", "web_search", "user_profile"));
 
-# Sensitive operations - minimal functions
-billing_step.set_functions("none")
+// Sensitive operations - minimal functions
+billingStep.setFunctions("none");
 ```
 
 ### 5. Context Organization
 
 Organize contexts by functional area or user journey:
 
-```python
-# By functional area
-contexts = ["triage", "technical_support", "billing", "account_management"]
+```java
+// By functional area
+List<String> byArea = List.of("triage", "technical_support", "billing", "account_management");
 
-# By user journey stage  
-contexts = ["onboarding", "verification", "configuration", "completion"]
+// By user journey stage
+List<String> byStage = List.of("onboarding", "verification", "configuration", "completion");
 
-# By security level
-contexts = ["public", "authenticated", "admin"]
+// By security level
+List<String> bySecurity = List.of("public", "authenticated", "admin");
 ```
 
 ### 6. Error Handling and Recovery
 
 Provide recovery paths for common issues:
 
-```python
-# Allow users to retry failed steps
-.set_valid_steps(["retry_payment", "choose_different_method", "contact_support"])
+```java
+// Allow users to retry failed steps
+.setValidSteps(List.of("retry_payment", "choose_different_method", "contact_support"))
 
-# Provide help context access
-.set_valid_contexts(["help", "main"])
+// Provide help context access
+.setValidContexts(List.of("help", "main"))
 
-# Include validation steps
-verification_step.add_step("validation") \
-    .set_step_criteria("Data validation passed") \
-    .set_valid_steps(["proceed", "edit_data"])
+// Include validation steps
+verificationCtx.addStep("validation")
+    .setStepCriteria("Data validation passed")
+    .setValidSteps(List.of("proceed", "edit_data"));
 ```
 
 ### 7. Content Strategy
 
 Choose the right content approach for each step:
 
-```python
-# Use set_text() for simple, direct instructions
-step.set_text("Please provide your email address")
+```java
+// Use setText() for simple, direct instructions
+step.setText("Please provide your email address");
 
-# Use POM sections for complex, structured content
-step.add_section("Role", "You are a technical specialist") \
-    .add_section("Context", "Customer is experiencing network issues") \
-    .add_section("Instructions", "Follow diagnostic protocol") \
-    .add_bullets(["Check connectivity", "Test speed", "Verify settings"])
+// Use POM sections for complex, structured content
+step.addSection("Role", "You are a technical specialist")
+    .addSection("Context", "Customer is experiencing network issues")
+    .addSection("Instructions", "Follow diagnostic protocol")
+    .addBullets("Diagnostic Steps", List.of("Check connectivity", "Test speed", "Verify settings"));
 ```
 
 ## Troubleshooting
@@ -1155,56 +1095,56 @@ step.add_section("Role", "You are a technical specialist") \
 
 **Error**: When using a single context with a name other than "default"
 
-```python
-# Wrong
-context = contexts.add_context("main")  # Error!
+```java
+// Wrong
+var context = contexts.addContext("main");  // Error!
 
-# Correct
-context = contexts.add_context("default")
+// Correct
+var context = contexts.addContext("default");
 ```
 
-#### 2. "Cannot mix set_text with add_section"
+#### 2. "Cannot mix setText with addSection"
 
 **Error**: Using both direct text and POM sections in the same step
 
-```python
-# Wrong
-step.set_text("Welcome!") \
-    .add_section("Role", "Assistant")  # Error!
+```java
+// Wrong
+step.setText("Welcome!")
+    .addSection("Role", "Assistant");  // Error!
 
-# Correct - choose one approach
-step.set_text("Welcome! I'm your assistant.")
-# OR
-step.add_section("Role", "Assistant") \
-    .add_section("Message", "Welcome!")
+// Correct - choose one approach
+step.setText("Welcome! I'm your assistant.");
+// OR
+step.addSection("Role", "Assistant")
+    .addSection("Message", "Welcome!");
 ```
 
 #### 3. Navigation Issues
 
 **Problem**: Users getting stuck or unable to navigate
 
-```python
-# Check your navigation rules
-step.set_valid_steps([])  # Dead end - is this intended?
-step.set_valid_contexts([])  # Trapped in context - is this intended?
+```java
+// Check your navigation rules
+step.setValidSteps(List.of());  // Dead end - is this intended?
+step.setValidContexts(List.of());  // Trapped in context - is this intended?
 
-# Add appropriate navigation
-step.set_valid_steps(["next_step", "previous_step"])
-step.set_valid_contexts(["main", "help"])
+// Add appropriate navigation
+step.setValidSteps(List.of("next_step", "previous_step"));
+step.setValidContexts(List.of("main", "help"));
 ```
 
 #### 4. Function Access Problems
 
 **Problem**: Functions not available when expected
 
-```python
-# Check function restrictions
-step.set_functions("none")  # All functions blocked
-step.set_functions(["datetime"])  # Only datetime allowed
+```java
+// Check function restrictions
+step.setFunctions("none");  // All functions blocked
+step.setFunctions(List.of("datetime"));  // Only datetime allowed
 
-# Verify function names match your agent's functions
-self.add_skill("web_search")  # Function name is "web_search"
-step.set_functions(["web_search"])  # Must match exactly
+// Verify function names match your agent's functions
+agent.addSkill(SkillName.WEB_SEARCH, Map.of());  // Function name is "web_search"
+step.setFunctions(List.of("web_search"));  // Must match exactly
 ```
 
 ### Debugging Tips
@@ -1213,38 +1153,39 @@ step.set_functions(["web_search"])  # Must match exactly
 
 Add logging to understand flow:
 
-```python
-def create_step_with_logging(self, name):
-    step = context.add_step(name)
-    print(f"Created step: {name}")
-    return step
+```java
+Step createStepWithLogging(Context context, String name) {
+    Step step = context.addStep(name);
+    System.out.println("Created step: " + name);
+    return step;
+}
 ```
 
 #### 2. Validate Navigation Rules
 
 Check that all referenced steps/contexts exist:
 
-```python
-# Ensure referenced steps exist
-.set_valid_steps(["review", "edit"])  # Both "review" and "edit" steps must exist
+```java
+// Ensure referenced steps exist
+.setValidSteps(List.of("review", "edit"))  // Both "review" and "edit" steps must exist
 
-# Ensure referenced contexts exist  
-.set_valid_contexts(["main", "help"])  # Both "main" and "help" contexts must exist
+// Ensure referenced contexts exist
+.setValidContexts(List.of("main", "help"))  // Both "main" and "help" contexts must exist
 ```
 
 #### 3. Test Function Restrictions
 
 Verify functions are properly restricted:
 
-```python
-# Test with all functions
-# step  # No set_functions() call
+```java
+// Test with all functions
+// step  // No setFunctions() call
 
-# Test with restrictions
-step.set_functions(["datetime"])
+// Test with restrictions
+step.setFunctions(List.of("datetime"));
 
-# Test with no functions
-step.set_functions("none")
+// Test with no functions
+step.setFunctions("none");
 ```
 
 ## Migration from POM
@@ -1252,59 +1193,60 @@ step.set_functions("none")
 ### Converting Traditional Prompts
 
 **Before (Traditional POM):**
-```python
-class TraditionalAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="assistant", route="/assistant")
-        
-        self.prompt_add_section("Role", "You are a helpful assistant")
-        self.prompt_add_section("Instructions", "Help users with questions")
-        self.prompt_add_section("Guidelines", bullets=[
-            "Be friendly",
-            "Ask clarifying questions",
-            "Provide accurate information"
-        ])
+```java
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+
+agent.promptAddSection("Role", "You are a helpful assistant");
+agent.promptAddSection("Instructions", "Help users with questions");
+agent.promptAddSection("Guidelines", "", List.of(
+        "Be friendly",
+        "Ask clarifying questions",
+        "Provide accurate information"));
 ```
 
 **After (Contexts and Steps):**
-```python
-class ContextsAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="assistant", route="/assistant")
-        
-        contexts = self.define_contexts()
-        main = contexts.add_context("default")
-        
-        main.add_step("assistance") \
-            .add_section("Role", "You are a helpful assistant") \
-            .add_section("Instructions", "Help users with questions") \
-            .add_section("Guidelines", bullets=[
+```java
+var agent = AgentBase.builder()
+        .name("assistant")
+        .route("/assistant")
+        .build();
+
+var contexts = agent.defineContexts();
+var main = contexts.addContext("default");
+
+main.addStep("assistance")
+        .addSection("Role", "You are a helpful assistant")
+        .addSection("Instructions", "Help users with questions")
+        .addBullets("Guidelines", List.of(
                 "Be friendly",
-                "Ask clarifying questions", 
-                "Provide accurate information"
-            ]) \
-            .set_step_criteria("User's question has been answered")
+                "Ask clarifying questions",
+                "Provide accurate information"))
+        .setStepCriteria("User's question has been answered");
 ```
 
 ### Hybrid Approach
 
 You can use both traditional prompts and contexts in the same agent:
 
-```python
-class HybridAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="hybrid", route="/hybrid")
-        
-        # Traditional prompt sections (from skills, global settings, etc.)
-        # These will coexist with contexts
-        
-        # Define contexts for structured workflows
-        contexts = self.define_contexts()
-        workflow = contexts.add_context("default")
-        
-        workflow.add_step("structured_process") \
-            .set_text("Following the structured workflow...") \
-            .set_step_criteria("Workflow complete")
+```java
+var agent = AgentBase.builder()
+        .name("hybrid")
+        .route("/hybrid")
+        .build();
+
+// Traditional prompt sections (from skills, global settings, etc.)
+// These will coexist with contexts
+
+// Define contexts for structured workflows
+var contexts = agent.defineContexts();
+var workflow = contexts.addContext("default");
+
+workflow.addStep("structured_process")
+        .setText("Following the structured workflow...")
+        .setStepCriteria("Workflow complete");
 ```
 
 ### Migration Strategy
@@ -1325,48 +1267,48 @@ Start with simple single-context workflows and gradually build more complex mult
 
 ### Dynamic Context Switching
 
-To switch contexts dynamically during a conversation, use `SwaigFunctionResult` with the `swml_change_context()` method:
+To switch contexts dynamically during a conversation, return a `FunctionResult` with the `swmlChangeContext()` method from a tool handler:
 
-```python
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-class MultiContextAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="multi-context", route="/multi")
+import java.util.List;
+import java.util.Map;
 
-        # Define contexts using the ContextBuilder pattern
-        contexts = self.define_contexts()
+var agent = AgentBase.builder()
+        .name("multi-context")
+        .route("/multi")
+        .build();
 
-        # Sales context
-        sales = contexts.add_context("sales")
-        sales.add_section("Role", "You are a helpful sales representative.")
-        sales.add_step("greeting").set_text("Welcome customers and understand their needs.")
+// Define contexts using the ContextBuilder pattern
+var contexts = agent.defineContexts();
 
-        # Support context
-        support = contexts.add_context("support")
-        support.add_section("Role", "You are a technical support specialist.")
-        support.add_step("diagnose").set_text("Help diagnose and resolve technical issues.")
+// Sales context
+var sales = contexts.addContext("sales");
+sales.addSection("Role", "You are a helpful sales representative.");
+sales.addStep("greeting").setText("Welcome customers and understand their needs.");
 
-    @AgentBase.tool(
-        name="transfer_to_support",
-        description="Transfer the customer to technical support",
-        parameters={}
-    )
-    def transfer_to_support(self, args, raw_data):
-        # Use swml_change_context to switch contexts
-        return SwaigFunctionResult("Transferring you to technical support...").swml_change_context("support")
+// Support context
+var support = contexts.addContext("support");
+support.addSection("Role", "You are a technical support specialist.");
+support.addStep("diagnose").setText("Help diagnose and resolve technical issues.");
 
-    @AgentBase.tool(
-        name="transfer_to_sales",
-        description="Transfer the customer to sales",
-        parameters={}
-    )
-    def transfer_to_sales(self, args, raw_data):
-        return SwaigFunctionResult("Transferring you to sales...").swml_change_context("sales")
+// Tools that switch contexts via swmlChangeContext
+agent.defineTool("transfer_to_support",
+        "Transfer the customer to technical support",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, raw) -> new FunctionResult("Transferring you to technical support...")
+                .swmlChangeContext("support"));
+
+agent.defineTool("transfer_to_sales",
+        "Transfer the customer to sales",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, raw) -> new FunctionResult("Transferring you to sales...")
+                .swmlChangeContext("sales"));
 ```
 
-For a complete example of multi-context agents with different personas, see `examples/contexts_demo.py`.
+For a complete example of multi-context agents with different personas, see `examples/ContextsDemo.java`.
 
 ---
 
@@ -1374,106 +1316,108 @@ For a complete example of multi-context agents with different personas, see `exa
 
 Collects a travel profile with typed questions and confirmation, then recommends destinations:
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class TravelAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Travel Agent", route="/travel")
+import java.util.List;
 
-        self.prompt_add_section("Role", "You are a friendly travel booking assistant.")
+var agent = AgentBase.builder()
+        .name("Travel Agent")
+        .route("/travel")
+        .build();
 
-        contexts = self.define_contexts()
-        ctx = contexts.add_context("default")
+agent.promptAddSection("Role", "You are a friendly travel booking assistant.");
 
-        # Step 1: Collect profile (gather mode, auto-advance)
-        ctx.add_step("collect_profile") \
-            .set_text("Collect the caller's travel profile.") \
-            .set_gather_info(
-                output_key="profile",
-                completion_action="next_step",
-                prompt="Welcome the caller and introduce yourself as a travel "
-                       "booking assistant. You need to collect a few details "
-                       "to build their travel profile. Be warm and conversational."
-            ) \
-            .add_gather_question("first_name", "What is your first name?") \
-            .add_gather_question("last_name", "What is your last name?", confirm=True) \
-            .add_gather_question("party_size", "How many people are traveling?", type="integer") \
-            .add_gather_question("budget_per_person", "What is your budget per person?", type="number") \
-            .add_gather_question("has_passport", "Do you have a valid passport?", type="boolean") \
-            .add_gather_question("home_airport", "What is your home airport?", confirm=True)
+var contexts = agent.defineContexts();
+var ctx = contexts.addContext("default");
 
-        # Step 2: Recommend destinations (normal mode)
-        ctx.add_step("plan_trip") \
-            .set_text(
+// Step 1: Collect profile (gather mode, auto-advance)
+ctx.addStep("collect_profile")
+        .setText("Collect the caller's travel profile.")
+        .setGatherInfo(
+                "profile",      // outputKey
+                "next_step",    // completionAction
+                "Welcome the caller and introduce yourself as a travel "
+                + "booking assistant. You need to collect a few details "
+                + "to build their travel profile. Be warm and conversational.")
+        .addGatherQuestion("first_name", "What is your first name?")
+        .addGatherQuestion("last_name", "What is your last name?", "string", true, null, null)
+        .addGatherQuestion("party_size", "How many people are traveling?", "integer", false, null, null)
+        .addGatherQuestion("budget_per_person", "What is your budget per person?", "number", false, null, null)
+        .addGatherQuestion("has_passport", "Do you have a valid passport?", "boolean", false, null, null)
+        .addGatherQuestion("home_airport", "What is your home airport?", "string", true, null, null);
+
+// Step 2: Recommend destinations (normal mode)
+ctx.addStep("plan_trip")
+        .setText(
                 "You now have the caller's travel profile in ${profile}. "
-                "Use their name, party size, budget, passport status, and "
-                "home airport to suggest three vacation destinations. "
-                "If they don't have a passport, only suggest domestic destinations."
-            )
+                + "Use their name, party size, budget, passport status, and "
+                + "home airport to suggest three vacation destinations. "
+                + "If they don't have a passport, only suggest domestic destinations.");
 
-        self.add_language(name="English", code="en-US", voice="rime.spore")
+agent.addLanguage("English", "en-US", "rime.spore");
 ```
 
 ### Example 5: Support Ticket Agent (Gather + Triage)
 
 Gathers issue details, then routes to the right team using normal mode navigation:
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class SupportAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="Support Agent", route="/support")
+import java.util.List;
 
-        self.prompt_add_section("Role", "You are a technical support agent.")
+var agent = AgentBase.builder()
+        .name("Support Agent")
+        .route("/support")
+        .build();
 
-        contexts = self.define_contexts()
-        ctx = contexts.add_context("default")
+agent.promptAddSection("Role", "You are a technical support agent.");
 
-        # Collect ticket info, then return to normal mode for triage
-        ctx.add_step("intake") \
-            .set_text(
+var contexts = agent.defineContexts();
+var ctx = contexts.addContext("default");
+
+// Collect ticket info, then return to normal mode for triage
+ctx.addStep("intake")
+        .setText(
                 "You have the caller's issue details in ${ticket}. "
-                "Based on the category and description, route them to "
-                "the appropriate team."
-            ) \
-            .set_gather_info(
-                output_key="ticket",
-                prompt="Thank the caller for contacting support. "
-                       "You need to collect some details about their issue."
-            ) \
-            .add_gather_question("name", "What is your name?") \
-            .add_gather_question("account_id", "What is your account ID?", confirm=True) \
-            .add_gather_question("category", "Is this about billing, a technical issue, or something else?") \
-            .add_gather_question("description", "Please describe the issue in detail.") \
-            .set_valid_steps(["billing_support", "tech_support", "general_support"])
+                + "Based on the category and description, route them to "
+                + "the appropriate team.")
+        .setGatherInfo(
+                "ticket",  // outputKey
+                null,      // completionAction (null = return to normal mode)
+                "Thank the caller for contacting support. "
+                + "You need to collect some details about their issue.")
+        .addGatherQuestion("name", "What is your name?")
+        .addGatherQuestion("account_id", "What is your account ID?", "string", true, null, null)
+        .addGatherQuestion("category", "Is this about billing, a technical issue, or something else?")
+        .addGatherQuestion("description", "Please describe the issue in detail.")
+        .setValidSteps(List.of("billing_support", "tech_support", "general_support"));
 
-        ctx.add_step("billing_support") \
-            .set_text("Help the caller with their billing issue. Details: ${ticket}.")
+ctx.addStep("billing_support")
+        .setText("Help the caller with their billing issue. Details: ${ticket}.");
 
-        ctx.add_step("tech_support") \
-            .set_text("Help the caller with their technical issue. Details: ${ticket}.") \
-            .set_functions(["run_diagnostics", "check_service_status"])
+ctx.addStep("tech_support")
+        .setText("Help the caller with their technical issue. Details: ${ticket}.")
+        .setFunctions(List.of("run_diagnostics", "check_service_status"));
 
-        ctx.add_step("general_support") \
-            .set_text("Help the caller with their general inquiry. Details: ${ticket}.")
+ctx.addStep("general_support")
+        .setText("Help the caller with their general inquiry. Details: ${ticket}.");
 
-        self.add_language(name="English", code="en-US", voice="rime.spore")
+agent.addLanguage("English", "en-US", "rime.spore");
 ```
 
-Note: This example uses gather **without** `completion_action`. After all questions are answered, the step returns to normal mode with `valid_steps` restored. The AI uses the gathered data to decide which support step to route to.
+Note: This example uses gather **without** `completionAction`. After all questions are answered, the step returns to normal mode with `validSteps` restored. The AI uses the gathered data to decide which support step to route to.
 
 ## Related Documentation
 
 - **[API Reference](api_reference.md)** - Complete AgentBase class reference
-- **[SWAIG Reference](swaig_reference.md)** - All available result methods including `swml_change_context()` and `swml_change_step()`
+- **[SWAIG Reference](swaig_reference.md)** - All available result methods including `swmlChangeContext()` and `swmlChangeStep()`
 - **[Agent Guide](agent_guide.md)** - General agent development guide
 - **[DataMap Guide](datamap_guide.md)** - Serverless function integration
 
 ### Example Files
 
-- `examples/contexts_demo.py` - Multi-context agent with personas (Franklin, Rachael, Dwight)
-- `examples/gather_info_demo.py` - Structured data collection using `set_gather_info()` and `add_gather_question()`
-- `examples/survey_agent_example.py` - Survey workflow with steps
-- `examples/info_gatherer_example.py` - Information gathering workflow
+- `examples/ContextsDemo.java` - Multi-context onboarding agent
+- `examples/GatherInfoDemo.java` - Structured data collection using `setGatherInfo()` and `addGatherQuestion()`
+- `examples/StepFunctionInheritanceDemo.java` - Per-step function whitelist inheritance
