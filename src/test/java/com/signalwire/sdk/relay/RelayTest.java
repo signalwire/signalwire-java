@@ -1118,11 +1118,16 @@ class RelayTest {
       assertFalse(client.isConnected());
     }
 
+    // Missing project/token (and no JWT, no env fallback) is an error — mirrors
+    // Python's ValueError (relay/client.py). build() reads SIGNALWIRE_PROJECT_ID
+    // / _API_TOKEN / _JWT_TOKEN as a fallback, so these throw only when the
+    // credential is absent from BOTH the builder and the environment. Unit tests
+    // run without SIGNALWIRE_* creds in the env.
     @Test
     @DisplayName("Builder fails without project")
     void builderNoProject() {
       assertThrows(
-          NullPointerException.class,
+          IllegalArgumentException.class,
           () -> RelayClient.builder().token("tok").space("space").build());
     }
 
@@ -1130,16 +1135,18 @@ class RelayTest {
     @DisplayName("Builder fails without token")
     void builderNoToken() {
       assertThrows(
-          NullPointerException.class,
+          IllegalArgumentException.class,
           () -> RelayClient.builder().project("proj").space("space").build());
     }
 
     @Test
-    @DisplayName("Builder fails without space")
+    @DisplayName("Builder defaults space to the RELAY host when unset")
     void builderNoSpace() {
-      assertThrows(
-          NullPointerException.class,
-          () -> RelayClient.builder().project("proj").token("tok").build());
+      // Python parity: host defaults to DEFAULT_RELAY_HOST (relay.signalwire.com)
+      // when neither the space arg nor SIGNALWIRE_SPACE is set — it is never an
+      // error on its own.
+      var client = RelayClient.builder().project("proj").token("tok").build();
+      assertEquals("relay.signalwire.com", client.getSpace());
     }
 
     @Test

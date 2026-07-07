@@ -48,11 +48,16 @@ class RestTest {
       assertNotNull(client.getHttpClient());
     }
 
+    // These assert that a missing credential with NO env-var fallback set is an
+    // error. build() reads SIGNALWIRE_PROJECT_ID/_API_TOKEN/SPACE as a fallback
+    // (Python parity), so it now throws IllegalArgumentException (mirroring
+    // Python's ValueError) only when a credential is absent from BOTH the builder
+    // and the environment. Unit tests run without SIGNALWIRE_* creds in the env.
     @Test
     @DisplayName("Builder fails without project")
     void builderNoProject() {
       assertThrows(
-          NullPointerException.class,
+          IllegalArgumentException.class,
           () -> RestClient.builder().token("tok").space("space").build());
     }
 
@@ -60,7 +65,7 @@ class RestTest {
     @DisplayName("Builder fails without token")
     void builderNoToken() {
       assertThrows(
-          NullPointerException.class,
+          IllegalArgumentException.class,
           () -> RestClient.builder().project("proj").space("space").build());
     }
 
@@ -68,7 +73,7 @@ class RestTest {
     @DisplayName("Builder fails without space")
     void builderNoSpace() {
       assertThrows(
-          NullPointerException.class,
+          IllegalArgumentException.class,
           () -> RestClient.builder().project("proj").token("tok").build());
     }
   }

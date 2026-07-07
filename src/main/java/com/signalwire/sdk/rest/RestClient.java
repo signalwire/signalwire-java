@@ -113,10 +113,32 @@ public class RestClient extends ResourceTree {
     }
 
     public RestClient build() {
-      Objects.requireNonNull(project, "project is required");
-      Objects.requireNonNull(token, "token is required");
-      Objects.requireNonNull(space, "space is required");
+      // Env-var fallback for any credential not set explicitly — parity with
+      // Python's RestClient() (rest/client.py), which reads SIGNALWIRE_PROJECT_ID
+      // / SIGNALWIRE_API_TOKEN / SIGNALWIRE_SPACE from the environment when the
+      // corresponding argument is absent. A builder with no explicit creds is a
+      // supported usage ("reads env vars automatically"), not an error.
+      if (project == null) {
+        project = envOrNull("SIGNALWIRE_PROJECT_ID");
+      }
+      if (token == null) {
+        token = envOrNull("SIGNALWIRE_API_TOKEN");
+      }
+      if (space == null) {
+        space = envOrNull("SIGNALWIRE_SPACE");
+      }
+      if (project == null || token == null || space == null) {
+        throw new IllegalArgumentException(
+            "project, token, and space are required. Provide them via the builder or set "
+                + "SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN, and SIGNALWIRE_SPACE "
+                + "environment variables.");
+      }
       return new RestClient(this);
+    }
+
+    private static String envOrNull(String key) {
+      String v = System.getenv(key);
+      return (v != null && !v.isEmpty()) ? v : null;
     }
   }
 

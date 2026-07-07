@@ -179,15 +179,44 @@ public class RelayClient implements AutoCloseable {
       return this;
     }
 
+    /** Default RELAY host, matching Python's DEFAULT_RELAY_HOST (relay/constants.py). */
+    private static final String DEFAULT_RELAY_HOST = "relay.signalwire.com";
+
     public RelayClient build() {
-      // JWT-only path: skip project/token requirement. Otherwise both
-      // project and token are required (existing contract: throws NPE).
-      if (jwtToken == null || jwtToken.isEmpty()) {
-        Objects.requireNonNull(project, "project is required");
-        Objects.requireNonNull(token, "token is required");
+      // Env-var fallback for any credential not set explicitly — parity with
+      // Python's relay Client() (relay/client.py), which reads
+      // SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / SIGNALWIRE_JWT_TOKEN and
+      // defaults the host to SIGNALWIRE_SPACE or DEFAULT_RELAY_HOST.
+      if (project == null) {
+        project = envOrNull("SIGNALWIRE_PROJECT_ID");
       }
-      Objects.requireNonNull(space, "space is required");
+      if (token == null) {
+        token = envOrNull("SIGNALWIRE_API_TOKEN");
+      }
+      if (jwtToken == null) {
+        jwtToken = envOrNull("SIGNALWIRE_JWT_TOKEN");
+      }
+      if (space == null) {
+        String envSpace = envOrNull("SIGNALWIRE_SPACE");
+        space = (envSpace != null) ? envSpace : DEFAULT_RELAY_HOST;
+      }
+      // JWT-only path: project/token not required (project_id is inside the
+      // token). Otherwise both project and token are required. Mirrors Python's
+      // ValueError; space always defaults, so it is never itself an error.
+      if (jwtToken == null || jwtToken.isEmpty()) {
+        if (project == null || token == null) {
+          throw new IllegalArgumentException(
+              "project and token are required (or provide a JWT token). Pass them via the "
+                  + "builder or set SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / "
+                  + "SIGNALWIRE_JWT_TOKEN environment variables.");
+        }
+      }
       return new RelayClient(this);
+    }
+
+    private static String envOrNull(String key) {
+      String v = System.getenv(key);
+      return (v != null && !v.isEmpty()) ? v : null;
     }
   }
 
