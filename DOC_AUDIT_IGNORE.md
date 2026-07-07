@@ -144,6 +144,8 @@ end: Python Call.end — Java uses Call#hangup
 
 ### Relay (Python Call)
 
+await: real Action#await() / Message#await() RELAY accessor (relay/Action.java, relay/Message.java) — fluent alias of waitForCompletion(); real generated/hand SDK method, surface fold-gap, enumerator does not surface the bare name
+
 
 ### Generated-namespace accessors not yet enumerated by the surface tool
 
@@ -177,6 +179,13 @@ roomRecordings: real VideoNamespace.roomRecordings() sub-resource accessor; mirr
 documents: real DatasphereNamespace.documents() sub-resource accessor; mirrors Python client.datasphere.documents attribute
 brands: real RegistryNamespace.brands() sub-resource accessor; mirrors Python client.registry.brands attribute
 campaigns: real RegistryNamespace.campaigns() sub-resource accessor; mirrors Python client.registry.campaigns attribute
+cxmlApplications: real FabricNamespace.cxmlApplications() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+cxmlScripts: real FabricNamespace.cxmlScripts() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+cxmlWebhooks: real FabricNamespace.cxmlWebhooks() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+freeswitchConnectors: real FabricNamespace.freeswitchConnectors() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+relayApplications: real FabricNamespace.relayApplications() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+sipGateways: real FabricNamespace.sipGateways() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+swmlWebhooks: real FabricNamespace.swmlWebhooks() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
 
 ### Typed-REST request-builder setters (Java idiom for Python kwargs)
 
@@ -236,6 +245,12 @@ carries one wire field); the enumerated surface has no method-surface analog for
 setter name in either language. Listed so example references resolve.
 
 action: Calling.*Request.Builder#action(Map) — 'action' wire field
+city: Addresses.CreateRequest.Builder#city(String) — 'city' wire field (address create)
+state: Addresses.CreateRequest.Builder#state(String) — 'state' wire field (address create)
+streetName: Addresses.CreateRequest.Builder#streetName(String) — 'street_name' wire field (address create)
+streetNumber: Addresses.CreateRequest.Builder#streetNumber(String) — 'street_number' wire field (address create)
+roomName: VideoRoomTokens.CreateRequest.Builder#roomName(String) — 'room_name' wire field (room token create)
+userName: VideoRoomTokens.CreateRequest.Builder#userName(String) — 'user_name' wire field (room token create)
 codec: Calling.*Request.Builder#codec(String) — 'codec' wire field
 controlId: Calling.*Request.Builder#controlId(String) — 'control_id' wire field
 dest: Calling.*Request.Builder#dest(Map) — 'destination' wire field
@@ -264,6 +279,9 @@ methods local to an example. They are not part of the SignalWire SDK surface.
 
 abs: Math.abs (JDK) — example id math
 add: List/Collection#add (JDK) — example list mutation
+isEqual: MessageDigest.isEqual (JDK) — timing-safe credential compare cited in api_reference/sdk_features/swml_service_guide prose
+size: Map/Collection#size (JDK) — example field-count in agent_guide analytics snippet
+WeatherSkill: user-defined example skill class (com.example.skills.WeatherSkill), not SDK API — reader's own third-party-skill in third_party_skills.md
 between: java.time.Duration.between (JDK) — example duration math
 computeIfAbsent: Map#computeIfAbsent (JDK) — example config cache
 contains: String/Collection#contains (JDK) — example membership test
