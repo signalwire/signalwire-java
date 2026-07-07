@@ -18,7 +18,7 @@ public final class CallingStreamParams {
   public String call_id;
   public String codec;
   public String control_id;
-  public Object custom_parameters;
+  public java.util.Map<String, Object> custom_parameters;
   public String name;
   public String node_id;
   public String status_url;

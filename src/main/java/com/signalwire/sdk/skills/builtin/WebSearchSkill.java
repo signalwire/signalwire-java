@@ -469,16 +469,16 @@ public class WebSearchSkill implements SkillBase {
     }
   }
 
-  /** Python parity: web_search get_hints() returns []. */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
   /**
-   * Python parity: web_search get_instance_key() = {@code SKILL_NAME + "_" + search_engine_id + "_"
-   * + tool_name}, where search_engine_id defaults to "default" and tool_name defaults to
-   * "web_search" when the params are absent.
+   * Instance key: {@code <skill>_<search_engine_id>_<tool_name>}, where {@code search_engine_id}
+   * defaults to "default" and {@code tool_name} defaults to "web_search" when the params are
+   * absent.
    */
   @Override
   public String getInstanceKey() {

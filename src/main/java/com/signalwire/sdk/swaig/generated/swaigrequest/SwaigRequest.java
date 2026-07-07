@@ -25,8 +25,8 @@ public final class SwaigRequest {
   public Boolean channel_active;
   public Boolean channel_offhook;
   public Boolean channel_ready;
-  public Object content_disposition;
-  public Object content_type;
+  public String content_disposition;
+  public String content_type;
   public String conversation_id;
   public String description;
   public String error_reason;
@@ -39,5 +39,5 @@ public final class SwaigRequest {
   public String project_id;
   public java.util.List<Object> raw_call_log;
   public String space_id;
-  public Object version;
+  public String version;
 }

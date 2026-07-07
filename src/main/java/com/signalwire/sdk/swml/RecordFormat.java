@@ -8,14 +8,14 @@ package com.signalwire.sdk.swml;
  * ({@link com.signalwire.sdk.swaig.FunctionResult#recordCall(String, boolean, RecordFormat,
  * String)} and the {@code recordFormat(RecordFormat)} builder setter) accept this enum <em>or</em>
  * a plain {@link String}. The enum gives editor autocompletion and makes a typo fail at compile
- * time (a bare string like {@code "mp33"} only fails at runtime, on the server). Strings keep
- * parity with the Python reference (which uses a bare {@code str}):
+ * time (a bare string like {@code "mp33"} only fails at runtime, on the server). A plain {@link
+ * String} is also accepted:
  *
  * <pre>{@code
  * result.recordCall(null, true, RecordFormat.MP3, "both");   // typed, autocompleted
- * result.recordCall(null, true, "mp3", "both");              // string still works (parity)
+ * result.recordCall(null, true, "mp3", "both");              // string still works
  * AgentBase.builder().recordFormat(RecordFormat.WAV);        // typed builder
- * AgentBase.builder().recordFormat("wav");                   // string still works (parity)
+ * AgentBase.builder().recordFormat("wav");                   // string still works
  * }</pre>
  *
  * <p>Each constant's {@link #getValue() value} is the canonical wire string, so routing a recording

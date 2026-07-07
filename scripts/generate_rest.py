@@ -978,7 +978,7 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
     lines = [header]
     lines.append(f"import {REST_PACKAGE}.{extends};")
     lines.append("")
-    lines.append(f"/**\n * {name} — generated from x-sdk-resource {name!r} ({spec.name} spec, base {base}).\n */")
+    lines.append(f"/**\n * {name} — REST resource client for the {spec.name!r} API namespace.\n */")
     lines.append(f"public class {name} extends {extends} {{")
 
     # Constructor bakes the base path (§4).
@@ -1267,8 +1267,13 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
     deterministic) — the surface records only the class name, so field types are pure
     idiom:
         scalar (incl. $ref-to-scalar-newtype / $ref-to-enum) -> String/Long/Double/Boolean
+        const literal   -> the const value's scalar type (a `const: "text/swaig"` is a
+                           fixed String), mirroring go inferring `string` from the const.
         array   -> java.util.List<Object>
-        object / $ref-to-object / union / unknown -> java.util.Map<String, Object>
+        object / $ref-to-object / union / empty-or-description-only schema
+                -> java.util.Map<String, Object>  (an untyped JSON-object blob — the
+                   go emitter renders these `map[string]any`, NEVER a bare escape hatch)
+        type: null -> Object (an always-null placeholder field; go's parity is bare `any`)
     """
     schemas = schemas or {}
     if schema.get("$ref") or (
@@ -1279,6 +1284,10 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
     if schema.get("allOf") or schema.get("oneOf") or schema.get("anyOf") or schema.get("$ref"):
         return "java.util.Map<String, Object>"
     t = _schema_type(schema)
+    if t is None and "const" in schema:
+        # A JSON-Schema `const` fixes a literal value; infer the field type from that
+        # value's JSON kind (go infers the scalar the same way — `const: "2.0"` -> string).
+        t = _const_type(schema["const"])
     if t == "string":
         return "String"
     if t == "integer":
@@ -1291,8 +1300,33 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
         return "java.util.List<Object>"
     if t == "object":
         return "java.util.Map<String, Object>"
-    # No/unknown type → any JSON value.
-    return "Object"
+    if t == "null":
+        # `type: null` — an always-null placeholder field (voice-log url/status). No
+        # narrower type exists; go emits the equivalent bare `any`. Kept as Object.
+        return "Object"
+    # No explicit type, no const, no combinator → an untyped JSON-object blob
+    # (empty `{}` / description-only schema, e.g. RELAY `result`/`data`/`params`,
+    # SWAIG `dest`/`file`). Emit the open Map, matching go's `map[string]any` — a
+    # generated typed surface must not degenerate to a bare `Object` escape hatch.
+    return "java.util.Map<String, Object>"
+
+
+def _const_type(value: object) -> str:
+    """The JSON-Schema type keyword for a `const` literal value (bool BEFORE int —
+    Python bool is an int subclass)."""
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return "null"
 
 
 def type_field_name(wire_key: str) -> str:
@@ -1372,7 +1406,7 @@ def emit_type_enum(package: str, enum_name: str, values: list[str], source_desc:
     reference. Returns RAW java (caller batch-formats)."""
     lines: list[str] = []
     lines.append("/**")
-    lines.append(f" * {enum_name} — generated public enum ({source_desc}).")
+    lines.append(f" * {enum_name} — the set of accepted wire values for this field.")
     lines.append(" *")
     lines.append(" * Each constant's wire value is the exact wire string.")
     lines.append(" */")

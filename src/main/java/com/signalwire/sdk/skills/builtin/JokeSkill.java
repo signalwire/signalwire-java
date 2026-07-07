@@ -69,15 +69,15 @@ public class JokeSkill implements SkillBase {
     return Map.of("joke_skill_enabled", true);
   }
 
-  /** Python parity: joke get_hints() returns []. */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
   /**
-   * Python parity: joke get_parameter_schema() — base schema plus {@code api_key} (required,
-   * hidden, env_var API_NINJAS_KEY) and {@code tool_name} (default "get_joke", optional).
+   * Parameter schema: base schema plus {@code api_key} (required, hidden, env_var API_NINJAS_KEY)
+   * and {@code tool_name} (default "get_joke", optional).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

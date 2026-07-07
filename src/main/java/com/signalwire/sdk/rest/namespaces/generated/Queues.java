@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Queues — generated from x-sdk-resource 'Queues' (relay-rest spec, base CrudResource). */
+/** Queues — REST resource client for the 'relay-rest' API namespace. */
 public class Queues extends CrudResource {
   public Queues(HttpClient httpClient) {
     super(httpClient, "/relay/rest/queues", UpdateMethod.PUT);

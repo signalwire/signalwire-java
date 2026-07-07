@@ -913,11 +913,10 @@ public class RelayClient implements AutoCloseable {
   }
 
   /**
-   * Send a raw JSON-RPC frame on the underlying socket. Production code uses {@link
-   * #execute(String, Map)}, which adds project_id/protocol automatically. This helper exists for
-   * the porting-sdk RELAY-handshake audit harness, which has to emit a {@code
-   * method:"signalwire.event"} frame from inside the on-event callback so the fixture's dispatch
-   * counter fires (see SUBAGENT_PLAYBOOK lesson on event-ACK semantics).
+   * Send a raw JSON-RPC frame on the underlying socket. Most callers use {@link #execute(String,
+   * Map)}, which adds project_id/protocol automatically. This lower-level helper lets a caller emit
+   * an arbitrary frame (for example a {@code method:"signalwire.event"} frame from inside an
+   * on-event callback) when the higher-level API is not sufficient.
    *
    * @param frame a Gson-serializable map representing the frame
    */

@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * RegistryBrands — generated from x-sdk-resource 'RegistryBrands' (relay-rest spec, base
- * BaseResource).
- */
+/** RegistryBrands — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryBrands extends BaseResource {
   public RegistryBrands(HttpClient httpClient) {
     super(httpClient, "/relay/rest/registry/beta/brands");

@@ -39,8 +39,8 @@ public class PromptManager {
   }
 
   /**
-   * @param agent optional parent agent instance (kept as a back-reference for parity with the
-   *     Python/Ruby managers; may be {@code null} for standalone use).
+   * @param agent optional parent agent instance (kept as a back-reference; may be {@code null} for
+   *     standalone use).
    */
   public PromptManager(Object agent) {
     this.agent = agent;

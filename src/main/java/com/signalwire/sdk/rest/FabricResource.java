@@ -11,15 +11,11 @@ import java.util.Map;
 /**
  * Fabric CRUD resource with address listing.
  *
- * <p>Mirrors Python's {@code signalwire.rest.namespaces._base.FabricResource} (the reference's
- * {@code CrudWithAddresses}): standard CRUD where {@link #update(String, Map)} sends PATCH, plus
- * {@link #listAddresses(String)} → GET {@code {base}/{id}/addresses}. The {@code list_addresses}
- * route is defined by the spec for EVERY fabric resource and is present in the reference's runtime
- * route registry (and every other port's fabric base — e.g. Go's {@code CrudWithAddresses}); it is
- * an ORACLE BLIND SPOT in {@code python_signatures.json} (which records only create/update on the
- * subclass because the enumerator drops the inherited base method), reconciled per changeset L12.
- * Fabric resources whose address sub-path is non-standard (singular collection: {@code CallFlows},
- * {@code ConferenceRooms}) OVERRIDE this with their own generated {@code listAddresses}.
+ * <p>Standard CRUD where {@link #update(String, Map)} sends PATCH, plus {@link
+ * #listAddresses(String)} → GET {@code {base}/{id}/addresses}. The address-listing route is
+ * available on every fabric resource. Fabric resources whose address sub-path is non-standard
+ * (singular collection: {@code CallFlows}, {@code ConferenceRooms}) OVERRIDE this with their own
+ * generated {@code listAddresses}.
  *
  * <p>The PUT-update variant is {@link FabricResourcePUT}.
  */

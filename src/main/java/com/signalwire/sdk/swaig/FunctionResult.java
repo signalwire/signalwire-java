@@ -257,8 +257,7 @@ public class FunctionResult {
   }
 
   /**
-   * Start background call recording via SWML — full parity with the Python reference {@code
-   * signalwire.core.function_result.FunctionResult.record_call}.
+   * Start background call recording via SWML.
    *
    * <p>Validates {@code format} ∈ {wav, mp3, mp4} and {@code direction} ∈ {speak, listen, both}
    * with byte-exact Python {@code ValueError} messages. The reference ALWAYS emits {@code stereo},
@@ -334,9 +333,9 @@ public class FunctionResult {
    * input_sensitivity / initial_timeout / end_silence_timeout / max_length / status_url) is still
    * exposed positionally. Delegates to the string path via {@link RecordFormat#getValue()} / {@link
    * RecordDirection#getValue()}, so the emitted SWML {@code record_call} payload is byte-identical
-   * to the bare-string call. This is the canonical reference-parity surface; the all-{@link String}
-   * full-arity overload above is the forward-compatible escape hatch (and the convenience/typed
-   * lower-arity overloads below just delegate here).
+   * to the bare-string call. This is the canonical typed surface; the all-{@link String} full-arity
+   * overload above is the forward-compatible escape hatch (and the convenience/typed lower-arity
+   * overloads below just delegate here).
    */
   public FunctionResult recordCall(
       String controlId,
@@ -509,11 +508,9 @@ public class FunctionResult {
   /**
    * Join an ad-hoc audio conference with RELAY and CXML calls using SWML.
    *
-   * <p>Functional parity with the Python reference {@code
-   * signalwire.core.function_result.FunctionResult.join_conference}. Every optional parameter the
-   * reference exposes is a positional argument here, with the same default and the same validation.
-   * Hold music is {@code waitUrl} (snake_case wire key {@code wait_url}) — there is no separate
-   * "hold audio" parameter; the reference uses {@code wait_url}.
+   * <p>Every optional parameter the reference exposes is a positional argument here, with the same
+   * default and the same validation. Hold music is {@code waitUrl} (snake_case wire key {@code
+   * wait_url}) — there is no separate "hold audio" parameter; the reference uses {@code wait_url}.
    *
    * @param name conference name (required, must be non-blank)
    * @param muted join muted (default {@code false})
@@ -708,8 +705,7 @@ public class FunctionResult {
   }
 
   /**
-   * Start a background call tap via SWML — full parity with the Python reference {@code
-   * signalwire.core.function_result.FunctionResult.tap}.
+   * Start a background call tap via SWML.
    *
    * <p>Validates {@code direction} ∈ {speak, hear, both}, {@code codec} ∈ {PCMU, PCMA}, and {@code
    * rtp_ptime > 0} with byte-exact Python {@code ValueError} messages (rendered through {@link
@@ -769,8 +765,8 @@ public class FunctionResult {
    * server's {@code ValueError}, while the remaining Python {@code tap} params ({@code rtp_ptime} /
    * {@code status_url}) are still exposed positionally. Delegates to the string path via {@link
    * TapDirection#getValue()} / {@link Codec#getValue()}, so the emitted SWML {@code tap} payload is
-   * byte-identical to the bare-string call. This is the canonical reference-parity surface; the
-   * all-{@link String} full-arity overload above is the forward-compatible escape hatch (and the
+   * byte-identical to the bare-string call. This is the canonical typed surface; the all-{@link
+   * String} full-arity overload above is the forward-compatible escape hatch (and the
    * convenience/typed lower-arity overloads below just delegate here).
    */
   public FunctionResult tap(
@@ -853,10 +849,9 @@ public class FunctionResult {
   }
 
   /**
-   * Send SMS via SWML — full parity with the Python reference {@code
-   * signalwire.core.function_result.FunctionResult.send_sms}. Either {@code body} or {@code media}
-   * must be supplied. {@code to_number} and {@code from_number} are always emitted; {@code body},
-   * {@code media}, {@code tags} and {@code region} are emitted only when supplied.
+   * Send SMS via SWML. Either {@code body} or {@code media} must be supplied. {@code to_number} and
+   * {@code from_number} are always emitted; {@code body}, {@code media}, {@code tags} and {@code
+   * region} are emitted only when supplied.
    *
    * @param toNumber E.164 destination (required)
    * @param fromNumber E.164 origin (required)
@@ -908,8 +903,7 @@ public class FunctionResult {
       "The payment status is ${pay_result}, do not mention anything else about collecting payment if successful.";
 
   /**
-   * Process payment via SWML pay action — full parity with the Python reference {@code
-   * signalwire.core.function_result.FunctionResult.pay}.
+   * Process payment via SWML pay action.
    *
    * <p>Every optional parameter the reference exposes is a positional argument here, in the same
    * order, with the same default and the same emitted wire key. The reference ALWAYS emits {@code
@@ -1064,9 +1058,8 @@ public class FunctionResult {
   }
 
   /**
-   * Dial out to a number with a destination SWML URL — full parity with the Python reference {@code
-   * FunctionResult.rpc_dial}. {@code deviceType} flows through to {@code params.devices.type}
-   * (Python defaults "phone") instead of being hard-coded.
+   * Dial out to a number with a destination SWML URL. {@code deviceType} flows through to {@code
+   * params.devices.type} (Python defaults "phone") instead of being hard-coded.
    *
    * @param toNumber E.164 number to dial (required)
    * @param fromNumber E.164 caller ID (required)
@@ -1098,9 +1091,8 @@ public class FunctionResult {
   }
 
   /**
-   * Inject a message into an AI agent on another call — full parity with the Python reference
-   * {@code FunctionResult.rpc_ai_message}. {@code role} flows through to {@code params.role}
-   * (Python defaults "system") instead of being hard-coded.
+   * Inject a message into an AI agent on another call. {@code role} flows through to {@code
+   * params.role} (Python defaults "system") instead of being hard-coded.
    *
    * @param callId target call ID (required)
    * @param messageText message text to inject (required)

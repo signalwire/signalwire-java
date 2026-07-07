@@ -13,26 +13,26 @@ package com.signalwire.sdk.relay.generated;
  * this as a method-less type definition).
  */
 public final class CallingPayParams {
-  public Object bank_account_type;
+  public java.util.Map<String, Object> bank_account_type;
   public String call_id;
   public String charge_amount;
   public String control_id;
   public String currency;
   public String description;
-  public Object input;
+  public java.util.Map<String, Object> input;
   public String language;
   public String max_attempts;
   public String min_postal_code_length;
   public String node_id;
   public java.util.List<Object> parameters;
   public String payment_connector_url;
-  public Object payment_method;
+  public java.util.Map<String, Object> payment_method;
   public String postal_code;
   public java.util.List<Object> prompts;
   public String security_code;
   public String status_url;
   public String timeout;
-  public Object token_type;
+  public java.util.Map<String, Object> token_type;
   public String valid_card_types;
   public String voice;
 }

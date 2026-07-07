@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** FabricTokens — generated from x-sdk-resource 'FabricTokens' (fabric spec, base BaseResource). */
+/** FabricTokens — REST resource client for the 'fabric' API namespace. */
 public class FabricTokens extends BaseResource {
   public FabricTokens(HttpClient httpClient) {
     super(httpClient, "/fabric");

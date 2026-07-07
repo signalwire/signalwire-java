@@ -24,7 +24,7 @@ public final class SignalwireConnectResult {
   public String protocol;
   public java.util.List<Object> protocols;
   public java.util.List<Object> protocols_uncertified;
-  public Object result;
+  public java.util.Map<String, Object> result;
   public Boolean session_restored;
   public String sessionid;
   public java.util.List<Object> subscriptions;

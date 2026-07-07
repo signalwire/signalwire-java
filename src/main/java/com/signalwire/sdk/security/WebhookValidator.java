@@ -24,7 +24,7 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * Webhook signature validation for SignalWire-signed HTTP requests.
  *
- * <p>Implements both schemes from {@code porting-sdk/webhooks.md}:
+ * <p>Implements both signature schemes:
  *
  * <ul>
  *   <li><b>Scheme A</b> (RELAY/SWML/JSON): {@code hex(HMAC-SHA1(key, url + rawBody))}.
@@ -90,10 +90,10 @@ public final class WebhookValidator {
    *
    * <p>The {@code headers} map is consulted for the signature header ({@code
    * X-SignalWire-Signature} or the {@code X-Twilio-Signature} alias); lookup is case-insensitive.
-   * {@code method} is accepted for signature-shape parity with the cross-port contract but is not
-   * part of the HMAC.
+   * {@code method} is accepted for signature-shape consistency but is not part of the HMAC.
    *
-   * @param method HTTP method (part of the cross-port contract; not HMAC'd). May be {@code null}.
+   * @param method HTTP method (accepted for signature-shape consistency; not HMAC'd). May be {@code
+   *     null}.
    * @param url the public URL SignalWire POSTed to (already reconstructed).
    * @param headers request headers, looked up case-insensitively for the signature.
    * @param body the raw request body as a UTF-8 string.
@@ -173,8 +173,8 @@ public final class WebhookValidator {
    * @param signature the {@code X-SignalWire-Signature} header value (or the {@code
    *     X-Twilio-Signature} alias). {@code null} or empty returns {@code false} without throwing.
    * @param url the full URL SignalWire POSTed to (scheme, host, optional port, path, query). Must
-   *     match what the platform saw — see the URL reconstruction section of {@code
-   *     porting-sdk/webhooks.md}.
+   *     match what the platform saw (the URL must be reconstructed exactly as the platform built
+   *     it).
    * @param rawBody the raw UTF-8 request body bytes as a string, <b>before</b> any JSON / form
    *     parsing. May be empty but must not be {@code null} — pass {@code ""} when the body was
    *     empty.

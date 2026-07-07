@@ -22,13 +22,12 @@ import javax.crypto.spec.SecretKeySpec;
  * TypeScript ports) so the getter/setter pair round-trips, while activation stays a stateless
  * success hook.
  *
- * <p><b>Token wire format (contract #70/#7 parity).</b> A minted token is the URL-safe Base64
- * encoding of the DECODED 5-field, dot-joined string {@code
- * call_id.function_name.expiry.nonce.signature}. The HMAC-SHA256 signed message is {@code
- * call_id:function_name:expiry:nonce} (colon-joined, call_id FIRST). The nonce is 16 hex characters
- * (8 random bytes) drawn from {@link SecureRandom}, so two mints for the SAME (function_name,
- * call_id, expiry) produce DIFFERENT tokens. The signature comparison uses {@link
- * MessageDigest#isEqual} (constant-time).
+ * <p><b>Token wire format.</b> A minted token is the URL-safe Base64 encoding of the DECODED
+ * 5-field, dot-joined string {@code call_id.function_name.expiry.nonce.signature}. The HMAC-SHA256
+ * signed message is {@code call_id:function_name:expiry:nonce} (colon-joined, call_id FIRST). The
+ * nonce is 16 hex characters (8 random bytes) drawn from {@link SecureRandom}, so two mints for the
+ * SAME (function_name, call_id, expiry) produce DIFFERENT tokens. The signature comparison uses
+ * {@link MessageDigest#isEqual} (constant-time).
  */
 public class SessionManager {
 
@@ -204,17 +203,14 @@ public class SessionManager {
   }
 
   /**
-   * Legacy lifecycle hook retained for reference parity. The manager is stateless with respect to
-   * activation, so this always reports success.
+   * Legacy lifecycle hook. The manager is stateless with respect to activation, so this always
+   * reports success.
    */
   public boolean activateSession(String callId) {
     return true;
   }
 
-  /**
-   * Legacy lifecycle hook retained for reference parity. Clears any metadata accumulated for the
-   * session and reports success.
-   */
+  /** Legacy lifecycle hook. Clears any metadata accumulated for the session and reports success. */
   public boolean endSession(String callId) {
     if (callId != null) {
       sessionMetadata.remove(callId);

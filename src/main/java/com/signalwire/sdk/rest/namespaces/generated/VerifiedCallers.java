@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * VerifiedCallers — generated from x-sdk-resource 'VerifiedCallers' (relay-rest spec, base
- * CrudResource).
- */
+/** VerifiedCallers — REST resource client for the 'relay-rest' API namespace. */
 public class VerifiedCallers extends CrudResource {
   public VerifiedCallers(HttpClient httpClient) {
     super(httpClient, "/relay/rest/verified_caller_ids", UpdateMethod.PUT);

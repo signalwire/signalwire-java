@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * ProjectTokens — generated from x-sdk-resource 'ProjectTokens' (project spec, base BaseResource).
- */
+/** ProjectTokens — REST resource client for the 'project' API namespace. */
 public class ProjectTokens extends BaseResource {
   public ProjectTokens(HttpClient httpClient) {
     super(httpClient, "/project/tokens");

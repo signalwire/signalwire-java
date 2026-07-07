@@ -171,19 +171,15 @@ public class NativeVectorSearchSkill implements SkillBase {
     return hints;
   }
 
-  /**
-   * Python parity: get_global_data returns {@code {}} unless the local search engine can supply
-   * stats (native_vector_search/skill.py). This port has no local search engine to introspect, so
-   * it faithfully mirrors the base case — an empty map.
-   */
+  /** Returns an empty map. There is no local search engine to introspect for stats. */
   @Override
   public Map<String, Object> getGlobalData() {
     return new LinkedHashMap<>();
   }
 
   /**
-   * Python parity: get_prompt_sections returns {@code []}; the section is added in register_tools
-   * once the agent is set (native_vector_search/skill.py).
+   * Returns an empty list; the prompt section is added when tools are registered, once the agent is
+   * set.
    */
   @Override
   public List<Map<String, Object>> getPromptSections() {
@@ -191,9 +187,8 @@ public class NativeVectorSearchSkill implements SkillBase {
   }
 
   /**
-   * Python parity: get_instance_key uses the tool name (default {@code "search_knowledge"}) and the
-   * index file (default {@code "default"}) — {@code f"{SKILL_NAME}_{tool_name}_{index_file}"}
-   * (native_vector_search/skill.py).
+   * Instance key: the skill name plus the tool name (default {@code "search_knowledge"}) and the
+   * index file (default {@code "default"}), joined as {@code <skill>_<tool>_<index>}.
    */
   @Override
   public String getInstanceKey() {
@@ -201,19 +196,15 @@ public class NativeVectorSearchSkill implements SkillBase {
   }
 
   /**
-   * Python parity: cleanup best-effort removes any temp dirs created while indexing
-   * (native_vector_search/skill.py). This port runs in remote mode only and creates no temp dirs,
-   * so there is nothing to remove; it is a safe no-op that logs.
+   * Releases the skill's resources. This runs in remote mode only and creates no temp dirs, so
+   * there is nothing to remove; it is a safe no-op that logs.
    */
   @Override
   public void cleanup() {
     log.debug("Native vector search skill cleaned up");
   }
 
-  /**
-   * Python parity: get_parameter_schema (native_vector_search/skill.py) — base params plus custom
-   * fields.
-   */
+  /** Parameter schema: base params plus custom fields. */
   @Override
   public Map<String, Object> getParameterSchema() {
     Map<String, Object> schema = SkillParams.base(true, getName());

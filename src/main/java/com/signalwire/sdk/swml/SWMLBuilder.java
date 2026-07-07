@@ -294,10 +294,9 @@ public class SWMLBuilder {
   // ------------------------------------------------------------------
 
   /**
-   * Add any schema verb to the document by name — the Java analog of the Python reference's runtime
-   * {@code __getattr__} verb dispatch (e.g. {@code builder.verb("denoise", null)}, {@code
+   * Add any schema verb to the document by name (e.g. {@code builder.verb("denoise", null)}, {@code
    * builder.verb("record_call", Map.of("stereo", true))}). Only valid schema verbs are accepted; an
-   * unknown verb name is rejected (parity with Python raising {@code AttributeError}).
+   * unknown verb name is rejected with an exception.
    *
    * <p>For the {@code sleep} verb — which emits a bare integer, not a config object — use {@link
    * #sleepVerb(int)}.

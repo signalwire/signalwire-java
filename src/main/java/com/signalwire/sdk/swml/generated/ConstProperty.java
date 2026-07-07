@@ -14,5 +14,5 @@ package com.signalwire.sdk.swml.generated;
  */
 public final class ConstProperty {
   /** wire key: const */
-  public Object const_;
+  public java.util.Map<String, Object> const_;
 }

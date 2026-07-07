@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Lookup — generated from x-sdk-resource 'Lookup' (relay-rest spec, base BaseResource). */
+/** Lookup — REST resource client for the 'relay-rest' API namespace. */
 public class Lookup extends BaseResource {
   public Lookup(HttpClient httpClient) {
     super(httpClient, "/relay/rest/lookup");

@@ -37,10 +37,10 @@ public class AuthHandler {
     Response handle(Map<String, String> headers);
   }
 
-  /** Basic-auth credential carrier (parity with FastAPI's HTTPBasicCredentials). */
+  /** Basic-auth credential carrier: a decoded username/password pair. */
   public record BasicCredentials(String username, String password) {}
 
-  /** Bearer-token credential carrier (parity with FastAPI's HTTPAuthorizationCredentials). */
+  /** Bearer-token credential carrier: the raw token string. */
   public record BearerCredentials(String credentials) {}
 
   /** Result of the {@link #getFastapiDependency(boolean)} callable. */

@@ -80,27 +80,23 @@ public class PlayBackgroundFileSkill implements SkillBase {
     return List.of(dm.toSwaigFunction());
   }
 
-  /**
-   * Python parity: {@code play_background_file/skill.py get_instance_key} -- {@code
-   * f"{SKILL_NAME}_{tool_name}"}.
-   */
+  /** Instance key: the skill name plus the tool name, joined as {@code <skill>_<tool>}. */
   @Override
   public String getInstanceKey() {
     return getName() + "_" + toolName;
   }
 
   /**
-   * Python parity: {@code play_background_file/skill.py get_tools} -- the reference builds the
-   * DataMap tool in {@code get_tools()}. In Java that tool is built in {@link
-   * #getSwaigFunctions()}, so {@code getTools()} returns exactly that list.
+   * Returns this skill's tools. The DataMap tool is built in {@link #getSwaigFunctions()}, so
+   * {@code getTools()} returns exactly that list.
    */
   public List<Map<String, Object>> getTools() {
     return getSwaigFunctions();
   }
 
   /**
-   * Python parity: {@code play_background_file/skill.py get_parameter_schema} -- base schema plus a
-   * {@code files} array (each file: key, description, url, wait).
+   * Parameter schema: base schema plus a {@code files} array (each file: key, description, url,
+   * wait).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

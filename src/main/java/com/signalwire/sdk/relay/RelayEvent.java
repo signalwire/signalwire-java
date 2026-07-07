@@ -322,7 +322,7 @@ public class RelayEvent {
 
     /**
      * The dial outcome as a typed {@link DialState}, <em>alongside</em> the raw string {@link
-     * #getDialState()} (which stays canonical for parity and forward-compat). Returns {@code
+     * #getDialState()} (which stays canonical and forward-compatible). Returns {@code
      * Optional.empty()} when the wire {@code dial_state} is not one of the three known {@link
      * DialState} values — the set mirrors server-emitted values that can grow, so an unrecognised
      * state is tolerated here rather than crashing dispatch.

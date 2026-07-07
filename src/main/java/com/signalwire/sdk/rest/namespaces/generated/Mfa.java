@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Mfa — generated from x-sdk-resource 'Mfa' (relay-rest spec, base BaseResource). */
+/** Mfa — REST resource client for the 'relay-rest' API namespace. */
 public class Mfa extends BaseResource {
   public Mfa(HttpClient httpClient) {
     super(httpClient, "/relay/rest/mfa");

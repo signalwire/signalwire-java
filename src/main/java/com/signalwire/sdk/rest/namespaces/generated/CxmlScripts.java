@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** CxmlScripts — generated from x-sdk-resource 'CxmlScripts' (fabric spec, base FabricResource). */
+/** CxmlScripts — REST resource client for the 'fabric' API namespace. */
 public class CxmlScripts extends FabricResourcePUT {
   public CxmlScripts(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/cxml_scripts");

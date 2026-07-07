@@ -307,10 +307,7 @@ public final class SwmlRenderer {
     return swaigConfig;
   }
 
-  /**
-   * Render a document Map as YAML (parity with the reference's optional yaml branch, which calls
-   * {@code yaml.dump(doc, sort_keys=False)}). Block style, insertion-ordered keys.
-   */
+  /** Render a document Map as YAML. Block style, insertion-ordered keys (not sorted). */
   private static String renderYaml(Map<String, Object> doc) {
     DumperOptions opts = new DumperOptions();
     opts.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);

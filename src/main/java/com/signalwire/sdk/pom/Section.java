@@ -33,7 +33,7 @@ public class Section {
   private final List<String> bullets;
   private final List<Section> subsections;
 
-  /** Tri-state: {@code null} means unset (Python parity for explicit-False vs. unset). */
+  /** Tri-state: {@code null} means unset, distinguishing explicit-{@code false} from unset. */
   private Boolean numbered;
 
   private boolean numberedBullets;

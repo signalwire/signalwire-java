@@ -70,11 +70,11 @@ public class WikipediaSearchSkill implements SkillBase {
    * Search Wikipedia for articles matching {@code query} and return the joined article extracts, or
    * an error / no-results message string.
    *
-   * <p>Python parity: wikipedia_search search_wiki(query). Two-step against the MediaWiki API:
-   * ({@code action=query&list=search}) to find matching titles, then ({@code
-   * action=query&prop=extracts&exintro&explaintext}) to fetch each article's intro extract. Formats
-   * each as {@code **Title**\n\n<extract>}, joining multiple with a 50-'=' separator, and returns
-   * {@code no_results_message} (with {query} substituted) when nothing is found.
+   * <p>Two-step against the MediaWiki API: ({@code action=query&list=search}) to find matching
+   * titles, then ({@code action=query&prop=extracts&exintro&explaintext}) to fetch each article's
+   * intro extract. Formats each as {@code **Title**\n\n<extract>}, joining multiple with a 50-'='
+   * separator, and returns {@code no_results_message} (with {query} substituted) when nothing is
+   * found.
    *
    * @param query the search term to look up
    * @return the Wikipedia article content or an error/no-results message
@@ -167,20 +167,20 @@ public class WikipediaSearchSkill implements SkillBase {
     }
   }
 
-  /** Substitute {query} into the configured no-results message. Python parity. */
+  /** Substitute {query} into the configured no-results message. */
   private String formatNoResults(String query) {
     return noResultsMessage.replace("{query}", query);
   }
 
-  /** Python parity: wikipedia_search get_hints() returns []. */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
   /**
-   * Python parity: wikipedia_search get_parameter_schema() — base schema plus {@code num_results}
-   * (integer, default 1, min 1 / max 5) and {@code no_results_message} (string).
+   * Parameter schema: base schema plus {@code num_results} (integer, default 1, min 1 / max 5) and
+   * {@code no_results_message} (string).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

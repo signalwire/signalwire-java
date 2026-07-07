@@ -15,7 +15,7 @@ package com.signalwire.sdk.relay.generated;
 public final class CallingUserEventParams {
   public Boolean async;
   public String call_id;
-  public Object event;
+  public java.util.Map<String, Object> event;
   public String node_id;
   public Boolean swml;
 }

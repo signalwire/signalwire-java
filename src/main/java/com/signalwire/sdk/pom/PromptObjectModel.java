@@ -40,7 +40,7 @@ public class PromptObjectModel {
   private final List<Section> sections;
   private final boolean debug;
 
-  /** Empty model (Python parity: {@code PromptObjectModel()} with debug=False). */
+  /** Empty model with debug disabled. */
   public PromptObjectModel() {
     this(false);
   }

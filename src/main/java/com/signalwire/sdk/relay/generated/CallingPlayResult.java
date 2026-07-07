@@ -16,6 +16,6 @@ public final class CallingPlayResult {
   public String call_id;
   public String code;
   public String control_id;
-  public Object data;
+  public java.util.Map<String, Object> data;
   public String message;
 }

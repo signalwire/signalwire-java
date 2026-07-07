@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** SwmlScripts — generated from x-sdk-resource 'SwmlScripts' (fabric spec, base FabricResource). */
+/** SwmlScripts — REST resource client for the 'fabric' API namespace. */
 public class SwmlScripts extends FabricResourcePUT {
   public SwmlScripts(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/swml_scripts");

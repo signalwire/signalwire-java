@@ -151,8 +151,8 @@ public class SpiderSkill implements SkillBase {
   }
 
   /**
-   * Python parity: get_instance_key uses the tool name (default {@code SKILL_NAME}) — {@code
-   * f"{SKILL_NAME}_{tool_name}"} (spider/skill.py).
+   * Instance key: the skill name plus the tool name (default the skill name), joined as {@code
+   * <skill>_<tool>}.
    */
   @Override
   public String getInstanceKey() {
@@ -160,16 +160,15 @@ public class SpiderSkill implements SkillBase {
   }
 
   /**
-   * Python parity: cleanup closes the HTTP session, clears the page cache, and logs
-   * (spider/skill.py). This port opens a fresh {@link HttpClient} per fetch and holds no cache, so
-   * there is nothing to release; we log for symmetry.
+   * Releases the skill's resources. A fresh {@link HttpClient} is opened per fetch and no cache is
+   * held, so there is nothing to release; this logs.
    */
   @Override
   public void cleanup() {
     log.info("Spider skill cleaned up");
   }
 
-  /** Python parity: get_parameter_schema (spider/skill.py) — base params plus custom fields. */
+  /** Parameter schema: base params plus custom fields. */
   @Override
   public Map<String, Object> getParameterSchema() {
     Map<String, Object> schema = SkillParams.base(true, getName());

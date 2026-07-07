@@ -14,5 +14,5 @@ package com.signalwire.sdk.swml.generated;
  */
 public final class Return {
   /** wire key: return */
-  public Object return_;
+  public java.util.Map<String, Object> return_;
 }

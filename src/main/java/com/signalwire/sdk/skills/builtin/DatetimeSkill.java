@@ -81,16 +81,13 @@ public class DatetimeSkill implements SkillBase {
     return List.of(getTime, getDate);
   }
 
-  /** Python parity: datetime get_hints() returns []. */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
-  /**
-   * Python parity: datetime get_parameter_schema() returns only the base schema (super()) — the
-   * datetime skill declares no custom parameters.
-   */
+  /** Returns only the base schema — the datetime skill declares no custom parameters. */
   @Override
   public Map<String, Object> getParameterSchema() {
     return SkillParams.base(supportsMultipleInstances(), getName());

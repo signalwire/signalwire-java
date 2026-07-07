@@ -29,8 +29,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * <p>Wraps the request in a body-caching wrapper before reading the body so that downstream
  * handlers (including framework parsers) can re-read the same raw bytes. This is the canonical Java
- * framework adapter described in the "Framework adapter" section of {@code
- * porting-sdk/webhooks.md}.
+ * framework adapter for webhook signature validation.
  *
  * <p>Behavior:
  *

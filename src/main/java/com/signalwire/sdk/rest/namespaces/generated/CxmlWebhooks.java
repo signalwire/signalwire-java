@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * CxmlWebhooks — generated from x-sdk-resource 'CxmlWebhooks' (fabric spec, base FabricResource).
- */
+/** CxmlWebhooks — REST resource client for the 'fabric' API namespace. */
 public class CxmlWebhooks extends FabricResource {
   public CxmlWebhooks(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/cxml_webhooks");

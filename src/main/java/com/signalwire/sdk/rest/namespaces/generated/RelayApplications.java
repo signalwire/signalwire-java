@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * RelayApplications — generated from x-sdk-resource 'RelayApplications' (fabric spec, base
- * FabricResource).
- */
+/** RelayApplications — REST resource client for the 'fabric' API namespace. */
 public class RelayApplications extends FabricResourcePUT {
   public RelayApplications(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/relay_applications");

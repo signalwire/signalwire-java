@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * VideoConferenceTokens — generated from x-sdk-resource 'VideoConferenceTokens' (video spec, base
- * BaseResource).
- */
+/** VideoConferenceTokens — REST resource client for the 'video' API namespace. */
 public class VideoConferenceTokens extends BaseResource {
   public VideoConferenceTokens(HttpClient httpClient) {
     super(httpClient, "/video/conference_tokens");

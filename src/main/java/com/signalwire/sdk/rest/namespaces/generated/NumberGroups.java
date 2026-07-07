@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * NumberGroups — generated from x-sdk-resource 'NumberGroups' (relay-rest spec, base CrudResource).
- */
+/** NumberGroups — REST resource client for the 'relay-rest' API namespace. */
 public class NumberGroups extends CrudResource {
   public NumberGroups(HttpClient httpClient) {
     super(httpClient, "/relay/rest/number_groups", UpdateMethod.PUT);

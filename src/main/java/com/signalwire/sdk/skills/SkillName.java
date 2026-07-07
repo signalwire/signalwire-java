@@ -6,13 +6,12 @@ package com.signalwire.sdk.skills;
  * <p>{@link com.signalwire.sdk.agent.AgentBase#addSkill(SkillName, java.util.Map)} (and the
  * matching {@code removeSkill} / {@code hasSkill} overloads) accept this enum <em>or</em> a plain
  * {@link String}. The enum gives editor autocompletion and makes a typo fail at compile time (a
- * bare string like {@code "datetiem"} only fails at runtime, on the server). Strings keep parity
- * with the Python reference (which uses bare {@code str}) and still allow custom / third-party
- * skills that aren't built in:
+ * bare string like {@code "datetiem"} only fails at runtime, on the server). A plain {@link String}
+ * is also accepted, which still allows custom / third-party skills that aren't built in:
  *
  * <pre>{@code
  * agent.addSkill(SkillName.DATETIME);          // typed, autocompleted
- * agent.addSkill("datetime");                  // string still works (parity)
+ * agent.addSkill("datetime");                  // string still works
  * agent.addSkill("my_custom_skill");           // open set: custom skills ok
  * }</pre>
  *

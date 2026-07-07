@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** ShortCodes — generated from x-sdk-resource 'ShortCodes' (relay-rest spec, base BaseResource). */
+/** ShortCodes — REST resource client for the 'relay-rest' API namespace. */
 public class ShortCodes extends BaseResource {
   public ShortCodes(HttpClient httpClient) {
     super(httpClient, "/relay/rest/short_codes");

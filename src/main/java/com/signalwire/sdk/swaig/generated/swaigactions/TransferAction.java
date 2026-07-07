@@ -13,6 +13,6 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * this as a method-less type definition).
  */
 public final class TransferAction {
-  public Object dest;
+  public java.util.Map<String, Object> dest;
   public Boolean summarize;
 }

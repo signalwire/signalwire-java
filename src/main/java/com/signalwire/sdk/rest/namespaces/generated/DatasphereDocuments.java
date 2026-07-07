@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * DatasphereDocuments — generated from x-sdk-resource 'DatasphereDocuments' (datasphere spec, base
- * CrudResource).
- */
+/** DatasphereDocuments — REST resource client for the 'datasphere' API namespace. */
 public class DatasphereDocuments extends CrudResource {
   public DatasphereDocuments(HttpClient httpClient) {
     super(httpClient, "/datasphere/documents", UpdateMethod.PATCH);

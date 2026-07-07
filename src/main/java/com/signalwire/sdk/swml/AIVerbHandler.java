@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class AIVerbHandler extends SWMLVerbHandler {
 
-  /** Top-level AI keys that live outside the params object (Python parity). */
+  /** Top-level AI keys that live outside the params object. */
   private static final Set<String> TOP_LEVEL_AI_KEYS =
       Set.of("languages", "hints", "pronounce", "global_data");
 
@@ -106,7 +106,7 @@ public class AIVerbHandler extends SWMLVerbHandler {
    *
    * <p>Requires exactly one of {@code promptText} / {@code promptPom} (mutually exclusive). {@code
    * languages}, {@code hints}, {@code pronounce} and {@code global_data} are placed at the top
-   * level; every other extra keyword is placed into {@code config['params']} (Python parity).
+   * level; every other extra keyword is placed into {@code config['params']}.
    *
    * @param promptText base text prompt (mutually exclusive with promptPom), or {@code null}
    * @param promptPom POM structure prompt (mutually exclusive with promptText), or {@code null}

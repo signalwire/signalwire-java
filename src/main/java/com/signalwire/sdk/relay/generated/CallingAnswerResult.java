@@ -14,6 +14,6 @@ package com.signalwire.sdk.relay.generated;
  */
 public final class CallingAnswerResult {
   public String code;
-  public Object data;
+  public java.util.Map<String, Object> data;
   public String message;
 }

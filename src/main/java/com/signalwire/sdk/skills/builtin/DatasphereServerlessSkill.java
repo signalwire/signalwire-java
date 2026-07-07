@@ -103,25 +103,22 @@ public class DatasphereServerlessSkill implements SkillBase {
         "SignalWire DataSphere (Serverless)");
   }
 
-  /** Python parity: get_hints returns an empty list (datasphere_serverless/skill.py). */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
   /**
-   * Python parity: get_instance_key uses the tool name (default {@code "search_knowledge"}) —
-   * {@code f"{SKILL_NAME}_{tool_name}"} (datasphere_serverless/skill.py).
+   * Instance key: the skill name plus the tool name (default {@code "search_knowledge"}), joined as
+   * {@code <skill>_<tool>}.
    */
   @Override
   public String getInstanceKey() {
     return getName() + "_" + toolName;
   }
 
-  /**
-   * Python parity: get_parameter_schema (datasphere_serverless/skill.py) — base params plus custom
-   * fields.
-   */
+  /** Parameter schema: base params plus custom fields. */
   @Override
   public Map<String, Object> getParameterSchema() {
     Map<String, Object> schema = SkillParams.base(true, getName());

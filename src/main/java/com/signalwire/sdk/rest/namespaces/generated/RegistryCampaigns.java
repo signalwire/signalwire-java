@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * RegistryCampaigns — generated from x-sdk-resource 'RegistryCampaigns' (relay-rest spec, base
- * BaseResource).
- */
+/** RegistryCampaigns — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryCampaigns extends BaseResource {
   public RegistryCampaigns(HttpClient httpClient) {
     super(httpClient, "/relay/rest/registry/beta/campaigns");

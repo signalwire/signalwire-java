@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * RegistryOrders — generated from x-sdk-resource 'RegistryOrders' (relay-rest spec, base
- * BaseResource).
- */
+/** RegistryOrders — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryOrders extends BaseResource {
   public RegistryOrders(HttpClient httpClient) {
     super(httpClient, "/relay/rest/registry/beta/orders");

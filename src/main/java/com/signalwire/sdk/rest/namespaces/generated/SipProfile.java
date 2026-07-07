@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** SipProfile — generated from x-sdk-resource 'SipProfile' (relay-rest spec, base BaseResource). */
+/** SipProfile — REST resource client for the 'relay-rest' API namespace. */
 public class SipProfile extends BaseResource {
   public SipProfile(HttpClient httpClient) {
     super(httpClient, "/relay/rest/sip_profile");

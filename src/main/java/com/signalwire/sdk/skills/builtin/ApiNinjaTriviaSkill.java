@@ -9,9 +9,8 @@ import java.util.*;
 public class ApiNinjaTriviaSkill implements SkillBase {
 
   /**
-   * Python parity: {@code api_ninjas_trivia/skill.py VALID_CATEGORIES} -- ordered category key to
-   * human-readable description. Used both as the valid-category list and to build the {@code
-   * categories} parameter-schema description.
+   * Ordered map of category key to human-readable description. Used both as the valid-category list
+   * and to build the {@code categories} parameter-schema description.
    */
   private static final Map<String, String> VALID_CATEGORIES;
 
@@ -89,18 +88,14 @@ public class ApiNinjaTriviaSkill implements SkillBase {
     return List.of(dm.toSwaigFunction());
   }
 
-  /**
-   * Python parity: {@code api_ninjas_trivia/skill.py get_instance_key} -- {@code
-   * f"{SKILL_NAME}_{tool_name}"}.
-   */
+  /** Instance key: the skill name plus the tool name, joined as {@code <skill>_<tool>}. */
   @Override
   public String getInstanceKey() {
     return getName() + "_" + toolName;
   }
 
   /**
-   * Python parity: {@code api_ninjas_trivia/skill.py get_tools} -- the reference builds the DataMap
-   * tool in {@code get_tools()}. In Java that tool is built in {@link #getSwaigFunctions()}, so
+   * Returns this skill's tools. The DataMap tool is built in {@link #getSwaigFunctions()}, so
    * {@code getTools()} returns exactly that list (the DataMap tool list).
    */
   public List<Map<String, Object>> getTools() {
@@ -108,9 +103,8 @@ public class ApiNinjaTriviaSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code api_ninjas_trivia/skill.py get_parameter_schema} -- base schema plus
-   * {@code api_key} (hidden, required, env_var API_NINJAS_KEY) and {@code categories} (array of
-   * category keys; description enumerates VALID_CATEGORIES).
+   * Parameter schema: base schema plus {@code api_key} (hidden, required, env_var API_NINJAS_KEY)
+   * and {@code categories} (array of category keys; description enumerates VALID_CATEGORIES).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

@@ -22,8 +22,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * RouteRegistry — enumerate the REST routes the Java SDK ACTUALLY IMPLEMENTS ("Set B" for the
- * cross-port SPEC-PARITY gate).
+ * RouteRegistry — enumerate the REST routes the Java SDK actually implements.
  *
  * <p>This is the set of routes the live {@link RestClient} actually dispatches, captured from the
  * REAL code path — not parsed from source (an AST scraper would have to re-implement the
@@ -63,9 +62,9 @@ import java.util.TreeMap;
  *   ./gradlew --no-daemon -q routeRegistry
  * </pre>
  *
- * <p>Package-private: this is the registry tool the SPEC-PARITY gate runs (a {@code main()} entry
- * point — no {@code public} needed to launch it), NOT a public SDK API, so it stays out of the
- * enumerated public surface (matching how every port keeps its registry tool out of the surface).
+ * <p>Package-private: this is an internal registry tool (a {@code main()} entry point — no {@code
+ * public} needed to launch it), NOT a public SDK API, so it stays out of the enumerated public
+ * surface.
  */
 final class RouteRegistry {
 

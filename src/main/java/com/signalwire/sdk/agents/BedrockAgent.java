@@ -41,8 +41,9 @@ public class BedrockAgent extends AgentBase {
   private int maxTokens;
 
   /**
-   * Full constructor. Python parity: {@code __init__(name="bedrock_agent", route="/bedrock",
-   * system_prompt=None, voice_id="matthew", temperature=0.7, top_p=0.9, max_tokens=1024)}.
+   * Full constructor. Defaults: {@code name="bedrock_agent"}, {@code route="/bedrock"}, {@code
+   * systemPrompt=null}, {@code voiceId="matthew"}, {@code temperature=0.7}, {@code topP=0.9},
+   * {@code maxTokens=1024}.
    *
    * @param name agent name
    * @param route HTTP route for the agent
@@ -86,9 +87,9 @@ public class BedrockAgent extends AgentBase {
   /**
    * Render the SWML document, transforming the {@code ai} verb into an {@code amazon_bedrock} verb.
    *
-   * <p>Python parity: {@code _render_swml} overrides the base render to swap the {@code ai} verb
-   * structure for {@code amazon_bedrock}. The base render builds a Map (not a JSON string), so this
-   * operates on that Map directly.
+   * <p>This overrides the base render to swap the {@code ai} verb structure for {@code
+   * amazon_bedrock}. The base render builds a Map (not a JSON string), so this operates on that Map
+   * directly.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -170,9 +171,8 @@ public class BedrockAgent extends AgentBase {
   }
 
   /**
-   * Update Bedrock inference parameters. Only non-null values are applied.
-   *
-   * <p>Python parity: {@code set_inference_params(temperature=None, top_p=None, max_tokens=None)}.
+   * Update Bedrock inference parameters ({@code temperature}, {@code topP}, {@code maxTokens}).
+   * Only non-null values are applied.
    *
    * @param temperature generation temperature (0-1), or {@code null} to leave unchanged
    * @param topP nucleus sampling parameter (0-1), or {@code null} to leave unchanged
@@ -259,12 +259,7 @@ public class BedrockAgent extends AgentBase {
     return maxTokens;
   }
 
-  /**
-   * String representation of the agent.
-   *
-   * <p>Python parity: {@code __repr__}. The enumerator maps Java {@code toString()} to {@code
-   * __repr__}.
-   */
+  /** String representation of the agent. */
   @Override
   public String toString() {
     return "BedrockAgent(name='"

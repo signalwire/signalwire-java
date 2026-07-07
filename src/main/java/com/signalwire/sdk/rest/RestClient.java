@@ -14,8 +14,8 @@ import java.util.Objects;
  *
  * <p>Uses {@code java.net.http.HttpClient} with Basic Auth. Extends the generated {@link
  * ResourceTree} (in {@code com.signalwire.sdk.rest.namespaces.generated}) which supplies every REST
- * resource and namespace-container accessor from the spec markup (§8). The hand client keeps only
- * the non-spec-derivable bits: auth / HTTP construction and the {@link Builder}.
+ * resource and namespace-container accessor. This client adds the auth / HTTP construction and the
+ * {@link Builder}.
  *
  * <pre>{@code
  * var client = RestClient.builder()
@@ -51,9 +51,9 @@ public class RestClient extends ResourceTree {
 
   /**
    * Build a {@link RestClient} pointed at an explicit base URL — typically a loopback fixture used
-   * by the porting-sdk's REST-transport audit. The returned client signs requests with the given
-   * {@code project}/{@code token} pair via Basic Auth and routes every namespace's HTTP through the
-   * fixture instead of the live SignalWire space.
+   * for testing. The returned client signs requests with the given {@code project}/{@code token}
+   * pair via Basic Auth and routes every namespace's HTTP through the fixture instead of the live
+   * SignalWire space.
    *
    * @param baseUrl fully qualified base URL (e.g. {@code "http://127.0.0.1:NNNN/api"}); {@code
    *     "/api"} is appended if not already present

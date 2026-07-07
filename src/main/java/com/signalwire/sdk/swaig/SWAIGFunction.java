@@ -188,7 +188,7 @@ public class SWAIGFunction {
    * @param baseUrl base URL for the webhook
    * @param token optional auth token to include in the URL
    * @param callId optional call ID for session tracking
-   * @param includeAuth whether to include auth credentials in the URL (parity placeholder)
+   * @param includeAuth whether to include auth credentials in the URL (reserved; currently unused)
    * @return representation for the SWAIG array in SWML
    */
   public Map<String, Object> toSwaig(
@@ -220,7 +220,7 @@ public class SWAIGFunction {
 
   // ---- internals ----
 
-  /** Coerce a handler return value into a {@link FunctionResult} Map (Python parity). */
+  /** Coerce a handler return value into a {@link FunctionResult} Map. */
   @SuppressWarnings("unchecked")
   private Map<String, Object> coerceResult(Object result) {
     if (result instanceof FunctionResult) {
@@ -417,7 +417,7 @@ public class SWAIGFunction {
     }
   }
 
-  /** Result of {@link #validateArgs}: {@code (valid, errors)} — parity with Python's tuple. */
+  /** Result of {@link #validateArgs}: {@code (valid, errors)}. */
   public static final class ValidationResult {
     private final boolean valid;
     private final List<String> errors;

@@ -74,19 +74,17 @@ public class WeatherApiSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code weather_api/skill.py get_tools} -- the reference builds the DataMap tool
-   * in {@code get_tools()}. In Java that tool is built in {@link #getSwaigFunctions()}, so {@code
-   * getTools()} returns exactly that list.
+   * Returns this skill's tools. The DataMap tool is built in {@link #getSwaigFunctions()}, so
+   * {@code getTools()} returns exactly that list.
    */
   public List<Map<String, Object>> getTools() {
     return getSwaigFunctions();
   }
 
   /**
-   * Python parity: {@code weather_api/skill.py get_parameter_schema} -- base schema
-   * (single-instance skill) plus {@code api_key} (hidden, required, env_var WEATHER_API_KEY),
-   * {@code tool_name} (default get_weather), and {@code temperature_unit} (enum
-   * fahrenheit/celsius).
+   * Parameter schema: base schema (single-instance skill) plus {@code api_key} (hidden, required,
+   * env_var WEATHER_API_KEY), {@code tool_name} (default get_weather), and {@code temperature_unit}
+   * (enum fahrenheit/celsius).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

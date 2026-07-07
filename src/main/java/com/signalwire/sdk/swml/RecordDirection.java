@@ -4,24 +4,23 @@ package com.signalwire.sdk.swml;
  * Audio direction for the SWML {@code record_call} verb, as a typed, compile-time-checked closed
  * set.
  *
- * <p>The Python reference {@code FunctionResult.record_call} validates {@code direction} against
- * {@code ["speak", "listen", "both"]} and raises {@code ValueError} on anything else. The methods
- * that take a record direction ({@link com.signalwire.sdk.swaig.FunctionResult#recordCall(String,
- * boolean, String, RecordDirection)}) accept this enum <em>or</em> a plain {@link String}. The enum
- * gives editor autocompletion and makes a typo fail at compile time (a bare string like {@code
- * "listenn"} only fails at runtime, on the server). Strings keep parity with the Python reference
- * (which uses a bare {@code str}):
+ * <p>The record {@code direction} is one of {@code "speak"}, {@code "listen"}, or {@code "both"};
+ * anything else is rejected. The methods that take a record direction ({@link
+ * com.signalwire.sdk.swaig.FunctionResult#recordCall(String, boolean, String, RecordDirection)})
+ * accept this enum <em>or</em> a plain {@link String}. The enum gives editor autocompletion and
+ * makes a typo fail at compile time (a bare string like {@code "listenn"} only fails at runtime, on
+ * the server). A plain {@link String} is also accepted:
  *
  * <pre>{@code
  * result.recordCall("rec1", true, "mp3", RecordDirection.LISTEN);   // typed, autocompleted
- * result.recordCall("rec1", true, "mp3", "listen");                 // string still works (parity)
+ * result.recordCall("rec1", true, "mp3", "listen");                 // string still works
  * }</pre>
  *
  * <p><strong>This is a DIFFERENT set from {@link TapDirection}.</strong> {@code record_call} uses
- * {@code listen} where {@code tap} uses {@code hear}, mirroring the reference's two separate
- * validation lists — the two sets are modelled as two distinct enums and are never shared (see the
- * 3-vocabulary trap: SWML {@code record_call} {@code {speak,listen,both}} vs SWML {@code tap}
- * {@code {speak,hear,both}} vs RELAY {@code {listen,speak,both}}).
+ * {@code listen} where {@code tap} uses {@code hear} — two separate validation lists — the two sets
+ * are modelled as two distinct enums and are never shared (see the 3-vocabulary trap: SWML {@code
+ * record_call} {@code {speak,listen,both}} vs SWML {@code tap} {@code {speak,hear,both}} vs RELAY
+ * {@code {listen,speak,both}}).
  *
  * <p>Each constant's {@link #getValue() value} is the canonical wire string, so routing a recording
  * through the enum is byte-for-byte identical to passing that string.

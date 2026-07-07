@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** VideoStreams — generated from x-sdk-resource 'VideoStreams' (video spec, base BaseResource). */
+/** VideoStreams — REST resource client for the 'video' API namespace. */
 public class VideoStreams extends BaseResource {
   public VideoStreams(HttpClient httpClient) {
     super(httpClient, "/video/streams");

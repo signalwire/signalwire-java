@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
 
-/**
- * VideoRoomSessions — generated from x-sdk-resource 'VideoRoomSessions' (video spec, base
- * ReadResource).
- */
+/** VideoRoomSessions — REST resource client for the 'video' API namespace. */
 public class VideoRoomSessions extends ReadResource {
   public VideoRoomSessions(HttpClient httpClient) {
     super(httpClient, "/video/room_sessions");

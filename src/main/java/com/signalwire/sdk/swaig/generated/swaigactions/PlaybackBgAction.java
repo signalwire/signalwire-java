@@ -13,6 +13,6 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * this as a method-less type definition).
  */
 public final class PlaybackBgAction {
-  public Object file;
+  public java.util.Map<String, Object> file;
   public Boolean wait;
 }

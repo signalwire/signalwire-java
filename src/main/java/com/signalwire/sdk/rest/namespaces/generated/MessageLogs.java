@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
 
-/** MessageLogs — generated from x-sdk-resource 'MessageLogs' (message spec, base ReadResource). */
+/** MessageLogs — REST resource client for the 'message' API namespace. */
 public class MessageLogs extends ReadResource {
   public MessageLogs(HttpClient httpClient) {
     super(httpClient, "/messaging/logs");

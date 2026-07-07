@@ -11,10 +11,10 @@ import java.util.function.Supplier;
  * Static registry of all available skills. Skills are registered by name and can be instantiated on
  * demand.
  *
- * <p>The class also exposes a small per-instance surface for Python-parity: an instance constructor
- * and {@link #addSkillDirectory(String)} mirror Python's {@code
- * SkillRegistry().add_skill_directory(path)}. The static registry is kept for the existing Java
- * idiom; instance state is limited to the external skill directories list.
+ * <p>The class also exposes a small per-instance surface: an instance constructor and {@link
+ * #addSkillDirectory(String)} let callers register additional external skill directories. The
+ * static registry is kept for the common case; instance state is limited to the external skill
+ * directories list.
  */
 public final class SkillRegistry {
 
@@ -113,10 +113,7 @@ public final class SkillRegistry {
     }
   }
 
-  /**
-   * Returns an immutable copy of the registered external skill directories. Parity surface for
-   * Python's {@code _external_paths}.
-   */
+  /** Returns an immutable copy of the registered external skill directories. */
   public synchronized List<String> getExternalPaths() {
     return Collections.unmodifiableList(new ArrayList<>(externalPaths));
   }

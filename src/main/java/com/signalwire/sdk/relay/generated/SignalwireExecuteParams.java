@@ -15,7 +15,7 @@ package com.signalwire.sdk.relay.generated;
 public final class SignalwireExecuteParams {
   public java.util.List<Object> attempted;
   public String method;
-  public Object params;
+  public java.util.Map<String, Object> params;
   public String protocol;
   public String requester_identity;
   public String requester_nodeid;

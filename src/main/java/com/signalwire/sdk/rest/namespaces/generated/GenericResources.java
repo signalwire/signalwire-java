@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * GenericResources — generated from x-sdk-resource 'GenericResources' (fabric spec, base
- * BaseResource).
- */
+/** GenericResources — REST resource client for the 'fabric' API namespace. */
 public class GenericResources extends BaseResource {
   public GenericResources(HttpClient httpClient) {
     super(httpClient, "/fabric/resources");

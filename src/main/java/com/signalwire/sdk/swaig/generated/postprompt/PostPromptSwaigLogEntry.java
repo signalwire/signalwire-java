@@ -23,7 +23,7 @@ public final class PostPromptSwaigLogEntry {
 
   public java.util.Map<String, Object> active_count;
   public String url;
-  public Object post_data;
+  public java.util.Map<String, Object> post_data;
   public java.util.Map<String, Object> post_response;
   public java.util.Map<String, Object> delayed_post_response;
   public String mcp_url;

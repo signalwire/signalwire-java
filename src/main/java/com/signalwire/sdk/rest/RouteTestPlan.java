@@ -24,11 +24,11 @@ import java.util.Set;
  * scripts/generate_rest_tests.py}).
  *
  * <p>Companion capture to {@link RouteRegistry}. {@code RouteRegistry} answers "which (method,
- * path) routes does the SDK implement" (deduped, via-merged) for the SPEC-PARITY gate; this program
- * answers the sibling question the TEST generator needs: for EVERY {@code via} route method, what
- * is the exact Java call expression that reaches it off the live {@link RestClient}, AND what
- * type-correct literal argument tokens must be passed. It is the Java realisation of the reflection
- * the ruby/php/go/ts generators do (rest_test_plan.rb / rest_test_plan.php / buildCallIndex).
+ * path) routes does the SDK implement" (deduped, via-merged); this program answers the sibling
+ * question the TEST generator needs: for EVERY {@code via} route method, what is the exact Java
+ * call expression that reaches it off the live {@link RestClient}, AND what type-correct literal
+ * argument tokens must be passed. It is the Java realisation of the reflection the ruby/php/go/ts
+ * generators do (rest_test_plan.rb / rest_test_plan.php / buildCallIndex).
  *
  * <p>It REUSES {@code RouteRegistry}'s live-client walk shape (a {@link RestClient} backed by a
  * recording {@link HttpClient}; reflection over namespace → sub-resource accessors → route methods)

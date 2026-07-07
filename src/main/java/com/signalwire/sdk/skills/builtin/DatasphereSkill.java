@@ -173,15 +173,15 @@ public class DatasphereSkill implements SkillBase {
         "SignalWire DataSphere");
   }
 
-  /** Python parity: get_hints returns an empty list (datasphere/skill.py). */
+  /** Returns an empty hint list. */
   @Override
   public List<String> getHints() {
     return Collections.emptyList();
   }
 
   /**
-   * Python parity: get_instance_key uses the tool name (default {@code "search_knowledge"}) to
-   * differentiate instances — {@code f"{SKILL_NAME}_{tool_name}"} (datasphere/skill.py).
+   * Instance key: the skill name plus the tool name (default {@code "search_knowledge"}), joined as
+   * {@code <skill>_<tool>}, so multiple instances are differentiated.
    */
   @Override
   public String getInstanceKey() {
@@ -189,16 +189,15 @@ public class DatasphereSkill implements SkillBase {
   }
 
   /**
-   * Python parity: cleanup closes the DataSphere HTTP session (datasphere/skill.py). This port
-   * opens a fresh {@link HttpClient} per request rather than holding a session, so there is nothing
-   * to close; we log for symmetry and leave no dangling resource.
+   * Releases the skill's resources. A fresh {@link HttpClient} is opened per request rather than
+   * holding a session, so there is nothing to close; this logs and leaves no dangling resource.
    */
   @Override
   public void cleanup() {
     log.debug("DataSphere skill cleaned up");
   }
 
-  /** Python parity: get_parameter_schema (datasphere/skill.py) — base params plus custom fields. */
+  /** Parameter schema: base params plus custom fields. */
   @Override
   public Map<String, Object> getParameterSchema() {
     Map<String, Object> schema = SkillParams.base(true, getName());

@@ -3,17 +3,16 @@ package com.signalwire.sdk.swml;
 /**
  * Audio direction for the SWML {@code tap} verb, as a typed, compile-time-checked closed set.
  *
- * <p>The Python reference {@code FunctionResult.tap} validates {@code direction} against {@code
- * ["speak", "hear", "both"]} and raises {@code ValueError} on anything else. The methods that take
- * a tap direction ({@link com.signalwire.sdk.swaig.FunctionResult#tap(String, String, TapDirection,
- * String)}) accept this enum <em>or</em> a plain {@link String}. The enum gives editor
- * autocompletion and makes a typo fail at compile time (a bare string like {@code "haer"} only
- * fails at runtime, on the server). Strings keep parity with the Python reference (which uses a
- * bare {@code str}):
+ * <p>The tap {@code direction} is one of {@code "speak"}, {@code "hear"}, or {@code "both"};
+ * anything else is rejected. The methods that take a tap direction ({@link
+ * com.signalwire.sdk.swaig.FunctionResult#tap(String, String, TapDirection, String)}) accept this
+ * enum <em>or</em> a plain {@link String}. The enum gives editor autocompletion and makes a typo
+ * fail at compile time (a bare string like {@code "haer"} only fails at runtime, on the server). A
+ * plain {@link String} is also accepted:
  *
  * <pre>{@code
  * result.tap("wss://x", "t1", TapDirection.HEAR, "PCMU");   // typed, autocompleted
- * result.tap("wss://x", "t1", "hear", "PCMU");              // string still works (parity)
+ * result.tap("wss://x", "t1", "hear", "PCMU");              // string still works
  * }</pre>
  *
  * <p><strong>This is a DIFFERENT set from {@link RecordDirection}.</strong> {@code tap} uses {@code

@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
 
-/** VoiceLogs — generated from x-sdk-resource 'VoiceLogs' (voice spec, base ReadResource). */
+/** VoiceLogs — REST resource client for the 'voice' API namespace. */
 public class VoiceLogs extends ReadResource {
   public VoiceLogs(HttpClient httpClient) {
     super(httpClient, "/voice/logs");

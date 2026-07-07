@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * PhoneNumbers — generated from x-sdk-resource 'PhoneNumbers' (relay-rest spec, base CrudResource).
- */
+/** PhoneNumbers — REST resource client for the 'relay-rest' API namespace. */
 public class PhoneNumbers extends CrudResource {
   public PhoneNumbers(HttpClient httpClient) {
     super(httpClient, "/relay/rest/phone_numbers", UpdateMethod.PUT);

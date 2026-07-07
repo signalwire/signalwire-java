@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
 
-/** FaxLogs — generated from x-sdk-resource 'FaxLogs' (fax spec, base ReadResource). */
+/** FaxLogs — REST resource client for the 'fax' API namespace. */
 public class FaxLogs extends ReadResource {
   public FaxLogs(HttpClient httpClient) {
     super(httpClient, "/fax/logs");

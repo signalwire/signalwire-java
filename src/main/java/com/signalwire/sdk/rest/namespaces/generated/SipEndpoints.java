@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * SipEndpoints — generated from x-sdk-resource 'SipEndpoints' (fabric spec, base FabricResource).
- */
+/** SipEndpoints — REST resource client for the 'fabric' API namespace. */
 public class SipEndpoints extends FabricResourcePUT {
   public SipEndpoints(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/sip_endpoints");

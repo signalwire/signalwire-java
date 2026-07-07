@@ -14,14 +14,14 @@ package com.signalwire.sdk.relay.generated;
  * this as a method-less type definition).
  */
 public final class CallingAmazonBedrockParams {
-  public Object SWAIG;
+  public java.util.Map<String, Object> SWAIG;
   public Boolean async;
   public String call_id;
-  public Object global_data;
+  public java.util.Map<String, Object> global_data;
   public String node_id;
-  public Object params;
-  public Object post_prompt;
+  public java.util.Map<String, Object> params;
+  public java.util.Map<String, Object> post_prompt;
   public String post_prompt_url;
-  public Object prompt;
+  public java.util.Map<String, Object> prompt;
   public Boolean swml;
 }

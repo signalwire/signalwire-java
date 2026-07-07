@@ -18,7 +18,7 @@ public final class CallingBindDigitParams {
   public String digits;
   public Long max_triggers;
   public String node_id;
-  public Object params;
+  public java.util.Map<String, Object> params;
   public String realm;
   public Boolean swml;
 }

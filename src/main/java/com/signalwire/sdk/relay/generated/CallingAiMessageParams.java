@@ -15,10 +15,10 @@ package com.signalwire.sdk.relay.generated;
 public final class CallingAiMessageParams {
   public Boolean async;
   public String call_id;
-  public Object global_data;
+  public java.util.Map<String, Object> global_data;
   public String message_text;
   public String node_id;
-  public Object reset;
+  public java.util.Map<String, Object> reset;
   public String role;
   public Boolean swml;
 }

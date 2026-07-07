@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Chat — generated from x-sdk-resource 'Chat' (chat spec, base BaseResource). */
+/** Chat — REST resource client for the 'chat' API namespace. */
 public class Chat extends BaseResource {
   public Chat(HttpClient httpClient) {
     super(httpClient, "/chat/tokens");

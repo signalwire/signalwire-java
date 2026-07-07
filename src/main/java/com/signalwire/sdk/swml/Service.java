@@ -155,7 +155,7 @@ public class Service implements AutoCloseable {
 
   /**
    * Validate provided basic-auth credentials against the configured ones using a constant-time
-   * comparison. (Python parity: ``AuthMixin.validate_basic_auth(username, password)``.)
+   * comparison.
    */
   public boolean validateBasicAuth(String username, String password) {
     if (authUser == null || authPassword == null) return false;
@@ -167,20 +167,14 @@ public class Service implements AutoCloseable {
             authPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }
 
-  /**
-   * Get the configured (user, password) pair as a String[2] tuple. (Python parity:
-   * ``AuthMixin.get_basic_auth_credentials``.)
-   */
+  /** Get the configured (user, password) pair as a String[2] tuple. */
   public String[] getBasicAuthCredentials() {
     return new String[] {
       authUser != null ? authUser : "", authPassword != null ? authPassword : ""
     };
   }
 
-  /**
-   * Get (user, password, source) where source is "provided", "environment", or "generated". (Python
-   * parity: ``AuthMixin.get_basic_auth_credentials(include_source=True)``.)
-   */
+  /** Get (user, password, source) where source is "provided", "environment", or "generated". */
   public String[] getBasicAuthCredentialsWithSource() {
     String user = authUser != null ? authUser : "";
     String pass = authPassword != null ? authPassword : "";
@@ -290,33 +284,24 @@ public class Service implements AutoCloseable {
     return new java.util.ArrayList<>(tools.keySet());
   }
 
-  /**
-   * Whether a SWAIG function with the given name is registered. (Python parity:
-   * ``ToolRegistry.has_function``.)
-   */
+  /** Whether a SWAIG function with the given name is registered. */
   public boolean hasFunction(String name) {
     return tools.containsKey(name);
   }
 
-  /**
-   * Get a registered SWAIG function by name, or null when absent. (Python parity:
-   * ``ToolRegistry.get_function``.)
-   */
+  /** Get a registered SWAIG function by name, or null when absent. */
   public com.signalwire.sdk.swaig.ToolDefinition getFunction(String name) {
     return tools.get(name);
   }
 
-  /**
-   * Snapshot of all registered SWAIG functions keyed by name. (Python parity:
-   * ``ToolRegistry.get_all_functions``.)
-   */
+  /** Snapshot of all registered SWAIG functions keyed by name. */
   public java.util.Map<String, com.signalwire.sdk.swaig.ToolDefinition> getAllFunctions() {
     return new java.util.LinkedHashMap<>(tools);
   }
 
   /**
    * Remove a registered SWAIG function. Returns true when removed, false when the function was not
-   * registered. (Python parity: ``ToolRegistry.remove_function``.)
+   * registered.
    */
   public boolean removeFunction(String name) {
     return tools.remove(name) != null;
@@ -379,8 +364,8 @@ public class Service implements AutoCloseable {
    * <p>Returning {@code null} uses the default rendered SWML; returning a non-null map merges the
    * entries as modifications.
    *
-   * <p>Python parity: {@code WebMixin.on_request(request_data, callback_path)}. The Python third
-   * {@code request} parameter is FastAPI-specific and intentionally not mirrored.
+   * <p>This hook takes the parsed request body and the callback sub-path; there is no framework-
+   * specific request object parameter.
    *
    * @param requestData parsed request body, or {@code null}
    * @param callbackPath optional callback sub-path, or {@code null}
@@ -396,8 +381,8 @@ public class Service implements AutoCloseable {
    * implementation returns {@code null} (no modification). Subclasses override to inspect the body
    * or callback path and return a map of SWML overrides.
    *
-   * <p>Python parity: {@code WebMixin.on_swml_request(request_data, callback_path)}. The Python
-   * third {@code request} parameter is FastAPI-specific and intentionally not mirrored.
+   * <p>This hook takes the parsed request body and the callback sub-path; there is no framework-
+   * specific request object parameter.
    *
    * @param requestData parsed request body, or {@code null}
    * @param callbackPath optional callback sub-path, or {@code null}
@@ -415,8 +400,7 @@ public class Service implements AutoCloseable {
    * {@code true} (no validation).
    *
    * <p>Returning {@code false} signals "signature invalid"; the caller sends {@code 403 Forbidden}
-   * and stops dispatch. Per porting-sdk/webhooks.md the response body must NOT disclose which
-   * branch failed.
+   * and stops dispatch. The response body must NOT disclose which branch failed.
    *
    * @param exchange the HTTP exchange.
    * @param rawBody the raw UTF-8 body string already read from the exchange. Pass through to {@link

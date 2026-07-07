@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** AiAgents — generated from x-sdk-resource 'AiAgents' (fabric spec, base FabricResource). */
+/** AiAgents — REST resource client for the 'fabric' API namespace. */
 public class AiAgents extends FabricResource {
   public AiAgents(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/ai_agents");

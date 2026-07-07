@@ -14,14 +14,11 @@ import java.util.Map;
  * Map<String, Object>} across {@link Call#connect}, {@link Call#refer}, {@link RelayClient#dial}
  * and {@link Call#tap}.
  *
- * <p>The wire shape is fixed (extracted from switchblade's {@code PublicCallConnectParams} / {@code
- * PublicCallDialParams} / {@code PublicCallReferParams} / {@code PublicCallTapParams}, mirrored in
- * {@code porting-sdk/relay-protocol/calling.*.params.json}): every device is an object with a
- * required string {@code type} discriminant and a {@code params} sub-object whose shape depends on
- * the type (a {@code phone} carries {@code to_number}/{@code from_number}, a {@code sip} carries
- * {@code to}/ {@code headers}, etc.). This class types the <em>shape</em> — the {@code {type,
- * params}} envelope — so callers stop hand-rolling the two-key map and get an explicit constructor
- * + accessors.
+ * <p>The wire shape is fixed: every device is an object with a required string {@code type}
+ * discriminant and a {@code params} sub-object whose shape depends on the type (a {@code phone}
+ * carries {@code to_number}/{@code from_number}, a {@code sip} carries {@code to}/ {@code headers},
+ * etc.). This class types the <em>shape</em> — the {@code {type, params}} envelope — so callers
+ * stop hand-rolling the two-key map and get an explicit constructor + accessors.
  *
  * <p><strong>{@code type} stays a {@link String}.</strong> The discriminant is NOT
  * schema-enumerated: the wire schema constrains it only to {@code "type": {"type": "string"}}, and
@@ -43,7 +40,7 @@ import java.util.Map;
  *     "to_number", "+15551112222", "from_number", "+15553334444"));
  * call.connect(List.of(List.of(phone.toMap())), null);
  *
- * // raw map still works (parity):
+ * // raw map still works:
  * call.connect(List.of(List.of(Map.of(
  *     "type", "phone",
  *     "params", Map.of("to_number", "+15551112222",

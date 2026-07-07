@@ -37,7 +37,7 @@ public final class CallingJoinConferenceParams {
   public String status_callback_event;
   public String status_callback_event_type;
   public String status_callback_method;
-  public Object stream;
+  public java.util.Map<String, Object> stream;
   public Boolean swml;
   public String trim;
   public String wait_url;

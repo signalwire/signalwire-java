@@ -126,17 +126,15 @@ public class SwmlTransferSkill implements SkillBase {
   }
 
   /**
-   * Python parity: get_instance_key uses the tool name (default {@code "transfer_call"}) — {@code
-   * f"{SKILL_NAME}_{tool_name}"} (swml_transfer/skill.py).
+   * Instance key: the skill name plus the tool name (default {@code "transfer_call"}), joined as
+   * {@code <skill>_<tool>}.
    */
   @Override
   public String getInstanceKey() {
     return getName() + "_" + toolName;
   }
 
-  /**
-   * Python parity: get_parameter_schema (swml_transfer/skill.py) — base params plus custom fields.
-   */
+  /** Parameter schema: base params plus custom fields. */
   @Override
   public Map<String, Object> getParameterSchema() {
     Map<String, Object> schema = SkillParams.base(true, getName());

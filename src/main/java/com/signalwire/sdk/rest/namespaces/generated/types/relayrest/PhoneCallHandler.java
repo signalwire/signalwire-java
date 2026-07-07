@@ -7,8 +7,7 @@
 package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
 
 /**
- * PhoneCallHandler — generated public enum (x-sdk-enum on 'relay_rest' components/schemas
- * 'PhoneNumberCallHandlerRequest').
+ * PhoneCallHandler — the set of accepted wire values for this field.
  *
  * <p>Each constant's wire value is the exact wire string.
  */

@@ -13,5 +13,5 @@ package com.signalwire.sdk.swml.generated;
  * this as a method-less type definition).
  */
 public final class SWMLAction {
-  public Object SWML;
+  public java.util.Map<String, Object> SWML;
 }

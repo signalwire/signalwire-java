@@ -85,7 +85,7 @@ public class Message {
 
   /**
    * The current message state as a typed {@link MessageState}, <em>alongside</em> the raw string
-   * {@link #getState()} (which stays canonical for parity and forward-compat). Returns {@code
+   * {@link #getState()} (which stays canonical and forward-compatible). Returns {@code
    * Optional.empty()} when the live wire state is not one of the seven known {@link MessageState}
    * values — the set mirrors server-emitted values that can grow, so an unrecognised state is
    * tolerated here rather than crashing the caller. The present value always agrees with {@code

@@ -13,10 +13,10 @@ package com.signalwire.sdk.swaig.generated.postprompt;
  * this as a method-less type definition).
  */
 public final class PostPrompt {
-  public Object content_type;
-  public Object content_disposition;
-  public Object conversation_type;
-  public Object action;
+  public String content_type;
+  public String content_disposition;
+  public String conversation_type;
+  public String action;
   public String project_id;
   public String space_id;
   public String call_id;

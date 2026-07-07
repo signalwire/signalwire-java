@@ -19,12 +19,12 @@ package com.signalwire.sdk.relay;
  * the six outbound values; {@code received} is the inbound-only seventh.
  *
  * <p>It is exposed <em>alongside</em> the existing string getter, never instead of it: {@link
- * Message#getState()} keeps returning the raw wire string (parity with Python, forward-compatible),
- * while {@link Message#getMessageState()} returns {@code Optional<MessageState>} for callers who
- * want a typed handle and an {@link #isTerminal()} predicate.
+ * Message#getState()} keeps returning the raw wire string (forward-compatible), while {@link
+ * Message#getMessageState()} returns {@code Optional<MessageState>} for callers who want a typed
+ * handle and an {@link #isTerminal()} predicate.
  *
  * <pre>{@code
- * String raw = msg.getState();                // "delivered" (always present, parity)
+ * String raw = msg.getState();                // "delivered" (always present)
  * msg.getMessageState()
  *    .filter(MessageState::isTerminal)        // DELIVERED / UNDELIVERED / FAILED
  *    .ifPresent(s -> ...);

@@ -17,5 +17,5 @@ public final class SignalwireReauthenticateResult {
   public String authentication;
   public java.util.Map<String, Object> authorization;
   public java.util.List<Object> ice_servers;
-  public Object result;
+  public java.util.Map<String, Object> result;
 }

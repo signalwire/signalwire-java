@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * FreeswitchConnectors — generated from x-sdk-resource 'FreeswitchConnectors' (fabric spec, base
- * FabricResource).
- */
+/** FreeswitchConnectors — REST resource client for the 'fabric' API namespace. */
 public class FreeswitchConnectors extends FabricResourcePUT {
   public FreeswitchConnectors(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/freeswitch_connectors");

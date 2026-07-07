@@ -32,7 +32,7 @@ import org.yaml.snakeyaml.Yaml;
  *
  * <p>Idiom mapping: JSON is parsed with Gson and YAML with SnakeYAML (both already repo
  * dependencies). After substitution, string values that look like booleans/integers/floats are
- * coerced to those native types (Python parity).
+ * coerced to those native types.
  */
 public class ConfigLoader {
 

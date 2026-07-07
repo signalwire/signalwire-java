@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * VideoRoomTokens — generated from x-sdk-resource 'VideoRoomTokens' (video spec, base
- * BaseResource).
- */
+/** VideoRoomTokens — REST resource client for the 'video' API namespace. */
 public class VideoRoomTokens extends BaseResource {
   public VideoRoomTokens(HttpClient httpClient) {
     super(httpClient, "/video/room_tokens");

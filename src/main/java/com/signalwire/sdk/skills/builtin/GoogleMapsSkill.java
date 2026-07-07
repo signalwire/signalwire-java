@@ -154,9 +154,9 @@ public class GoogleMapsSkill implements SkillBase {
   }
 
   /**
-   * Python parity: google_maps get_parameter_schema() — base schema plus {@code api_key} (required,
-   * hidden, env_var GOOGLE_MAPS_API_KEY), {@code lookup_tool_name} (default "lookup_address") and
-   * {@code route_tool_name} (default "compute_route").
+   * Parameter schema: base schema plus {@code api_key} (required, hidden, env_var
+   * GOOGLE_MAPS_API_KEY), {@code lookup_tool_name} (default "lookup_address") and {@code
+   * route_tool_name} (default "compute_route").
    */
   @Override
   public Map<String, Object> getParameterSchema() {

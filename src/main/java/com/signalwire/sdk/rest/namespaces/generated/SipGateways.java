@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** SipGateways — generated from x-sdk-resource 'SipGateways' (fabric spec, base FabricResource). */
+/** SipGateways — REST resource client for the 'fabric' API namespace. */
 public class SipGateways extends FabricResource {
   public SipGateways(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/sip_gateways");

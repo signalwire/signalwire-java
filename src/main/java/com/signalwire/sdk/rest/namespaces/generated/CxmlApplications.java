@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * CxmlApplications — generated from x-sdk-resource 'CxmlApplications' (fabric spec, base
- * BaseResource).
- */
+/** CxmlApplications — REST resource client for the 'fabric' API namespace. */
 public class CxmlApplications extends BaseResource {
   public CxmlApplications(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/cxml_applications");

@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
 
-/**
- * FabricAddresses — generated from x-sdk-resource 'FabricAddresses' (fabric spec, base
- * ReadResource).
- */
+/** FabricAddresses — REST resource client for the 'fabric' API namespace. */
 public class FabricAddresses extends ReadResource {
   public FabricAddresses(HttpClient httpClient) {
     super(httpClient, "/fabric/addresses");

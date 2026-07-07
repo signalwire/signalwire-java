@@ -14,7 +14,7 @@ package com.signalwire.sdk.relay.generated;
  * this as a method-less type definition).
  */
 public final class CallingLiveTranscribeParams {
-  public Object action;
+  public java.util.Map<String, Object> action;
   public Boolean async;
   public String call_id;
   public String node_id;

@@ -16,9 +16,7 @@ import java.util.TreeSet;
  * Registry for SWML verb handlers.
  *
  * <p>Maintains a registry of handlers for special SWML verbs and provides methods for accessing
- * them. The "ai" verb handler is registered automatically on construction (Python parity). Mirrors
- * the Python reference {@code signalwire.core.swml_handler.VerbHandlerRegistry} and the Ruby {@code
- * SignalWire::SWML::VerbHandlerRegistry}.
+ * them. The "ai" verb handler is registered automatically on construction.
  */
 public class VerbHandlerRegistry {
 

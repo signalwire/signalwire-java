@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * VideoConferences — generated from x-sdk-resource 'VideoConferences' (video spec, base
- * CrudResource).
- */
+/** VideoConferences — REST resource client for the 'video' API namespace. */
 public class VideoConferences extends CrudResource {
   public VideoConferences(HttpClient httpClient) {
     super(httpClient, "/video/conferences", UpdateMethod.PUT);

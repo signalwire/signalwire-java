@@ -159,8 +159,8 @@ public class InfoGathererSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code info_gatherer/skill.py get_instance_key} -- {@code prefix =
-   * params.get("prefix"); return f"info_gatherer_{prefix}" if prefix else "info_gatherer"}.
+   * Instance key: {@code info_gatherer_<prefix>} when a {@code prefix} is set, otherwise {@code
+   * info_gatherer}.
    */
   @Override
   public String getInstanceKey() {
@@ -171,8 +171,8 @@ public class InfoGathererSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code info_gatherer/skill.py get_parameter_schema} -- base schema plus {@code
-   * questions}, {@code prefix}, {@code completion_message}.
+   * Parameter schema: base schema plus {@code questions}, {@code prefix}, {@code
+   * completion_message}.
    */
   @Override
   public Map<String, Object> getParameterSchema() {

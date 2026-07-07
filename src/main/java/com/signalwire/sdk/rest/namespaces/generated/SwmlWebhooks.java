@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * SwmlWebhooks — generated from x-sdk-resource 'SwmlWebhooks' (fabric spec, base FabricResource).
- */
+/** SwmlWebhooks — REST resource client for the 'fabric' API namespace. */
 public class SwmlWebhooks extends FabricResource {
   public SwmlWebhooks(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/swml_webhooks");

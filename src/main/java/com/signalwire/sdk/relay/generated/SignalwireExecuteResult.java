@@ -15,5 +15,5 @@ package com.signalwire.sdk.relay.generated;
 public final class SignalwireExecuteResult {
   public String requester_nodeid;
   public String responder_nodeid;
-  public Object result;
+  public java.util.Map<String, Object> result;
 }

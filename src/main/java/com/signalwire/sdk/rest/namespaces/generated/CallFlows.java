@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** CallFlows — generated from x-sdk-resource 'CallFlows' (fabric spec, base FabricResource). */
+/** CallFlows — REST resource client for the 'fabric' API namespace. */
 public class CallFlows extends FabricResourcePUT {
   public CallFlows(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/call_flows");

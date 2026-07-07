@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Subscribers — generated from x-sdk-resource 'Subscribers' (fabric spec, base FabricResource). */
+/** Subscribers — REST resource client for the 'fabric' API namespace. */
 public class Subscribers extends FabricResourcePUT {
   public Subscribers(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/subscribers");

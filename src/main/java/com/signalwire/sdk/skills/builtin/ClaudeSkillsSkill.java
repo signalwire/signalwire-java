@@ -223,9 +223,8 @@ public class ClaudeSkillsSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code claude_skills/skill.py get_instance_key} -- {@code skills_path =
-   * params.get("skills_path", "default"); return f"{SKILL_NAME}_{hash(skills_path) % 10000}"}. Java
-   * uses {@code Math.floorMod(skillsPath.hashCode(), 10000)} for a deterministic composite key.
+   * Instance key: the skill name plus a deterministic composite of the {@code skills_path} (default
+   * {@code "default"}), computed as {@code Math.floorMod(skillsPath.hashCode(), 10000)}.
    */
   @Override
   public String getInstanceKey() {
@@ -234,10 +233,10 @@ public class ClaudeSkillsSkill implements SkillBase {
   }
 
   /**
-   * Python parity: {@code claude_skills/skill.py get_parameter_schema} -- base schema plus the
-   * Claude-skills loader params (skills_path, include, exclude, prompt_title, prompt_intro,
-   * skill_descriptions, tool_prefix, response_prefix, response_postfix, allow_shell_injection,
-   * allow_script_execution, ignore_invocation_control, shell_timeout).
+   * Parameter schema: base schema plus the Claude-skills loader params (skills_path, include,
+   * exclude, prompt_title, prompt_intro, skill_descriptions, tool_prefix, response_prefix,
+   * response_postfix, allow_shell_injection, allow_script_execution, ignore_invocation_control,
+   * shell_timeout).
    */
   @Override
   public Map<String, Object> getParameterSchema() {

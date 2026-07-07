@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * ImportedNumbers — generated from x-sdk-resource 'ImportedNumbers' (relay-rest spec, base
- * BaseResource).
- */
+/** ImportedNumbers — REST resource client for the 'relay-rest' API namespace. */
 public class ImportedNumbers extends BaseResource {
   public ImportedNumbers(HttpClient httpClient) {
     super(httpClient, "/relay/rest/imported_phone_numbers");

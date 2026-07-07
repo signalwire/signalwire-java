@@ -10,9 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * ConferenceLogs — generated from x-sdk-resource 'ConferenceLogs' (logs spec, base BaseResource).
- */
+/** ConferenceLogs — REST resource client for the 'logs' API namespace. */
 public class ConferenceLogs extends BaseResource {
   public ConferenceLogs(HttpClient httpClient) {
     super(httpClient, "/logs/conferences");

@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** PubSub — generated from x-sdk-resource 'PubSub' (pubsub spec, base BaseResource). */
+/** PubSub — REST resource client for the 'pubsub' API namespace. */
 public class PubSub extends BaseResource {
   public PubSub(HttpClient httpClient) {
     super(httpClient, "/pubsub/tokens");

@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** Recordings — generated from x-sdk-resource 'Recordings' (relay-rest spec, base BaseResource). */
+/** Recordings — REST resource client for the 'relay-rest' API namespace. */
 public class Recordings extends BaseResource {
   public Recordings(HttpClient httpClient) {
     super(httpClient, "/relay/rest/recordings");

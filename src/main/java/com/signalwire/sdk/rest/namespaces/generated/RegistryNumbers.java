@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * RegistryNumbers — generated from x-sdk-resource 'RegistryNumbers' (relay-rest spec, base
- * BaseResource).
- */
+/** RegistryNumbers — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryNumbers extends BaseResource {
   public RegistryNumbers(HttpClient httpClient) {
     super(httpClient, "/relay/rest/registry/beta/numbers");

@@ -512,8 +512,7 @@ public class AgentBase extends Service {
    * map-based section list so callers get the rich Section / render API without mutating internal
    * state.
    *
-   * <p>Python parity: {@code agent.pom} instance attribute (agent_base.py line 209). Returns {@code
-   * null} when {@code usePom} is false (mirroring Python's {@code self.pom = None}).
+   * <p>Returns {@code null} when {@code usePom} is false.
    *
    * @return typed POM wrapper, or {@code null} when POM mode is off.
    */
@@ -670,9 +669,8 @@ public class AgentBase extends Service {
   /**
    * Mint a per-call SWAIG-function token via the agent's SessionManager.
    *
-   * <p>Python parity: {@code state_mixin.StateMixin._create_tool_token}. Returns an empty string
-   * when the underlying SessionManager throws (Python catches all exceptions and returns "" on
-   * error).
+   * <p>Returns an empty string when the underlying SessionManager throws (all exceptions are caught
+   * and return "" on error).
    */
   public String createToolToken(String toolName, String callId) {
     try {
@@ -686,8 +684,7 @@ public class AgentBase extends Service {
    * Validate a per-call SWAIG-function token. Returns false when the function is not registered,
    * when the SessionManager rejects the token, or on any underlying exception.
    *
-   * <p>Python parity: {@code state_mixin.StateMixin.validate_tool_token} — rejects unknown
-   * functions up-front and swallows exceptions.
+   * <p>Rejects unknown functions up-front and swallows exceptions (returning false).
    */
   public boolean validateToolToken(String functionName, String token, String callId) {
     if (!hasTool(functionName)) {
@@ -720,11 +717,10 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Add a complex hint with pattern matching. Mirrors Python {@code
-   * AIConfigMixin.add_pattern_hint(hint, pattern, replace, ignore_case=False)}: appends a
-   * STRUCTURED hint object {@code {hint, pattern, replace, ignore_case}} to the hints list (NOT a
-   * bare string), which renders into the SWML {@code ai.hints} array. All three of {@code
-   * hint}/{@code pattern}/{@code replace} must be non-empty or the call is a no-op (Python parity).
+   * Add a complex hint with pattern matching. Appends a STRUCTURED hint object {@code {hint,
+   * pattern, replace, ignore_case}} to the hints list (NOT a bare string), which renders into the
+   * SWML {@code ai.hints} array. All three of {@code hint}/{@code pattern}/{@code replace} must be
+   * non-empty or the call is a no-op.
    *
    * @param hint the hint text to match
    * @param pattern regular-expression pattern
@@ -783,8 +779,7 @@ public class AgentBase extends Service {
    *   <li><b>params</b>: emitted only when non-empty.
    * </ul>
    *
-   * <p>Every field survives into the rendered SWML {@code ai.languages} entry (contract #74
-   * parity).
+   * <p>Every field survives into the rendered SWML {@code ai.languages} entry.
    */
   public AgentBase addLanguage(
       String name,
@@ -1619,8 +1614,7 @@ public class AgentBase extends Service {
   /**
    * Public delegate around {@link #validateSignedWebhook} so external front-doors (e.g. {@link
    * com.signalwire.sdk.server.AgentServer}, a Lambda adapter, etc.) can run the same logic the
-   * in-process HTTP server does. Mirrors the no-op-when-unset behavior described in
-   * porting-sdk/webhooks.md.
+   * in-process HTTP server does. It is a no-op when no signing key is configured.
    *
    * @param exchange the inbound HttpExchange.
    * @param rawBody raw UTF-8 body string.
@@ -1633,9 +1627,9 @@ public class AgentBase extends Service {
   /**
    * Override the {@link Service} hook to enforce SignalWire webhook signature validation when a
    * {@link #signingKey} is configured. Returns {@code true} (no-op) when {@code signingKey} is
-   * unset; per porting-sdk/webhooks.md, the AgentBase MUST NOT silently reject unsigned requests
-   * when no key is configured (a prominent startup warning is the documented behavior instead —
-   * emitted in {@link Builder#build()}).
+   * unset; the AgentBase MUST NOT silently reject unsigned requests when no key is configured (a
+   * prominent startup warning is the documented behavior instead — emitted in {@link
+   * Builder#build()}).
    *
    * <p>The signature header is read from {@code X-SignalWire-Signature} (or its {@code
    * X-Twilio-Signature} legacy alias). The URL is reconstructed from proxy headers / {@code
@@ -2187,8 +2181,7 @@ public class AgentBase extends Service {
    * surface renders SWML via AgentBase's 5-phase pipeline ({@link #renderSwml}) — mirroring the
    * embedded server's {@code renderMainSwml} path — instead of the base {@code renderDocument}.
    * Performs basic-auth and the routing-callback check over plain primitives, returning a {@code
-   * (status, headers, body)} triple with the 401-auth and 307-redirect behavior preserved (parity
-   * with the Python reference {@code AgentBase.handle_request}).
+   * (status, headers, body)} triple with the 401-auth and 307-redirect behavior preserved.
    *
    * @param method HTTP method, e.g. {@code "GET"} or {@code "POST"}.
    * @param url the full request URL.

@@ -10,10 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
 
-/**
- * ConferenceRooms — generated from x-sdk-resource 'ConferenceRooms' (fabric spec, base
- * FabricResource).
- */
+/** ConferenceRooms — REST resource client for the 'fabric' API namespace. */
 public class ConferenceRooms extends FabricResourcePUT {
   public ConferenceRooms(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/conference_rooms");

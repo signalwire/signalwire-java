@@ -10,7 +10,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
 
-/** VideoRooms — generated from x-sdk-resource 'VideoRooms' (video spec, base CrudResource). */
+/** VideoRooms — REST resource client for the 'video' API namespace. */
 public class VideoRooms extends CrudResource {
   public VideoRooms(HttpClient httpClient) {
     super(httpClient, "/video/rooms", UpdateMethod.PUT);
