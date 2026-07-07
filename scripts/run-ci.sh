@@ -207,6 +207,23 @@ skill_contract_gate() {
         --port-repo "$PORT_ROOT"
 }
 
+# ARTIFACT-DENY (authoritative --listing mode) — the PUBLISHED Maven artifact is the
+# `jar` task output (build/libs/signalwire-sdk-<ver>.jar). List its real contents with
+# `jar tf` and feed that to artifact_deny.py, rather than the git-ls-files proxy (which
+# over-reports in-repo files that never enter the jar).
+dayone_artifact_deny() {
+    # shellcheck disable=SC2086
+    ./gradlew $GRADLE_DAEMON_FLAG --build-cache -q jar || return 1
+    local jar
+    jar="$(ls -t "$PORT_ROOT"/build/libs/signalwire-sdk-*.jar 2>/dev/null | grep -v -- '-sources\.jar' | grep -v -- '-javadoc\.jar' | head -1)"
+    if [ -z "$jar" ]; then
+        echo "publish jar not found under build/libs/" >&2
+        return 1
+    fi
+    "${JAVA_HOME:+$JAVA_HOME/bin/}jar" tf "$jar" \
+        | python3 "$PORTING_SDK_DIR/scripts/artifact_deny.py" --port java --listing -
+}
+
 # ---- register gates ----------------------------------------------------------
 sched_init "$@"
 
@@ -329,6 +346,20 @@ sched_gate SWAIG-CLI deps=SIGNATURES desc="swaig-test shared mini-contract (verb
         --default-action-argv='--url|http://user:pass@127.0.0.1:1/' \
         --has-serverless \
         --serverless-argv='DummyAgentClass|--simulate-serverless|bogus-platform-xyz|--dump-swml'
+
+# Day-one deterministic gates (enforced, non-report-only).
+sched_gate DOC-LANG-PURITY res=dayone desc="no python-verbatim docs in a non-python port" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_lang_purity.py" --port java --repo .
+sched_gate DOC-LINKS res=dayone desc="every relative markdown link resolves to a tracked file" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_links.py" --port java --repo .
+sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at repo root (allowlist ROOT_HYGIENE_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/root_hygiene.py" --port java --repo .
+sched_gate IGNORE-LEDGER-VERIFY res=dayone desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
+    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo .
+sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
+    -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port java --repo .
+sched_gate ARTIFACT-DENY res=gradle desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
+    --fn dayone_artifact_deny
 
 sched_run
 rc=$?
