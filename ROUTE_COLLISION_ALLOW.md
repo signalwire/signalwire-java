@@ -29,5 +29,5 @@ satisfied: the override wins, giving the single spec-canonical URL.
      proven-real exception (Java @Override collapses to one live route = the spec's singular
      path), but per AGENT_RULES §3 an allowlist entry needs explicit written approval. -->
 
-- CallFlows.list_addresses — spec-declared singular-path override (openapi.yaml:801); Java `@Override` replaces the base, single live route = canonical singular path. (pending approval)
-- ConferenceRooms.list_addresses — spec-declared singular-path override (openapi.yaml:1074); Java `@Override` replaces the base, single live route = canonical singular path. (pending approval)
+- CallFlows.list_addresses — spec-declared singular-path override (openapi.yaml:801); Java `@Override` replaces the base, single live route = canonical singular path. (APPROVED: user 2026-07-07)
+- ConferenceRooms.list_addresses — spec-declared singular-path override (openapi.yaml:1074); Java `@Override` replaces the base, single live route = canonical singular path. (APPROVED: user 2026-07-07)
