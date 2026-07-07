@@ -200,6 +200,61 @@ def repo_root() -> Path:
 
 
 # ---------------------------------------------------------------------------
+# SDK-surface policy overlay (the single source; NOT wire truth).
+#
+# rest-apis/x-sdk-overlay.yaml is the ONE authoritative place that says which spec
+# fields the SDKs hide (dropped from the surface) or deprecate (emitted-but-flagged).
+# It is a policy overlay, not markup in the (often vendored) specs, so the same field
+# is governed once and applied wherever it surfaces (schema.json $defs/AIParams + the
+# calling/fabric REST projections). Each rule is (field, scope-or-None); scope=None ->
+# matches in every schema, scope="SchemaName" -> matches only inside the SPEC schema of
+# that name (the components/schemas or $defs key — NOT the java class name we later
+# emit), so the scope value is identical across all ports.
+# ---------------------------------------------------------------------------
+
+_overlay_cache: "dict[str, set[tuple[str, str | None]]] | None" = None
+
+
+def _overlay_path() -> Path:
+    return resolve_porting_sdk() / "rest-apis" / "x-sdk-overlay.yaml"
+
+
+def _load_overlay() -> "dict[str, set[tuple[str, str | None]]]":
+    global _overlay_cache
+    if _overlay_cache is None:
+        def rules(key: str, data: dict) -> "set[tuple[str, str | None]]":
+            out: set[tuple[str, str | None]] = set()
+            for entry in data.get(key) or []:
+                if isinstance(entry, dict) and entry.get("field"):
+                    out.add((entry["field"], entry.get("scope")))
+            return out
+        data = {}
+        path = _overlay_path()
+        if path.is_file():
+            data = yaml.safe_load(path.read_text()) or {}
+        _overlay_cache = {"hidden": rules("hidden", data), "deprecated": rules("deprecated", data)}
+    return _overlay_cache
+
+
+def _overlay_match(rules: "set[tuple[str, str | None]]", field: str, schema_name: str | None) -> bool:
+    # A rule matches when its field equals `field` AND (it is unscoped OR its scope
+    # equals the containing SPEC schema name). `schema_name` is the schema's name as it
+    # appears in the spec (the $defs / components.schemas key) — NOT the java type name.
+    for rf, scope in rules:
+        if rf == field and (scope is None or scope == schema_name):
+            return True
+    return False
+
+
+def overlay_hidden(field: str, schema_name: str | None = None) -> bool:
+    return _overlay_match(_load_overlay()["hidden"], field, schema_name)
+
+
+def overlay_deprecated(field: str, schema_name: str | None = None) -> bool:
+    return _overlay_match(_load_overlay()["deprecated"], field, schema_name)
+
+
+# ---------------------------------------------------------------------------
 # Base loading (x-sdk-bases; §2) — fail-loud on cyclic/undefined extends.
 # ---------------------------------------------------------------------------
 
@@ -1388,6 +1443,11 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
     props = node.get("properties") or {}
     used: set[str] = set()
     for wire_key, psc in props.items():
+        # SDK-surface policy comes from the single overlay (rest-apis/x-sdk-overlay.yaml),
+        # keyed on the SPEC schema name (raw_name), NOT the emitted java class name.
+        if overlay_hidden(wire_key, raw_name):
+            # hidden: drop from the SDK surface entirely (still on the wire).
+            continue
         field = type_field_name(wire_key)
         while field in used:
             field += "_"
@@ -1395,6 +1455,13 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
         jtype = type_field_type(psc if isinstance(psc, dict) else {}, schemas)
         if field != wire_key:
             lines.append(f"  /** wire key: {wire_key} */")
+        if overlay_deprecated(wire_key, raw_name):
+            # deprecated: still emitted (back-compat), flagged idiomatically so tooling
+            # and IDEs surface it. javadoc @deprecated + the @Deprecated annotation.
+            lines.append("  /**")
+            lines.append(f"   * @deprecated {wire_key} — superseded; retained for back-compat.")
+            lines.append("   */")
+            lines.append("  @Deprecated")
         lines.append(f"  public {jtype} {field};")
     lines.append("}")
     return type_gen_header(package, source_desc) + "\n".join(lines) + "\n"

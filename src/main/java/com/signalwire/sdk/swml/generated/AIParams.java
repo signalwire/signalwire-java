@@ -23,8 +23,6 @@ public final class AIParams {
   public String attention_timeout_prompt;
   public java.util.Map<String, Object> asr_diarize;
   public java.util.Map<String, Object> asr_speaker_affinity;
-  public java.util.Map<String, Object> audible_debug;
-  public java.util.Map<String, Object> audible_latency;
   public String background_file;
   public java.util.Map<String, Object> background_file_loops;
   public java.util.Map<String, Object> background_file_volume;
@@ -35,7 +33,6 @@ public final class AIParams {
   public String barge_match_string;
   public java.util.Map<String, Object> barge_min_words;
   public java.util.Map<String, Object> barge_functions;
-  public java.util.Map<String, Object> cache_mode;
   public String conscience;
   public java.util.List<Object> convo;
   public String conversation_id;
@@ -47,7 +44,6 @@ public final class AIParams {
   public String digit_terminators;
   public java.util.Map<String, Object> digit_timeout;
   public java.util.Map<String, Object> end_of_speech_timeout;
-  public java.util.Map<String, Object> enable_accounting;
   public java.util.Map<String, Object> enable_thinking;
   public java.util.Map<String, Object> enable_vision;
   public java.util.Map<String, Object> energy_level;
@@ -66,7 +62,12 @@ public final class AIParams {
   public java.util.Map<String, Object> input_poll_freq;
   public java.util.Map<String, Object> interrupt_on_noise;
   public String interrupt_prompt;
-  public java.util.Map<String, Object> languages_enabled;
+
+  /**
+   * @deprecated languages_enabled — superseded; retained for back-compat.
+   */
+  @Deprecated public java.util.Map<String, Object> languages_enabled;
+
   public String local_tz;
   public java.util.Map<String, Object> llm_diarize_aware;
   public java.util.Map<String, Object> max_emotion;
@@ -95,7 +96,6 @@ public final class AIParams {
   public java.util.Map<String, Object> transfer_summary;
   public java.util.Map<String, Object> turn_detection_timeout;
   public java.util.Map<String, Object> tts_number_format;
-  public java.util.Map<String, Object> verbose_logs;
   public String video_listening_file;
   public String video_idle_file;
   public String video_talking_file;
