@@ -4,6 +4,7 @@
 
 `RestClient` is created with a builder. Each value falls back to its corresponding environment variable when not supplied:
 
+<!-- snippet-setup -->
 ```java
 import com.signalwire.sdk.rest.RestClient;
 

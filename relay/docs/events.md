@@ -2,6 +2,16 @@
 
 RELAY events are server-pushed notifications about call state changes and operation results. Events arrive over the WebSocket as `signalwire.event` JSON-RPC messages and are automatically routed to the correct `Call` object.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+import com.signalwire.sdk.relay.Call;
+
+RelayClient client = RelayClient.builder().build();
+Call call = new Call("call-id", "node-id");
+java.util.Map<String, Object> rawPayload = java.util.Map.of();
+```
+
 ## Listening for Events
 
 ### On a Call
@@ -10,13 +20,13 @@ RELAY events are server-pushed notifications about call state changes and operat
 import java.util.List;
 import java.util.Map;
 
-client.onCall(call -> {
+client.onCall(incoming -> {
     // Register a listener (receives every event routed to this call)
-    call.on(event -> System.out.println("Event: " + event.getEventType()
+    incoming.on(event -> System.out.println("Event: " + event.getEventType()
         + " " + event.getParams()));
 
     // Or wait for the call to reach a specific state
-    var event = call.waitFor("ended", 60_000);  // targetState, timeoutMs
+    var event = incoming.waitFor("ended", 60_000);  // targetState, timeoutMs
 });
 ```
 

@@ -48,38 +48,45 @@ The authoritative list of handler values. The Java SDK ships this as a typed enu
 
 ## Typed helpers on `phoneNumbers()`
 
-The Java SDK ships seven typed helpers that wrap `phoneNumbers().update` with the right `call_handler` value and companion field already set. They're the one-line recipe for every common case.
+The Java SDK ships seven typed helpers that wrap `phoneNumbers().update` with the right `call_handler` value and companion field already set. They're the one-line recipe for every common case. Each helper's final `Map<String, Object>` argument carries any extra wire keys (pass `Map.of()` when you have none).
 
+<!-- snippet-setup -->
 ```java
+import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.PhoneCallHandler;
 
+RestClient client = RestClient.builder().build();
+String pnSid = "pn-uuid";
+```
+
+```java
 // SWML webhook (the common case — your backend returns SWML per call)
-client.phoneNumbers().setSwmlWebhook(pnSid, "https://example.com/swml");
+client.phoneNumbers().setSwmlWebhook(pnSid, "https://example.com/swml", Map.of());
 
 // cXML / LAML webhook (Twilio-compat) — with optional fallback / status callback
-client.phoneNumbers().setCxmlWebhook(pnSid, "https://example.com/voice.xml");
+client.phoneNumbers().setCxmlWebhook(pnSid, "https://example.com/voice.xml", null, null, Map.of());
 client.phoneNumbers().setCxmlWebhook(
         pnSid,
         "https://example.com/voice.xml",
         "https://example.com/fallback.xml",     // optional
-        "https://example.com/status");          // optional
+        "https://example.com/status",           // optional
+        Map.of());
 
 // Existing cXML application by ID
-client.phoneNumbers().setCxmlApplication(pnSid, "app-uuid");
+client.phoneNumbers().setCxmlApplication(pnSid, "app-uuid", Map.of());
 
 // AI Agent by ID (agent created via fabric.aiAgents or AgentBase)
-client.phoneNumbers().setAiAgent(pnSid, "agent-uuid");
+client.phoneNumbers().setAiAgent(pnSid, "agent-uuid", Map.of());
 
-// Call flow (optionally pin a version — default is current_deployed)
-client.phoneNumbers().setCallFlow(pnSid, "flow-uuid");
-client.phoneNumbers().setCallFlow(pnSid, "flow-uuid", "current_deployed");
+// Call flow (pin a version — e.g. current_deployed)
+client.phoneNumbers().setCallFlow(pnSid, "flow-uuid", "current_deployed", Map.of());
 
 // Relay application (named routing)
-client.phoneNumbers().setRelayApplication(pnSid, "my-relay-app");
+client.phoneNumbers().setRelayApplication(pnSid, "my-relay-app", Map.of());
 
 // Relay topic (RELAY client subscription) — optional status callback
-client.phoneNumbers().setRelayTopic(pnSid, "office");
-client.phoneNumbers().setRelayTopic(pnSid, "office", "https://example.com/status");
+client.phoneNumbers().setRelayTopic(pnSid, "office", null, Map.of());
+client.phoneNumbers().setRelayTopic(pnSid, "office", "https://example.com/status", Map.of());
 ```
 
 All helpers return the updated phone number representation as `Map<String, Object>`. All are thin wrappers over the single underlying `phoneNumbers().update(sid, body)` call; use the update form directly when you need an unusual combination.

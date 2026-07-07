@@ -1,5 +1,16 @@
 # SignalWire AI Agents SDK Architecture
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.datamap.DataMap;
+import com.signalwire.sdk.logging.Logger;
+
+AgentBase agent = AgentBase.builder().name("arch-agent").route("/agent").build();
+Logger logger = Logger.getLogger("arch");
+```
+
 ## Overview
 
 The SignalWire AI Agents SDK provides a Java framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
@@ -290,6 +301,7 @@ agent.addSkill("web_search", Map.of(
 
 Parameters are passed to the skill's `setup(params)` method:
 
+<!-- snippet: no-compile illustrative excerpt implementing only setup() (getName/getDescription/registerTools omitted for brevity) -->
 ```java
 public class WebSearchSkill implements SkillBase {
     private int numResults;
@@ -358,6 +370,8 @@ The SDK is designed to be highly extensible:
 
 1. **Custom Agents**: Extend AgentBase to create specialized agents
    ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
    public class CustomAgent extends AgentBase {
        public CustomAgent() {
            // super(name, route, host, port, authUser, authPassword)
@@ -394,6 +408,8 @@ The SDK is designed to be highly extensible:
 
 6. **Custom Prefabs**: Create reusable agent patterns
    ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
    public class MyCustomPrefab extends AgentBase {
        public MyCustomPrefab(String configParam1) {
            super("custom-prefab", "/", "0.0.0.0", 3000, null, null);
@@ -430,6 +446,10 @@ The SDK is designed to be highly extensible:
 9. **Custom Skills**: Create reusable skill modules
    ```java
    import com.signalwire.sdk.skills.SkillBase;
+   import com.signalwire.sdk.swaig.FunctionResult;
+   import com.signalwire.sdk.swaig.ToolDefinition;
+   import java.util.List;
+   import java.util.Map;
 
    public class MyCustomSkill implements SkillBase {
        @Override public String getName() { return "my_skill"; }
@@ -706,6 +726,8 @@ Key steps for creating custom prefabs:
 
 1. **Extend the base class**:
    ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
    public class MyCustomPrefab extends AgentBase {
        private final String customParam;
 
@@ -717,6 +739,7 @@ Key steps for creating custom prefabs:
    ```
 
 2. **Configure defaults** (in the constructor):
+   <!-- snippet: no-compile constructor-body excerpt (instance-method calls shown inside a prefab subclass, not standalone) -->
    ```java
    // Set standard prompt sections
    promptAddSection("Personality", "I am a specialized agent for...");
@@ -724,6 +747,7 @@ Key steps for creating custom prefabs:
    ```
 
 3. **Add specialized tools**:
+   <!-- snippet: no-compile constructor-body excerpt (instance-method call shown inside a prefab subclass, not standalone) -->
    ```java
    defineTool("specialized_function", "Do something specialized",
        Map.of("type", "object", "properties", Map.of()),
@@ -731,6 +755,7 @@ Key steps for creating custom prefabs:
    ```
 
 4. **Create a factory method** (optional):
+   <!-- snippet: no-compile method excerpt shown outside its enclosing prefab class for illustration -->
    ```java
    public static MyCustomPrefab create(Map<String, Object> config) {
        // Create an instance from a configuration map

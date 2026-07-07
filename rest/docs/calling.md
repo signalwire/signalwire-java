@@ -4,6 +4,15 @@ The Calling API provides REST-based call control. All commands are dispatched vi
 
 Access the namespace through `client.calling()`. Every method takes a typed, closed request object built with a fluent builder. Optional/unmodeled wire keys go through the builder's `extras(Map)` door. Each method returns a `Map<String, Object>` decoded from the JSON response.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+
+RestClient client = RestClient.builder().build();
+String callId = "call-uuid";
+```
+
 ## How It Works
 
 Every method on `client.calling()` sends a POST request with this structure:
@@ -31,7 +40,7 @@ var result = client.calling().dial(
         .to("+15551234567")
         .url("https://example.com/call-handler")
         .build());
-String callId = (String) result.get("id");
+callId = (String) result.get("id");
 ```
 
 ### `update(UpdateRequest request) -> Map<String, Object>`

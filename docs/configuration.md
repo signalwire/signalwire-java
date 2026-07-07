@@ -2,6 +2,12 @@
 
 This guide explains the unified configuration system available in SignalWire AI Agents SDK.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.core.ConfigLoader;
+```
+
 ## Overview
 
 All SignalWire services (SWML-based agents, Search, MCP Gateway) now support optional JSON configuration files with environment variable substitution. SWML (SignalWire Markup Language) is the JSON document format that defines agent behavior during calls. Services continue to work without any configuration file, maintaining full backward compatibility.

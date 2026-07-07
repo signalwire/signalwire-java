@@ -30,6 +30,14 @@
 
 The `AgentBase` class provides the foundation for creating AI-powered agents using the SignalWire AI Agent SDK. It extends the `Service` class (the SWML service base), inheriting all its SWML (SignalWire Markup Language) document creation and serving capabilities, while adding AI-specific functionality. SWML is the JSON document format that tells the SignalWire platform how an agent should behave during a call.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+AgentBase agent = AgentBase.builder().name("guide-agent").route("/agent").build();
+```
+
 Key features of `AgentBase` include:
 
 - Structured prompt building with POM (Prompt Object Model)
@@ -73,7 +81,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.List;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .route("/agent")
         .host("0.0.0.0")
@@ -336,7 +344,7 @@ import com.signalwire.sdk.swaig.ToolDefinition;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("hybrid-agent")
         .route("/hybrid")
         .build();
@@ -415,6 +423,7 @@ Notes on the Java model:
 
 The parameters for a SWAIG function are defined using JSON Schema, expressed as nested `Map`s:
 
+<!-- snippet: no-compile illustrative JSON-schema shape (a bare Map literal, not a runnable statement) -->
 ```java
 Map.of("type", "object",
        "properties", Map.of(
@@ -435,6 +444,7 @@ Map.of("type", "object",
 
 To return results from a SWAIG function, use the `FunctionResult` class:
 
+<!-- snippet: no-compile illustrative — tool-handler return-value forms (bare `return` statements, shown outside a method body) -->
 ```java
 import com.signalwire.sdk.swaig.FunctionResult;
 
@@ -587,7 +597,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("skillful-agent")
         .route("/skillful")
         .build();
@@ -974,7 +984,7 @@ public class WeatherSkill implements SkillBase {
 ```java
 import java.util.Map;
 
-// Register your skill class with the SkillRegistry, then add it by name:
+// Register your skill type with the SkillRegistry, then add it by name:
 agent.addSkill("weather", Map.of(
         "units", "celsius"
 ));
@@ -989,7 +999,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("dynamic-skill-agent")
         .build();
 
@@ -1212,7 +1222,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("static-agent")
         .build();
 
@@ -1232,7 +1242,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("dynamic-agent")
         .build();
 
@@ -1265,7 +1275,7 @@ Use the `setDynamicConfigCallback()` method to register a callback that will be 
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .route("/agent")
         .build();
@@ -1294,8 +1304,8 @@ The `agent` parameter in your callback is the actual agent instance, allowing yo
 #### Language Configuration
 ```java
 // Add languages with voice configuration
-configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
-configAgent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
+agent.addLanguage("English", "en-US", "rime.spore:mistv2");
+agent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
 ```
 
 #### Prompt Building
@@ -1303,18 +1313,18 @@ configAgent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
 import java.util.List;
 
 // Add prompt sections
-configAgent.promptAddSection("Role", "You are a helpful assistant.");
-configAgent.promptAddSection("Guidelines", "", List.of(
+agent.promptAddSection("Role", "You are a helpful assistant.");
+agent.promptAddSection("Guidelines", "", List.of(
         "Be professional and courteous",
         "Provide accurate information",
         "Ask clarifying questions when needed"
 ));
 
 // Set raw prompt text
-configAgent.setPromptText("You are a specialized AI assistant...");
+agent.setPromptText("You are a specialized AI assistant...");
 
 // Set post-prompt for summary
-configAgent.setPostPrompt("Summarize the key points of this conversation.");
+agent.setPostPrompt("Summarize the key points of this conversation.");
 ```
 
 #### AI Parameters
@@ -1322,7 +1332,7 @@ configAgent.setPostPrompt("Summarize the key points of this conversation.");
 import java.util.Map;
 
 // Configure AI behavior
-configAgent.setParams(Map.of(
+agent.setParams(Map.of(
         "end_of_speech_timeout", 300,
         "attention_timeout", 20000,
         "background_file_volume", -30
@@ -1335,14 +1345,14 @@ import java.util.List;
 import java.util.Map;
 
 // Set data available to the AI
-configAgent.setGlobalData(Map.of(
+agent.setGlobalData(Map.of(
         "customer_tier", "premium",
         "features_enabled", List.of("advanced_support", "priority_queue"),
         "session_info", Map.of("start_time", "2024-01-01T00:00:00Z")
 ));
 
 // Update existing global data
-configAgent.updateGlobalData(Map.of("additional_info", "value"));
+agent.updateGlobalData(Map.of("additional_info", "value"));
 ```
 
 #### Speech Recognition Hints
@@ -1350,8 +1360,8 @@ configAgent.updateGlobalData(Map.of("additional_info", "value"));
 import java.util.List;
 
 // Add hints for better speech recognition
-configAgent.addHints(List.of("SignalWire", "SWML", "API", "technical"));
-configAgent.addPronunciation("API", "A P I", false);
+agent.addHints(List.of("SignalWire", "SWML", "API", "technical"));
+agent.addPronunciation("API", "A P I", false);
 ```
 
 #### Function Configuration
@@ -1360,10 +1370,10 @@ import java.util.List;
 import java.util.Map;
 
 // Set native functions
-configAgent.setNativeFunctions(List.of("transfer", "hangup"));
+agent.setNativeFunctions(List.of("transfer", "hangup"));
 
 // Add function includes
-configAgent.addFunctionInclude(
+agent.addFunctionInclude(
         "https://api.example.com/functions",
         Map.of("functions", List.of("get_account_info", "update_profile")));
 ```
@@ -1431,10 +1441,10 @@ agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -
 import java.util.Map;
 
 agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
-    // Extract headers
-    String userAgent = headers.getOrDefault("user-agent", "");
-    String authToken = headers.getOrDefault("authorization", "");
-    String locale = headers.getOrDefault("accept-language", "en-US");
+    // Extract headers (each header maps to a List<String> of values)
+    String userAgent = headers.getOrDefault("user-agent", List.of("")).get(0);
+    String authToken = headers.getOrDefault("authorization", List.of("")).get(0);
+    String locale = headers.getOrDefault("accept-language", List.of("en-US")).get(0);
 
     // Configure based on headers
     if (userAgent.toLowerCase().contains("mobile")) {
@@ -1659,7 +1669,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .build();
 
@@ -1676,7 +1686,7 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .build();
 
@@ -1716,7 +1726,7 @@ You can support both static and dynamic patterns during migration:
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .build();
 
@@ -1739,6 +1749,7 @@ if (useDynamic) {
 #### Performance Considerations
 
 1. **Keep Callbacks Lightweight**
+<!-- snippet: no-compile illustrative — references an application-defined TIER_CONFIGS map -->
 ```java
 import java.util.Map;
 
@@ -1810,6 +1821,7 @@ agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -
 ```
 
 2. **Protect Sensitive Configuration**
+<!-- snippet: no-compile illustrative — references application helpers isValidCustomer/getCustomerTier -->
 ```java
 import java.util.Map;
 
@@ -1831,6 +1843,7 @@ agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -
 ```
 
 3. **Rate Limiting for Complex Configurations**
+<!-- snippet: no-compile illustrative — references an application-defined `database` handle -->
 ```java
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1851,6 +1864,7 @@ agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -
 #### Error Handling
 
 1. **Graceful Degradation**
+<!-- snippet: no-compile illustrative — references application helpers applyCustomConfig/applyDefaultConfig -->
 ```java
 agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
     try {
@@ -1901,7 +1915,7 @@ The debug events system provides real-time visibility into what the AI module is
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my_agent")
         .build();
 agent.enableDebugEvents();  // That's it — events are auto-logged
@@ -1920,7 +1934,7 @@ To act on specific events (alerting, metrics, custom logging), register a handle
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my_agent")
         .build();
 agent.enableDebugEvents();
@@ -1936,7 +1950,7 @@ agent.onDebugEvent(event -> {
                 + event.get("barge_elapsed_ms") + "ms");
     } else if ("llm_error".equals(eventType)) {
         System.out.println("[" + callId + "] LLM error: " + event.get("event"));
-        alertOpsTeam(event);
+        // alertOpsTeam(event);  // application-defined incident hook
     } else if ("session_end".equals(eventType)) {
         double durationMs = ((Number) event.getOrDefault("duration_ms", 0)).doubleValue();
         System.out.printf("[%s] Call ended after %.1fs — reason: %s%n",
@@ -1988,7 +2002,7 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.Instant;
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("my-agent")
         .build();
 
@@ -2052,8 +2066,8 @@ agent.defineTool("startup_hook", "Called when the voice session starts",
         (args, rawData) -> {
             String callerId = (String) rawData.get("from_number");
 
-            // Load user preferences from a database
-            Map<String, Object> preferences = loadUserPreferences(callerId);
+            // Load user preferences from a database (application-defined helper)
+            Map<String, Object> preferences = Map.of();  // loadUserPreferences(callerId);
 
             // Store in global data for quick access during the call
             return new FunctionResult("User preferences loaded")
@@ -2090,10 +2104,10 @@ agent.defineTool("hangup_hook", "Called when the voice session ends",
                     "outcome", state.getOrDefault("outcome", "unknown")
             );
 
-            // Post to analytics service
-            sendToAnalytics(analyticsData);
+            // Post to analytics service (application-defined helper)
+            // sendToAnalytics(analyticsData);
 
-            return new FunctionResult("Analytics data sent");
+            return new FunctionResult("Analytics data sent: " + analyticsData.size() + " fields");
         });
 ```
 
@@ -2131,6 +2145,7 @@ When SIP routing is enabled, the agent automatically registers SIP usernames bas
 
 For multi-agent setups, centralized routing is more efficient:
 
+<!-- snippet: no-compile illustrative — references example agent instances (registrationAgent/supportAgent) constructed elsewhere -->
 ```java
 import com.signalwire.sdk.server.AgentServer;
 
@@ -2198,8 +2213,10 @@ import java.util.Map;
 
 public class MyRoutedAgent extends AgentBase {
 
-    protected MyRoutedAgent(Builder builder) {
-        super(builder);
+    // Subclasses call the protected AgentBase(name, route, host, port, authUser, authPassword)
+    // constructor with explicit fields (see BedrockAgent for a full example).
+    public MyRoutedAgent(String name, String route) {
+        super(name, route, "0.0.0.0", 3000, null, null);
     }
 
     @Override
@@ -2221,6 +2238,7 @@ public class MyRoutedAgent extends AgentBase {
 
 You can modify the SWML document based on request data by overriding the `onSwmlRequest` method in a subclass:
 
+<!-- snippet: no-compile illustrative — a single overridden method (@Override onSwmlRequest), shown outside its enclosing class -->
 ```java
 import java.util.List;
 import java.util.Map;
@@ -2297,6 +2315,7 @@ agent.setPostPromptUrl("https://analytics.example.com/conversation-summaries");
 
 The SDK provides a check-for-input endpoint that allows agents to check for new input from external systems:
 
+<!-- snippet: no-compile illustrative — a standalone helper method definition (checkForNewInput), not a runnable statement block -->
 ```java
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -2373,7 +2392,7 @@ import java.util.List;
 
 // InfoGathererAgent(name, questions[, route, port]).
 // Build each question with the InfoGathererAgent.question(keyName, questionText) factory.
-var agent = new InfoGathererAgent(
+var prefab = new InfoGathererAgent(
         "info-gatherer",
         List.of(
                 InfoGathererAgent.question("full_name", "What is your full name?"),
@@ -2382,7 +2401,7 @@ var agent = new InfoGathererAgent(
         )
 );
 
-agent.run();
+prefab.run();
 ```
 
 #### FAQBotAgent
@@ -2396,7 +2415,7 @@ import java.util.List;
 
 // FAQBotAgent(name, faqs[, route, port]).
 // Each FAQ is built with FAQBotAgent.faq(question, answer, keywords).
-var agent = new FAQBotAgent(
+var prefab = new FAQBotAgent(
         "knowledge-base",
         List.of(
                 FAQBotAgent.faq(
@@ -2410,7 +2429,7 @@ var agent = new FAQBotAgent(
         )
 );
 
-agent.run();
+prefab.run();
 ```
 
 #### ConciergeAgent
@@ -2424,7 +2443,7 @@ import java.util.List;
 
 // ConciergeAgent(name, venueName, amenities[, route, port]).
 // Each amenity is built with ConciergeAgent.amenity(name, description, hours, location, price).
-var agent = new ConciergeAgent(
+var prefab = new ConciergeAgent(
         "concierge",
         "Oceanview Resort",
         List.of(
@@ -2437,7 +2456,7 @@ var agent = new ConciergeAgent(
         )
 );
 
-agent.run();
+prefab.run();
 ```
 
 #### SurveyAgent
@@ -2452,7 +2471,7 @@ import java.util.List;
 // SurveyAgent(name, questions[, completionMessage, route, port]).
 // Build questions with the typed factory methods: ratingQuestion, multipleChoiceQuestion,
 // yesNoQuestion, openEndedQuestion.
-var agent = new SurveyAgent(
+var prefab = new SurveyAgent(
         "satisfaction-survey",
         List.of(
                 SurveyAgent.ratingQuestion(
@@ -2462,7 +2481,7 @@ var agent = new SurveyAgent(
         )
 );
 
-agent.run();
+prefab.run();
 ```
 
 #### ReceptionistAgent
@@ -2485,13 +2504,13 @@ departments.put("Support",
 departments.put("Billing",
         ReceptionistAgent.phoneDepartment("For payment and invoice questions", "+15551237777"));
 
-var agent = new ReceptionistAgent(
+var prefab = new ReceptionistAgent(
         "acme-receptionist",
         "Thank you for calling ACME Corp. How may I direct your call?",
         departments
 );
 
-agent.run();
+prefab.run();
 ```
 
 ### Creating Your Own Prefabs
@@ -2584,6 +2603,7 @@ public class CustomerSupportAgent {
 
 #### Using the Custom Prefab
 
+<!-- snippet: no-compile references CustomerSupportAgent, the custom prefab class defined in the preceding block (cross-block reference) -->
 ```java
 // Create an instance of the custom prefab
 var supportAgent = new CustomerSupportAgent(
@@ -2618,7 +2638,7 @@ var gatherer = new InfoGathererAgent(
 );
 
 // Reach into the underlying agent to add customizations
-AgentBase agent = gatherer.getAgent();
+agent = gatherer.getAgent();
 
 // Add an additional instruction
 agent.promptAddSection("Instructions", "", List.of(

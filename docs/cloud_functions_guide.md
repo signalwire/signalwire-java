@@ -2,6 +2,13 @@
 
 This guide covers deploying SignalWire AI Agents to Google Cloud Functions and Azure Functions.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.runtime.ServerlessAdapter;
+import com.signalwire.sdk.swaig.FunctionResult;
+```
+
 ## Overview
 
 SignalWire AI Agents now support deployment to major cloud function platforms:
@@ -24,6 +31,7 @@ The agent automatically detects Google Cloud Functions environment using these v
 1. **Create your Cloud Function handler.** The SDK provides
    `ServerlessAdapter.handleGcf(...)`, which dispatches a request through the
    agent and returns a `(status, headers, body)` envelope:
+<!-- snippet: no-compile Google Cloud Functions entry point; depends on the reader's `com.google.cloud.functions.*` provider libraries, not on the doc-compile classpath -->
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.runtime.ServerlessAdapter;
@@ -145,6 +153,7 @@ my-agent-function/
    `HttpRequestMessage`; forward its method/path/headers/body through the same
    `ServerlessAdapter.handleGcf(...)` dispatch (the SDK's serverless dispatch is
    platform-neutral):
+<!-- snippet: no-compile Azure Functions entry point; depends on the reader's `com.microsoft.azure.functions.*` provider libraries, not on the doc-compile classpath -->
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.runtime.ServerlessAdapter;

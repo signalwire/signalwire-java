@@ -15,6 +15,21 @@
 
 ## Overview
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.contexts.ContextBuilder;
+import com.signalwire.sdk.contexts.Context;
+import com.signalwire.sdk.contexts.Step;
+import com.signalwire.sdk.skills.SkillName;
+
+AgentBase agent = AgentBase.builder().name("ctx-guide").route("/agent").build();
+ContextBuilder contexts = agent.defineContexts();
+Context ctx = contexts.addContext("default");
+Context context = ctx;
+Step step = ctx.addStep("step");
+```
+
 The **Contexts and Steps** system enhances traditional Prompt Object Model (POM) prompts in SignalWire AI agents by adding structured workflows on top of your base prompt. Instead of just defining a single prompt, you create workflows with explicit steps, navigation rules, and completion criteria. Steps can restrict which SWAIG (SignalWire AI Gateway) functions are available at each stage of the conversation.
 
 ### Key Benefits
@@ -111,13 +126,13 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.List;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Onboarding Assistant")
         .route("/onboarding")
         .build();
 
 // Define contexts (replaces traditional prompt setup)
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Single context must be named "default"
 var workflow = contexts.addContext("default");
@@ -157,7 +172,7 @@ import com.signalwire.sdk.skills.SkillName;
 import java.util.List;
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Customer Service")
         .route("/service")
         .build();
@@ -168,7 +183,7 @@ agent.addSkill(SkillName.WEB_SEARCH, Map.of(
         "api_key", "your-api-key",
         "search_engine_id", "your-engine-id"));
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Main triage context
 var triage = contexts.addContext("triage");
@@ -217,16 +232,17 @@ The main entry point for defining contexts and steps.
 
 ```java
 // Get the builder
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Create contexts
-Context context = contexts.addContext("name");
+context = contexts.addContext("name");
 ```
 
 ### Context
 
 Represents a conversation context or workflow state.
 
+<!-- snippet: no-compile class Context interface-style signature listing (methods without bodies) — API reference, not runnable -->
 ```java
 class Context {
     Step addStep(String name);                          // Create a new step in this context
@@ -275,6 +291,7 @@ class Context {
 
 Represents a single step within a context workflow.
 
+<!-- snippet: no-compile class Step interface-style signature listing (methods without bodies) — API reference, not runnable -->
 ```java
 class Step {
     // Content definition (choose one approach)
@@ -388,7 +405,7 @@ step.setValidContexts(List.of("main"));  // Override - only main allowed
 ### Complete Navigation Example
 
 ```java
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Main context
 var main = contexts.addContext("main");
@@ -424,8 +441,8 @@ Control which AI tools/functions are available in each step for enhanced securit
 ### Function Restriction Levels
 
 ```java
-// No restrictions (default) - all agent functions available
-step;  // Don't call setFunctions()
+// No restrictions (default) - all agent functions available:
+// simply don't call step.setFunctions()
 
 // Allow specific functions only
 step.setFunctions(List.of("datetime", "math", "web_search"));
@@ -437,7 +454,7 @@ step.setFunctions("none");
 ### Security-Focused Example
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Banking Assistant")
         .route("/banking")
         .build();
@@ -446,7 +463,7 @@ var agent = AgentBase.builder()
 agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
 agent.addSkill(SkillName.DATETIME, Map.of());
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Public context - full access
 var public_ = contexts.addContext("public");
@@ -467,7 +484,7 @@ auth.addStep("account_access")
 
 ```java
 // Progressive function access based on trust level
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Low trust - limited functions
 var public_ = contexts.addContext("public");
@@ -595,6 +612,7 @@ Without a gather `prompt`, the AI jumps straight into asking the first question 
 
 Each question has a `type` that controls the JSON schema of the `answer` parameter in `gather_submit`:
 
+<!-- snippet: no-compile illustrative — dangling `.addGatherQuestion(...)` method-variant calls with no receiver -->
 ```java
 // String (default) - free text (the 2-arg overload defaults type to "string")
 .addGatherQuestion("name", "What is your name?")
@@ -613,6 +631,7 @@ Each question has a `type` that controls the JSON schema of the `answer` paramet
 
 When `confirm=True`, the AI must read the answer back to the caller and get explicit confirmation before submitting:
 
+<!-- snippet: no-compile illustrative — dangling `.addGatherQuestion(...)` call with no receiver -->
 ```java
 .addGatherQuestion(
     "last_name",
@@ -634,6 +653,7 @@ How it works:
 
 Each question can have additional instructions and specific functions made available:
 
+<!-- snippet: no-compile illustrative — dangling `.addGatherQuestion(...)` call with no receiver -->
 ```java
 .addGatherQuestion(
     "home_airport",
@@ -651,6 +671,7 @@ The `resolve_airport` function must already be registered on the agent. The `fun
 
 Answers are stored in `global_data`, which is available in prompt variable expansion via `${key}`:
 
+<!-- snippet: no-compile illustrative — dangling `.addGatherQuestion(...)`/data-map calls with no receiver -->
 ```java
 // Store under a namespace
 .setGatherInfo("profile", null, null)
@@ -761,7 +782,7 @@ Flow:
 ### Example 1: Technical Support Troubleshooting
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Tech Support")
         .route("/tech-support")
         .build();
@@ -770,7 +791,7 @@ var agent = AgentBase.builder()
 agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
 agent.addSkill(SkillName.DATETIME, Map.of());
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Initial triage
 var triage = contexts.addContext("triage");
@@ -842,7 +863,7 @@ agent.run();
 ### Example 2: Multi-Step Application Process
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Loan Application")
         .route("/loan-app")
         .build();
@@ -850,7 +871,7 @@ var agent = AgentBase.builder()
 // Add verification tools
 agent.addSkill(SkillName.DATETIME, Map.of());  // For date validation
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Single workflow context
 var application = contexts.addContext("default");
@@ -913,7 +934,7 @@ agent.run();
 ### Example 3: E-commerce Customer Service
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("E-commerce Support")
         .route("/ecommerce")
         .build();
@@ -922,7 +943,7 @@ var agent = AgentBase.builder()
 agent.addSkill(SkillName.WEB_SEARCH, Map.of("api_key", "key", "search_engine_id", "id"));
 agent.addSkill(SkillName.DATETIME, Map.of());
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Main service menu
 var main = contexts.addContext("main");
@@ -984,6 +1005,7 @@ agent.run();
 
 Use descriptive step names that indicate purpose:
 
+<!-- snippet: no-compile illustrative — dangling `.addStep(...)` naming examples with no receiver -->
 ```java
 // Good
 .addStep("collect_shipping_address")
@@ -1000,6 +1022,7 @@ Use descriptive step names that indicate purpose:
 
 Define clear, testable completion criteria:
 
+<!-- snippet: no-compile illustrative — dangling `.setStepCriteria(...)` examples with no receiver -->
 ```java
 // Good - specific and measurable
 .setStepCriteria("User has provided valid email address and confirmed subscription preferences")
@@ -1014,6 +1037,7 @@ Define clear, testable completion criteria:
 
 Design intuitive navigation that matches user expectations:
 
+<!-- snippet: no-compile illustrative — dangling `.setValidSteps(...)` examples with no receiver -->
 ```java
 // Allow users to go back and review
 .setValidSteps(List.of("review_info", "edit_details", "confirm_submission"))
@@ -1029,6 +1053,7 @@ Design intuitive navigation that matches user expectations:
 
 Restrict functions based on security and context needs:
 
+<!-- snippet: no-compile illustrative — references example step handles publicStep/authStep declared elsewhere -->
 ```java
 // Public areas - limited functions
 publicStep.setFunctions(List.of("datetime", "web_search"));
@@ -1059,6 +1084,7 @@ List<String> bySecurity = List.of("public", "authenticated", "admin");
 
 Provide recovery paths for common issues:
 
+<!-- snippet: no-compile illustrative — dangling `.setValidSteps(...)`/`.setValidContexts(...)` examples with no receiver -->
 ```java
 // Allow users to retry failed steps
 .setValidSteps(List.of("retry_payment", "choose_different_method", "contact_support"))
@@ -1095,6 +1121,7 @@ step.addSection("Role", "You are a technical specialist")
 
 **Error**: When using a single context with a name other than "default"
 
+<!-- snippet: no-compile illustrative — deliberately shows a duplicate `var context` (Wrong vs Correct), which cannot compile -->
 ```java
 // Wrong
 var context = contexts.addContext("main");  // Error!
@@ -1153,6 +1180,7 @@ step.setFunctions(List.of("web_search"));  // Must match exactly
 
 Add logging to understand flow:
 
+<!-- snippet: no-compile illustrative — a standalone helper method definition (createStepWithLogging), not a runnable statement block -->
 ```java
 Step createStepWithLogging(Context context, String name) {
     Step step = context.addStep(name);
@@ -1165,6 +1193,7 @@ Step createStepWithLogging(Context context, String name) {
 
 Check that all referenced steps/contexts exist:
 
+<!-- snippet: no-compile illustrative — dangling `.setValidSteps(...)`/`.setValidContexts(...)` examples with no receiver -->
 ```java
 // Ensure referenced steps exist
 .setValidSteps(List.of("review", "edit"))  // Both "review" and "edit" steps must exist
@@ -1194,7 +1223,7 @@ step.setFunctions("none");
 
 **Before (Traditional POM):**
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("assistant")
         .route("/assistant")
         .build();
@@ -1209,12 +1238,12 @@ agent.promptAddSection("Guidelines", "", List.of(
 
 **After (Contexts and Steps):**
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("assistant")
         .route("/assistant")
         .build();
 
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 var main = contexts.addContext("default");
 
 main.addStep("assistance")
@@ -1232,7 +1261,7 @@ main.addStep("assistance")
 You can use both traditional prompts and contexts in the same agent:
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("hybrid")
         .route("/hybrid")
         .build();
@@ -1241,7 +1270,7 @@ var agent = AgentBase.builder()
 // These will coexist with contexts
 
 // Define contexts for structured workflows
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 var workflow = contexts.addContext("default");
 
 workflow.addStep("structured_process")
@@ -1276,13 +1305,13 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("multi-context")
         .route("/multi")
         .build();
 
 // Define contexts using the ContextBuilder pattern
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Sales context
 var sales = contexts.addContext("sales");
@@ -1321,15 +1350,15 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.List;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Travel Agent")
         .route("/travel")
         .build();
 
 agent.promptAddSection("Role", "You are a friendly travel booking assistant.");
 
-var contexts = agent.defineContexts();
-var ctx = contexts.addContext("default");
+contexts = agent.defineContexts();
+ctx = contexts.addContext("default");
 
 // Step 1: Collect profile (gather mode, auto-advance)
 ctx.addStep("collect_profile")
@@ -1367,15 +1396,15 @@ import com.signalwire.sdk.agent.AgentBase;
 
 import java.util.List;
 
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
         .name("Support Agent")
         .route("/support")
         .build();
 
 agent.promptAddSection("Role", "You are a technical support agent.");
 
-var contexts = agent.defineContexts();
-var ctx = contexts.addContext("default");
+contexts = agent.defineContexts();
+ctx = contexts.addContext("default");
 
 // Collect ticket info, then return to normal mode for triage
 ctx.addStep("intake")

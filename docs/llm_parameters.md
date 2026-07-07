@@ -2,6 +2,11 @@
 
 This guide explains how to customize Language Model (LLM) parameters in SignalWire AI Agents to fine-tune the AI's behavior for your specific use case.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+```
+
 ## Overview
 
 SignalWire AI Agents SDK provides methods to customize LLM parameters for both the main prompt and post-prompt, allowing precise control over the AI's response characteristics.
@@ -15,6 +20,8 @@ SignalWire AI Agents SDK provides methods to customize LLM parameters for both t
 Sets LLM parameters for the main agent prompt. Accepts any parameters that will be passed to the server.
 
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 agent.setPromptLlmParams(Map.of(
     "temperature", 0.7,
     "top_p", 0.9,
@@ -29,6 +36,8 @@ agent.setPromptLlmParams(Map.of(
 Sets LLM parameters for the post-prompt (conversation summary). Accepts any parameters that will be passed to the server.
 
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 agent.setPostPromptLlmParams(Map.of(
     "temperature", 0.3,
     "top_p", 0.95,
@@ -231,6 +240,8 @@ Presence and frequency penalties can be used together:
 
 **Partial Configuration:** You can set only the parameters you want to customize. For example:
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 // Only set temperature, let server handle other parameters
 agent.setPromptLlmParams(Map.of("temperature", 0.7));
 

@@ -28,6 +28,14 @@ Alternatively, you can authenticate with a JWT token:
 
 ## Minimal Example
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+import com.signalwire.sdk.relay.Call;
+import java.util.List;
+import java.util.Map;
+```
+
 ```java
 import com.signalwire.sdk.relay.RelayClient;
 import java.util.List;
@@ -96,6 +104,7 @@ Use `client.dial()` to place an outbound call:
 import java.util.List;
 import java.util.Map;
 
+var client = RelayClient.builder().build();
 var call = client.dial(List.of(
     List.of(Map.of("type", "phone",
         "params", Map.of("to_number", "+15551234567", "from_number", "+15559876543")))
@@ -113,6 +122,7 @@ The outer list represents serial attempts; the inner list represents parallel at
 import java.util.List;
 import java.util.Map;
 
+var client = RelayClient.builder().build();
 var call = client.dial(List.of(
     List.of(
         Map.of("type", "phone",

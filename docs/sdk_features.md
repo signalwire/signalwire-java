@@ -1,5 +1,19 @@
 # SignalWire AI Agents SDK: Why the SDK, Not Raw SWML
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.contexts.ContextBuilder;
+import com.signalwire.sdk.contexts.Context;
+import com.signalwire.sdk.contexts.Step;
+
+AgentBase agent = AgentBase.builder().name("features-agent").route("/agent").build();
+AgentBase salesAgent = AgentBase.builder().name("sales").route("/sales").build();
+AgentBase supportAgent = AgentBase.builder().name("support").route("/support").build();
+AgentBase triageAgent = AgentBase.builder().name("triage").route("/triage").build();
+```
+
 ## The Problem with Raw SWML
 
 SWML (SignalWire Markup Language) is a JSON document format that defines how an agent behaves during a call -- 30+ verbs, an AI verb with dozens of parameters, SWAIG (SignalWire AI Gateway) function definitions with JSON Schema, post-prompt URLs, webhook authentication, language arrays, pronunciation rules, hints, global data, contexts, steps, gather configs. Writing it by hand means constructing deeply nested JSON, manually building authenticated webhook URLs, hand-coding parameter schemas, and deploying separate webhook servers for your tools. Every agent becomes a bespoke JSON engineering project.
@@ -32,15 +46,15 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
 import java.util.Map;
 
-var agent = AgentBase.builder()
+var weatherAgent = AgentBase.builder()
     .name("weather")
     .route("/weather")
     .port(3000)
     .build();
 
-agent.promptAddSection("Role", "You help with weather.");
+weatherAgent.promptAddSection("Role", "You help with weather.");
 
-agent.defineTool(
+weatherAgent.defineTool(
     "get_weather",
     "Get weather",
     Map.of(
@@ -53,7 +67,7 @@ agent.defineTool(
       return new FunctionResult("72°F and sunny in " + city);
     });
 
-agent.run();
+weatherAgent.run();
 ```
 
 That's a complete agent: HTTP server, SWML generation, authenticated webhook routing, function execution, and response formatting. The generated SWML contains the full AI configuration, function schemas, and webhook URLs pointing back to the running process -- all computed automatically.
@@ -81,6 +95,7 @@ POM sections are rendered by the platform into a format the LLM understands with
 
 ### 1. Defined Functions (Local Execution)
 
+<!-- snippet: no-compile illustrative handler using a reader-supplied `db` handle and `order` domain type (not defined here) -->
 ```java
 agent.defineTool(
     "lookup_order",
@@ -206,6 +221,7 @@ PGI is enforced through four layers of constraint, each operating independently.
 ### PGI in Practice: Blackjack
 
 ```java
+ContextBuilder ctx = agent.defineContexts();
 Context game = ctx.addContext("blackjack");
 
 Step betting = game.addStep("betting");
@@ -227,6 +243,7 @@ The `you_lost` step has zero functions and zero valid transitions. The game is o
 
 The tool handler demonstrates execution authority -- the model has no idea a step change is about to happen:
 
+<!-- snippet: no-compile illustrative handler using reader-supplied game helpers (deckPop/playerHand/calculateHand/formatCard) not defined here -->
 ```java
 agent.defineTool(
     "hit",
@@ -305,6 +322,7 @@ One process, multiple agents, route-based dispatch. Each agent gets its own SWML
 
 ## Dynamic Configuration and Multi-Tenancy
 
+<!-- snippet: no-compile illustrative callback using a reader-supplied `loadTenantConfig(tenant)` helper (not defined here) -->
 ```java
 agent.setDynamicConfigCallback((queryParams, bodyParams, headers, ephemeralAgent) -> {
   List<String> tenantHeader = headers.getOrDefault("X-Tenant-ID", List.of("default"));

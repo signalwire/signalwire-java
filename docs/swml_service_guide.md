@@ -1,5 +1,11 @@
 # SignalWire SWML Service Guide
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.swml.Service;
+import com.signalwire.sdk.logging.Logger;
+```
+
 ## Table of Contents
 - [Introduction](#introduction)
 - [Installation](#installation)
@@ -81,6 +87,7 @@ The SDK includes a centralized logging system (`com.signalwire.sdk.logging.Logge
 
 Obtain a logger and use its level methods:
 
+<!-- snippet: no-compile class-field declaration excerpt referencing the reader's own `MyService` class (shown as a field, not a runnable statement) -->
 ```java
 import com.signalwire.sdk.logging.Logger;
 
@@ -167,6 +174,8 @@ The `Service` class validates SWML verbs against the SignalWire schema.
 When adding a verb, the service validates it against the schema to ensure it has the correct structure and parameters.
 
 ```java
+var service = new Service("demo-service", "/");
+
 // This validates the configuration against the schema
 service.addVerb("play", Map.of(
     "url", "say:Hello, world!",
@@ -181,6 +190,7 @@ service.addVerb("play", Map.of(
 
 You can register custom verb handlers for specialized verb processing by extending `SWMLVerbHandler`:
 
+<!-- snippet: no-compile illustrative unit combining a full handler class with a trailing `service.registerVerbHandler(...)` usage statement (not a single compilable form) -->
 ```java
 import com.signalwire.sdk.swml.SWMLVerbHandler;
 import java.util.List;
@@ -289,6 +299,8 @@ Use `registerRoutingCallback` to register a function called for requests to a sp
 ```java
 import java.util.Map;
 
+var service = new Service("router-service", "/");
+
 // Route based on a field in the request body
 service.registerRoutingCallback(
     (body, headers) -> {
@@ -312,6 +324,7 @@ service.registerRoutingCallback(
 
 You can use the `callbackPath` parameter passed to `onRequest` / `onSwmlRequest` to serve different content for different paths:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing Service subclass for illustration -->
 ```java
 @Override
 public Map<String, Object> onRequest(
@@ -421,14 +434,18 @@ In this example:
 
 ### Hosting Multiple Services
 
-Java uses the built-in JDK HTTP server rather than a FastAPI router. To host several services in one process, register them by route with `AgentServer` (which accepts any `Service`, including plain SWML services and `AgentBase` agents):
+Java uses the built-in JDK HTTP server rather than a FastAPI router. To host several agents in one process, register them by route with `AgentServer`. `AgentServer.register` accepts `AgentBase` agents (which extend `Service`); host a plain `Service` on its own by calling its own `run()`:
 
 ```java
+import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.server.AgentServer;
 
+var voiceAgent = AgentBase.builder().name("voice").route("/voice").build();
+var routerAgent = AgentBase.builder().name("router").route("/router").build();
+
 AgentServer server = new AgentServer("0.0.0.0", 3000);
-server.register(voiceService, "/voice");
-server.register(routerService, "/router");
+server.register(voiceAgent, "/voice");
+server.register(routerAgent, "/router");
 server.run();
 ```
 

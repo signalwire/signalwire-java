@@ -2,6 +2,22 @@
 
 A comprehensive guide to understanding, implementing, and testing DataMap configurations in SignalWire AI Agents from the SWML (SignalWire Markup Language) perspective.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.datamap.DataMap;
+import com.signalwire.sdk.swaig.FunctionResult;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.google.gson.Gson;
+
+AgentBase agent = AgentBase.builder().name("datamap-agent").route("/agent").build();
+HttpClient httpClient = HttpClient.newHttpClient();
+Gson gson = new Gson();
+```
+
 ## Table of Contents
 
 ### 1. Introduction to DataMap in SWML
@@ -149,27 +165,31 @@ agent.defineTool(
         "properties", Map.of("query", Map.of("type", "string")),
         "required", List.of("query")),
     (args, rawData) -> {
-      // Custom HTTP request logic
-      HttpResponse<String> response = httpClient.send(
-          HttpRequest.newBuilder()
-              .uri(URI.create("https://api.example.com/search"))
-              .header("Content-Type", "application/json")
-              .POST(HttpRequest.BodyPublishers.ofString(
-                  gson.toJson(Map.of("query", args.get("query")))))
-              .build(),
-          HttpResponse.BodyHandlers.ofString());
+      try {
+        // Custom HTTP request logic
+        HttpResponse<String> response = httpClient.send(
+            HttpRequest.newBuilder()
+                .uri(URI.create("https://api.example.com/search"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                    gson.toJson(Map.of("query", args.get("query")))))
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
 
-      // Custom error handling
-      if (response.statusCode() != 200) {
-        return new FunctionResult("API request failed");
+        // Custom error handling
+        if (response.statusCode() != 200) {
+          return new FunctionResult("API request failed");
+        }
+
+        // Custom response processing
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = gson.fromJson(response.body(), Map.class);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
+        return new FunctionResult("Found: " + results.get(0).get("text"));
+      } catch (Exception e) {
+        return new FunctionResult("API request failed: " + e.getMessage());
       }
-
-      // Custom response processing
-      @SuppressWarnings("unchecked")
-      Map<String, Object> data = gson.fromJson(response.body(), Map.class);
-      @SuppressWarnings("unchecked")
-      List<Map<String, Object>> results = (List<Map<String, Object>>) data.get("results");
-      return new FunctionResult("Found: " + results.get(0).get("text"));
     });
 ```
 

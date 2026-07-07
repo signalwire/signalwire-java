@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.datamap.DataMap;
+```
+
 ## Project Overview
 
 This is the **SignalWire AI Agents SDK for Java** -- a Java 21+ framework for building, deploying, and managing AI agents as microservices. The SDK provides tools for creating self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform.
@@ -106,6 +113,7 @@ Skills are self-contained modules in `skills/builtin/`. Each implements `SkillBa
 
 #### DataMap Tools
 ```java
+var agent = AgentBase.builder().name("my-agent").route("/").build();
 var dm = new DataMap("weather")
     .purpose("Get current weather")
     .parameter("city", "string", "City name", true)

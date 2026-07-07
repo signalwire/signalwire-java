@@ -2,6 +2,19 @@
 
 This document provides a comprehensive reference for all public APIs in the SignalWire AI Agents SDK for Java.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.datamap.DataMap;
+import com.signalwire.sdk.contexts.ContextBuilder;
+
+AgentBase agent = AgentBase.builder().name("ref-agent").route("/agent").build();
+FunctionResult result = new FunctionResult("...");
+DataMap dataMap = new DataMap("ref_tool");
+ContextBuilder contexts = agent.defineContexts();
+```
+
 ## Installation
 
 Add the SDK as a dependency (Maven Central coordinates `com.signalwire:signalwire-sdk:2.0.2`).
@@ -45,7 +58,7 @@ The `AgentBase` class is the foundation for creating AI agents. It extends `Serv
 Agents are constructed through the fluent `AgentBase.builder()` API, not a public constructor. Call `build()` to obtain the agent, then configure it with the instance methods below.
 
 ```java
-var agent = AgentBase.builder()
+agent = AgentBase.builder()
     .name("my-agent")          // Human-readable name
     .route("/")                // HTTP route path (default: "/")
     .host("0.0.0.0")           // Host address to bind to (default: "0.0.0.0")
@@ -85,7 +98,7 @@ Start the agent's HTTP server. Delegates to `serve()`. In serverless deployments
 
 **Usage:**
 ```java
-var agent = AgentBase.builder().name("my-agent").port(3000).build();
+agent = AgentBase.builder().name("my-agent").port(3000).build();
 agent.run();   // blocks serving on the configured host/port
 ```
 
@@ -778,16 +791,17 @@ Set a callback for per-request dynamic configuration. The `DynamicConfigCallback
 
 **Usage:**
 ```java
-agent.setDynamicConfigCallback((queryParams, headers, body, cfg) -> {
+// Callback signature: configure(queryParams, bodyParams, headers, agent)
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, cfg) -> {
     // Configure based on request
     if ("spanish".equals(queryParams.get("language"))) {
         cfg.addLanguage("Spanish", "es-ES", "nova.luna");
     }
 
-    // Set customer-specific data
-    String customerId = headers.get("X-Customer-ID");
-    if (customerId != null) {
-        cfg.setGlobalData(Map.of("customer_id", customerId));
+    // Set customer-specific data (headers map values are lists)
+    List<String> customerIdValues = headers.get("X-Customer-ID");
+    if (customerIdValues != null && !customerIdValues.isEmpty()) {
+        cfg.setGlobalData(Map.of("customer_id", customerIdValues.get(0)));
     }
 });
 ```
@@ -845,7 +859,7 @@ Register a handler for conversation summaries. The callback is invoked when the 
 
 **Usage:**
 ```java
-var agent = AgentBase.builder().name("summary-agent").route("/agent").build();
+agent = AgentBase.builder().name("summary-agent").route("/agent").build();
 
 // Configure post-prompt to request a JSON summary
 agent.setPostPrompt(
@@ -871,7 +885,7 @@ Register a handler for debug webhook events. Requires `enableDebugEvents()` to b
 
 **Usage:**
 ```java
-var agent = AgentBase.builder().name("debug-agent").route("/agent").build();
+agent = AgentBase.builder().name("debug-agent").route("/agent").build();
 agent.enableDebugEvents();
 
 agent.onDebugEvent(data -> {
@@ -922,7 +936,7 @@ Define structured workflow contexts for the agent. Returns a `ContextBuilder`.
 
 **Usage:**
 ```java
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 contexts.addContext("greeting")
     .addStep("welcome")
     .setText("Welcome! How can I help?")
@@ -947,6 +961,7 @@ The `FunctionResult` class is used to create structured responses from SWAIG fun
 
 ### Construction
 
+<!-- snippet: no-compile constructor-signature listing (documentation of overloads, not runnable code) -->
 ```java
 new FunctionResult()                        // empty (actions only)
 new FunctionResult(String response)         // with a spoken response
@@ -960,7 +975,7 @@ new FunctionResult(String response, boolean postProcess)  // with post-processin
 **Usage:**
 ```java
 // Simple response
-var result = new FunctionResult("The weather is sunny and 75F");
+result = new FunctionResult("The weather is sunny and 75F");
 
 // Response with post-processing enabled
 var result2 = new FunctionResult("I'll transfer you now", true);
@@ -978,7 +993,7 @@ Set or update the natural language response text.
 
 **Usage:**
 ```java
-var result = new FunctionResult();
+result = new FunctionResult();
 result.setResponse("I found your order information");
 ```
 
@@ -987,7 +1002,7 @@ Enable or disable post-processing for this result.
 
 **Usage:**
 ```java
-var result = new FunctionResult("I'll help you with that");
+result = new FunctionResult("I'll help you with that");
 result.setPostProcess(true);  // Let AI handle follow-up questions first
 ```
 
@@ -1081,7 +1096,7 @@ End the call immediately.
 
 **Usage:**
 ```java
-var result = new FunctionResult("Thank you for calling. Goodbye!");
+result = new FunctionResult("Thank you for calling. Goodbye!");
 result.hangup();
 ```
 
@@ -1090,7 +1105,7 @@ Put the call on hold. `timeout` is in seconds.
 
 **Usage:**
 ```java
-var result = new FunctionResult("Please hold while I look that up");
+result = new FunctionResult("Please hold while I look that up");
 result.hold(60);
 ```
 
@@ -1403,8 +1418,10 @@ Process a payment through the call. The full-arity form takes positional argumen
 
 **Usage:**
 ```java
-// Basic payment processing (short overload)
-result.pay("https://payment-processor.com/webhook", "29.99", "Monthly subscription");
+// Basic payment processing:
+//   pay(connectorUrl, inputMethod, statusUrl, timeout, maxAttempts)
+result.pay("https://payment-processor.com/webhook", "dtmf",
+        "https://example.com/pay-status", 30, 3);
 ```
 
 ### Call Monitoring
@@ -1461,7 +1478,7 @@ Convert the result to a `Map<String, Object>` for serialization. (`toJson()` ret
 
 **Usage:**
 ```java
-var result = new FunctionResult("Hello world");
+result = new FunctionResult("Hello world");
 result.addAction("play", "music.mp3");
 Map<String, Object> map = result.toMap();
 System.out.println(map);
@@ -1506,7 +1523,7 @@ Map<String, String> param = FunctionResult.createPaymentParameter("merchant_id",
 All configuration methods return `this`, enabling fluent method chaining:
 
 ```java
-var result = new FunctionResult("I'll help you with that")
+result = new FunctionResult("I'll help you with that")
     .setPostProcess(true)
     .updateGlobalData(Map.of("status", "helping"))
     .setEndOfSpeechTimeout(800)
@@ -1516,7 +1533,7 @@ var result = new FunctionResult("I'll help you with that")
 var payment = new FunctionResult("Processing your payment")
     .setPostProcess(true)
     .updateGlobalData(Map.of("payment_status", "processing"))
-    .pay("https://payments.com/webhook", "99.99", "Service payment")
+    .pay("https://payments.com/webhook", "dtmf", "https://example.com/pay-status", 30, 3)
     .sendSms(
         "+15551234567",
         "+15559876543",
@@ -1537,6 +1554,7 @@ The `DataMap` class provides a declarative approach to creating SWAIG tools that
 
 ### Construction
 
+<!-- snippet: no-compile constructor-signature listing (documentation of the constructor, not runnable code) -->
 ```java
 new DataMap(String functionName)
 ```
@@ -1560,7 +1578,7 @@ Set the function description/purpose. Returns the DataMap for chaining.
 
 **Usage:**
 ```java
-var dataMap = new DataMap("get_weather").purpose("Get current weather information for any city");
+dataMap = new DataMap("get_weather").purpose("Get current weather information for any city");
 ```
 
 ##### `description(String description)`
@@ -1568,7 +1586,7 @@ Alias for `purpose()` — set the function description.
 
 **Usage:**
 ```java
-var dataMap = new DataMap("search_api").description("Search our knowledge base for information");
+dataMap = new DataMap("search_api").description("Search our knowledge base for information");
 ```
 
 #### Parameter Definition
@@ -1660,7 +1678,7 @@ dataMap.params(Map.of(
 DataMap supports multiple webhook configurations for fallback scenarios:
 
 ```java
-var dataMap = new DataMap("search_with_fallback")
+dataMap = new DataMap("search_with_fallback")
     .purpose("Search with multiple API fallbacks")
     .parameter("query", "string", "Search query", true)
 
@@ -1720,7 +1738,7 @@ Process array responses by iterating over elements.
 
 **Usage:**
 ```java
-var dataMap = new DataMap("search_docs")
+dataMap = new DataMap("search_docs")
     .webhook("GET", "https://api.docs.com/search?q=${args.query}")
     .foreach(Map.of("array", "${response.results}"))
     .output(new FunctionResult("Found: ${foreach.title} - ${foreach.summary}"));
@@ -1934,7 +1952,7 @@ The `ContextBuilder` is accessed via `agent.defineContexts()` and provides the m
 
 ```java
 // Access the context builder
-var contexts = agent.defineContexts();
+contexts = agent.defineContexts();
 
 // Create contexts and steps
 contexts.addContext("greeting")
@@ -1961,6 +1979,7 @@ var supportContext = contexts.addContext("support");
 
 The `Context` class represents a conversation context containing multiple steps. Key methods (all return `Context` for chaining unless noted):
 
+<!-- snippet: no-compile method-signature listing (API reference of Context methods, not runnable code) -->
 ```java
 Step addStep(String name)                       // Create a new step (returns the Step)
 Context setValidContexts(List<String> contexts) // Which contexts are reachable from here
@@ -2275,6 +2294,7 @@ Represents a SWAIG function definition with metadata. Used with `defineTool(Tool
 
 #### Construction
 
+<!-- snippet: no-compile constructor-signature listing (documentation of the constructor, not runnable code) -->
 ```java
 new ToolDefinition(String name, String description, Map<String, Object> parameters, ToolHandler handler)
 ```
@@ -2324,15 +2344,17 @@ The dynamic configuration callback receives the agent instance directly, allowin
 
 **Usage:**
 ```java
-agent.setDynamicConfigCallback((queryParams, headers, body, cfg) -> {
+// Callback signature: configure(queryParams, bodyParams, headers, agent)
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, cfg) -> {
     // Configure based on request
     if ("es".equals(queryParams.get("lang"))) {
         cfg.addLanguage("Spanish", "es-ES", "nova.luna");
     }
 
-    // Customer-specific configuration
-    String customerId = headers.get("X-Customer-ID");
-    if (customerId != null) {
+    // Customer-specific configuration (header values are lists)
+    List<String> customerIdValues = headers.get("X-Customer-ID");
+    if (customerIdValues != null && !customerIdValues.isEmpty()) {
+        String customerId = customerIdValues.get(0);
         cfg.setGlobalData(Map.of("customer_id", customerId));
         cfg.promptAddSection("Customer Context", "You are helping customer " + customerId);
     }
@@ -2377,7 +2399,7 @@ Environment variables are read automatically by the agent (basic-auth credential
 ```java
 // The agent reads SWML_BASIC_AUTH_USER / SWML_BASIC_AUTH_PASSWORD /
 // GOOGLE_SEARCH_API_KEY from the environment automatically.
-var agent = AgentBase.builder().name("My Agent").build();
+agent = AgentBase.builder().name("My Agent").build();
 agent.addSkill("web_search", Map.of(
     "search_engine_id", "your-engine-id"
     // api_key is read from GOOGLE_SEARCH_API_KEY in the environment

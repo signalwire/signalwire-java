@@ -22,6 +22,7 @@ You need three things to connect:
 
 ## Minimal Example
 
+<!-- snippet-setup -->
 ```java
 import com.signalwire.sdk.rest.RestClient;
 
@@ -45,10 +46,9 @@ export SIGNALWIRE_SPACE=example.signalwire.com
 ```
 
 ```java
-import com.signalwire.sdk.rest.RestClient;
-
-var client = RestClient.builder().build();
-var agents = client.fabric().aiAgents().list();
+// Environment-only construction: reads SIGNALWIRE_PROJECT_ID / _API_TOKEN / _SPACE.
+// var client = RestClient.builder().build();
+var envAgents = client.fabric().aiAgents().list();
 ```
 
 ## CRUD Pattern
@@ -86,10 +86,7 @@ var addresses = client.fabric().aiAgents().listAddresses("agent-uuid", Map.of())
 ## Error Handling
 
 ```java
-import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
-
-var client = RestClient.builder().build();
 
 try {
     var agent = client.fabric().aiAgents().get("nonexistent-id");

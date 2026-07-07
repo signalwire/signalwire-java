@@ -8,6 +8,15 @@ SWAIG (SignalWire AI Gateway) is the platform's AI tool-calling system -- it con
 > full-arity positional form). The examples below assume `import com.signalwire.sdk.swaig.FunctionResult;`
 > and `import java.util.*;`.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.agent.AgentBase;
+
+FunctionResult result = new FunctionResult("...");
+AgentBase agent = AgentBase.builder().name("ref").build();
+```
+
 ## Core Methods
 
 ### Basic Construction & Control
@@ -16,7 +25,7 @@ SWAIG (SignalWire AI Gateway) is the platform's AI tool-calling system -- it con
 Creates a new result object with optional response text and post-processing behavior.
 
 ```java
-var result = new FunctionResult("Hello, I'll help you with that");
+result = new FunctionResult("Hello, I'll help you with that");
 var result2 = new FunctionResult("Processing request...", true);
 ```
 
@@ -230,7 +239,7 @@ result.recordCall(
         "customer_voicemail",
         false,
         "wav",
-        "speak",             // Only record customer voice
+        "speak",             // Only capture customer voice
         "#",                 // Stop on '#' press
         true,                // Play beep before recording
         44.0,
@@ -631,7 +640,7 @@ When called with a `String`, the tool_call/tool_result pair is replaced with an 
 
 ```java
 // Remove entirely — LLM won't see this function was called
-var result = new FunctionResult("Done.");
+result = new FunctionResult("Done.");
 result.replaceInHistory(true);
 
 // Replace with a friendly assistant message instead of tool artifacts
@@ -747,7 +756,7 @@ String json = result.toJson();
 All methods return `this` to enable fluent method chaining:
 
 ```java
-var result = new FunctionResult("Processing your request", true)
+result = new FunctionResult("Processing your request", true)
         .updateGlobalData(Map.of("status", "processing"))
         .playBackgroundFile("processing.wav", true)
         .setEndOfSpeechTimeout(2500);

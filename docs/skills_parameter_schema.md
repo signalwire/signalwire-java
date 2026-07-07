@@ -2,6 +2,16 @@
 
 This guide explains the parameter schema system for the SignalWire AI Agents SDK skills, which enables GUI configuration tools and programmatic skill discovery.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import com.signalwire.sdk.swaig.ToolDefinition;
+import java.util.LinkedHashMap;
+
+Map<String, Object> schema = new LinkedHashMap<>();
+```
+
 ## Overview
 
 The parameter schema system allows skills to declare their configurable parameters with metadata including types, descriptions, default values, and security hints. This enables:
@@ -100,6 +110,8 @@ Each entry has this structure (shown here as JSON):
 ### Using Schema for GUI Configuration
 
 Here's an example of how to use the schema to generate a configuration form:
+
+<!-- snippet: no-compile illustrative fragment mixing a top-level call with a standalone `static` helper method (not a single compilable unit) -->
 
 ```java
 import com.signalwire.sdk.skills.SkillRegistry;
@@ -224,6 +236,7 @@ Each parameter in the schema can have the following properties:
 
 To add parameter schema support to a skill, override `getParameterSchema()`:
 
+<!-- snippet: no-compile complete example compilation unit in the reader's own `com.example.skills` package (declared for the narrative, not part of the SDK) -->
 ```java
 package com.example.skills;
 
@@ -385,6 +398,7 @@ All skills automatically inherit these base parameters from `SkillBase`:
 
 Skills like `datetime` and `math` that don't need configuration just return the base schema:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing SkillBase class for illustration -->
 ```java
 @Override
 public Map<String, Object> getParameterSchema() {
@@ -397,6 +411,7 @@ public Map<String, Object> getParameterSchema() {
 
 Skills like `web_search` with multiple configuration options add to the base schema:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing SkillBase class for illustration -->
 ```java
 @Override
 public Map<String, Object> getParameterSchema() {

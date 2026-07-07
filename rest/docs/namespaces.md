@@ -2,6 +2,14 @@
 
 Reference for every namespace beyond Fabric and Calling (which have their own pages). Every namespace is reached through a fluent accessor on the `RestClient` (e.g. `client.phoneNumbers()`, `client.video().rooms()`). CRUD methods take a `Map<String, Object>` body for create/update; some resources use a typed request builder (shown below).
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.namespaces.generated.*;
+
+RestClient client = RestClient.builder().build();
+```
+
 ## Phone Numbers
 
 ```java
@@ -26,10 +34,16 @@ client.phoneNumbers().delete("pn-uuid");
 ## Addresses
 
 ```java
-Map<String, Object> addresses = client.addresses().list();
-Map<String, Object> address = client.addresses().create(Map.of(
-    "label", "Office", "street", "123 Main St", "city", "Austin", "state", "TX"));
-address = client.addresses().get("addr-uuid");
+Map<String, Object> addresses = client.addresses().list(Map.of());
+Map<String, Object> address = client.addresses().create(
+    Addresses.CreateRequest.builder()
+        .label("Office")
+        .streetNumber("123")
+        .streetName("Main St")
+        .city("Austin")
+        .state("TX")
+        .build());
+address = client.addresses().get("addr-uuid", Map.of());
 client.addresses().delete("addr-uuid");
 ```
 
@@ -51,8 +65,8 @@ Map<String, Object> member = client.queues().getMember("q-uuid", "member-uuid", 
 ## Recordings
 
 ```java
-Map<String, Object> recordings = client.recordings().list();
-Map<String, Object> recording = client.recordings().get("rec-uuid");
+Map<String, Object> recordings = client.recordings().list(Map.of());
+Map<String, Object> recording = client.recordings().get("rec-uuid", Map.of());
 client.recordings().delete("rec-uuid");
 ```
 
@@ -224,7 +238,10 @@ client.video().rooms().createStream("room-uuid",
 
 // Room tokens
 Map<String, Object> token = client.video().roomTokens().create(
-    Map.of("room_name", "standup", "user_name", "alice"));
+    VideoRoomTokens.CreateRequest.builder()
+        .roomName("standup")
+        .userName("alice")
+        .build());
 
 // Room sessions
 Map<String, Object> sessions = client.video().roomSessions().list(Map.of("room_name", "standup"));
@@ -234,8 +251,8 @@ Map<String, Object> members = client.video().roomSessions().listMembers("session
 Map<String, Object> recordings = client.video().roomSessions().listRecordings("session-uuid", Map.of());
 
 // Room recordings
-Map<String, Object> recs = client.video().roomRecordings().list();
-Map<String, Object> rec = client.video().roomRecordings().get("rec-uuid");
+Map<String, Object> recs = client.video().roomRecordings().list(Map.of());
+Map<String, Object> rec = client.video().roomRecordings().get("rec-uuid", Map.of());
 client.video().roomRecordings().delete("rec-uuid");
 
 // Conferences

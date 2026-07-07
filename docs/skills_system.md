@@ -2,6 +2,14 @@
 
 The SignalWire Agents SDK includes a modular skills system that lets you add capabilities to your agents with simple one-liner calls and configurable parameters.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+```
+
 ## What's New
 
 Instead of manually implementing every agent capability, you can now:
@@ -63,6 +71,8 @@ Search the internet and extract content from web pages.
 
 **Usage examples:**
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 // Default: fast single result
 agent.addSkill("web_search", Map.of());
 
@@ -114,6 +124,8 @@ Search documents by querying a **remote** vector-search server over HTTP. (The J
 
 **Usage examples:**
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 // Remote mode
 agent.addSkill("native_vector_search", Map.of(
     "remote_url", "http://localhost:8001/search",
@@ -154,6 +166,8 @@ Transfer calls between agents using pattern matching.
 
 **Usage examples:**
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 // Simple transfer between departments
 agent.addSkill("swml_transfer", Map.of(
     "tool_name", "transfer_to_department",
@@ -232,6 +246,8 @@ agent.run();
 
 ### Different Parameter Configurations
 ```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
 // Speed-optimized for quick responses
 agent.addSkill("web_search", Map.of(
     "num_results", 1,
@@ -292,6 +308,7 @@ if (agent.hasSkill("datetime")) {
 
 Create a new skill by implementing `SkillBase` with parameter support:
 
+<!-- snippet: no-compile complete example compilation unit in the reader's own `com.example.skills` package (declared for the narrative, not part of the SDK) -->
 ```java
 package com.example.skills;
 
@@ -389,6 +406,7 @@ public class MyCustomSkill implements SkillBase {
 ```
 
 Register the skill in the `SkillRegistry`, then it is available as:
+<!-- snippet: no-compile references the reader's own `MyCustomSkill` from the example above (not an SDK type) -->
 ```java
 import com.signalwire.sdk.skills.SkillRegistry;
 import java.util.Map;
@@ -466,6 +484,7 @@ System.out.println("Skills system with parameters working!");
 ## Migration Guide
 
 **Before (manual implementation):**
+<!-- snippet: no-compile illustrative "before" pseudo-code (elided `/* ... */` method argument), shown for contrast -->
 ```java
 // Had to manually implement every capability
 public class WebSearchAgent extends AgentBase {

@@ -2,6 +2,12 @@
 
 The `WebService` class (`com.signalwire.sdk.web.WebService`) provides static file serving capabilities for the SignalWire AI Agents SDK for Java. It can run as a standalone service or alongside your AI agents.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.web.WebService;
+import com.signalwire.sdk.agent.AgentBase;
+```
+
 ## Table of Contents
 - [Overview](#overview)
 - [Installation](#installation)
@@ -482,6 +488,7 @@ export SIGNALWIRE_LOG_LEVEL=debug
 
 ### WebService Class
 
+<!-- snippet: no-compile method-signature listing (API reference of WebService constructors, not runnable code) -->
 ```java
 public class WebService {
     public WebService();
@@ -513,6 +520,7 @@ public class WebService {
 #### Methods
 
 ##### start(String host, Integer bindPort) / start()
+<!-- snippet: no-compile method-signature listing (API reference of start(), not runnable code) -->
 ```java
 public int start(String host, Integer bindPort);
 public int start(); // start("127.0.0.1", port)
@@ -520,18 +528,21 @@ public int start(); // start("127.0.0.1", port)
 Start the web service (non-blocking). Binds `bindPort` (0 = OS-assigned) on `host` and returns the actually-bound port.
 
 ##### stop()
+<!-- snippet: no-compile method-signature listing (API reference of stop(), not runnable code) -->
 ```java
 public void stop();
 ```
 Stop the service and release the socket. Safe to call when not running.
 
 ##### addDirectory(String route, String directory)
+<!-- snippet: no-compile method-signature listing (API reference of addDirectory(), not runnable code) -->
 ```java
 public void addDirectory(String route, String directory);
 ```
 Add a new directory to serve. Remounts immediately if the server is already running; throws `IllegalArgumentException` when the path does not exist or is not a directory.
 
 ##### removeDirectory(String route)
+<!-- snippet: no-compile method-signature listing (API reference of removeDirectory(), not runnable code) -->
 ```java
 public void removeDirectory(String route);
 ```

@@ -23,11 +23,12 @@ var agent = client.fabric().aiAgents().create(Map.of(
 var results = client.phoneNumbers().search(Map.of("area_code", "512"));
 
 // Place a call via REST
-client.calling().execute("dial", Map.of(
-    "from", "+15559876543",
-    "to", "+15551234567",
-    "url", "https://example.com/call-handler"
-));
+client.calling().dial(
+    com.signalwire.sdk.rest.namespaces.generated.Calling.DialRequest.builder()
+        .from("+15559876543")
+        .to("+15551234567")
+        .url("https://example.com/call-handler")
+        .build());
 ```
 
 ## Features

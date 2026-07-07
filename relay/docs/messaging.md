@@ -2,6 +2,13 @@
 
 Send and receive SMS/MMS messages through the RELAY client.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+
+RelayClient client = RelayClient.builder().build();
+```
+
 ## Sending Messages
 
 Use `client.sendMessage()` to send an outbound SMS or MMS. The parameter order is
@@ -81,16 +88,9 @@ message.setOnCompleted(m -> System.out.println("done: " + m.getState()));
 Register a handler with `client.onMessage(...)` to receive inbound SMS/MMS.
 
 ```java
-import com.signalwire.sdk.relay.RelayClient;
 import java.util.List;
 
-var client = RelayClient.builder()
-    .project("your-project-id")
-    .token("your-api-token")
-    .space("example.signalwire.com")
-    .contexts(List.of("default"))
-    .build();
-
+// client = RelayClient.builder().contexts(List.of("default")).build();
 client.onMessage(message -> {
     System.out.println("From: " + message.getFromNumber().orElse(""));
     System.out.println("To: " + message.getToNumber().orElse(""));
@@ -174,11 +174,7 @@ The same `RelayClient` handles both calls and messages:
 import java.util.List;
 import java.util.Map;
 
-var client = RelayClient.builder()
-    .project("...").token("...").space("example.signalwire.com")
-    .contexts(List.of("default"))
-    .build();
-
+// client = RelayClient.builder().contexts(List.of("default")).build();
 client.onCall(call -> {
     call.answer();
     call.play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))

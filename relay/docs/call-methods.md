@@ -2,6 +2,13 @@
 
 A `Call` object represents a live phone call. You get one from `client.onCall(handler)` (inbound) or `client.dial(devices)` (outbound).
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.*;
+
+Call call = new Call("call-id", "node-id");
+```
+
 ## Properties
 
 `Call` exposes its state through accessor methods. Nullable scalars are returned as `Optional<String>` (empty until the server pushes the relevant event).
@@ -274,7 +281,7 @@ RelayEvent event = action.waitForCompletion();
 ### `receiveFax(Map<String, Object> options) -> Action.ReceiveFaxAction`
 
 ```java
-Action.ReceiveFaxAction action = call.receiveFax(null);
+Action.ReceiveFaxAction action = call.receiveFax(Map.of());
 RelayEvent event = action.waitForCompletion();
 ```
 
@@ -288,7 +295,7 @@ Intercept call media and stream to an RTP endpoint.
 Action.TapAction action = call.tap(
     Map.of("type", "audio", "params", Map.of("direction", "both")),
     Map.of("type", "rtp", "params", Map.of("addr", "192.168.1.100", "port", 5000)),
-    null);
+    Map.of());
 ```
 
 ## Streaming

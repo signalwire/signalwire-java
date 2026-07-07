@@ -2,6 +2,17 @@
 
 This guide explains how to create and integrate third-party skills with the SignalWire AI Agents SDK for Java. The SDK supports multiple methods for registering external skills, making it easy to extend agent capabilities without modifying the core SDK.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.skills.SkillRegistry;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+AgentBase agent = AgentBase.builder().name("skills-agent").route("/agent").build();
+```
+
 ## Overview
 
 Third-party skills can be integrated using these methods:
@@ -16,6 +27,7 @@ Java has no Python-entry-point mechanism; where Python auto-discovers packaged s
 
 Third-party skills follow the same structure as built-in skills: implement the `SkillBase` interface. Here's a minimal example:
 
+<!-- snippet: no-compile complete example compilation unit in the reader's own `com.example.skills` package (declared for the narrative, not part of the SDK) -->
 ```java
 package com.example.skills;
 
@@ -137,6 +149,7 @@ public class WeatherSkill implements SkillBase {
 
 Register a skill factory or class with `SkillRegistry`, then add it to any agent by name:
 
+<!-- snippet: no-compile references the reader's own `com.example.skills.WeatherSkill` from the example above (not an SDK type) -->
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.skills.SkillRegistry;
@@ -187,6 +200,7 @@ Java resolves classes on the classpath rather than at runtime from source files,
 
 Python packages advertise skills via `setuptools` entry points. Java has no equivalent auto-discovery, so a distributable skill library registers its skills programmatically — typically from a small bootstrap method that callers invoke once:
 
+<!-- snippet: no-compile complete example compilation unit in the reader's own `com.example.skills` package (declared for the narrative, not part of the SDK) -->
 ```java
 package com.example.skills;
 
@@ -216,6 +230,7 @@ dependencies {
 
 Then bootstrap and use:
 
+<!-- snippet: no-compile calls the reader's own `com.example.skills.SkillsBootstrap` from the example above (not an SDK type) -->
 ```java
 com.example.skills.SkillsBootstrap.registerAll();
 agent.addSkill("weather", Map.of("api_key", "..."));
@@ -304,6 +319,7 @@ System.out.println(schema.get("weather"));
 
 `setup` returns `false` to abort loading. Validate required params and connectivity there:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing SkillBase class for illustration -->
 ```java
 @Override
 public boolean setup(Map<String, Object> params) {
@@ -352,6 +368,7 @@ Provides weather information for any location.
 
 Support multiple instances of your skill by overriding `supportsMultipleInstances()` and `getInstanceKey()`:
 
+<!-- snippet: no-compile illustrative excerpt showing only the multi-instance overrides (getDescription/setup/registerTools omitted for brevity) -->
 ```java
 public class WeatherSkill implements SkillBase {
   private Map<String, Object> params;
@@ -393,6 +410,7 @@ agent.addSkill("weather", Map.of(
 
 Customize tool names for better agent prompts. Read the name in `setup` and use it in `registerTools`:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing SkillBase class for illustration -->
 ```java
 @Override
 public List<ToolDefinition> registerTools() {
@@ -412,6 +430,7 @@ public List<ToolDefinition> registerTools() {
 
 Load skills that depend on other skills by checking the agent's skill manager in `setup`:
 
+<!-- snippet: no-compile method-override body shown outside its enclosing SkillBase class for illustration -->
 ```java
 @Override
 public boolean setup(Map<String, Object> params) {
@@ -427,6 +446,7 @@ public boolean setup(Map<String, Object> params) {
 
 Test your skills before distribution with JUnit 5:
 
+<!-- snippet: no-compile JUnit test referencing the reader's own `com.example.skills.WeatherSkill`; JUnit is a test-scope dependency not on the doc-compile classpath -->
 ```java
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -477,6 +497,7 @@ If your skill isn't being discovered:
 
 `registerSkill(Class)` requires a public no-arg constructor and a non-empty `getName()`; otherwise it throws `IllegalArgumentException`:
 
+<!-- snippet: no-compile references the reader's own `com.example.skills.WeatherSkill` class (not an SDK type) -->
 ```java
 try {
   new SkillRegistry().registerSkill(WeatherSkill.class);
@@ -536,6 +557,7 @@ dependencies {
 
 Add the library as a dependency and use it:
 
+<!-- snippet: no-compile calls the reader's own `com.example.skills.SkillsBootstrap` from the example above (not an SDK type) -->
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import java.util.Map;

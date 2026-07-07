@@ -4,8 +4,10 @@
 
 `RelayClient` is created via its builder:
 
+<!-- snippet-setup -->
 ```java
 import com.signalwire.sdk.relay.RelayClient;
+import com.signalwire.sdk.relay.Call;
 import java.util.List;
 
 var client = RelayClient.builder()
@@ -15,6 +17,7 @@ var client = RelayClient.builder()
     .space("example.signalwire.com") // SIGNALWIRE_SPACE (or .host(...))
     .contexts(List.of("default"))    // Topics to subscribe to
     .build();
+Call call = new Call("call-id", "node-id");
 ```
 
 Authentication requires either `project` + `token` (legacy) or `jwtToken` (faster, no server roundtrip). When the credential setters are omitted, the client falls back to the corresponding environment variables (`SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_JWT_TOKEN`, `SIGNALWIRE_SPACE`).
@@ -42,8 +45,8 @@ client.disconnect();
 `RelayClient` also implements `AutoCloseable`, so it works with try-with-resources:
 
 ```java
-try (var client = RelayClient.builder().contexts(List.of("default")).build()) {
-    client.connect();
+try (var scopedClient = RelayClient.builder().contexts(List.of("default")).build()) {
+    scopedClient.connect();
     // ...
 }
 ```
@@ -53,8 +56,8 @@ try (var client = RelayClient.builder().contexts(List.of("default")).build()) {
 Register the inbound call handler. The handler receives a `Call` object.
 
 ```java
-client.onCall(call -> {
-    call.answer();
+client.onCall(incoming -> {
+    incoming.answer();
 });
 ```
 
@@ -72,7 +75,7 @@ A convenience overload `dial(devices)` uses a default timeout of 120 seconds.
 import java.util.List;
 import java.util.Map;
 
-var call = client.dial(List.of(
+var outbound = client.dial(List.of(
     List.of(Map.of("type", "phone",
         "params", Map.of("to_number", "+15551234567", "from_number", "+15559876543")))
 ));

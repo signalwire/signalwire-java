@@ -1126,6 +1126,12 @@ The CLI tool supports testing three types of webhook functions:
 External webhook functions are automatically detected when a function has a `webhook_url` parameter and are tested by making HTTP requests to the external service:
 
 ```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+var agent = AgentBase.builder().name("my-agent").route("/").build();
+
 // An external webhook tool: the handler is never invoked locally — the SWML
 // carries the external `web_hook_url`, so SignalWire calls that service instead.
 var getWeather = new ToolDefinition(
