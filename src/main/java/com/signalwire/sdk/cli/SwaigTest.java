@@ -401,13 +401,13 @@ public class SwaigTest {
   private static void printRawSwaigFunction(java.util.Map<String, Object> fn) {
     Object name = fn.get("function");
     System.out.println("  - " + (name != null ? name.toString() : "(unnamed)"));
-    Object purpose = fn.get("purpose");
-    if (purpose != null) {
-      System.out.println("      description: " + purpose);
+    Object description = fn.get("description");
+    if (description != null) {
+      System.out.println("      description: " + description);
     }
-    Object args = fn.get("argument");
-    if (args != null) {
-      System.out.println("      parameters: " + args);
+    Object params = fn.get("parameters");
+    if (params != null) {
+      System.out.println("      parameters: " + params);
     }
   }
 

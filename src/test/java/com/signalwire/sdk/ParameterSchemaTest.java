@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
  *       difference.
  *   <li><b>Real defineTool → render/invoke.</b> Builder-built params are passed to a real {@link
  *       AgentBase#defineTool}, the agent renders real SWML, and the test digs the parameters back
- *       out of the generated {@code ai.SWAIG.functions[].argument} and asserts they survived the
+ *       out of the generated {@code ai.SWAIG.functions[].parameters} and asserts they survived the
  *       round-trip; the handler is then actually invoked.
  * </ol>
  */
@@ -291,8 +291,8 @@ class ParameterSchemaTest {
               return new FunctionResult("Booked " + args.get("service"));
             }));
 
-    // Render REAL SWML and dig out the function's "argument" (where
-    // ToolDefinition.toSwaigFunction puts the parameters Map).
+    // Render REAL SWML and dig out the function's "parameters" (where
+    // ToolDefinition.toSwaigFunction puts the parameters Map, mirroring Python).
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     Map<String, Object> sections = (Map<String, Object>) swml.get("sections");
     List<Map<String, Object>> main = (List<Map<String, Object>>) sections.get("main");
@@ -310,14 +310,14 @@ class ParameterSchemaTest {
             .findFirst()
             .orElseThrow();
 
-    Map<String, Object> argument = (Map<String, Object>) fn.get("argument");
-    assertNotNull(argument, "builder params must render under the function's 'argument'");
-    // The rendered argument is byte-identical to what the builder built.
-    assertEquals(GSON.toJson(params), GSON.toJson(argument));
+    Map<String, Object> parameters = (Map<String, Object>) fn.get("parameters");
+    assertNotNull(parameters, "builder params must render under the function's 'parameters'");
+    // A complete {type,properties} schema passes through byte-identical (no double-wrap).
+    assertEquals(GSON.toJson(params), GSON.toJson(parameters));
 
     // Content-shaped checks on the rendered schema.
-    assertEquals("object", argument.get("type"));
-    Map<String, Object> renderedProps = (Map<String, Object>) argument.get("properties");
+    assertEquals("object", parameters.get("type"));
+    Map<String, Object> renderedProps = (Map<String, Object>) parameters.get("properties");
     assertTrue(renderedProps.containsKey("service"));
     assertEquals(
         "The service to book",
@@ -326,7 +326,7 @@ class ParameterSchemaTest {
     assertEquals(
         List.of("mp3", "wav", "mp4"), ((Map<String, Object>) renderedProps.get("fmt")).get("enum"));
     assertEquals(1, ((Map<String, Object>) renderedProps.get("seats")).get("default"));
-    assertEquals(List.of("service"), argument.get("required"));
+    assertEquals(List.of("service"), parameters.get("required"));
 
     // And the function is really invocable with an arg the schema describes.
     FunctionResult result =

@@ -184,8 +184,11 @@ class ToolTest {
             (a, r) -> new FunctionResult("ok"));
     Map<String, Object> func = td.toSwaigFunction("http://localhost/swaig", null);
     assertEquals("my_tool", func.get("function"));
-    assertEquals("My tool description", func.get("purpose"));
-    assertNotNull(func.get("argument"));
+    assertEquals("My tool description", func.get("description"));
+    // A complete {type,properties} schema passes through flat under "parameters".
+    assertEquals(
+        Map.of("type", "object", "properties", Map.of("x", Map.of("type", "string"))),
+        func.get("parameters"));
     assertEquals("http://localhost/swaig", func.get("web_hook_url"));
     assertFalse(func.containsKey("meta_data_token"));
   }

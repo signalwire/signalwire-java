@@ -87,6 +87,27 @@ final class SwmlDump {
     return node;
   }
 
+  /**
+   * From an {@code ai.SWAIG.functions} list, pick the function whose {@code function} equals {@code
+   * fnName} and return its {@code field} (mirrors the oracle's {@code swaig_fn}/{@code field}
+   * observe filter and Go's {@code swaigFnField}).
+   */
+  @SuppressWarnings("unchecked")
+  private static Object swaigFnField(Object frag, String fnName, String field) {
+    if (!(frag instanceof List)) {
+      return null;
+    }
+    for (Object o : (List<Object>) frag) {
+      if (o instanceof Map) {
+        Map<String, Object> fn = (Map<String, Object>) o;
+        if (fnName.equals(fn.get("function"))) {
+          return fn.get(field);
+        }
+      }
+    }
+    return null;
+  }
+
   /** Reduce a map fragment to the listed keys (mirrors the oracle's `pick`). */
   @SuppressWarnings("unchecked")
   private static Object pick(Object frag, String... keys) {
@@ -193,6 +214,29 @@ final class SwmlDump {
               AgentBase a = newAgent();
               a.addPronunciation("SW", "SignalWire", true);
               return extract(render(a), "ai.pronounce");
+            }));
+
+    // swml_define_tool_complete_schema: define_tool given a COMPLETE
+    // {type,properties,required} schema must render
+    // ai.SWAIG.functions[lookup].parameters as that schema FLAT (pass-through),
+    // NOT double-wrapped.
+    c.add(
+        new Case(
+            "swml_define_tool_complete_schema",
+            () -> {
+              AgentBase a = newAgent();
+              a.defineTool(
+                  "lookup",
+                  "Look up a thing",
+                  map(
+                      "type",
+                      "object",
+                      "properties",
+                      map("q", map("type", "string")),
+                      "required",
+                      list("q")),
+                  (args, raw) -> new com.signalwire.sdk.swaig.FunctionResult("ok"));
+              return swaigFnField(extract(render(a), "ai.SWAIG.functions"), "lookup", "parameters");
             }));
 
     return c;
