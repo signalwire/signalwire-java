@@ -294,7 +294,7 @@ The SDK's contexts/steps/function restrictions are the primitives that make PGI 
 agent.run();
 ```
 
-That single call starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer` backed by virtual threads -- no external web framework), generates SWML, and routes its own SWAIG and post-prompt callbacks. The port defaults to 3000 and is configurable via the `PORT` env var or the builder's `.port(...)`.
+That single call starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer` with its default executor -- no external web framework), generates SWML, and routes its own SWAIG and post-prompt callbacks. The port defaults to 3000 and is configurable via the `PORT` env var or the builder's `.port(...)`.
 
 For standalone mode, the SDK provides:
 - Kubernetes health (`/health`) and readiness (`/ready`) probes
