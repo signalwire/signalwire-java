@@ -2,36 +2,50 @@
 
 RELAY events are server-pushed notifications about call state changes and operation results. Events arrive over the WebSocket as `signalwire.event` JSON-RPC messages and are automatically routed to the correct `Call` object.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+import com.signalwire.sdk.relay.Call;
+
+RelayClient client = RelayClient.builder().build();
+Call call = new Call("call-id", "node-id");
+java.util.Map<String, Object> rawPayload = java.util.Map.of();
+```
+
 ## Listening for Events
 
 ### On a Call
 
-```python
-@client.on_call
-async def handle(call):
-    # Register a listener
-    call.on("calling.call.play", lambda event: print(f"Play: {event.params}"))
+```java
+import java.util.List;
+import java.util.Map;
 
-    # Or wait for a specific event
-    event = await call.wait_for("calling.call.state",
-        predicate=lambda e: e.params.get("call_state") == "ended",
-        timeout=60.0,
-    )
+client.onCall(incoming -> {
+    // Register a listener (receives every event routed to this call)
+    incoming.on(event -> System.out.println("Event: " + event.getEventType()
+        + " " + event.getParams()));
+
+    // Or wait for the call to reach a specific state
+    var event = incoming.waitFor("ended", 60_000);  // targetState, timeoutMs
+});
 ```
 
 ### Via Actions
 
-Actions returned by `play()`, `record()`, etc. have a `wait()` method that resolves when the operation completes:
+Actions returned by `play()`, `record()`, etc. have a `waitForCompletion()` method that resolves when the operation completes:
 
-```python
-action = await call.play([{"type": "tts", "params": {"text": "Hello"}}])
-event = await action.wait(timeout=30.0)
-# event is a RelayEvent with the terminal state
+```java
+import java.util.List;
+import java.util.Map;
+
+var action = call.play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello"))));
+var event = action.waitForCompletion(30_000);
+// event is a RelayEvent with the terminal state
 ```
 
 ## Event Types
 
-All event type constants are importable from `signalwire_agents.relay`:
+All event-type constants are available on `com.signalwire.sdk.relay.Constants`:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -60,48 +74,52 @@ All event type constants are importable from `signalwire_agents.relay`:
 
 ## Typed Event Classes
 
-Raw events are always `RelayEvent` with a `params` dict. For convenience, typed event classes provide named properties:
+Raw events are always `RelayEvent` with a `getParams()` map. For convenience, typed event classes (nested under `RelayEvent`) provide named accessors:
 
-```python
-from signalwire_agents.relay import CallStateEvent, PlayEvent, RecordEvent, parse_event
+```java
+import com.signalwire.sdk.relay.Constants;
+import com.signalwire.sdk.relay.RelayEvent;
 
-# Automatic parsing
-event = parse_event(raw_payload)
+// Automatic parsing
+RelayEvent event = RelayEvent.parseEvent(rawPayload);
 
-# Or construct directly
-if event.event_type == "calling.call.state":
-    state_event = CallStateEvent.from_payload(raw_payload)
-    print(state_event.call_state)   # "answered"
-    print(state_event.end_reason)   # "hangup" (only on ended)
+// Or construct directly
+if (Constants.EVENT_CALL_STATE.equals(event.getEventType())) {
+    var stateEvent = RelayEvent.CallStateEvent.fromPayload(rawPayload);
+    System.out.println(stateEvent.getCallState());   // "answered"
+    System.out.println(stateEvent.getEndReason());   // "hangup" (only on ended)
+}
 ```
 
 ### Available Typed Events
 
-| Class | Key Properties |
+All are nested classes of `RelayEvent` (e.g. `RelayEvent.CallStateEvent`):
+
+| Class | Key Accessors |
 |-------|---------------|
-| `CallStateEvent` | `call_state`, `end_reason`, `direction`, `device` |
-| `CallReceiveEvent` | `call_state`, `direction`, `device`, `node_id`, `context`, `tag` |
-| `PlayEvent` | `control_id`, `state` |
-| `RecordEvent` | `control_id`, `state`, `url`, `duration`, `size` |
-| `CollectEvent` | `control_id`, `state`, `result`, `final` |
-| `ConnectEvent` | `connect_state`, `peer` |
-| `DetectEvent` | `control_id`, `detect` |
-| `FaxEvent` | `control_id`, `fax` |
-| `TapEvent` | `control_id`, `state`, `tap`, `device` |
-| `StreamEvent` | `control_id`, `state`, `url`, `name` |
-| `SendDigitsEvent` | `control_id`, `state` |
-| `DialEvent` | `tag`, `dial_state`, `call` |
-| `ReferEvent` | `state`, `sip_refer_to`, `sip_refer_response_code` |
-| `DenoiseEvent` | `denoised` |
-| `PayEvent` | `control_id`, `state` |
-| `QueueEvent` | `control_id`, `status`, `queue_id`, `queue_name`, `position`, `size` |
-| `EchoEvent` | `state` |
-| `TranscribeEvent` | `control_id`, `state`, `url`, `duration`, `size` |
-| `HoldEvent` | `state` |
-| `ConferenceEvent` | `conference_id`, `name`, `status` |
-| `CallingErrorEvent` | `code`, `message` |
-| `MessageReceiveEvent` | `message_id`, `context`, `direction`, `from_number`, `to_number`, `body`, `media`, `segments`, `message_state`, `tags` |
-| `MessageStateEvent` | `message_id`, `context`, `direction`, `from_number`, `to_number`, `body`, `media`, `segments`, `message_state`, `reason`, `tags` |
+| `CallStateEvent` | `getCallId()`, `getCallState()`, `getEndReason()`, `getDirection()`, `getDevice()` |
+| `CallReceiveEvent` | `getCallId()`, `getCallState()`, `getContext()`, `getDevice()`, `getNodeId()` |
+| `CallPlayEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `CallRecordEvent` | `getCallId()`, `getControlId()`, `getState()`, `getUrl()`, `getDuration()`, `getSize()` |
+| `CallCollectEvent` | `getCallId()`, `getControlId()`, `getState()`, `getResult()`, `getResultType()`, `getFinal()` |
+| `CallConnectEvent` | `getCallId()`, `getConnectState()` |
+| `CallDetectEvent` | `getCallId()`, `getControlId()`, `getDetect()`, `getDetectEvent()` |
+| `CallFaxEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `CallTapEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `CallStreamEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `CallSendDigitsEvent` | `getCallId()`, `getState()` |
+| `CallDialEvent` | `getTag()`, `getNodeId()`, `getDialState()`, `getDialStateEnum()`, `getCallInfo()`, `getCallId()` |
+| `CallReferEvent` | `getCallId()`, `getReferState()` |
+| `CallDenoiseEvent` | `getCallId()`, `getEventType()`, `getParams()` |
+| `CallPayEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `QueueEvent` | `getCallId()`, `getControlId()`, `getStatus()`, `getQueueId()`, `getQueueName()`, `getPosition()`, `getSize()` |
+| `EchoEvent` | `getCallId()`, `getState()` |
+| `CallTranscribeEvent` | `getCallId()`, `getControlId()`, `getState()` |
+| `HoldEvent` | `getCallId()`, `getState()` |
+| `ConferenceEvent` | `getConferenceId()`, `getCallId()` |
+| `CallingErrorEvent` | `getCallId()`, `getCode()`, `getMessage()` |
+| `MessagingReceiveEvent` | `getMessageId()`, `getContext()`, `getDirection()`, `getFromNumber()`, `getToNumber()`, `getBody()`, `getMedia()`, `getSegments()`, `getMessageState()`, `getTags()` |
+| `MessagingStateEvent` | `getMessageId()`, `getContext()`, `getDirection()`, `getFromNumber()`, `getToNumber()`, `getBody()`, `getMedia()`, `getSegments()`, `getMessageState()`, `getReason()`, `getTags()` |
 
 ## Call States
 

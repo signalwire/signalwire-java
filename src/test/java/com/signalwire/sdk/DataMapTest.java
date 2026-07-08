@@ -163,6 +163,60 @@ class DataMapTest {
   }
 
   @Test
+  void testDataMapWebhookExpressions() {
+    // The bulk form attaches an expressions list to the most recent webhook.
+    // Build each entry with the same shape a single expression(...) call produces,
+    // then assert the bulk-added list is wire-identical.
+    var startOutput = new FunctionResult("Starting playback");
+    var stopOutput = new FunctionResult("Stopping playback");
+
+    List<Map<String, Object>> exprList = new ArrayList<>();
+    Map<String, Object> e1 = new LinkedHashMap<>();
+    e1.put("string", "${args.command}");
+    e1.put("pattern", "start.*");
+    e1.put("output", startOutput.toMap());
+    exprList.add(e1);
+    Map<String, Object> e2 = new LinkedHashMap<>();
+    e2.put("string", "${args.command}");
+    e2.put("pattern", "stop.*");
+    e2.put("output", stopOutput.toMap());
+    exprList.add(e2);
+
+    var dm =
+        new DataMap("file_control")
+            .purpose("Control file playback")
+            .parameter("command", "string", "Playback command")
+            .webhook("GET", "https://api.example.com/control")
+            .webhookExpressions(exprList);
+
+    var func = dm.toSwaigFunction();
+
+    @SuppressWarnings("unchecked")
+    var dataMap = (Map<String, Object>) func.get("data_map");
+    @SuppressWarnings("unchecked")
+    var webhooks = (List<Map<String, Object>>) dataMap.get("webhooks");
+    assertEquals(1, webhooks.size());
+    assertTrue(webhooks.get(0).containsKey("expressions"));
+
+    @SuppressWarnings("unchecked")
+    var webhookExprs = (List<Map<String, Object>>) webhooks.get(0).get("expressions");
+    assertEquals(2, webhookExprs.size());
+
+    // Wire-identical to building each expression map individually.
+    assertEquals(exprList, webhookExprs);
+    assertEquals("${args.command}", webhookExprs.get(0).get("string"));
+    assertEquals("start.*", webhookExprs.get(0).get("pattern"));
+    assertEquals(startOutput.toMap(), webhookExprs.get(0).get("output"));
+    assertEquals("stop.*", webhookExprs.get(1).get("pattern"));
+  }
+
+  @Test
+  void testDataMapWebhookExpressionsRequiresWebhook() {
+    assertThrows(
+        IllegalStateException.class, () -> new DataMap("test").webhookExpressions(List.of()));
+  }
+
+  @Test
   void testDataMapForeach() {
     var dm =
         new DataMap("search")

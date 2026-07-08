@@ -120,7 +120,7 @@ class EventDispatchMockTest {
   void recordPauseJournalsRecordPause() throws Exception {
     Call call = answeredCall("ec-rec-pa");
     Action.RecordAction action = call.recordAudio(Map.of("format", "wav"), "ec-rec-pa-1");
-    action.pauseWithBehavior("continuous");
+    action.pause("continuous");
 
     List<RelayMockTest.JournalEntry> pauses = mock.journalRecv(Constants.METHOD_RECORD_PAUSE);
     assertFalse(pauses.isEmpty());

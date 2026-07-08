@@ -1,8 +1,19 @@
 # SignalWire AI Agents SDK Architecture
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.datamap.DataMap;
+import com.signalwire.sdk.logging.Logger;
+
+AgentBase agent = AgentBase.builder().name("arch-agent").route("/agent").build();
+Logger logger = Logger.getLogger("arch");
+```
+
 ## Overview
 
-The SignalWire AI Agents SDK provides a Python framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
+The SignalWire AI Agents SDK provides a Java framework for building, deploying, and managing AI agents as microservices. These agents are self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform. The SDK simplifies the creation of custom AI agents by handling common functionality like HTTP routing, prompt management, and tool execution.
 
 ## Core Components
 
@@ -34,7 +45,7 @@ The SDK is built around a clear class hierarchy:
    - Handler registry for function execution
 
 4. **HTTP Routing**
-   - FastAPI-based web service
+   - JDK built-in `HttpServer` (virtual threads), no external web framework
    - Endpoint routing for SWML, SWAIG, and other services
    - Custom routing callbacks for dynamic endpoint handling
    - SIP request routing for voice applications
@@ -82,13 +93,13 @@ DataMap tools follow a pipeline execution model on the SignalWire server:
 ### Core Components
 
 1. **Builder Pattern**: Fluent interface for constructing data_map configurations
-   ```python
-   tool = (DataMap('function_name')
-       .description('Function purpose')
-       .parameter('param', 'string', 'Description', required=True)
-       .webhook('GET', 'https://api.example.com/endpoint')
-       .output(SwaigFunctionResult('Response template'))
-   )
+   ```java
+   var tool = new DataMap("function_name")
+       .description("Function purpose")
+       .parameter("param", "string", "Description", true)
+       .webhook("GET", "https://api.example.com/endpoint")
+       .output(new FunctionResult("Response template"))
+       .toSwaigFunction();
    ```
 
 2. **Processing Pipeline**: Ordered execution with early termination
@@ -109,28 +120,37 @@ DataMap tools follow a pipeline execution model on the SignalWire server:
 The system supports different tool patterns:
 
 1. **API Integration Tools**: Direct REST API calls
-   ```python
-   weather_tool = (DataMap('get_weather')
-       .webhook('GET', 'https://api.weather.com/v1/current?q=${location}')
-       .output(SwaigFunctionResult('Weather: ${response.current.condition}'))
-   )
+   ```java
+   var weatherTool = new DataMap("get_weather")
+       .parameter("location", "string", "City name", true)
+       .webhook("GET", "https://api.weather.com/v1/current?q=${args.location}")
+       .output(new FunctionResult("Weather: ${response.current.condition}"))
+       .toSwaigFunction();
    ```
 
 2. **Expression-Based Tools**: Pattern matching without API calls
-   ```python
-   control_tool = (DataMap('file_control')
-       .expression(r'start.*', SwaigFunctionResult().add_action('start', True))
-       .expression(r'stop.*', SwaigFunctionResult().add_action('stop', True))
-   )
+   ```java
+   var controlTool = new DataMap("file_control")
+       .parameter("command", "string", "User command", true)
+       .expression("${args.command}", "start.*",
+           new FunctionResult().addAction("start", true))
+       .expression("${args.command}", "stop.*",
+           new FunctionResult().addAction("stop", true))
+       .toSwaigFunction();
    ```
 
 3. **Array Processing Tools**: Handle list responses
-   ```python
-   search_tool = (DataMap('search_docs')
-       .webhook('GET', 'https://api.docs.com/search')
-       .foreach('${response.results}')
-       .output(SwaigFunctionResult('Found: ${foreach.title}'))
-   )
+   ```java
+   var searchTool = new DataMap("search_docs")
+       .parameter("query", "string", "Search query", true)
+       .webhook("GET", "https://api.docs.com/search")
+       .foreach(Map.of(
+           "input_key", "results",
+           "output_key", "formatted_results",
+           "max", 5,
+           "append", "Found: ${this.title}\n"))
+       .output(new FunctionResult("${formatted_results}"))
+       .toSwaigFunction();
    ```
 
 ### Integration with Agent Architecture
@@ -141,8 +161,8 @@ DataMap tools integrate with the existing agent architecture:
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │ AgentBase       │    │ SWAIG           │    │ SignalWire      │
 │                 │    │ Function        │    │ Server          │
-│ .register_      │━━━▶│ Registry        │━━━▶│ Execution       │
-│  swaig_function │    │                 │    │ Environment     │
+│ .registerSwaig- │━━━▶│ Registry        │━━━▶│ Execution       │
+│  Function()     │    │                 │    │ Environment     │
 │                 │    │ data_map field  │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
@@ -219,8 +239,8 @@ The skills system follows a three-layer architecture:
 │ Agent Layer     │    │ Management      │    │ Skills Layer    │
 │                 │    │ Layer           │    │                 │
 │ AgentBase       │━━━▶│ SkillManager    │━━━▶│ SkillBase       │
-│ .add_skill()    │    │ .load_skill()   │    │ .setup()        │
-│                 │    │ .unload_skill() │    │ .register_tools()│
+│ .addSkill()     │    │ .loadSkill()    │    │ .setup()        │
+│                 │    │ .unloadSkill()  │    │ .registerTools()│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │                       │                       │
@@ -268,25 +288,33 @@ The skills system follows a three-layer architecture:
 
 Skills support configurable parameters for customization:
 
-```python
-# Default behavior
-agent.add_skill("web_search")
+```java
+// Default behavior
+agent.addSkill("web_search", Map.of());
 
-# Custom configuration
-agent.add_skill("web_search", {
-    "num_results": 3,
-    "delay": 0.5
-})
+// Custom configuration
+agent.addSkill("web_search", Map.of(
+    "num_results", 3,
+    "delay", 0.5
+));
 ```
 
-Parameters are passed to the skill constructor and accessible via `self.params`:
+Parameters are passed to the skill's `setup(params)` method:
 
-```python
-class WebSearchSkill(SkillBase):
-    def setup(self) -> bool:
-        self.num_results = self.params.get('num_results', 1)
-        self.delay = self.params.get('delay', 0)
-        # Configure behavior based on parameters
+<!-- snippet: no-compile illustrative excerpt implementing only setup() (getName/getDescription/registerTools omitted for brevity) -->
+```java
+public class WebSearchSkill implements SkillBase {
+    private int numResults;
+    private double delay;
+
+    @Override
+    public boolean setup(Map<String, Object> params) {
+        this.numResults = (int) params.getOrDefault("num_results", 1);
+        this.delay = ((Number) params.getOrDefault("delay", 0)).doubleValue();
+        // Configure behavior based on parameters
+        return true;
+    }
+}
 ```
 
 ### Error Handling
@@ -341,90 +369,105 @@ The SDK implements a multi-layer security model:
 The SDK is designed to be highly extensible:
 
 1. **Custom Agents**: Extend AgentBase to create specialized agents
-   ```python
-   class CustomAgent(AgentBase):
-       def __init__(self):
-           super().__init__(name="custom", route="/custom")
+   ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
+   public class CustomAgent extends AgentBase {
+       public CustomAgent() {
+           // super(name, route, host, port, authUser, authPassword)
+           super("custom", "/custom", "0.0.0.0", 3000, null, null);
+       }
+   }
    ```
 
-2. **Tool Registration**: Add new tools using the decorator pattern
-   ```python
-   @AgentBase.tool(
-       name="tool_name", 
-       description="Tool description",
-       parameters={...},
-       secure=True
-   )
-   def my_tool(self, args, raw_data):
-       # Tool implementation
+2. **Tool Registration**: Add new tools with `defineTool`
+   ```java
+   agent.defineTool("tool_name", "Tool description",
+       Map.of("type", "object", "properties", Map.of(
+           "param", Map.of("type", "string", "description", "..."))),
+       (args, rawData) -> {
+           // Tool implementation
+           return new FunctionResult("done");
+       });
    ```
 
 3. **Prompt Customization**: Add sections, hints, languages
-   ```python
-   agent.add_language(name="English", code="en-US", voice="elevenlabs.josh")
-   agent.add_hints(["SignalWire", "SWML", "SWAIG"])
+   ```java
+   agent.addLanguage("English", "en-US", "elevenlabs.josh");
+   agent.addHints(List.of("SignalWire", "SWML", "SWAIG"));
    ```
 
 4. **Session Management**: The SDK includes session management for secure function calls
 
-5. **Request Handling**: Override request handling methods
-   ```python
-   def on_swml_request(self, request_data):
-       # Custom request handling
+5. **Request Handling**: Register a summary callback
+   ```java
+   agent.onSummary((summary, rawData) -> {
+       // Custom summary handling
+   });
    ```
 
 6. **Custom Prefabs**: Create reusable agent patterns
-   ```python
-   class MyCustomPrefab(AgentBase):
-       def __init__(self, config_param1, config_param2, **kwargs):
-           super().__init__(**kwargs)
-           # Configure the agent based on parameters
-           self.prompt_add_section("Personality", body=f"Customized based on: {config_param1}")
+   ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
+   public class MyCustomPrefab extends AgentBase {
+       public MyCustomPrefab(String configParam1) {
+           super("custom-prefab", "/", "0.0.0.0", 3000, null, null);
+           // Configure the agent based on parameters
+           promptAddSection("Personality", "Customized based on: " + configParam1);
+       }
+   }
    ```
 
 7. **Dynamic Configuration**: Per-request agent configuration for flexible behavior
-   ```python
-   def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-       # Configure agent differently based on request data
-       # agent is the actual AgentBase instance
-       tier = query_params.get('tier', 'standard')
-       agent.set_params({"end_of_speech_timeout": 300 if tier == 'premium' else 500})
-   
-   self.set_dynamic_config_callback(self.configure_agent_dynamically)
+   ```java
+   agent.setDynamicConfigCallback((queryParams, bodyParams, headers, requestAgent) -> {
+       // Configure agent differently based on request data
+       String tier = queryParams.getOrDefault("tier", "standard");
+       requestAgent.setParams(Map.of(
+           "end_of_speech_timeout", "premium".equals(tier) ? 300 : 500));
+   });
    ```
 
 8. **Skills Integration**: Add capabilities with one-liner calls
-   ```python
-   # Add built-in skills
-   agent.add_skill("web_search")
-   agent.add_skill("datetime")
-   agent.add_skill("math")
-   
-   # Configure skills with parameters
-   agent.add_skill("web_search", {
-       "num_results": 3,
-       "delay": 0.5
-   })
+   ```java
+   // Add built-in skills
+   agent.addSkill("web_search", Map.of());
+   agent.addSkill("datetime", Map.of());
+   agent.addSkill("math", Map.of());
+
+   // Configure skills with parameters
+   agent.addSkill("web_search", Map.of(
+       "num_results", 3,
+       "delay", 0.5
+   ));
    ```
 
 9. **Custom Skills**: Create reusable skill modules
-   ```python
-   from signalwire_agents.core.skill_base import SkillBase
-   
-   class MyCustomSkill(SkillBase):
-       SKILL_NAME = "my_skill"
-       SKILL_DESCRIPTION = "A custom skill"
-       REQUIRED_PACKAGES = ["requests"]
-       REQUIRED_ENV_VARS = ["API_KEY"]
-       
-       def setup(self) -> bool:
-           # Initialize the skill
-           return True
-           
-       def register_tools(self) -> None:
-           # Register tools with the agent using the wrapper method
-           # This automatically includes swaig_fields
-           self.define_tool(...)
+   ```java
+   import com.signalwire.sdk.skills.SkillBase;
+   import com.signalwire.sdk.swaig.FunctionResult;
+   import com.signalwire.sdk.swaig.ToolDefinition;
+   import java.util.List;
+   import java.util.Map;
+
+   public class MyCustomSkill implements SkillBase {
+       @Override public String getName() { return "my_skill"; }
+       @Override public String getDescription() { return "A custom skill"; }
+       @Override public List<String> getRequiredEnvVars() { return List.of("API_KEY"); }
+
+       @Override
+       public boolean setup(Map<String, Object> params) {
+           // Initialize the skill
+           return true;
+       }
+
+       @Override
+       public List<ToolDefinition> registerTools() {
+           // Build tools with defineTool(...) so swaig_fields are merged automatically
+           return List.of(defineTool("...", "...", Map.of(), (args, raw) -> new FunctionResult("")));
+       }
+   }
    ```
 
 ### Dynamic Configuration
@@ -514,16 +557,16 @@ The dynamic configuration callback receives the actual agent instance, allowing 
 │ ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐              │
 │ │ Prompt Sections │   │ Language Config │   │ AI Parameters   │              │
 │ │ ─────────────── │   │ ─────────────── │   │ ─────────────── │              │
-│ │ • add_section() │   │ • add_language()│   │ • set_params()  │              │
-│ │ • set_prompt()  │   │ • voice config  │   │ • timeouts      │              │
-│ │ • post_prompt   │   │ • fillers       │   │ • volumes       │              │
+│ │ promptAddSection│   │ • addLanguage() │   │ • setParams()   │              │
+│ │ • setPrompt()   │   │ • voice config  │   │ • timeouts      │              │
+│ │ • postPrompt    │   │ • fillers       │   │ • volumes       │              │
 │ └─────────────────┘   └─────────────────┘   └─────────────────┘              │
 │                                                                               │
 │ ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐              │
 │ │ Global Data     │   │ Hints & Speech  │   │ Functions       │              │
 │ │ ─────────────── │   │ ─────────────── │   │ ─────────────── │              │
-│ │ • set_global()  │   │ • add_hints()   │   │ • native_funcs()│              │
-│ │ • update_data() │   │ • pronunciation │   │ • recognition   │              │
+│ │ • setGlobalData │   │ • addHints()    │   │ • nativeFuncs() │              │
+│ │ • updateData()  │   │ • pronunciation │   │ • recognition   │              │
 │ │ • session data  │   │ • recognition   │   │ • external URLs │              │
 │ └─────────────────┘   └─────────────────┘   └─────────────────┘              │
 │                                                                               │
@@ -617,22 +660,20 @@ Dynamic configuration integrates with other SDK components:
 
 The system includes robust error handling:
 
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    try:
-        # Primary configuration logic
-        # agent is the actual AgentBase instance
-        tier = query_params.get('tier', 'standard')
-        if tier == 'premium':
-            agent.set_params({"end_of_speech_timeout": 300})
-            agent.add_hints(["premium support", "priority handling"])
-    except ConfigurationError as e:
-        # Log error and apply safe defaults
-        self.log.error("dynamic_config_error", error=str(e))
-        # Agent retains its base configuration
-    except Exception as e:
-        # Catch-all - agent continues with existing configuration
-        self.log.error("dynamic_config_critical", error=str(e))
+```java
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, requestAgent) -> {
+    try {
+        // Primary configuration logic
+        String tier = queryParams.getOrDefault("tier", "standard");
+        if ("premium".equals(tier)) {
+            requestAgent.setParams(Map.of("end_of_speech_timeout", 300));
+            requestAgent.addHints(List.of("premium support", "priority handling"));
+        }
+    } catch (Exception e) {
+        // Log error and apply safe defaults — agent retains its base configuration
+        logger.error("dynamic_config_error: " + e.getMessage());
+    }
+});
 ```
 
 #### Migration Strategy
@@ -684,45 +725,42 @@ Users can create their own prefab agents by extending `AgentBase` or any existin
 Key steps for creating custom prefabs:
 
 1. **Extend the base class**:
-   ```python
-   class MyCustomPrefab(AgentBase):
-       def __init__(self, custom_param, **kwargs):
-           super().__init__(**kwargs)
-           self._custom_param = custom_param
+   ```java
+   import com.signalwire.sdk.agent.AgentBase;
+
+   public class MyCustomPrefab extends AgentBase {
+       private final String customParam;
+
+       public MyCustomPrefab(String customParam) {
+           super("custom-prefab", "/", "0.0.0.0", 3000, null, null);
+           this.customParam = customParam;
+       }
+   }
    ```
 
-2. **Configure defaults**:
-   ```python
-   # Set standard prompt sections
-   self.prompt_add_section("Personality", body="I am a specialized agent for...")
-   self.prompt_add_section("Goal", body="Help users with...")
-   
-   # Add default tools
-   self.register_default_tools()
+2. **Configure defaults** (in the constructor):
+   <!-- snippet: no-compile constructor-body excerpt (instance-method calls shown inside a prefab subclass, not standalone) -->
+   ```java
+   // Set standard prompt sections
+   promptAddSection("Personality", "I am a specialized agent for...");
+   promptAddSection("Goal", "Help users with...");
    ```
 
 3. **Add specialized tools**:
-   ```python
-   @AgentBase.tool(
-       name="specialized_function", 
-       description="Do something specialized",
-       parameters={...}
-   )
-   def specialized_function(self, args, raw_data):
-       # Implementation
-       return SwaigFunctionResult("Function result")
+   <!-- snippet: no-compile constructor-body excerpt (instance-method call shown inside a prefab subclass, not standalone) -->
+   ```java
+   defineTool("specialized_function", "Do something specialized",
+       Map.of("type", "object", "properties", Map.of()),
+       (args, rawData) -> new FunctionResult("Function result"));
    ```
 
 4. **Create a factory method** (optional):
-   ```python
-   @classmethod
-   def create(cls, config_dict, **kwargs):
-       """Create an instance from a configuration dictionary"""
-       return cls(
-           custom_param=config_dict.get("custom_param", "default"),
-           name=config_dict.get("name", "custom_prefab"),
-           **kwargs
-       )
+   <!-- snippet: no-compile method excerpt shown outside its enclosing prefab class for illustration -->
+   ```java
+   public static MyCustomPrefab create(Map<String, Object> config) {
+       // Create an instance from a configuration map
+       return new MyCustomPrefab((String) config.getOrDefault("custom_param", "default"));
+   }
    ```
 
 ### Prefab Customization Points
@@ -992,25 +1030,22 @@ Functions are defined with:
 - Security settings
 
 Example:
-```python
-@AgentBase.tool(
-    name="get_weather",
-    description="Get the current weather for a location",
-    parameters={
-        "location": {
-            "type": "string",
-            "description": "The city or location to get weather for"
-        }
-    }
-)
-def get_weather(self, args, raw_data):
-    location = args.get("location", "Unknown location")
-    return SwaigFunctionResult(f"It's sunny and 72°F in {location}.")
+```java
+agent.defineTool("get_weather",
+    "Get the current weather for a location",
+    Map.of("type", "object", "properties", Map.of(
+        "location", Map.of(
+            "type", "string",
+            "description", "The city or location to get weather for"))),
+    (args, rawData) -> {
+        String location = (String) args.getOrDefault("location", "Unknown location");
+        return new FunctionResult("It's sunny and 72°F in " + location + ".");
+    });
 ```
 
 ### HTTP Routing
 
-The SDK uses FastAPI for routing with these key endpoints:
+The SDK uses the JDK built-in `HttpServer` for routing with these key endpoints:
 
 - **/** (GET/POST): Main endpoint that returns the SWML document
 - **/swaig/** (POST): Endpoint for executing SWAIG functions
@@ -1034,7 +1069,7 @@ The SDK supports multiple deployment models:
 
 2. **Multi-Agent Mode**
    - Multiple agents on same server with different routes
-   - `app.include_router(agent.as_router(), prefix=agent.route)`
+   - `new AgentServer(port).register(agent, agent.getRoute())`
 
 3. **Reverse Proxy Integration**
    - Set `SWML_PROXY_URL_BASE` for proper webhook URL generation
@@ -1042,7 +1077,7 @@ The SDK supports multiple deployment models:
 
 4. **Direct HTTPS Mode**
    - Configure with SSL certificates
-   - `agent.serve(ssl_cert="cert.pem", ssl_key="key.pem")`
+   - `new AgentServer(port).enableTls("cert.pem", "key.pem").register(agent)`
 
 ## Best Practices
 
@@ -1089,7 +1124,7 @@ Schema definitions are loaded from the `schema.json` file, which provides the co
 
 ## Logging
 
-The SDK uses structlog for structured logging with JSON output format. Key events logged include:
+The SDK uses its own level-controlled `Logger` (`SIGNALWIRE_LOG_LEVEL`-driven) for structured logging. Key events logged include:
 - Service initialization
 - Request handling
 - Function execution
@@ -1119,8 +1154,8 @@ Key environment variables:
 
 1. Client requests the root endpoint
 2. Authentication is validated 
-3. `on_swml_request()` is called to allow customization
-4. Current SWML document is rendered and returned
+3. The dynamic-config callback (`setDynamicConfigCallback`) runs, if registered, to allow customization
+4. Current SWML document is rendered (`renderSwml`) and returned
 
 ### SWAIG Function Call (POST /swaig/)
 
@@ -1135,7 +1170,7 @@ Key environment variables:
 1. Client sends conversation summary data
 2. Authentication is validated
 3. Summary is extracted from request
-4. `on_summary()` is called to process the data
+4. The `onSummary(...)` callback is invoked to process the data
 
 ## Session Management
 

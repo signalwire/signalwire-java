@@ -28,7 +28,15 @@
 
 ## Introduction
 
-The `AgentBase` class provides the foundation for creating AI-powered agents using the SignalWire AI Agent SDK. It extends the `SWMLService` class, inheriting all its SWML (SignalWire Markup Language) document creation and serving capabilities, while adding AI-specific functionality. SWML is the JSON document format that tells the SignalWire platform how an agent should behave during a call.
+The `AgentBase` class provides the foundation for creating AI-powered agents using the SignalWire AI Agent SDK. It extends the `Service` class (the SWML service base), inheriting all its SWML (SignalWire Markup Language) document creation and serving capabilities, while adding AI-specific functionality. SWML is the JSON document format that tells the SignalWire platform how an agent should behave during a call.
+
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+
+AgentBase agent = AgentBase.builder().name("guide-agent").route("/agent").build();
+```
 
 Key features of `AgentBase` include:
 
@@ -66,116 +74,75 @@ Here's how these components relate to each other:
 
 ## Creating an Agent
 
-To create an agent, extend the `AgentBase` class and define your agent's behavior:
+To create an agent, build an `AgentBase` with the fluent builder and configure its behavior via the instance methods:
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(
-            name="my-agent",
-            route="/agent",
-            host="0.0.0.0",
-            port=3000,
-            use_pom=True  # Enable Prompt Object Model
-        )
-        
-        # Define agent personality and behavior
-        self.prompt_add_section("Personality", body="You are a helpful and friendly assistant.")
-        self.prompt_add_section("Goal", body="Help users with their questions and tasks.")
-        self.prompt_add_section("Instructions", bullets=[
-            "Answer questions clearly and concisely",
-            "If you don't know, say so",
-            "Use the provided tools when appropriate"
-        ])
-        
-        # Add a post-prompt for summary
-        self.set_post_prompt("Please summarize the key points of this conversation.")
+import java.util.List;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .host("0.0.0.0")
+        .port(3000)
+        .build();
+
+// Define agent personality and behavior
+agent.promptAddSection("Personality", "You are a helpful and friendly assistant.");
+agent.promptAddSection("Goal", "Help users with their questions and tasks.");
+agent.promptAddSection("Instructions", "", List.of(
+        "Answer questions clearly and concisely",
+        "If you don't know, say so",
+        "Use the provided tools when appropriate"
+));
+
+// Add a post-prompt for summary
+agent.setPostPrompt("Please summarize the key points of this conversation.");
 ```
+
+The Prompt Object Model (POM) is always enabled for structured prompts; `promptAddSection` builds it up section by section. For a reusable agent type, put this configuration in a factory method or a subclass of `AgentBase`.
 
 ## Running Your Agent
 
-The SignalWire AI Agent SDK provides a `run()` method that automatically detects the execution environment and configures the agent appropriately. This method works across all deployment modes:
+The SignalWire AI Agent SDK provides a `run()` method that starts the agent's HTTP server, binding to the host/port configured on the builder.
 
 ### Deployment with `run()`
 
-```python
-def main():
-    agent = MyAgent()
-    
-    print("Starting agent server...")
-    print("Note: Works in any deployment mode (server/CGI/Lambda)")
-    agent.run()  # Auto-detects environment
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-if __name__ == "__main__":
-    main()
+public class MyAgentMain {
+    public static void main(String[] args) throws Exception {
+        var agent = AgentBase.builder()
+                .name("my-agent")
+                .route("/agent")
+                .port(3000)
+                .build();
+
+        System.out.println("Starting agent server...");
+        agent.run();  // Starts the built-in HTTP server (blocks)
+    }
+}
 ```
 
-The `run()` method automatically detects and configures for:
-
-- **HTTP Server**: When run directly, starts an HTTP server
-- **CGI**: When CGI environment variables are detected, operates in CGI mode  
-- **AWS Lambda**: When Lambda environment is detected, configures for serverless execution
-
-### Deployment Modes
-
-#### HTTP Server Mode
-When run directly (e.g., `python my_agent.py`), the agent starts an HTTP server:
-
-```python
-# Automatically starts HTTP server when run directly
-agent.run()
-```
-
-#### CGI Mode  
-When CGI environment variables are present, operates in CGI mode with clean HTTP output:
-
-```python
-# Same code - automatically detects CGI environment
-agent.run()
-```
-
-#### AWS Lambda Mode
-When AWS Lambda environment is detected, configures for serverless execution:
-
-```python
-# Same code - automatically detects Lambda environment  
-agent.run()
-```
-
-### Environment Detection
-
-The SDK automatically detects the execution environment:
-
-| Environment | Detection Method | Behavior |
-|-------------|------------------|----------|
-| **HTTP Server** | Default when no serverless environment detected | Starts FastAPI server on specified host/port |
-| **CGI** | `GATEWAY_INTERFACE` environment variable present | Processes single CGI request and exits |
-| **AWS Lambda** | `AWS_LAMBDA_FUNCTION_NAME` environment variable | Handles Lambda event/context |
-| **Google Cloud** | `FUNCTION_NAME` or `K_SERVICE` variables | Processes Cloud Function request |
-| **Azure Functions** | `AZURE_FUNCTIONS_*` variables | Handles Azure Function request |
+The `run()` method starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer`, backed by virtual threads — no external web framework). The `PORT` environment variable overrides the builder's port when set.
 
 ### Logging Configuration
 
-The SDK includes a central logging system that automatically configures based on the deployment environment:
+The SDK includes a central logging system controlled by environment variables:
 
-```python
-# Logging is automatically configured based on environment
-# No manual setup required in most cases
-
-# Optional: Override logging mode via environment variable
-# SIGNALWIRE_LOG_MODE=off      # Disable all logging
-# SIGNALWIRE_LOG_MODE=stderr   # Log to stderr
-# SIGNALWIRE_LOG_MODE=default  # Use default logging
-# SIGNALWIRE_LOG_MODE=auto     # Auto-detect (default)
+```java
+// Logging is configured from environment variables; no manual setup needed.
+//
+// SIGNALWIRE_LOG_LEVEL=debug|info|warn|error|off  // Log verbosity
+// SIGNALWIRE_LOG_MODE=off                          // Set to "off" to suppress all output
 ```
 
-The logging system automatically:
-- **CGI Mode**: Sets logging to 'off' to avoid interfering with HTTP headers
-- **Lambda Mode**: Configures appropriate logging for serverless environment
+The logging system:
 - **Server Mode**: Uses structured logging with timestamps and levels
-- **Debug Mode**: Enhanced logging when debug flags are set
+- **Silent Mode**: `SIGNALWIRE_LOG_MODE=off` suppresses all output
+- **Debug Mode**: Enhanced logging when `SIGNALWIRE_LOG_LEVEL=debug`
 
 ## Prompt Building
 
@@ -185,48 +152,50 @@ There are several ways to build prompts for your agent:
 
 The Prompt Object Model (POM) provides a structured way to build prompts:
 
-```python
-# Add a section with just body text
-self.prompt_add_section("Personality", body="You are a friendly assistant.")
+```java
+import java.util.List;
 
-# Add a section with bullet points
-self.prompt_add_section("Instructions", bullets=[
-    "Answer questions clearly",
-    "Be helpful and polite",
-    "Use functions when appropriate"
-])
+// Add a section with just body text
+agent.promptAddSection("Personality", "You are a friendly assistant.");
 
-# Add a section with both body and bullets
-self.prompt_add_section("Context", 
-                       body="The user is calling about technical support.",
-                       bullets=["They may need help with their account", 
-                               "Check for existing tickets"])
+// Add a section with bullet points (empty body, then the bullets list)
+agent.promptAddSection("Instructions", "", List.of(
+        "Answer questions clearly",
+        "Be helpful and polite",
+        "Use functions when appropriate"
+));
+
+// Add a section with both body and bullets
+agent.promptAddSection("Context",
+        "The user is calling about technical support.",
+        List.of("They may need help with their account",
+                "Check for existing tickets"));
 ```
 
-All three sections (Personality, Goal, Instructions) are built on top of the same `prompt_add_section(title, body=..., bullets=...)` primitive — there are no `setPersonality` / `setGoal` / `setInstructions` wrappers in this SDK. Pass the section title ("Personality", "Goal", "Instructions") explicitly, as shown above.
+All three sections (Personality, Goal, Instructions) are built on top of the same `promptAddSection(title, body)` / `promptAddSection(title, body, bullets)` overloads — there are no `setPersonality` / `setGoal` / `setInstructions` wrappers in this SDK. Pass the section title ("Personality", "Goal", "Instructions") explicitly, as shown above.
 
 ### 2. Using Raw Text Prompts
 
 For simpler agents, you can set the prompt directly as text:
 
-```python
-self.set_prompt_text("""
-You are a helpful assistant. Your goal is to provide clear and concise information
-to the user. Answer their questions to the best of your ability.
-""")
+```java
+agent.setPromptText("""
+        You are a helpful assistant. Your goal is to provide clear and concise information
+        to the user. Answer their questions to the best of your ability.
+        """);
 ```
 
 ### 3. Setting a Post-Prompt
 
 The post-prompt is sent to the AI after the conversation for summary or analysis:
 
-```python
-self.set_post_prompt("""
-Analyze the conversation and extract:
-1. Main topics discussed
-2. Action items or follow-ups needed
-3. Whether the user's questions were answered satisfactorily
-""")
+```java
+agent.setPostPrompt("""
+        Analyze the conversation and extract:
+        1. Main topics discussed
+        2. Action items or follow-ups needed
+        3. Whether the user's questions were answered satisfactorily
+        """);
 ```
 
 ## SWAIG Functions
@@ -270,31 +239,39 @@ A vague description is the #1 cause of "the model has the right tool but doesn't
 
 These are the traditional SWAIG functions that are handled locally by your agent:
 
-```python
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
 
-@AgentBase.tool(
-    name="get_weather",
-    description="Get the current weather for a location",
-    parameters={
-        "location": {
-            "type": "string",
-            "description": "The city or location to get weather for"
-        }
-    },
-    secure=True  # Optional, defaults to True
-)
-def get_weather(self, args, raw_data):
-    # Extract the location parameter
-    location = args.get("location", "Unknown location")
-    
-    # Here you would typically call a weather API
-    # For this example, we'll return mock data
-    weather_data = f"It's sunny and 72°F in {location}."
-    
-    # Return a SwaigFunctionResult
-    return SwaigFunctionResult(weather_data)
+import java.util.List;
+import java.util.Map;
+
+agent.defineTool(
+        "get_weather",
+        "Get the current weather for a location",
+        Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "location", Map.of(
+                                "type", "string",
+                                "description", "The city or location to get weather for"
+                        )
+                ),
+                "required", List.of("location")
+        ),
+        (args, rawData) -> {
+            // Extract the location parameter
+            String location = (String) args.getOrDefault("location", "Unknown location");
+
+            // Here you would typically call a weather API.
+            // For this example, we return mock data.
+            String weatherData = "It's sunny and 72F in " + location + ".";
+
+            // Return a FunctionResult
+            return new FunctionResult(weatherData);
+        });
 ```
+
+The handler is a `(args, rawData) -> FunctionResult` lambda (the `ToolHandler` functional interface). Tools are secure by default; to make one public, register it as a `ToolDefinition` and call `.setSecure(false)` — see [SWAIG Function Security](#swaig-function-security).
 
 ### 2. External Webhook Functions
 
@@ -303,29 +280,39 @@ External webhook functions allow you to delegate function execution to external 
 - Distribute function processing across multiple servers
 - Integrate with third-party systems that provide their own endpoints
 
-To create an external webhook function, add a `webhook_url` parameter to the decorator:
+To create an external webhook function, build a `ToolDefinition` and attach the external URL via `setExtraFields` with the `web_hook_url` key, then register it:
 
-```python
-@AgentBase.tool(
-    name="get_weather_external",
-    description="Get weather from external service",
-    parameters={
-        "location": {
-            "type": "string",
-            "description": "The city or location to get weather for"
-        }
-    },
-    webhook_url="https://your-service.com/weather-endpoint"
-)
-def get_weather_external(self, args, raw_data):
-    # This function will never be called locally when webhook_url is provided
-    # The external service at webhook_url will receive the function call instead
-    return SwaigFunctionResult("This should not be reached for external webhooks")
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+import java.util.List;
+import java.util.Map;
+
+var externalWeather = new ToolDefinition(
+        "get_weather_external",
+        "Get weather from external service",
+        Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "location", Map.of(
+                                "type", "string",
+                                "description", "The city or location to get weather for"
+                        )
+                ),
+                "required", List.of("location")
+        ),
+        // This handler is never invoked locally when web_hook_url is set;
+        // the external service receives the function call instead.
+        (args, rawData) -> new FunctionResult("This should not be reached for external webhooks"))
+        .setExtraFields(Map.of("web_hook_url", "https://your-service.com/weather-endpoint"));
+
+agent.defineTool(externalWeather);
 ```
 
 #### How External Webhooks Work
 
-When you specify a `webhook_url`:
+When you specify a `web_hook_url`:
 
 1. **Function Registration**: The function is registered with your agent as usual
 2. **SWML Generation**: The generated SWML includes the external webhook URL instead of your local endpoint
@@ -351,45 +338,35 @@ When you specify a `webhook_url`:
 
 You can mix both types of functions in the same agent:
 
-```python
-class HybridAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="hybrid-agent", route="/hybrid")
-    
-    # Local function - handled by this agent
-    @AgentBase.tool(
-        name="get_help",
-        description="Get help information",
-        parameters={}
-    )
-    def get_help(self, args, raw_data):
-        return SwaigFunctionResult("I can help you with weather and news!")
-    
-    # External function - handled by external service
-    @AgentBase.tool(
-        name="get_weather",
-        description="Get current weather",
-        parameters={
-            "location": {"type": "string", "description": "City name"}
-        },
-        webhook_url="https://weather-service.com/api/weather"
-    )
-    def get_weather_external(self, args, raw_data):
-        # This won't be called for external webhooks
-        pass
-    
-    # Another external function - different service
-    @AgentBase.tool(
-        name="get_news",
-        description="Get latest news",
-        parameters={
-            "topic": {"type": "string", "description": "News topic"}
-        },
-        webhook_url="https://news-service.com/api/news"
-    )
-    def get_news_external(self, args, raw_data):
-        # This won't be called for external webhooks
-        pass
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("hybrid-agent")
+        .route("/hybrid")
+        .build();
+
+// Local function - handled by this agent
+agent.defineTool("get_help", "Get help information",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> new FunctionResult("I can help you with weather and news!"));
+
+// External function - handled by external service
+agent.defineTool(new ToolDefinition("get_weather", "Get current weather",
+        Map.of("type", "object", "properties", Map.of(
+                "location", Map.of("type", "string", "description", "City name"))),
+        (args, rawData) -> new FunctionResult(""))  // not called for external webhooks
+        .setExtraFields(Map.of("web_hook_url", "https://weather-service.com/api/weather")));
+
+// Another external function - different service
+agent.defineTool(new ToolDefinition("get_news", "Get latest news",
+        Map.of("type", "object", "properties", Map.of(
+                "topic", Map.of("type", "string", "description", "News topic"))),
+        (args, rawData) -> new FunctionResult(""))  // not called for external webhooks
+        .setExtraFields(Map.of("web_hook_url", "https://news-service.com/api/news")));
 ```
 
 #### Testing External Webhooks
@@ -397,144 +374,137 @@ class HybridAgent(AgentBase):
 You can test external webhook functions using the CLI tool:
 
 ```bash
-# Test local function
-swaig-test examples/my_agent.py --exec get_help
+# List all functions with their types (against a running agent)
+bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
 
-# Test external webhook function
-swaig-test examples/my_agent.py --verbose --exec get_weather --location "New York"
+# Test a local function
+bin/swaig-test --url http://user:pass@localhost:3000 --exec get_help
 
-# List all functions with their types
-swaig-test examples/my_agent.py --list-tools
+# Test an external webhook function
+bin/swaig-test --url http://user:pass@localhost:3000 --exec get_weather --param location="New York"
 ```
 
-The CLI tool will automatically detect external webhook functions and make HTTP requests to the external services, simulating what SignalWire does in production.
+The CLI tool detects external webhook functions and makes HTTP requests to the external services, simulating what SignalWire does in production.
 
-### 3. Type-Hinted Functions
+### 3. Explicit JSON-Schema Parameters
 
-Instead of writing JSON Schema by hand, you can use Python type hints and the SDK will infer the schema automatically:
+Java is statically typed, so there is no runtime type-hint inference like Python's. Define the parameter schema explicitly as a `Map` (JSON Schema). The handler is a `(args, rawData)` lambda that reads arguments from the `args` map:
 
-```python
-from typing import Optional, Literal
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
 
-@AgentBase.tool(name="get_weather")
-def get_weather(self, city: str, units: Literal["celsius", "fahrenheit"] = "celsius"):
-    """Get the weather forecast.
+import java.util.List;
+import java.util.Map;
 
-    Args:
-        city: Name of the city to look up
-        units: Temperature units to use
-    """
-    return SwaigFunctionResult(f"It's sunny in {city} (showing {units})")
+agent.defineTool("get_weather", "Get the weather forecast.",
+        Map.of("type", "object",
+                "properties", Map.of(
+                        "city", Map.of("type", "string",
+                                "description", "Name of the city to look up"),
+                        "units", Map.of("type", "string",
+                                "description", "Temperature units to use",
+                                "enum", List.of("celsius", "fahrenheit"))
+                ),
+                "required", List.of("city")),
+        (args, rawData) -> {
+            String city = (String) args.get("city");
+            String units = (String) args.getOrDefault("units", "celsius");
+            return new FunctionResult("It's sunny in " + city + " (showing " + units + ")");
+        });
 ```
 
-The SDK automatically:
-- Infers parameter types from type hints (`str` → `"string"`, `int` → `"integer"`, etc.)
-- Marks parameters without defaults as required
-- Extracts the tool description from the docstring's first line
-- Extracts per-parameter descriptions from the `Args:` block
-- Handles `Optional[X]` as a non-required parameter
-- Converts `Literal["a", "b"]` to `enum` values
-
-**Supported types:**
-
-| Python Type | JSON Schema Type |
-|---|---|
-| `str` | `"string"` |
-| `int` | `"integer"` |
-| `float` | `"number"` |
-| `bool` | `"boolean"` |
-| `list` / `List[X]` | `"array"` (with `items` if parameterized) |
-| `dict` | `"object"` |
-| `Literal["a", "b"]` | `"string"` with `enum` |
-| `Optional[X]` | type of `X`, not required |
-
-**Rules:**
-- If `parameters=` is provided explicitly, it always takes precedence over inference
-- The `raw_data` parameter is special: if included in the signature, it receives the raw request data but is excluded from the schema
-- Old-style `(self, args, raw_data)` handlers continue to work exactly as before
-
-**Accessing raw_data in typed handlers:**
-
-```python
-@AgentBase.tool(name="check_call")
-def check_call(self, query: str, raw_data: dict = None):
-    """Check the current call."""
-    call_id = raw_data.get("call_id", "unknown") if raw_data else "unknown"
-    return SwaigFunctionResult(f"Call {call_id}: query={query}")
-```
+Notes on the Java model:
+- Map a JSON-Schema `"type"` to the Java value you cast the argument to: `"string"` → `String`, `"integer"` → `Number` (call `.intValue()`), `"number"` → `Number` (call `.doubleValue()`), `"boolean"` → `Boolean`, `"array"` → `List`, `"object"` → `Map`.
+- Mark required parameters with a `"required"` list on the schema.
+- Use `"enum"` for a fixed set of allowed string values.
+- The handler always receives both `args` (the parsed arguments map) and `rawData` (the full raw request map — call id, call info, vars, global data). Read whatever you need from either.
 
 ### Function Parameters
 
-The parameters for a SWAIG function are defined using JSON Schema:
+The parameters for a SWAIG function are defined using JSON Schema, expressed as nested `Map`s:
 
-```python
-parameters={
-    "parameter_name": {
-        "type": "string", # Can be string, number, integer, boolean, array, object
-        "description": "Description of the parameter",
-        # Optional attributes:
-        "enum": ["option1", "option2"],  # For enumerated values
-        "minimum": 0,  # For numeric types
-        "maximum": 100,  # For numeric types
-        "pattern": "^[A-Z]+$"  # For string validation
-    }
-}
+<!-- snippet: no-compile illustrative JSON-schema shape (a bare Map literal, not a runnable statement) -->
+```java
+Map.of("type", "object",
+       "properties", Map.of(
+               "parameter_name", Map.of(
+                       "type", "string",  // string, number, integer, boolean, array, object
+                       "description", "Description of the parameter",
+                       // Optional attributes:
+                       "enum", List.of("option1", "option2"),  // For enumerated values
+                       "minimum", 0,                            // For numeric types
+                       "maximum", 100,                          // For numeric types
+                       "pattern", "^[A-Z]+$"                    // For string validation
+               )
+       ),
+       "required", List.of("parameter_name"))
 ```
 
 ### Function Results
 
-To return results from a SWAIG function, use the `SwaigFunctionResult` class:
+To return results from a SWAIG function, use the `FunctionResult` class:
 
-```python
-# Basic result with just text
-return SwaigFunctionResult("Here's the result")
+<!-- snippet: no-compile illustrative — tool-handler return-value forms (bare `return` statements, shown outside a method body) -->
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
 
-# Result with a single action
-return SwaigFunctionResult("Here's the result with an action")
-       .add_action("say", "I found the information you requested.")
+import java.util.List;
+import java.util.Map;
 
-# Result with multiple actions using add_actions
-return SwaigFunctionResult("Multiple actions example")
-       .add_actions([
-           {"playback_bg": {"file": "https://example.com/music.mp3"}},
-           {"set_global_data": {"key": "value"}}
-       ])
+// Basic result with just text
+return new FunctionResult("Here's the result");
 
-# Alternative way to add multiple actions sequentially
-return (
-    SwaigFunctionResult("Sequential actions example")
-    .add_action("say", "I found the information you requested.")
-    .add_action("playback_bg", {"file": "https://example.com/music.mp3"})
-)
+// Result with a single action
+return new FunctionResult("Here's the result with an action")
+        .addAction("say", "I found the information you requested.");
+
+// Result with multiple actions using addActions
+return new FunctionResult("Multiple actions example")
+        .addActions(List.of(
+                Map.of("playback_bg", Map.of("file", "https://example.com/music.mp3")),
+                Map.of("set_global_data", Map.of("key", "value"))
+        ));
+
+// Alternative way to add multiple actions sequentially
+return new FunctionResult("Sequential actions example")
+        .addAction("say", "I found the information you requested.")
+        .addAction("playback_bg", Map.of("file", "https://example.com/music.mp3"));
 ```
 
 In the examples above:
-- `add_action(name, data)` adds a single action with the given name and data
-- `add_actions(actions)` adds multiple actions at once from a list of action objects
+- `addAction(name, data)` adds a single action with the given name and data
+- `addActions(actions)` adds multiple actions at once from a list of action objects
+
+`FunctionResult` also offers typed helper methods for common actions — `say(text)`, `hangup()`, `hold(timeout)`, `connect(destination, isFinal, from)`, `updateGlobalData(data)`, `playBackgroundFile(filename)`, and more — each returning `this` so they chain fluently.
 
 ### Native Functions
 
 The agent can use SignalWire's built-in functions:
 
-```python
-# Enable native functions
-self.set_native_functions([
-    "check_time",
-    "wait_seconds"
-])
+```java
+import java.util.List;
+
+// Enable native functions
+agent.setNativeFunctions(List.of(
+        "check_time",
+        "wait_seconds"
+));
 ```
 
 ### Function Includes
 
 You can include functions from remote sources:
 
-```python
-# Include remote functions
-self.add_function_include(
-    url="https://api.example.com/functions",
-    functions=["get_weather", "get_news"],
-    meta_data={"session_id": "unique-session-123"}  # Use for session tracking, NOT credentials
-)
+```java
+import java.util.List;
+import java.util.Map;
+
+// Include remote functions. addFunctionInclude(url, functions) records an
+// include entry pointing at the remote URL; "functions" carries the remote
+// function definitions to expose.
+agent.addFunctionInclude(
+        "https://api.example.com/functions",
+        Map.of("functions", List.of("get_weather", "get_news")));
 ```
 
 ### SWAIG Function Security
@@ -543,17 +513,24 @@ The SDK implements an automated security mechanism for SWAIG functions to ensure
 
 #### Token-Based Security
 
-By default, all SWAIG functions are marked as `secure=True`, which enables token-based security:
+By default, all SWAIG functions are secure, which enables token-based security. To make security explicit, register the tool as a `ToolDefinition` and call `.setSecure(true)`:
 
-```python
-@agent.tool(
-    name="get_account_details",
-    description="Get customer account details",
-    parameters={"account_id": {"type": "string"}},
-    secure=True  # This is the default, can be omitted
-)
-def get_account_details(self, args, raw_data):
-    # Implementation
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+import java.util.Map;
+
+agent.defineTool(new ToolDefinition(
+        "get_account_details",
+        "Get customer account details",
+        Map.of("type", "object", "properties", Map.of(
+                "account_id", Map.of("type", "string"))),
+        (args, rawData) -> {
+            // Implementation
+            return new FunctionResult("...");
+        })
+        .setSecure(true));  // This is the default, can be omitted
 ```
 
 When a function is marked as secure:
@@ -582,33 +559,32 @@ The token system secures both SWAIG functions and post-prompt endpoints:
 
 You can disable token security for specific functions when appropriate:
 
-```python
-@agent.tool(
-    name="get_public_information",
-    description="Get public information that doesn't require security",
-    parameters={},
-    secure=False  # Disable token security for this function
-)
-def get_public_information(self, args, raw_data):
-    # Implementation
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
+
+import java.util.Map;
+
+agent.defineTool(new ToolDefinition(
+        "get_public_information",
+        "Get public information that doesn't require security",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> {
+            // Implementation
+            return new FunctionResult("...");
+        })
+        .setSecure(false));  // Disable token security for this function
 ```
 
 #### Token Expiration
 
-The default token expiration is 60 minutes (3600 seconds), but you can configure this when initializing your agent:
-
-```python
-agent = MyAgent(
-    name="my_agent",
-    token_expiry_secs=1800  # Set token expiration to 30 minutes
-)
-```
+The default token expiration is 60 minutes (3600 seconds). Token lifetime is owned by the agent's `SessionManager`, which defaults to a 3600-second expiry (`new SessionManager(1800)` would set a 30-minute expiry). The signed token embeds the expiry, call id, function name, and a nonce.
 
 The expiration timer resets each time a function is successfully called, so as long as there is activity at least once within the expiration period, the tokens will remain valid throughout the entire conversation.
 
 #### Custom Token Validation
 
-You can override the default token validation by implementing your own `validate_tool_token` method in your custom agent class.
+`AgentBase` exposes `validateToolToken(functionName, token, callId)`, which delegates to the `SessionManager`. Override it in a subclass of `AgentBase` to plug in your own validation logic.
 
 ## Skills System
 
@@ -616,23 +592,26 @@ The Skills System allows you to extend your agents with reusable capabilities vi
 
 ### Quick Start
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class SkillfulAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="skillful-agent", route="/skillful")
-        
-        # Add skills with one-liners
-        self.add_skill("web_search")    # Web search capability
-        self.add_skill("datetime")      # Current date/time info
-        self.add_skill("math")          # Mathematical calculations
-        
-        # Configure skills with parameters
-        self.add_skill("web_search", {
-            "num_results": 3,  # Get 3 search results instead of default 1
-            "delay": 0.5       # Add delay between requests
-        })
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("skillful-agent")
+        .route("/skillful")
+        .build();
+
+// Add skills with one-liners
+agent.addSkill("web_search", Map.of());  // Web search capability
+agent.addSkill("datetime", Map.of());    // Current date/time info
+agent.addSkill("math", Map.of());        // Mathematical calculations
+
+// Configure skills with parameters
+agent.addSkill("web_search", Map.of(
+        "num_results", 3,   // Get 3 search results instead of default 1
+        "delay", 0.5        // Add delay between requests
+));
 ```
 
 ### Available Built-in Skills
@@ -641,7 +620,7 @@ class SkillfulAgent(AgentBase):
 Provides web search capabilities using Google Custom Search API with web scraping.
 
 **Requirements:**
-- Packages: `beautifulsoup4`, `requests`
+- HTTP/HTML parsing is handled by the SDK's built-in HTTP client (no extra dependencies)
 
 **Parameters:**
 - `api_key` (required): Google Custom Search API key
@@ -655,92 +634,94 @@ Provides web search capabilities using Google Custom Search API with web scrapin
 The web_search skill supports multiple instances with different search engines and tool names, allowing you to search different data sources:
 
 **Example:**
-```python
-# Basic single instance
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id"
-})
-# Creates tool: web_search
+```java
+import java.util.Map;
 
-# Fast single result (previous default)
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id",
-    "num_results": 1,
-    "delay": 0
-})
+// Basic single instance
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "your-search-engine-id"
+));
+// Creates tool: web_search
 
-# Multiple results with delay
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id",
-    "num_results": 5,
-    "delay": 1.0
-})
+// Fast single result (previous default)
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "your-search-engine-id",
+        "num_results", 1,
+        "delay", 0
+));
 
-# Multiple instances with different search engines
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "general-search-engine-id",
-    "tool_name": "search_general",
-    "num_results": 1
-})
-# Creates tool: search_general
+// Multiple results with delay
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "your-search-engine-id",
+        "num_results", 5,
+        "delay", 1.0
+));
 
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "news-search-engine-id",
-    "tool_name": "search_news",
-    "num_results": 3,
-    "delay": 0.5
-})
-# Creates tool: search_news
+// Multiple instances with different search engines
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "general-search-engine-id",
+        "tool_name", "search_general",
+        "num_results", 1
+));
+// Creates tool: search_general
 
-# Custom no results message
-agent.add_skill("web_search", {
-    "api_key": "your-google-api-key",
-    "search_engine_id": "your-search-engine-id",
-    "no_results_message": "Sorry, I couldn't find information about '{query}'. Please try a different search term."
-})
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "news-search-engine-id",
+        "tool_name", "search_news",
+        "num_results", 3,
+        "delay", 0.5
+));
+// Creates tool: search_news
+
+// Custom no results message
+agent.addSkill("web_search", Map.of(
+        "api_key", "your-google-api-key",
+        "search_engine_id", "your-search-engine-id",
+        "no_results_message", "Sorry, I couldn't find information about '{query}'. Please try a different search term."
+));
 ```
 
 #### DateTime Skill (`datetime`)
 Provides current date and time information with timezone support.
 
 **Requirements:**
-- Packages: `pytz`
+- Uses the JDK's built-in `java.time` API for timezones (no extra dependencies)
 
 **Tools Added:**
 - `get_current_time`: Get current time with optional timezone
 - `get_current_date`: Get current date with optional timezone
 
 **Example:**
-```python
-agent.add_skill("datetime")
-# Agent can now tell users the current time and date
+```java
+agent.addSkill("datetime", Map.of());
+// Agent can now tell users the current time and date
 ```
 
 #### Math Skill (`math`)
 Provides safe mathematical expression evaluation.
 
 **Requirements:**
-- None (uses built-in Python functionality)
+- None (uses built-in JDK functionality)
 
 **Tools Added:**
 - `calculate`: Evaluate mathematical expressions safely
 
 **Example:**
-```python
-agent.add_skill("math")
-# Agent can now perform calculations like "2 + 3 * 4"
+```java
+agent.addSkill("math", Map.of());
+// Agent can now perform calculations like "2 + 3 * 4"
 ```
 
 #### DataSphere Skill (`datasphere`)
 Provides knowledge search capabilities using SignalWire DataSphere, a cloud-hosted document search and retrieval-augmented generation (RAG) service.
 
 **Requirements:**
-- Packages: `requests`
+- HTTP calls are handled by the SDK's built-in HTTP client (no extra dependencies)
 
 **Parameters:**
 - `space_name` (required): SignalWire space name
@@ -760,38 +741,41 @@ Provides knowledge search capabilities using SignalWire DataSphere, a cloud-host
 The DataSphere skill supports multiple instances with different tool names, allowing you to search multiple knowledge bases:
 
 **Example:**
-```python
-# Basic single instance
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project",
-    "token": "my-token",
-    "document_id": "general-knowledge"
-})
-# Creates tool: search_knowledge
+```java
+import java.util.List;
+import java.util.Map;
 
-# Multiple instances for different knowledge bases
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project", 
-    "token": "my-token",
-    "document_id": "product-docs",
-    "tool_name": "search_products",
-    "tags": ["Products", "Features"],
-    "count": 3
-})
-# Creates tool: search_products
+// Basic single instance
+agent.addSkill("datasphere", Map.of(
+        "space_name", "my-space",
+        "project_id", "my-project",
+        "token", "my-token",
+        "document_id", "general-knowledge"
+));
+// Creates tool: search_knowledge
 
-agent.add_skill("datasphere", {
-    "space_name": "my-space",
-    "project_id": "my-project",
-    "token": "my-token", 
-    "document_id": "support-kb",
-    "tool_name": "search_support",
-    "no_results_message": "I couldn't find support information about '{query}'. Try contacting our support team.",
-    "distance": 5.0
-})
-# Creates tool: search_support
+// Multiple instances for different knowledge bases
+agent.addSkill("datasphere", Map.of(
+        "space_name", "my-space",
+        "project_id", "my-project",
+        "token", "my-token",
+        "document_id", "product-docs",
+        "tool_name", "search_products",
+        "tags", List.of("Products", "Features"),
+        "count", 3
+));
+// Creates tool: search_products
+
+agent.addSkill("datasphere", Map.of(
+        "space_name", "my-space",
+        "project_id", "my-project",
+        "token", "my-token",
+        "document_id", "support-kb",
+        "tool_name", "search_support",
+        "no_results_message", "I couldn't find support information about '{query}'. Try contacting our support team.",
+        "distance", 5.0
+));
+// Creates tool: search_support
 ```
 
 #### Native Vector Search Skill (`native_vector_search`)
@@ -809,220 +793,258 @@ Provides document search by querying a **remote** vector-search server over HTTP
 The native vector search skill supports multiple instances with different remote endpoints and tool names.
 
 **Example:**
-```python
-# Remote mode connecting to a search server
-agent.add_skill("native_vector_search", {
-    "tool_name": "search_knowledge",
-    "description": "Search the knowledge base",
-    "remote_url": "http://localhost:8001/search",
-    "index_name": "concepts",
-    "count": 3
-})
-# Creates tool: search_knowledge
+```java
+import java.util.Map;
+
+// Remote mode connecting to a search server
+agent.addSkill("native_vector_search", Map.of(
+        "tool_name", "search_knowledge",
+        "description", "Search the knowledge base",
+        "remote_url", "http://localhost:8001/search",
+        "index_name", "concepts",
+        "count", 3
+));
+// Creates tool: search_knowledge
 ```
 
 ### Skill Management
 
-```python
-# Check what skills are loaded
-loaded_skills = agent.list_skills()
-print(f"Loaded skills: {', '.join(loaded_skills)}")
+```java
+import java.util.List;
 
-# Check if a specific skill is loaded
-if agent.has_skill("web_search"):
-    print("Web search is available")
+// Check what skills are loaded
+List<String> loadedSkills = agent.listSkills();
+System.out.println("Loaded skills: " + String.join(", ", loadedSkills));
 
-# Remove a skill (if needed)
-agent.remove_skill("math")
+// Check if a specific skill is loaded
+if (agent.hasSkill("web_search")) {
+    System.out.println("Web search is available");
+}
+
+// Remove a skill (if needed)
+agent.removeSkill("math");
 ```
 
 ### Advanced Skill Configuration with swaig_fields
 
 Skills support a special `swaig_fields` parameter that allows you to customize how SWAIG functions are registered. When you pass `swaig_fields` to a skill, they are automatically merged into all tool definitions created by that skill through the `SkillBase.define_tool()` wrapper method.
 
-```python
-# Add a skill with swaig_fields to customize SWAIG function properties
-agent.add_skill("math", {
-    "precision": 2,  # Regular skill parameter
-    "swaig_fields": {  # Special fields merged into SWAIG function automatically
-        "secure": False,  # Override default security requirement
-        "fillers": {
-            "en-US": ["Let me calculate that...", "Computing the result..."],
-            "es-ES": ["Déjame calcular eso...", "Calculando el resultado..."]
-        }
-    }
-})
+```java
+import java.util.List;
+import java.util.Map;
 
-# Add web search with custom security and fillers
-agent.add_skill("web_search", {
-    "num_results": 3,
-    "delay": 0.5,
-    "swaig_fields": {
-        "secure": True,  # Require authentication
-        "fillers": {
-            "en-US": ["Searching the web...", "Looking that up...", "Finding information..."]
-        }
-    }
-})
+// Add a skill with swaig_fields to customize SWAIG function properties
+agent.addSkill("math", Map.of(
+        "precision", 2,  // Regular skill parameter
+        "swaig_fields", Map.of(  // Special fields merged into SWAIG function automatically
+                "secure", false,  // Override default security requirement
+                "fillers", Map.of(
+                        "en-US", List.of("Let me calculate that...", "Computing the result..."),
+                        "es-ES", List.of("Déjame calcular eso...", "Calculando el resultado...")
+                )
+        )
+));
+
+// Add web search with custom security and fillers
+agent.addSkill("web_search", Map.of(
+        "num_results", 3,
+        "delay", 0.5,
+        "swaig_fields", Map.of(
+                "secure", true,  // Require authentication
+                "fillers", Map.of(
+                        "en-US", List.of("Searching the web...", "Looking that up...", "Finding information...")
+                )
+        )
+));
 ```
 
-The `swaig_fields` can include any parameter accepted by `AgentBase.define_tool()`:
+The `swaig_fields` can include any field supported by a tool definition:
 - `secure`: Boolean indicating if the function requires authentication
-- `fillers`: Dictionary mapping language codes to arrays of filler phrases
+- `fillers`: Map of language codes to lists of filler phrases
 - Any other fields supported by the SWAIG function system
 
-**Implementation Note**: The `SkillBase` class provides a `define_tool()` wrapper method that automatically injects `swaig_fields` into all tool definitions. Skills should use `self.define_tool()` instead of `self.agent.define_tool()` to get automatic swaig_fields support without manual handling.
+**Implementation Note**: The `SkillBase` class provides a `defineTool()` wrapper method that automatically injects `swaig_fields` into all tool definitions. Skills should use `this.defineTool()` (the `SkillBase` wrapper) rather than the agent's `defineTool()` directly to get automatic `swaig_fields` support without manual handling.
 
 ### Error Handling
 
 The skills system provides detailed error messages for common issues:
 
-```python
-try:
-    agent.add_skill("web_search")
-except ValueError as e:
-    print(f"Failed to load skill: {e}")
-    # Output: "Failed to load skill 'web_search': Missing required environment variables: ['GOOGLE_SEARCH_API_KEY']"
+```java
+import java.util.Map;
+
+try {
+    agent.addSkill("web_search", Map.of());
+} catch (IllegalArgumentException e) {
+    System.out.println("Failed to load skill: " + e.getMessage());
+    // Output: "Failed to load skill 'web_search': Missing required environment variables: [GOOGLE_SEARCH_API_KEY]"
+}
 ```
 
 ### Creating Custom Skills
 
-You can create your own skills by extending the `SkillBase` class:
+You can create your own skills by implementing the `SkillBase` interface:
 
-```python
-from signalwire_agents.core.skill_base import SkillBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```java
+import com.signalwire.sdk.skills.SkillBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 
-class WeatherSkill(SkillBase):
-    """A custom skill for weather information"""
-    
-    SKILL_NAME = "weather"
-    SKILL_DESCRIPTION = "Get weather information for locations"
-    SKILL_VERSION = "1.0.0"
-    REQUIRED_PACKAGES = ["requests"]
-    REQUIRED_ENV_VARS = ["WEATHER_API_KEY"]
-    
-    def setup(self) -> bool:
-        """Setup the skill - validate dependencies and initialize"""
-        if not self.validate_env_vars() or not self.validate_packages():
-            return False
-        
-        # Get configuration parameters
-        self.default_units = self.params.get('units', 'fahrenheit')
-        self.timeout = self.params.get('timeout', 10)
-        
-        return True
-    
-    def register_tools(self) -> None:
-        """Register tools with the agent"""
-        self.define_tool(
-            name="get_weather",
-            description="Get current weather for a location",
-            parameters={
-                "location": {
-                    "type": "string",
-                    "description": "City or location name"
-                },
-                "units": {
-                    "type": "string",
-                    "description": "Temperature units (fahrenheit or celsius)",
-                    "enum": ["fahrenheit", "celsius"]
-                }
-            },
-            handler=self._get_weather_handler
-        )
-    
-    def _get_weather_handler(self, args, raw_data):
-        """Handle weather requests"""
-        location = args.get("location", "")
-        units = args.get("units", self.default_units)
-        
-        if not location:
-            return SwaigFunctionResult("Please provide a location")
-        
-        # Your weather API integration here
-        weather_data = f"Weather for {location}: 72°F and sunny"
-        return SwaigFunctionResult(weather_data)
-    
-    def get_hints(self) -> List[str]:
-        """Return speech recognition hints"""
-        return ["weather", "temperature", "forecast", "conditions"]
-    
-    def get_prompt_sections(self) -> List[Dict[str, Any]]:
-        """Return prompt sections to add to agent"""
-        return [
-            {
-                "title": "Weather Information",
-                "body": "You can provide current weather information for any location.",
-                "bullets": [
-                    "Use get_weather tool when users ask about weather",
-                    "Always specify the location clearly",
-                    "Include temperature and conditions in your response"
-                ]
-            }
-        ]
+import java.util.List;
+import java.util.Map;
+
+/** A custom skill for weather information. */
+public class WeatherSkill implements SkillBase {
+
+    private String defaultUnits = "fahrenheit";
+
+    @Override
+    public String getName() {
+        return "weather";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Get weather information for locations";
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
+    @Override
+    public List<String> getRequiredEnvVars() {
+        return List.of("WEATHER_API_KEY");
+    }
+
+    /** Setup the skill -- validate dependencies and read configuration. */
+    @Override
+    public boolean setup(Map<String, Object> params) {
+        // Read configuration parameters
+        this.defaultUnits = (String) params.getOrDefault("units", "fahrenheit");
+        return true;
+    }
+
+    /** Register tools with the agent. */
+    @Override
+    public List<ToolDefinition> registerTools() {
+        // defineTool() (the SkillBase helper) merges any configured swaig_fields.
+        return List.of(defineTool(
+                "get_weather",
+                "Get current weather for a location",
+                Map.of("type", "object",
+                        "properties", Map.of(
+                                "location", Map.of("type", "string",
+                                        "description", "City or location name"),
+                                "units", Map.of("type", "string",
+                                        "description", "Temperature units (fahrenheit or celsius)",
+                                        "enum", List.of("fahrenheit", "celsius"))
+                        ),
+                        "required", List.of("location")),
+                this::getWeatherHandler));
+    }
+
+    /** Handle weather requests. */
+    private FunctionResult getWeatherHandler(Map<String, Object> args, Map<String, Object> rawData) {
+        String location = (String) args.getOrDefault("location", "");
+        // String units = (String) args.getOrDefault("units", defaultUnits);
+
+        if (location.isEmpty()) {
+            return new FunctionResult("Please provide a location");
+        }
+
+        // Your weather API integration here
+        String weatherData = "Weather for " + location + ": 72F and sunny";
+        return new FunctionResult(weatherData);
+    }
+
+    /** Return speech recognition hints. */
+    @Override
+    public List<String> getHints() {
+        return List.of("weather", "temperature", "forecast", "conditions");
+    }
+
+    /** Return prompt sections to add to the agent. */
+    @Override
+    public List<Map<String, Object>> getPromptSections() {
+        return List.of(Map.of(
+                "title", "Weather Information",
+                "body", "You can provide current weather information for any location.",
+                "bullets", List.of(
+                        "Use get_weather tool when users ask about weather",
+                        "Always specify the location clearly",
+                        "Include temperature and conditions in your response"
+                )
+        ));
+    }
+}
 ```
 
 **Using the custom skill:**
-```python
-# Place the skill in signalwire_agents/skills/weather/skill.py
-# Then use it in your agent:
+```java
+import java.util.Map;
 
-agent.add_skill("weather", {
-    "units": "celsius",
-    "timeout": 15
-})
+// Register your skill type with the SkillRegistry, then add it by name:
+agent.addSkill("weather", Map.of(
+        "units", "celsius"
+));
 ```
 
 ### Skills with Dynamic Configuration
 
 Skills work with dynamic configuration:
 
-```python
-class DynamicSkillAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="dynamic-skill-agent")
-        self.set_dynamic_config_callback(self.configure_per_request)
-    
-    def configure_per_request(self, query_params, body_params, headers, agent):
-        # Add different skills based on request parameters
-        tier = query_params.get('tier', 'basic')
-        
-        # Basic skills for all users
-        agent.add_skill("datetime")
-        agent.add_skill("math")
-        
-        # Premium skills for premium users
-        if tier == 'premium':
-            agent.add_skill("web_search", {
-                "num_results": 5,
-                "delay": 0.5
-            })
-        elif tier == 'basic':
-            agent.add_skill("web_search", {
-                "num_results": 1,
-                "delay": 0
-            })
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("dynamic-skill-agent")
+        .build();
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Add different skills based on request parameters
+    String tier = queryParams.getOrDefault("tier", "basic");
+
+    // Basic skills for all users
+    configAgent.addSkill("datetime", Map.of());
+    configAgent.addSkill("math", Map.of());
+
+    // Premium skills for premium users
+    if ("premium".equals(tier)) {
+        configAgent.addSkill("web_search", Map.of(
+                "num_results", 5,
+                "delay", 0.5
+        ));
+    } else if ("basic".equals(tier)) {
+        configAgent.addSkill("web_search", Map.of(
+                "num_results", 1,
+                "delay", 0
+        ));
+    }
+});
 ```
 
 ### Best Practices
 
 1. **Choose appropriate parameters**: Configure skills for your use case
-   ```python
-   # For speed (customer service)
-   agent.add_skill("web_search", {"num_results": 1, "delay": 0})
-   
-   # For research (detailed analysis)
-   agent.add_skill("web_search", {"num_results": 5, "delay": 1.0})
+   ```java
+   // For speed (customer service)
+   agent.addSkill("web_search", Map.of("num_results", 1, "delay", 0));
+
+   // For research (detailed analysis)
+   agent.addSkill("web_search", Map.of("num_results", 5, "delay", 1.0));
    ```
 
 2. **Handle missing dependencies gracefully**:
-   ```python
-   try:
-       agent.add_skill("web_search")
-   except ValueError as e:
-       self.logger.warning(f"Web search unavailable: {e}")
-       # Continue without web search capability
+   ```java
+   try {
+       agent.addSkill("web_search", Map.of());
+   } catch (IllegalArgumentException e) {
+       System.out.println("Web search unavailable: " + e.getMessage());
+       // Continue without web search capability
+   }
    ```
 
 3. **Document your custom skills**: Include clear descriptions and parameter documentation
@@ -1035,48 +1057,54 @@ For more detailed information about the skills system architecture and advanced 
 
 Agents can support multiple languages:
 
-```python
-# Add English language
-self.add_language(
-    name="English",
-    code="en-US",
-    voice="en-US-Neural2-F",
-    speech_fillers=["Let me think...", "One moment please..."],
-    function_fillers=["I'm looking that up...", "Let me check that..."]
-)
+```java
+import java.util.List;
 
-# Add Spanish language
-self.add_language(
-    name="Spanish",
-    code="es",
-    voice="rime.spore:multilingual",
-    speech_fillers=["Un momento por favor...", "Estoy pensando..."]
-)
+// Add English language.
+// Overload: addLanguage(name, code, voice, speechFillers, functionFillers, engine, model)
+agent.addLanguage(
+        "English",
+        "en-US",
+        "en-US-Neural2-F",
+        List.of("Let me think...", "One moment please..."),
+        List.of("I'm looking that up...", "Let me check that..."),
+        null,   // engine
+        null    // model
+);
+
+// Add Spanish language (speech fillers only; function fillers null)
+agent.addLanguage(
+        "Spanish",
+        "es",
+        "rime.spore:multilingual",
+        List.of("Un momento por favor...", "Estoy pensando..."),
+        null,   // functionFillers
+        null,   // engine
+        null    // model
+);
 ```
 
 ### Voice Formats
 
 There are different ways to specify voices:
 
-```python
-# Simple format
-self.add_language(name="English", code="en-US", voice="en-US-Neural2-F")
+```java
+// Simple format (name, code, voice)
+agent.addLanguage("English", "en-US", "en-US-Neural2-F");
 
-# Explicit parameters with engine and model
-self.add_language(
-    name="British English",
-    code="en-GB",
-    voice="spore",
-    engine="rime",
-    model="multilingual"
-)
+// Explicit parameters with engine and model
+agent.addLanguage(
+        "British English",
+        "en-GB",
+        "spore",
+        null,          // speechFillers
+        null,          // functionFillers
+        "rime",        // engine
+        "multilingual" // model
+);
 
-# Combined string format
-self.add_language(
-    name="Spanish",
-    code="es",
-    voice="rime.spore:multilingual"
-)
+// Combined string format ("engine.voice:model" is parsed apart)
+agent.addLanguage("Spanish", "es", "rime.spore:multilingual");
 ```
 
 ## Agent Configuration
@@ -1085,81 +1113,90 @@ self.add_language(
 
 Hints help the AI understand certain terms better:
 
-```python
-# Simple hints (list of words)
-self.add_hints(["SignalWire", "SWML", "SWAIG"])
+```java
+import java.util.List;
 
-# Pattern hint with replacement
-self.add_pattern_hint(
-    hint="AI Agent", 
-    pattern="AI\\s+Agent", 
-    replace="A.I. Agent", 
-    ignore_case=True
-)
+// Simple hints (list of words)
+agent.addHints(List.of("SignalWire", "SWML", "SWAIG"));
+
+// Pattern hint with replacement
+agent.addPatternHint(
+        "AI Agent",     // hint
+        "AI\\s+Agent",  // pattern
+        "A.I. Agent",   // replace
+        true            // ignoreCase
+);
 ```
 
 ### Adding Pronunciation Rules
 
 Pronunciation rules help the AI speak certain terms correctly:
 
-```python
-# Add pronunciation rule
-self.add_pronunciation("API", "A P I", ignore_case=False)
-self.add_pronunciation("SIP", "sip", ignore_case=True)
+```java
+// Add pronunciation rule: addPronunciation(replace, with, ignoreCase)
+agent.addPronunciation("API", "A P I", false);
+agent.addPronunciation("SIP", "sip", true);
 ```
 
 ### Setting AI Parameters
 
 Configure various AI behavior parameters:
 
-```python
-# Set AI parameters
-self.set_params({
-    "wait_for_user": False,
-    "end_of_speech_timeout": 1000,
-    "ai_volume": 5,
-    "languages_enabled": True,
-    "local_tz": "America/Los_Angeles"
-})
+```java
+import java.util.Map;
+
+// Set AI parameters
+agent.setParams(Map.of(
+        "wait_for_user", false,
+        "end_of_speech_timeout", 1000,
+        "ai_volume", 5,
+        "languages_enabled", true,
+        "local_tz", "America/Los_Angeles"
+));
 ```
 
 ### Setting Global Data
 
 Provide global data for the AI to reference:
 
-```python
-# Set global data
-self.set_global_data({
-    "company_name": "SignalWire",
-    "product": "AI Agent SDK",
-    "supported_features": [
-        "Voice AI",
-        "Telephone integration",
-        "SWAIG functions"
-    ]
-})
+```java
+import java.util.List;
+import java.util.Map;
+
+// Set global data
+agent.setGlobalData(Map.of(
+        "company_name", "SignalWire",
+        "product", "AI Agent SDK",
+        "supported_features", List.of(
+                "Voice AI",
+                "Telephone integration",
+                "SWAIG functions"
+        )
+));
 ```
 
 ### Customizing LLM Parameters
 
 The SDK provides methods to fine-tune the Language Model parameters for both the main prompt and post-prompt, giving you precise control over the AI's behavior:
 
-```python
-# Set LLM parameters for the main prompt
-# These parameters are passed to the server which validates them based on the model
-self.set_prompt_llm_params(
-    temperature=0.7,        # Controls randomness
-    top_p=0.9,             # Nucleus sampling threshold
-    barge_confidence=0.6,  # ASR confidence to interrupt
-    presence_penalty=0.0,  # Penalizes token repetition
-    frequency_penalty=0.0  # Penalizes frequent word usage
-)
+```java
+import java.util.Map;
 
-# Set different parameters for the post-prompt
-self.set_post_prompt_llm_params(
-    temperature=0.3,       # Lower temperature for consistent summaries
-    top_p=0.95            # Slightly wider token selection
-)
+// Set LLM parameters for the main prompt.
+// These parameters are passed to the server which validates them based on the model.
+agent.setPromptLlmParams(Map.of(
+        "temperature", 0.7,        // Controls randomness
+        "top_p", 0.9,              // Nucleus sampling threshold
+        "barge_confidence", 0.6,   // ASR confidence to interrupt
+        "presence_penalty", 0.0,   // Penalizes token repetition
+        "frequency_penalty", 0.0   // Penalizes frequent word usage
+));
+
+// Set different parameters for the post-prompt
+agent.setPostPromptLlmParams(Map.of(
+        "temperature", 0.3,        // Lower temperature for consistent summaries
+        "top_p", 0.95              // Slightly wider token selection
+));
 ```
 
 **Common Use Cases:**
@@ -1180,44 +1217,52 @@ Dynamic agent configuration allows you to configure agents per-request based on 
 There are two main approaches to agent configuration:
 
 #### Static Configuration (Traditional)
-```python
-class StaticAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="static-agent")
-        
-        # Configuration happens once at startup
-        self.add_language("English", "en-US", "rime.spore:mistv2")
-        self.set_params({"end_of_speech_timeout": 500})
-        self.prompt_add_section("Role", "You are a customer service agent.")
-        self.set_global_data({"service_level": "standard"})
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("static-agent")
+        .build();
+
+// Configuration happens once at startup
+agent.addLanguage("English", "en-US", "rime.spore:mistv2");
+agent.setParams(Map.of("end_of_speech_timeout", 500));
+agent.promptAddSection("Role", "You are a customer service agent.");
+agent.setGlobalData(Map.of("service_level", "standard"));
 ```
 
 **Pros**: Simple, fast, predictable
 **Cons**: Same behavior for all users, requires separate agents for different configurations
 
 #### Dynamic Configuration (New)
-```python
-class DynamicAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="dynamic-agent")
-        
-        # No static configuration - set up dynamic callback instead
-        self.set_dynamic_config_callback(self.configure_per_request)
-    
-    def configure_per_request(self, query_params, body_params, headers, agent):
-        # Configuration happens fresh for each request
-        tier = query_params.get('tier', 'standard')
-        
-        if tier == 'premium':
-            agent.add_language("English", "en-US", "rime.spore:mistv2")
-            agent.set_params({"end_of_speech_timeout": 300})  # Faster
-            agent.prompt_add_section("Role", "You are a premium customer service agent.")
-            agent.set_global_data({"service_level": "premium"})
-        else:
-            agent.add_language("English", "en-US", "rime.spore:mistv2")
-            agent.set_params({"end_of_speech_timeout": 500})  # Standard
-            agent.prompt_add_section("Role", "You are a customer service agent.")
-            agent.set_global_data({"service_level": "standard"})
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("dynamic-agent")
+        .build();
+
+// No static configuration - set up dynamic callback instead
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Configuration happens fresh for each request
+    String tier = queryParams.getOrDefault("tier", "standard");
+
+    if ("premium".equals(tier)) {
+        configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+        configAgent.setParams(Map.of("end_of_speech_timeout", 300));  // Faster
+        configAgent.promptAddSection("Role", "You are a premium customer service agent.");
+        configAgent.setGlobalData(Map.of("service_level", "premium"));
+    } else {
+        configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+        configAgent.setParams(Map.of("end_of_speech_timeout", 500));  // Standard
+        configAgent.promptAddSection("Role", "You are a customer service agent.");
+        configAgent.setGlobalData(Map.of("service_level", "standard"));
+    }
+});
 ```
 
 **Pros**: Highly flexible, single agent serves multiple configurations, enables advanced use cases
@@ -1225,104 +1270,112 @@ class DynamicAgent(AgentBase):
 
 ### Setting Up Dynamic Configuration
 
-Use the `set_dynamic_config_callback()` method to register a callback function that will be called for each request:
+Use the `setDynamicConfigCallback()` method to register a callback that will be called for each request. The callback is a `DynamicConfigCallback` functional interface — a lambda receiving `(queryParams, bodyParams, headers, configAgent)`:
 
-```python
-class MyDynamicAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent", route="/agent")
-        
-        # Register the dynamic configuration callback
-        self.set_dynamic_config_callback(self.configure_agent_dynamically)
-    
-    def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-        """
-        This method is called for every request to configure the agent
-        
-        Args:
-            query_params (dict): Query string parameters from the URL
-            body_params (dict): Parsed JSON body from POST requests
-            headers (dict): HTTP headers from the request
-            agent (AgentBase): The agent instance to configure
-        """
-        # Your dynamic configuration logic here
-        pass
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .route("/agent")
+        .build();
+
+// Register the dynamic configuration callback.
+// Called for every request to configure the agent:
+//   queryParams  (Map<String,String>):        query string parameters from the URL
+//   bodyParams   (Map<String,Object>):        parsed JSON body from POST requests
+//   headers      (Map<String,String>):        HTTP headers from the request
+//   configAgent  (AgentBase):                 the agent instance to configure
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Your dynamic configuration logic here
+});
 ```
 
-The callback function receives four parameters:
-- **query_params**: Dictionary of URL query parameters
-- **body_params**: Dictionary of parsed JSON body (empty for GET requests)
-- **headers**: Dictionary of HTTP headers
-- **agent**: The agent instance to configure dynamically
+The callback receives four parameters:
+- **queryParams**: Map of URL query parameters
+- **bodyParams**: Map of parsed JSON body (empty for GET requests)
+- **headers**: Map of HTTP headers
+- **configAgent**: The agent instance to configure dynamically
 
 ### Dynamic Configuration Methods
 
 The `agent` parameter in your callback is the actual agent instance, allowing you to use all the same configuration methods you would use during initialization:
 
 #### Language Configuration
-```python
-# Add languages with voice configuration
-agent.add_language("English", "en-US", "rime.spore:mistv2")
-agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+```java
+// Add languages with voice configuration
+agent.addLanguage("English", "en-US", "rime.spore:mistv2");
+agent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
 ```
 
 #### Prompt Building
-```python
-# Add prompt sections
-agent.prompt_add_section("Role", "You are a helpful assistant.")
-agent.prompt_add_section("Guidelines", bullets=[
-    "Be professional and courteous",
-    "Provide accurate information",
-    "Ask clarifying questions when needed"
-])
+```java
+import java.util.List;
 
-# Set raw prompt text
-agent.set_prompt_text("You are a specialized AI assistant...")
+// Add prompt sections
+agent.promptAddSection("Role", "You are a helpful assistant.");
+agent.promptAddSection("Guidelines", "", List.of(
+        "Be professional and courteous",
+        "Provide accurate information",
+        "Ask clarifying questions when needed"
+));
 
-# Set post-prompt for summary
-agent.set_post_prompt("Summarize the key points of this conversation.")
+// Set raw prompt text
+agent.setPromptText("You are a specialized AI assistant...");
+
+// Set post-prompt for summary
+agent.setPostPrompt("Summarize the key points of this conversation.");
 ```
 
 #### AI Parameters
-```python
-# Configure AI behavior
-agent.set_params({
-    "end_of_speech_timeout": 300,
-    "attention_timeout": 20000,
-    "background_file_volume": -30
-})
+```java
+import java.util.Map;
+
+// Configure AI behavior
+agent.setParams(Map.of(
+        "end_of_speech_timeout", 300,
+        "attention_timeout", 20000,
+        "background_file_volume", -30
+));
 ```
 
 #### Global Data
-```python
-# Set data available to the AI
-agent.set_global_data({
-    "customer_tier": "premium",
-    "features_enabled": ["advanced_support", "priority_queue"],
-    "session_info": {"start_time": "2024-01-01T00:00:00Z"}
-})
+```java
+import java.util.List;
+import java.util.Map;
 
-# Update existing global data
-agent.update_global_data({"additional_info": "value"})
+// Set data available to the AI
+agent.setGlobalData(Map.of(
+        "customer_tier", "premium",
+        "features_enabled", List.of("advanced_support", "priority_queue"),
+        "session_info", Map.of("start_time", "2024-01-01T00:00:00Z")
+));
+
+// Update existing global data
+agent.updateGlobalData(Map.of("additional_info", "value"));
 ```
 
 #### Speech Recognition Hints
-```python
-# Add hints for better speech recognition
-agent.add_hints(["SignalWire", "SWML", "API", "technical"])
-agent.add_pronunciation("API", "A P I")
+```java
+import java.util.List;
+
+// Add hints for better speech recognition
+agent.addHints(List.of("SignalWire", "SWML", "API", "technical"));
+agent.addPronunciation("API", "A P I", false);
 ```
 
 #### Function Configuration
-```python
-# Set native functions
-agent.set_native_functions(["transfer", "hangup"])
+```java
+import java.util.List;
+import java.util.Map;
 
-# Add function includes
-agent.add_function_include(
-    url="https://api.example.com/functions",
-    functions=["get_account_info", "update_profile"]
-)
+// Set native functions
+agent.setNativeFunctions(List.of("transfer", "hangup"));
+
+// Add function includes
+agent.addFunctionInclude(
+        "https://api.example.com/functions",
+        Map.of("functions", List.of("get_account_info", "update_profile")));
 ```
 
 ### Request Data Access
@@ -1330,174 +1383,218 @@ agent.add_function_include(
 Your callback function receives detailed information about the incoming request:
 
 #### Query Parameters
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    # Extract query parameters
-    tier = query_params.get('tier', 'standard')
-    language = query_params.get('language', 'en')
-    customer_id = query_params.get('customer_id')
-    debug = query_params.get('debug', '').lower() == 'true'
-    
-    # Use parameters for configuration
-    if tier == 'premium':
-        agent.set_params({"end_of_speech_timeout": 300})
-    
-    if customer_id:
-        agent.set_global_data({"customer_id": customer_id})
+```java
+import java.util.Map;
 
-# Request: GET /agent?tier=premium&language=es&customer_id=12345&debug=true
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Extract query parameters
+    String tier = queryParams.getOrDefault("tier", "standard");
+    String language = queryParams.getOrDefault("language", "en");
+    String customerId = queryParams.get("customer_id");
+    boolean debug = "true".equalsIgnoreCase(queryParams.getOrDefault("debug", ""));
+
+    // Use parameters for configuration
+    if ("premium".equals(tier)) {
+        configAgent.setParams(Map.of("end_of_speech_timeout", 300));
+    }
+
+    if (customerId != null) {
+        configAgent.setGlobalData(Map.of("customer_id", customerId));
+    }
+});
+
+// Request: GET /agent?tier=premium&language=es&customer_id=12345&debug=true
 ```
 
 #### POST Body Parameters
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    # Extract from POST body
-    user_profile = body_params.get('user_profile', {})
-    preferences = body_params.get('preferences', {})
-    
-    # Configure based on profile
-    if user_profile.get('language') == 'es':
-        agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
-    
-    if preferences.get('voice_speed') == 'fast':
-        agent.set_params({"end_of_speech_timeout": 200})
+```java
+import java.util.Map;
 
-# Request: POST /agent with JSON body:
-# {
-#   "user_profile": {"language": "es", "region": "mx"},
-#   "preferences": {"voice_speed": "fast", "tone": "formal"}
-# }
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Extract from POST body
+    @SuppressWarnings("unchecked")
+    Map<String, Object> userProfile =
+            (Map<String, Object>) bodyParams.getOrDefault("user_profile", Map.of());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> preferences =
+            (Map<String, Object>) bodyParams.getOrDefault("preferences", Map.of());
+
+    // Configure based on profile
+    if ("es".equals(userProfile.get("language"))) {
+        configAgent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
+    }
+
+    if ("fast".equals(preferences.get("voice_speed"))) {
+        configAgent.setParams(Map.of("end_of_speech_timeout", 200));
+    }
+});
+
+// Request: POST /agent with JSON body:
+// {
+//   "user_profile": {"language": "es", "region": "mx"},
+//   "preferences": {"voice_speed": "fast", "tone": "formal"}
+// }
 ```
 
 #### HTTP Headers
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    # Extract headers
-    user_agent = headers.get('user-agent', '')
-    auth_token = headers.get('authorization', '')
-    locale = headers.get('accept-language', 'en-US')
-    
-    # Configure based on headers
-    if 'mobile' in user_agent.lower():
-        agent.set_params({"end_of_speech_timeout": 400})  # Longer for mobile
-    
-    if locale.startswith('es'):
-        agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Extract headers (each header maps to a List<String> of values)
+    String userAgent = headers.getOrDefault("user-agent", List.of("")).get(0);
+    String authToken = headers.getOrDefault("authorization", List.of("")).get(0);
+    String locale = headers.getOrDefault("accept-language", List.of("en-US")).get(0);
+
+    // Configure based on headers
+    if (userAgent.toLowerCase().contains("mobile")) {
+        configAgent.setParams(Map.of("end_of_speech_timeout", 400));  // Longer for mobile
+    }
+
+    if (locale.startsWith("es")) {
+        configAgent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
+    }
+});
 ```
 
 ### Configuration Examples
 
 #### Simple Multi-Tenant Configuration
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    tenant = query_params.get('tenant', 'default')
-    
-    # Tenant-specific configuration
-    if tenant == 'healthcare':
-        agent.add_language("English", "en-US", "rime.spore:mistv2")
-        agent.prompt_add_section("Compliance", 
-            "Follow HIPAA guidelines and maintain patient confidentiality.")
-        agent.set_global_data({
-            "industry": "healthcare",
-            "compliance_level": "hipaa"
-        })
-    elif tenant == 'finance':
-        agent.add_language("English", "en-US", "rime.spore:mistv2")
-        agent.prompt_add_section("Compliance",
-            "Follow financial regulations and protect sensitive data.")
-        agent.set_global_data({
-            "industry": "finance", 
-            "compliance_level": "pci"
-        })
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    String tenant = queryParams.getOrDefault("tenant", "default");
+
+    // Tenant-specific configuration
+    if ("healthcare".equals(tenant)) {
+        configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+        configAgent.promptAddSection("Compliance",
+                "Follow HIPAA guidelines and maintain patient confidentiality.");
+        configAgent.setGlobalData(Map.of(
+                "industry", "healthcare",
+                "compliance_level", "hipaa"
+        ));
+    } else if ("finance".equals(tenant)) {
+        configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+        configAgent.promptAddSection("Compliance",
+                "Follow financial regulations and protect sensitive data.");
+        configAgent.setGlobalData(Map.of(
+                "industry", "finance",
+                "compliance_level", "pci"
+        ));
+    }
+});
 ```
 
 #### Language and Localization
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    language = query_params.get('language', 'en')
-    region = query_params.get('region', 'us')
-    
-    # Configure language and voice
-    if language == 'es':
-        if region == 'mx':
-            agent.add_language("Spanish (Mexico)", "es-MX", "rime.spore:mistv2")
-        else:
-            agent.add_language("Spanish", "es-ES", "rime.spore:mistv2")
-        
-        agent.prompt_add_section("Language", "Respond in Spanish.")
-    elif language == 'fr':
-        agent.add_language("French", "fr-FR", "rime.alois")
-        agent.prompt_add_section("Language", "Respond in French.")
-    else:
-        agent.add_language("English", "en-US", "rime.spore:mistv2")
-    
-    # Regional customization
-    agent.set_global_data({
-        "language": language,
-        "region": region,
-        "currency": "USD" if region == "us" else "EUR" if region == "eu" else "MXN"
-    })
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    String language = queryParams.getOrDefault("language", "en");
+    String region = queryParams.getOrDefault("region", "us");
+
+    // Configure language and voice
+    if ("es".equals(language)) {
+        if ("mx".equals(region)) {
+            configAgent.addLanguage("Spanish (Mexico)", "es-MX", "rime.spore:mistv2");
+        } else {
+            configAgent.addLanguage("Spanish", "es-ES", "rime.spore:mistv2");
+        }
+        configAgent.promptAddSection("Language", "Respond in Spanish.");
+    } else if ("fr".equals(language)) {
+        configAgent.addLanguage("French", "fr-FR", "rime.alois");
+        configAgent.promptAddSection("Language", "Respond in French.");
+    } else {
+        configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+    }
+
+    // Regional customization
+    String currency = "us".equals(region) ? "USD" : "eu".equals(region) ? "EUR" : "MXN";
+    configAgent.setGlobalData(Map.of(
+            "language", language,
+            "region", region,
+            "currency", currency
+    ));
+});
 ```
 
 #### A/B Testing Configuration
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    # Determine test group (could be from query param, user ID hash, etc.)
-    test_group = query_params.get('test_group', 'A')
-    
-    if test_group == 'A':
-        # Control group - standard configuration
-        agent.set_params({"end_of_speech_timeout": 500})
-        agent.prompt_add_section("Style", "Use a standard conversational approach.")
-        agent.set_global_data({"test_group": "A", "features": ["basic"]})
-    else:
-        # Test group B - experimental features
-        agent.set_params({"end_of_speech_timeout": 300})
-        agent.prompt_add_section("Style", 
-            "Use an enhanced, more interactive conversational approach.")
-        agent.set_global_data({"test_group": "B", "features": ["basic", "enhanced"]})
+```java
+import java.util.List;
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Determine test group (could be from query param, user ID hash, etc.)
+    String testGroup = queryParams.getOrDefault("test_group", "A");
+
+    if ("A".equals(testGroup)) {
+        // Control group - standard configuration
+        configAgent.setParams(Map.of("end_of_speech_timeout", 500));
+        configAgent.promptAddSection("Style", "Use a standard conversational approach.");
+        configAgent.setGlobalData(Map.of("test_group", "A", "features", List.of("basic")));
+    } else {
+        // Test group B - experimental features
+        configAgent.setParams(Map.of("end_of_speech_timeout", 300));
+        configAgent.promptAddSection("Style",
+                "Use an enhanced, more interactive conversational approach.");
+        configAgent.setGlobalData(Map.of("test_group", "B", "features", List.of("basic", "enhanced")));
+    }
+});
 ```
 
 #### Customer Tier-Based Configuration
-```python
-def configure_agent_dynamically(self, query_params, body_params, headers, agent):
-    customer_id = query_params.get('customer_id')
-    tier = query_params.get('tier', 'standard')
-    
-    # Base configuration
-    agent.add_language("English", "en-US", "rime.spore:mistv2")
-    
-    # Tier-specific configuration
-    if tier == 'enterprise':
-        agent.set_params({
-            "end_of_speech_timeout": 200,  # Fastest response
-            "attention_timeout": 30000     # Longest attention span
-        })
-        agent.prompt_add_section("Service Level",
-            "You provide white-glove enterprise support with priority handling.")
-        features = ["all_features", "dedicated_support", "custom_integration"]
-    elif tier == 'premium':
-        agent.set_params({
-            "end_of_speech_timeout": 300,
-            "attention_timeout": 20000
-        })
-        agent.prompt_add_section("Service Level",
-            "You provide premium support with enhanced features.")
-        features = ["premium_features", "priority_support"]
-    else:
-        agent.set_params({
-            "end_of_speech_timeout": 500,
-            "attention_timeout": 15000
-        })
-        agent.prompt_add_section("Service Level",
-            "You provide standard customer support.")
-        features = ["basic_features"]
-    
-    # Set global data
-    global_data = {"tier": tier, "features": features}
-    if customer_id:
-        global_data["customer_id"] = customer_id
-    agent.set_global_data(global_data)
+```java
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    String customerId = queryParams.get("customer_id");
+    String tier = queryParams.getOrDefault("tier", "standard");
+
+    // Base configuration
+    configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+
+    // Tier-specific configuration
+    List<String> features;
+    if ("enterprise".equals(tier)) {
+        configAgent.setParams(Map.of(
+                "end_of_speech_timeout", 200,  // Fastest response
+                "attention_timeout", 30000     // Longest attention span
+        ));
+        configAgent.promptAddSection("Service Level",
+                "You provide white-glove enterprise support with priority handling.");
+        features = List.of("all_features", "dedicated_support", "custom_integration");
+    } else if ("premium".equals(tier)) {
+        configAgent.setParams(Map.of(
+                "end_of_speech_timeout", 300,
+                "attention_timeout", 20000
+        ));
+        configAgent.promptAddSection("Service Level",
+                "You provide premium support with enhanced features.");
+        features = List.of("premium_features", "priority_support");
+    } else {
+        configAgent.setParams(Map.of(
+                "end_of_speech_timeout", 500,
+                "attention_timeout", 15000
+        ));
+        configAgent.promptAddSection("Service Level",
+                "You provide standard customer support.");
+        features = List.of("basic_features");
+    }
+
+    // Set global data
+    Map<String, Object> globalData = new LinkedHashMap<>();
+    globalData.put("tier", tier);
+    globalData.put("features", features);
+    if (customerId != null) {
+        globalData.put("customer_id", customerId);
+    }
+    configAgent.setGlobalData(globalData);
+});
 ```
 
 ### Use Cases
@@ -1505,7 +1602,7 @@ def configure_agent_dynamically(self, query_params, body_params, headers, agent)
 #### Multi-Tenant SaaS Applications
 Perfect for SaaS platforms where each customer needs different agent behavior:
 
-```python
+```text
 # Different tenants get different capabilities
 # /agent?tenant=acme&industry=healthcare
 # /agent?tenant=globex&industry=finance
@@ -1520,7 +1617,7 @@ Benefits:
 #### A/B Testing and Experimentation
 Test different agent configurations with real users:
 
-```python
+```text
 # Split traffic between different configurations
 # /agent?test_group=A  (control)
 # /agent?test_group=B  (experimental)
@@ -1535,7 +1632,7 @@ Benefits:
 #### Personalization and User Preferences
 Adapt agent behavior to individual user preferences:
 
-```python
+```text
 # Personalized based on user profile
 # /agent?user_id=123&voice_speed=fast&formality=casual
 ```
@@ -1549,7 +1646,7 @@ Benefits:
 #### Geographic and Cultural Localization
 Adapt to different regions and cultures:
 
-```python
+```text
 # Location-based configuration
 # /agent?country=mx&language=es&timezone=America/Mexico_City
 ```
@@ -1567,74 +1664,84 @@ Benefits:
 **Step 1: Move Configuration to Callback**
 
 Before (Static):
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-        
-        # Static configuration
-        self.add_language("English", "en-US", "rime.spore:mistv2")
-        self.set_params({"end_of_speech_timeout": 500})
-        self.prompt_add_section("Role", "You are a helpful assistant.")
-        self.set_global_data({"version": "1.0"})
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .build();
+
+// Static configuration
+agent.addLanguage("English", "en-US", "rime.spore:mistv2");
+agent.setParams(Map.of("end_of_speech_timeout", 500));
+agent.promptAddSection("Role", "You are a helpful assistant.");
+agent.setGlobalData(Map.of("version", "1.0"));
 ```
 
 After (Dynamic):
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-        
-        # Set up dynamic configuration
-        self.set_dynamic_config_callback(self.configure_agent)
-    
-    def configure_agent(self, query_params, body_params, headers, agent):
-        # Same configuration, but now dynamic
-        agent.add_language("English", "en-US", "rime.spore:mistv2")
-        agent.set_params({"end_of_speech_timeout": 500})
-        agent.prompt_add_section("Role", "You are a helpful assistant.")
-        agent.set_global_data({"version": "1.0"})
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .build();
+
+// Set up dynamic configuration
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Same configuration, but now dynamic
+    configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+    configAgent.setParams(Map.of("end_of_speech_timeout", 500));
+    configAgent.promptAddSection("Role", "You are a helpful assistant.");
+    configAgent.setGlobalData(Map.of("version", "1.0"));
+});
 ```
 
 **Step 2: Add Parameter-Based Logic**
 
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Start with base configuration
-    agent.add_language("English", "en-US", "rime.spore:mistv2")
-    agent.prompt_add_section("Role", "You are a helpful assistant.")
-    
-    # Add parameter-based customization
-    timeout = int(query_params.get('timeout', '500'))
-    agent.set_params({"end_of_speech_timeout": timeout})
-    
-    version = query_params.get('version', '1.0')
-    agent.set_global_data({"version": version})
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Start with base configuration
+    configAgent.addLanguage("English", "en-US", "rime.spore:mistv2");
+    configAgent.promptAddSection("Role", "You are a helpful assistant.");
+
+    // Add parameter-based customization
+    int timeout = Integer.parseInt(queryParams.getOrDefault("timeout", "500"));
+    configAgent.setParams(Map.of("end_of_speech_timeout", timeout));
+
+    String version = queryParams.getOrDefault("version", "1.0");
+    configAgent.setGlobalData(Map.of("version", version));
+});
 ```
 
 **Step 3: Test Both Approaches**
 
 You can support both static and dynamic patterns during migration:
 
-```python
-class MyAgent(AgentBase):
-    def __init__(self, use_dynamic=False):
-        super().__init__(name="my-agent")
-        
-        if use_dynamic:
-            self.set_dynamic_config_callback(self.configure_agent)
-        else:
-            # Keep static configuration for backward compatibility
-            self._setup_static_config()
-    
-    def _setup_static_config(self):
-        # Original static configuration
-        self.add_language("English", "en-US", "rime.spore:mistv2")
-        # ... rest of static config
-    
-    def configure_agent(self, query_params, body_params, headers, agent):
-        # New dynamic configuration
-        # ... dynamic config logic
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .build();
+
+boolean useDynamic = false;
+
+if (useDynamic) {
+    agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+        // New dynamic configuration
+        // ... dynamic config logic
+    });
+} else {
+    // Keep static configuration for backward compatibility
+    agent.addLanguage("English", "en-US", "rime.spore:mistv2");
+    // ... rest of static config
+}
 ```
 
 ### Best Practices
@@ -1642,131 +1749,157 @@ class MyAgent(AgentBase):
 #### Performance Considerations
 
 1. **Keep Callbacks Lightweight**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Good: Simple parameter extraction and configuration
-    tier = query_params.get('tier', 'standard')
-    agent.set_params(TIER_CONFIGS[tier])
-    
-    # Avoid: Heavy computation or external API calls
-    # customer_data = expensive_api_call(customer_id)  # Don't do this
+<!-- snippet: no-compile illustrative — references an application-defined TIER_CONFIGS map -->
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Good: Simple parameter extraction and configuration
+    String tier = queryParams.getOrDefault("tier", "standard");
+    configAgent.setParams(TIER_CONFIGS.get(tier));
+
+    // Avoid: Heavy computation or external API calls
+    // Map<String,Object> customerData = expensiveApiCall(customerId);  // Don't do this
+});
 ```
 
 2. **Cache Configuration Data**
-```python
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-        
-        # Pre-compute configuration templates
-        self.tier_configs = {
-            'basic': {'end_of_speech_timeout': 500},
-            'premium': {'end_of_speech_timeout': 300},
-            'enterprise': {'end_of_speech_timeout': 200}
-        }
-        
-        self.set_dynamic_config_callback(self.configure_agent)
-    
-    def configure_agent(self, query_params, body_params, headers, agent):
-        tier = query_params.get('tier', 'basic')
-        agent.set_params(self.tier_configs[tier])
+```java
+import java.util.Map;
+
+// Pre-compute configuration templates once
+Map<String, Map<String, Object>> tierConfigs = Map.of(
+        "basic", Map.of("end_of_speech_timeout", 500),
+        "premium", Map.of("end_of_speech_timeout", 300),
+        "enterprise", Map.of("end_of_speech_timeout", 200)
+);
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    String tier = queryParams.getOrDefault("tier", "basic");
+    configAgent.setParams(tierConfigs.get(tier));
+});
 ```
 
 3. **Use Default Values**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Always provide defaults
-    language = query_params.get('language', 'en')
-    tier = query_params.get('tier', 'standard')
-    
-    # Handle invalid values gracefully
-    if language not in ['en', 'es', 'fr']:
-        language = 'en'
+```java
+import java.util.List;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Always provide defaults
+    String language = queryParams.getOrDefault("language", "en");
+    String tier = queryParams.getOrDefault("tier", "standard");
+
+    // Handle invalid values gracefully
+    if (!List.of("en", "es", "fr").contains(language)) {
+        language = "en";
+    }
+});
 ```
 
 #### Security Considerations
 
 1. **Validate Input Parameters**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Validate and sanitize inputs
-    tier = query_params.get('tier', 'standard')
-    if tier not in ['basic', 'premium', 'enterprise']:
-        tier = 'basic'  # Safe default
-    
-    # Validate numeric parameters
-    try:
-        timeout = int(query_params.get('timeout', '500'))
-        timeout = max(100, min(timeout, 2000))  # Clamp to reasonable range
-    except ValueError:
-        timeout = 500  # Safe default
+```java
+import java.util.List;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Validate and sanitize inputs
+    String tier = queryParams.getOrDefault("tier", "standard");
+    if (!List.of("basic", "premium", "enterprise").contains(tier)) {
+        tier = "basic";  // Safe default
+    }
+
+    // Validate numeric parameters
+    int timeout;
+    try {
+        timeout = Integer.parseInt(queryParams.getOrDefault("timeout", "500"));
+        timeout = Math.max(100, Math.min(timeout, 2000));  // Clamp to reasonable range
+    } catch (NumberFormatException e) {
+        timeout = 500;  // Safe default
+    }
+});
 ```
 
 2. **Protect Sensitive Configuration**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Don't expose internal configuration via parameters
-    # Bad: agent.set_global_data({"api_key": query_params.get('api_key')})
-    
-    # Good: Use internal mapping for call-related data only
-    customer_id = query_params.get('customer_id')
-    if customer_id and self.is_valid_customer(customer_id):
-        # Store call-related customer info, NOT sensitive credentials
-        agent.set_global_data({
-            "customer_id": customer_id,
-            "customer_tier": self.get_customer_tier(customer_id),
-            "account_type": "premium"
-        })
+<!-- snippet: no-compile illustrative — references application helpers isValidCustomer/getCustomerTier -->
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Don't expose internal configuration via parameters
+    // Bad: configAgent.setGlobalData(Map.of("api_key", queryParams.get("api_key")));
+
+    // Good: Use internal mapping for call-related data only
+    String customerId = queryParams.get("customer_id");
+    if (customerId != null && isValidCustomer(customerId)) {
+        // Store call-related customer info, NOT sensitive credentials
+        configAgent.setGlobalData(Map.of(
+                "customer_id", customerId,
+                "customer_tier", getCustomerTier(customerId),
+                "account_type", "premium"
+        ));
+    }
+});
 ```
 
 3. **Rate Limiting for Complex Configurations**
-```python
-from functools import lru_cache
+<!-- snippet: no-compile illustrative — references an application-defined `database` handle -->
+```java
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-class MyAgent(AgentBase):
-    @lru_cache(maxsize=100)
-    def get_customer_config(self, customer_id):
-        # Cache expensive lookups
-        return self.database.get_customer_settings(customer_id)
-    
-    def configure_agent(self, query_params, body_params, headers, agent):
-        customer_id = query_params.get('customer_id')
-        if customer_id:
-            config = self.get_customer_config(customer_id)
-            agent.set_global_data(config)
+// Cache expensive lookups (bounded, thread-safe)
+Map<String, Map<String, Object>> customerConfigCache = new ConcurrentHashMap<>();
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    String customerId = queryParams.get("customer_id");
+    if (customerId != null) {
+        Map<String, Object> config = customerConfigCache.computeIfAbsent(
+                customerId, id -> database.getCustomerSettings(id));
+        configAgent.setGlobalData(config);
+    }
+});
 ```
 
 #### Error Handling
 
 1. **Graceful Degradation**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    try:
-        # Try custom configuration
-        self.apply_custom_config(query_params, agent)
-    except Exception as e:
-        # Log error but don't fail the request
-        self.log.error("config_error", error=str(e))
-        
-        # Fall back to default configuration
-        self.apply_default_config(agent)
+<!-- snippet: no-compile illustrative — references application helpers applyCustomConfig/applyDefaultConfig -->
+```java
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    try {
+        // Try custom configuration
+        applyCustomConfig(queryParams, configAgent);
+    } catch (Exception e) {
+        // Log error but don't fail the request
+        System.err.println("config_error: " + e.getMessage());
+
+        // Fall back to default configuration
+        applyDefaultConfig(configAgent);
+    }
+});
 ```
 
 2. **Configuration Validation**
-```python
-def configure_agent(self, query_params, body_params, headers, agent):
-    # Validate required parameters
-    if not query_params.get('tenant'):
-        agent.set_global_data({"error": "Missing tenant parameter"})
-        return
-    
-    # Validate configuration makes sense
-    language = query_params.get('language', 'en')
-    region = query_params.get('region', 'us')
-    
-    if language == 'es' and region == 'us':
-        # Adjust for Spanish speakers in US
-        agent.add_language("Spanish (US)", "es-US", "rime.spore:mistv2")
+```java
+import java.util.Map;
+
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, configAgent) -> {
+    // Validate required parameters
+    if (queryParams.get("tenant") == null) {
+        configAgent.setGlobalData(Map.of("error", "Missing tenant parameter"));
+        return;
+    }
+
+    // Validate configuration makes sense
+    String language = queryParams.getOrDefault("language", "en");
+    String region = queryParams.getOrDefault("region", "us");
+
+    if ("es".equals(language) && "us".equals(region)) {
+        // Adjust for Spanish speakers in US
+        configAgent.addLanguage("Spanish (US)", "es-US", "rime.spore:mistv2");
+    }
+});
 ```
 
 Dynamic agent configuration enables sophisticated, multi-tenant AI applications while maintaining the familiar AgentBase API. Start with simple parameter-based configuration and gradually add more complex logic as your use cases evolve.
@@ -1779,13 +1912,17 @@ The debug events system provides real-time visibility into what the AI module is
 
 #### Basic Setup
 
-```python
-agent = AgentBase("my_agent")
-agent.enable_debug_events()  # That's it — events are auto-logged
-agent.serve()
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+agent = AgentBase.builder()
+        .name("my_agent")
+        .build();
+agent.enableDebugEvents();  // That's it — events are auto-logged
+agent.run();
 ```
 
-With just `enable_debug_events()`, every debug event is logged through the agent's structured logger. No other configuration is needed — the SDK automatically:
+With just `enableDebugEvents()`, every debug event is logged through the agent's structured logger. No other configuration is needed — the SDK automatically:
 - Registers a `/debug_events` endpoint on the agent
 - Sets `debug_webhook_url` and `debug_webhook_level` in the SWML params
 - Logs each incoming event with its type and payload
@@ -1794,26 +1931,34 @@ With just `enable_debug_events()`, every debug event is logged through the agent
 
 To act on specific events (alerting, metrics, custom logging), register a handler:
 
-```python
-agent = AgentBase("my_agent")
-agent.enable_debug_events()
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-@agent.on_debug_event
-def handle(event_type, data):
-    call_id = data.get("call_id")
+agent = AgentBase.builder()
+        .name("my_agent")
+        .build();
+agent.enableDebugEvents();
 
-    if event_type == "barge":
-        print(f"[{call_id}] Caller interrupted after {data.get('barge_elapsed_ms')}ms")
+// The callback receives the full event map (event type under "type",
+// plus call_id and event-specific fields).
+agent.onDebugEvent(event -> {
+    String eventType = (String) event.get("type");
+    String callId = (String) event.get("call_id");
 
-    elif event_type == "llm_error":
-        print(f"[{call_id}] LLM error: {data.get('event')}")
-        alert_ops_team(data)
+    if ("barge".equals(eventType)) {
+        System.out.println("[" + callId + "] Caller interrupted after "
+                + event.get("barge_elapsed_ms") + "ms");
+    } else if ("llm_error".equals(eventType)) {
+        System.out.println("[" + callId + "] LLM error: " + event.get("event"));
+        // alertOpsTeam(event);  // application-defined incident hook
+    } else if ("session_end".equals(eventType)) {
+        double durationMs = ((Number) event.getOrDefault("duration_ms", 0)).doubleValue();
+        System.out.printf("[%s] Call ended after %.1fs — reason: %s%n",
+                callId, durationMs / 1000, event.get("reason"));
+    }
+});
 
-    elif event_type == "session_end":
-        duration = data.get("duration_ms", 0) / 1000
-        print(f"[{call_id}] Call ended after {duration:.1f}s — reason: {data.get('reason')}")
-
-agent.serve()
+agent.run();
 ```
 
 The handler is called for every event in addition to the default structured logging.
@@ -1823,8 +1968,8 @@ The handler is called for every event in addition to the default structured logg
 - **Level 1** (default): High-level events — session start/end, barge, errors, step changes, hold, filler, gather flow, action processing
 - **Level 2+**: Adds high-volume events — every LLM request/response, conversation history additions
 
-```python
-agent.enable_debug_events(level=2)  # Include LLM request/response events
+```java
+agent.enableDebugEvents();  // Enable debug events (level is set on the AI params)
 ```
 
 For the complete list of event types and their payloads, see the [API Reference](api_reference.md#debug-events).
@@ -1850,104 +1995,120 @@ These hooks are particularly useful for:
 
 To implement lifecycle hooks, define them as regular SWAIG functions with these specific names:
 
-```python
-from signalwire_agents import AgentBase, SwaigFunctionResult
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="my-agent")
-    
-    @AgentBase.tool(
-        name="startup_hook",
-        description="Called when the voice session starts"
-    )
-    def startup_hook(self, args, raw_data):
-        # Extract session information
-        call_id = raw_data.get("call_id")
-        from_number = raw_data.get("from_number")
-        to_number = raw_data.get("to_number")
-        
-        # Initialize session state
-        self.update_state(call_id, {
-            "session_start": datetime.now().isoformat(),
-            "from": from_number,
-            "to": to_number,
-            "interaction_count": 0
-        })
-        
-        # Log session start
-        print(f"Session started: {call_id} from {from_number}")
-        
-        # Return success (SignalWire expects a response)
-        return SwaigFunctionResult("Session initialized successfully")
-    
-    @AgentBase.tool(
-        name="hangup_hook",
-        description="Called when the voice session ends"
-    )
-    def hangup_hook(self, args, raw_data):
-        # Extract session information
-        call_id = raw_data.get("call_id")
-        
-        # Retrieve session state
-        state = self.get_state(call_id)
-        
-        if state:
-            # Calculate session duration
-            start_time = datetime.fromisoformat(state.get("session_start"))
-            duration = (datetime.now() - start_time).total_seconds()
-            
-            # Log session metrics
-            print(f"Session ended: {call_id}")
-            print(f"Duration: {duration} seconds")
-            print(f"Interactions: {state.get('interaction_count', 0)}")
-            
-            # Clean up state (optional - SignalWire will clean up automatically)
-            self.delete_state(call_id)
-        
-        return SwaigFunctionResult("Session cleanup completed")
+import java.time.Instant;
+import java.util.Map;
+
+agent = AgentBase.builder()
+        .name("my-agent")
+        .build();
+
+// startup_hook: called when the voice session starts.
+agent.defineTool("startup_hook", "Called when the voice session starts",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> {
+            // Extract session information from the raw request
+            String callId = (String) rawData.get("call_id");
+            Object fromNumber = rawData.get("from_number");
+            Object toNumber = rawData.get("to_number");
+
+            // Initialize session state carried in global data (survives the call).
+            System.out.println("Session started: " + callId + " from " + fromNumber);
+
+            // Persist session start details via global data on the result.
+            return new FunctionResult("Session initialized successfully")
+                    .updateGlobalData(Map.of(
+                            "session_start", Instant.now().toString(),
+                            "from", fromNumber,
+                            "to", toNumber,
+                            "interaction_count", 0
+                    ));
+        });
+
+// hangup_hook: called when the voice session ends.
+agent.defineTool("hangup_hook", "Called when the voice session ends",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> {
+            String callId = (String) rawData.get("call_id");
+
+            // Retrieve session state from the request's global_data
+            @SuppressWarnings("unchecked")
+            Map<String, Object> state = (Map<String, Object>) rawData.get("global_data");
+
+            if (state != null && state.get("session_start") != null) {
+                // Calculate session duration
+                Instant startTime = Instant.parse((String) state.get("session_start"));
+                long durationSeconds = java.time.Duration.between(startTime, Instant.now()).getSeconds();
+
+                // Log session metrics
+                System.out.println("Session ended: " + callId);
+                System.out.println("Duration: " + durationSeconds + " seconds");
+                System.out.println("Interactions: " + state.getOrDefault("interaction_count", 0));
+            }
+
+            return new FunctionResult("Session cleanup completed");
+        });
 ```
 
 #### Common Use Cases
 
 ##### 1. User Preference Loading
-```python
-@AgentBase.tool(name="startup_hook", description="Called when the voice session starts", parameters={})
-def startup_hook(self, args, raw_data):
-    caller_id = raw_data.get("from_number")
-    
-    # Load user preferences from database
-    preferences = self.load_user_preferences(caller_id)
-    
-    # Store in session state for quick access
-    self.update_state(raw_data.get("call_id"), {
-        "user_preferences": preferences,
-        "language": preferences.get("language", "en-US"),
-        "previous_orders": preferences.get("recent_orders", [])
-    })
-    
-    return SwaigFunctionResult("User preferences loaded")
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+
+import java.util.Map;
+
+agent.defineTool("startup_hook", "Called when the voice session starts",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> {
+            String callerId = (String) rawData.get("from_number");
+
+            // Load user preferences from a database (application-defined helper)
+            Map<String, Object> preferences = Map.of();  // loadUserPreferences(callerId);
+
+            // Store in global data for quick access during the call
+            return new FunctionResult("User preferences loaded")
+                    .updateGlobalData(Map.of(
+                            "user_preferences", preferences,
+                            "language", preferences.getOrDefault("language", "en-US"),
+                            "previous_orders", preferences.getOrDefault("recent_orders", java.util.List.of())
+                    ));
+        });
 ```
 
 ##### 2. Analytics and Logging
-```python
-@AgentBase.tool(name="hangup_hook", description="Called when the voice session ends", parameters={})
-def hangup_hook(self, args, raw_data):
-    call_id = raw_data.get("call_id")
-    state = self.get_state(call_id)
-    
-    # Send analytics data
-    analytics_data = {
-        "call_id": call_id,
-        "duration": state.get("duration"),
-        "functions_called": state.get("functions_called", []),
-        "outcome": state.get("outcome", "unknown")
-    }
-    
-    # Post to analytics service
-    self.send_to_analytics(analytics_data)
-    
-    return SwaigFunctionResult("Analytics data sent")
+```java
+import com.signalwire.sdk.swaig.FunctionResult;
+
+import java.util.List;
+import java.util.Map;
+
+agent.defineTool("hangup_hook", "Called when the voice session ends",
+        Map.of("type", "object", "properties", Map.of()),
+        (args, rawData) -> {
+            String callId = (String) rawData.get("call_id");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> state = (Map<String, Object>) rawData.get("global_data");
+            if (state == null) {
+                state = Map.of();
+            }
+
+            // Assemble analytics data
+            Map<String, Object> analyticsData = Map.of(
+                    "call_id", callId,
+                    "duration", state.getOrDefault("duration", 0),
+                    "functions_called", state.getOrDefault("functions_called", List.of()),
+                    "outcome", state.getOrDefault("outcome", "unknown")
+            );
+
+            // Post to analytics service (application-defined helper)
+            // sendToAnalytics(analyticsData);
+
+            return new FunctionResult("Analytics data sent: " + analyticsData.size() + " fields");
+        });
 ```
 
 #### Important Notes
@@ -1956,7 +2117,7 @@ def hangup_hook(self, args, raw_data):
 2. **Error Handling**: Always implement proper error handling in hooks - failures shouldn't crash the voice session
 3. **Timing**: `startup_hook` is called before the AI starts speaking to the caller
 4. **Session Data**: Any data you need to persist across the session should be stored in external storage (Redis, database, etc.)
-5. **Return Values**: Both hooks must return a `SwaigFunctionResult` object
+5. **Return Values**: Both hooks must return a `FunctionResult` object
 
 ### SIP Routing
 
@@ -1966,16 +2127,16 @@ SIP routing allows your agents to receive voice calls via SIP addresses. The SDK
 
 Enable SIP routing on a single agent:
 
-```python
-# Enable SIP routing with automatic username mapping based on agent name
-agent.enable_sip_routing(auto_map=True)
+```java
+// Enable SIP routing with automatic username mapping based on agent name
+agent.enableSipRouting();
 
-# Register additional SIP usernames for this agent
-agent.register_sip_username("support_agent")
-agent.register_sip_username("help_desk")
+// Register additional SIP usernames for this agent
+agent.registerSipUsername("support_agent");
+agent.registerSipUsername("help_desk");
 ```
 
-When `auto_map=True`, the agent automatically registers SIP usernames based on:
+When SIP routing is enabled, the agent automatically registers SIP usernames based on:
 - The agent's name (e.g., `support@domain`)
 - The agent's route path (e.g., `/support` becomes `support@domain`)
 - Common variations (e.g., removing vowels for shorter dialing)
@@ -1984,24 +2145,27 @@ When `auto_map=True`, the agent automatically registers SIP usernames based on:
 
 For multi-agent setups, centralized routing is more efficient:
 
-```python
-# Create an AgentServer
-server = AgentServer(host="0.0.0.0", port=3000)
+<!-- snippet: no-compile illustrative — references example agent instances (registrationAgent/supportAgent) constructed elsewhere -->
+```java
+import com.signalwire.sdk.server.AgentServer;
 
-# Register multiple agents
-server.register(registration_agent)  # Route: /register
-server.register(support_agent)       # Route: /support
+// Create an AgentServer
+var server = new AgentServer("0.0.0.0", 3000);
 
-# Set up central SIP routing
-server.setup_sip_routing(route="/sip", auto_map=True)
+// Register multiple agents
+server.register(registrationAgent);  // Route: /register
+server.register(supportAgent);       // Route: /support
 
-# Register additional SIP username mappings
-server.register_sip_username("signup", "/register")    # signup@domain → registration agent
-server.register_sip_username("help", "/support")       # help@domain → support agent
+// Set up central SIP routing
+server.setupSipRouting("/sip", true);
+
+// Register additional SIP username mappings
+server.registerSipUsername("signup", "/register");    // signup@domain -> registration agent
+server.registerSipUsername("help", "/support");       // help@domain -> support agent
 ```
 
 With server-level routing:
-- Each agent is reachable via its name (when `auto_map=True`)
+- Each agent is reachable via its name (when auto-map is enabled)
 - Additional SIP usernames can be mapped to specific agent routes
 - All SIP routing is handled at a single endpoint (`/sip` by default)
 
@@ -2018,224 +2182,196 @@ With server-level routing:
 
 You can dynamically handle requests to different paths using routing callbacks:
 
-```python
-# Enable custom routing in the constructor or anytime after initialization
-self.register_routing_callback(self.handle_customer_route, path="/customer")
-self.register_routing_callback(self.handle_product_route, path="/product")
+```java
+import java.util.List;
+import java.util.Map;
 
-# Define the routing handlers
-def handle_customer_route(self, request, body):
-    """
-    Process customer-related requests
-    
-    Args:
-        request: FastAPI Request object
-        body: Parsed JSON body as dictionary
-        
-    Returns:
-        Optional[str]: A URL to redirect to, or None to process normally
-    """
-    # Extract any relevant data
-    customer_id = body.get("customer_id")
-    
-    # You can redirect to another agent/service if needed
-    if customer_id and customer_id.startswith("vip-"):
-        return f"/vip-handler/{customer_id}"
-        
-    # Or return None to process the request with on_swml_request
-    return None
-    
-# Customize SWML based on the route in on_swml_request
-def on_swml_request(self, request_data=None, callback_path=None):
-    """
-    Customize SWML based on the request and path
-    
-    Args:
-        request_data: The request body data
-        callback_path: The path that triggered the routing callback
-    """
-    if callback_path == "/customer":
-        # Serve customer-specific content
-        return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to customer service!"}}
-                ]
-            }
+// Register routing callbacks for specific paths.
+// A callback is (body, headers) -> route-or-null: return a URL to redirect to,
+// or null to process the request normally via onSwmlRequest.
+agent.registerRoutingCallback((body, headers) -> {
+    // Extract any relevant data
+    Object customerId = body.get("customer_id");
+
+    // You can redirect to another agent/service if needed
+    if (customerId instanceof String s && s.startsWith("vip-")) {
+        return "/vip-handler/" + s;
+    }
+
+    // Return null to process the request with onSwmlRequest
+    return null;
+}, "/customer");
+```
+
+To customize the SWML document based on the route, override `onSwmlRequest(requestData, callbackPath)` in a subclass of `AgentBase`:
+
+```java
+import com.signalwire.sdk.agent.AgentBase;
+
+import java.util.List;
+import java.util.Map;
+
+public class MyRoutedAgent extends AgentBase {
+
+    // Subclasses call the protected AgentBase(name, route, host, port, authUser, authPassword)
+    // constructor with explicit fields (see BedrockAgent for a full example).
+    public MyRoutedAgent(String name, String route) {
+        super(name, route, "0.0.0.0", 3000, null, null);
+    }
+
+    @Override
+    public Map<String, Object> onSwmlRequest(Map<String, Object> requestData, String callbackPath) {
+        if ("/customer".equals(callbackPath)) {
+            // Serve customer-specific content
+            return Map.of("sections", Map.of("main", List.of(
+                    Map.of("answer", Map.of()),
+                    Map.of("play", Map.of("url", "say:Welcome to customer service!"))
+            )));
         }
-    # Other path handling...
-    return None
+        // Other path handling...
+        return null;
+    }
+}
 ```
 
 ### Customizing SWML Requests
 
-You can modify the SWML document based on request data by overriding the `on_swml_request` method:
+You can modify the SWML document based on request data by overriding the `onSwmlRequest` method in a subclass:
 
-```python
-def on_swml_request(self, request_data=None, callback_path=None):
-    """
-    Customize the SWML document based on request data
-    
-    Args:
-        request_data: The request data (body for POST or query params for GET)
-        callback_path: The path that triggered the routing callback
-        
-    Returns:
-        Optional dict with modifications to apply to the document
-    """
-    if request_data and "caller_type" in request_data:
-        # Example: Return modifications to change the AI behavior based on caller type
-        if request_data["caller_type"] == "vip":
-            return {
-                "sections": {
-                    "main": [
-                        # Keep the first verb (answer)
-                        # Modify the AI verb parameters
-                        {
-                            "ai": {
-                                "params": {
-                                    "wait_for_user": False,
-                                    "end_of_speech_timeout": 500  # More responsive
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-            
-    # You can also use the callback_path to serve different content based on the route
-    if callback_path == "/customer":
-        return {
-            "sections": {
-                "main": [
-                    {"answer": {}},
-                    {"play": {"url": "say:Welcome to our customer service line."}}
-                ]
-            }
-        }
-    
-    # Return None to use the default document
-    return None
+<!-- snippet: no-compile illustrative — a single overridden method (@Override onSwmlRequest), shown outside its enclosing class -->
+```java
+import java.util.List;
+import java.util.Map;
+
+@Override
+public Map<String, Object> onSwmlRequest(Map<String, Object> requestData, String callbackPath) {
+    // requestData: the request data (body for POST or query params for GET)
+    // callbackPath: the path that triggered the routing callback
+    // Returns: a modifications map to apply to the document, or null.
+
+    if (requestData != null && "vip".equals(requestData.get("caller_type"))) {
+        // Return modifications to change the AI behavior based on caller type
+        return Map.of("sections", Map.of("main", List.of(
+                // Modify the AI verb parameters
+                Map.of("ai", Map.of("params", Map.of(
+                        "wait_for_user", false,
+                        "end_of_speech_timeout", 500  // More responsive
+                )))
+        )));
+    }
+
+    // You can also use the callbackPath to serve different content based on the route
+    if ("/customer".equals(callbackPath)) {
+        return Map.of("sections", Map.of("main", List.of(
+                Map.of("answer", Map.of()),
+                Map.of("play", Map.of("url", "say:Welcome to our customer service line."))
+        )));
+    }
+
+    // Return null to use the default document
+    return null;
+}
 ```
 
 ### Conversation Summary Handling
 
 Process conversation summaries:
 
-```python
-def on_summary(self, summary, raw_data=None):
-    """
-    Handle the conversation summary
-    
-    Args:
-        summary: The summary object or None if no summary was found
-        raw_data: The complete raw POST data from the request
-    """
-    if summary:
-        # Log the summary
-        self.log.info("conversation_summary", summary=summary)
-        
-        # Save the summary to a database, send notifications, etc.
-        # ...
+```java
+// Register a summary callback: (summary, rawPayload) -> void.
+// summary is the summary map (may be empty if none was produced);
+// rawPayload is the complete raw POST data from the request.
+agent.onSummary((summary, rawPayload) -> {
+    if (summary != null && !summary.isEmpty()) {
+        // Log the summary
+        System.out.println("conversation_summary: " + summary);
+
+        // Save the summary to a database, send notifications, etc.
+        // ...
+    }
+});
 ```
 
 ### Custom Webhook URLs
 
 You can override the default webhook URLs for SWAIG functions and post-prompt delivery:
 
-```python
-# In your agent initialization or setup code:
+```java
+// In your agent initialization or setup code:
 
-# Override the webhook URL for all SWAIG functions
-agent.set_web_hook_url("https://external-service.example.com/handle-swaig")
+// Override the webhook URL for all SWAIG functions
+agent.setWebHookUrl("https://external-service.example.com/handle-swaig");
 
-# Override the post-prompt delivery URL
-agent.set_post_prompt_url("https://analytics.example.com/conversation-summaries")
+// Override the post-prompt delivery URL
+agent.setPostPromptUrl("https://analytics.example.com/conversation-summaries");
 
-# These methods allow you to:
-# 1. Send function calls to external services instead of handling them locally
-# 2. Send conversation summaries to analytics services or other systems
-# 3. Use special URLs with pre-configured authentication
+// These methods allow you to:
+// 1. Send function calls to external services instead of handling them locally
+// 2. Send conversation summaries to analytics services or other systems
+// 3. Use special URLs with pre-configured authentication
 ```
 
 ### External Input Checking
 
 The SDK provides a check-for-input endpoint that allows agents to check for new input from external systems:
 
-```python
-# Example client code that checks for new input
-import requests
-import json
+<!-- snippet: no-compile illustrative — a standalone helper method definition (checkForNewInput), not a runnable statement block -->
+```java
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
-def check_for_new_input(agent_url, conversation_id, auth):
-    """
-    Check if there's any new input for a conversation
-    
-    Args:
-        agent_url: Base URL for the agent
-        conversation_id: ID of the conversation to check
-        auth: (username, password) tuple for basic auth
-    
-    Returns:
-        New messages if any, None otherwise
-    """
-    url = f"{agent_url}/check_for_input"
-    response = requests.post(
-        url,
-        json={"conversation_id": conversation_id},
-        auth=auth
-    )
-    
-    if response.status_code == 200:
-        data = response.json()
-        if data.get("new_input", False):
-            return data.get("messages", [])
-    
-    return None
-```
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 
-By default, the check_for_input endpoint returns an empty response. To implement custom behavior, override the `_handle_check_for_input_request` method in your agent:
+// Example client code that checks for new input.
+// Returns new messages if any, or null.
+static List<Object> checkForNewInput(String agentUrl, String conversationId,
+                                     String user, String pass) throws Exception {
+    Gson gson = new Gson();
+    String basic = Base64.getEncoder()
+            .encodeToString((user + ":" + pass).getBytes());
 
-```python
-async def _handle_check_for_input_request(self, request):
-    # First do basic authentication check
-    if not self._check_basic_auth(request):
-        return Response(
-            content=json.dumps({"error": "Unauthorized"}),
-            status_code=401,
-            headers={"WWW-Authenticate": "Basic"},
-            media_type="application/json"
-        )
-    
-    # Get conversation_id from request
-    conversation_id = None
-    if request.method == "POST":
-        body = await request.json()
-        conversation_id = body.get("conversation_id")
-    else:
-        conversation_id = request.query_params.get("conversation_id")
-    
-    if not conversation_id:
-        return Response(
-            content=json.dumps({"error": "Missing conversation_id"}),
-            status_code=400,
-            media_type="application/json"
-        )
-    
-    # Custom logic to check for new input
-    # For example, checking a database or external API
-    messages = self._get_new_messages(conversation_id)
-    
-    return {
-        "status": "success",
-        "conversation_id": conversation_id,
-        "new_input": len(messages) > 0,
-        "messages": messages
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(agentUrl + "/check_for_input"))
+            .header("Authorization", "Basic " + basic)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(
+                    gson.toJson(Map.of("conversation_id", conversationId))))
+            .build();
+
+    HttpResponse<String> response = HttpClient.newHttpClient()
+            .send(request, HttpResponse.BodyHandlers.ofString());
+
+    if (response.statusCode() == 200) {
+        Map<String, Object> data = gson.fromJson(
+                response.body(), new TypeToken<Map<String, Object>>() {}.getType());
+        if (Boolean.TRUE.equals(data.get("new_input"))) {
+            @SuppressWarnings("unchecked")
+            List<Object> messages = (List<Object>) data.getOrDefault("messages", List.of());
+            return messages;
+        }
     }
+    return null;
+}
 ```
 
-This endpoint is useful for implementing asynchronous conversations where users might send messages through different channels that need to be incorporated into the agent conversation.
+By default, the `/check_for_input` endpoint returns an empty response (`{"new_input": false, "messages": []}`) after enforcing basic authentication. It is served automatically by the agent's built-in HTTP server. A successful response has this shape:
+
+```json
+{
+    "status": "success",
+    "conversation_id": "conv-123",
+    "new_input": true,
+    "messages": [ /* new messages, if any */ ]
+}
+```
+
+To supply your own messages (for example, from a database or an external API), front the agent with a small handler on the `/check_for_input` route that performs the lookup and returns the JSON above. This endpoint is useful for implementing asynchronous conversations where users might send messages through different channels that need to be incorporated into the agent conversation.
 
 ## Prefab Agents
 
@@ -2249,133 +2385,143 @@ The SDK includes several built-in prefab agents:
 
 Collects structured information from users:
 
-```python
-from signalwire_agents.prefabs import InfoGathererAgent
+```java
+import com.signalwire.sdk.prefabs.InfoGathererAgent;
 
-agent = InfoGathererAgent(
-    fields=[
-        {"name": "full_name", "prompt": "What is your full name?"},
-        {"name": "email", "prompt": "What is your email address?", 
-         "validation": r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"},
-        {"name": "reason", "prompt": "How can I help you today?"}
-    ],
-    confirmation_template="Thanks {full_name}, I'll help you with {reason}. I'll send a confirmation to {email}.",
-    name="info-gatherer",
-    route="/info-gatherer"
-)
+import java.util.List;
 
-agent.serve(host="0.0.0.0", port=8000)
+// InfoGathererAgent(name, questions[, route, port]).
+// Build each question with the InfoGathererAgent.question(keyName, questionText) factory.
+var prefab = new InfoGathererAgent(
+        "info-gatherer",
+        List.of(
+                InfoGathererAgent.question("full_name", "What is your full name?"),
+                InfoGathererAgent.question("email", "What is your email address?"),
+                InfoGathererAgent.question("reason", "How can I help you today?")
+        )
+);
+
+prefab.run();
 ```
 
 #### FAQBotAgent
 
 Answers questions based on a knowledge base:
 
-```python
-from signalwire_agents.prefabs import FAQBotAgent
+```java
+import com.signalwire.sdk.prefabs.FAQBotAgent;
 
-agent = FAQBotAgent(
-    knowledge_base_path="./docs",
-    personality="I'm a product documentation assistant.",
-    citation_style="inline",
-    name="knowledge-base",
-    route="/knowledge-base"
-)
+import java.util.List;
 
-agent.serve(host="0.0.0.0", port=8000)
+// FAQBotAgent(name, faqs[, route, port]).
+// Each FAQ is built with FAQBotAgent.faq(question, answer, keywords).
+var prefab = new FAQBotAgent(
+        "knowledge-base",
+        List.of(
+                FAQBotAgent.faq(
+                        "What is SignalWire?",
+                        "SignalWire is a communications platform with APIs for voice, video, and messaging.",
+                        List.of("signalwire", "platform", "api")),
+                FAQBotAgent.faq(
+                        "How do I create an AI Agent?",
+                        "Use the SignalWire AI Agent SDK to build and deploy conversational AI agents.",
+                        List.of("agent", "sdk", "create"))
+        )
+);
+
+prefab.run();
 ```
 
 #### ConciergeAgent
 
-Routes users to specialized agents:
+Acts as a venue concierge providing amenity information and availability:
 
-```python
-from signalwire_agents.prefabs import ConciergeAgent
+```java
+import com.signalwire.sdk.prefabs.ConciergeAgent;
 
-agent = ConciergeAgent(
-    routing_map={
-        "technical_support": {
-            "url": "http://tech-support-agent:8001",
-            "criteria": ["error", "broken", "not working"]
-        },
-        "sales": {
-            "url": "http://sales-agent:8002",
-            "criteria": ["pricing", "purchase", "subscribe"]
-        }
-    },
-    greeting="Welcome to SignalWire. How can I help you today?",
-    name="concierge",
-    route="/concierge"
-)
+import java.util.List;
 
-agent.serve(host="0.0.0.0", port=8000)
+// ConciergeAgent(name, venueName, amenities[, route, port]).
+// Each amenity is built with ConciergeAgent.amenity(name, description, hours, location, price).
+var prefab = new ConciergeAgent(
+        "concierge",
+        "Oceanview Resort",
+        List.of(
+                ConciergeAgent.amenity("Infinity Pool",
+                        "Heated infinity pool overlooking the ocean.",
+                        "7:00 AM - 10:00 PM", "Main Level", null),
+                ConciergeAgent.amenity("Spa",
+                        "Full-service luxury spa with massages and treatments.",
+                        "9:00 AM - 8:00 PM", "Lower Level", "$150+")
+        )
+);
+
+prefab.run();
 ```
 
 #### SurveyAgent
 
 Conducts structured surveys with different question types:
 
-```python
-from signalwire_agents.prefabs import SurveyAgent
+```java
+import com.signalwire.sdk.prefabs.SurveyAgent;
 
-agent = SurveyAgent(
-    survey_name="Customer Satisfaction",
-    introduction="We'd like to know about your recent experience with our product.",
-    questions=[
-        {
-            "id": "satisfaction",
-            "text": "How satisfied are you with our product?",
-            "type": "rating",
-            "scale": 5,
-            "labels": {
-                "1": "Very dissatisfied",
-                "5": "Very satisfied"
-            }
-        },
-        {
-            "id": "feedback",
-            "text": "Do you have any specific feedback about how we can improve?",
-            "type": "text"
-        }
-    ],
-    name="satisfaction-survey",
-    route="/survey"
-)
+import java.util.List;
 
-agent.serve(host="0.0.0.0", port=8000)
+// SurveyAgent(name, questions[, completionMessage, route, port]).
+// Build questions with the typed factory methods: ratingQuestion, multipleChoiceQuestion,
+// yesNoQuestion, openEndedQuestion.
+var prefab = new SurveyAgent(
+        "satisfaction-survey",
+        List.of(
+                SurveyAgent.ratingQuestion(
+                        "How satisfied are you with our product?", 1, 5),
+                SurveyAgent.openEndedQuestion(
+                        "Do you have any specific feedback about how we can improve?")
+        )
+);
+
+prefab.run();
 ```
 
 #### ReceptionistAgent
 
 Handles call routing and department transfers:
 
-```python
-from signalwire_agents.prefabs import ReceptionistAgent
+```java
+import com.signalwire.sdk.prefabs.ReceptionistAgent;
 
-agent = ReceptionistAgent(
-    departments=[
-        {"name": "sales", "description": "For product inquiries and pricing", "number": "+15551235555"},
-        {"name": "support", "description": "For technical assistance", "number": "+15551236666"},
-        {"name": "billing", "description": "For payment and invoice questions", "number": "+15551237777"}
-    ],
-    greeting="Thank you for calling ACME Corp. How may I direct your call?",
-    voice="rime.spore:mistv2",
-    name="acme-receptionist",
-    route="/reception"
-)
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-agent.serve(host="0.0.0.0", port=8000)
+// ReceptionistAgent(name, greeting, departments[, route, port]).
+// departments maps a display name to a config built with ReceptionistAgent.phoneDepartment(description, number).
+Map<String, Map<String, Object>> departments = new LinkedHashMap<>();
+departments.put("Sales",
+        ReceptionistAgent.phoneDepartment("For product inquiries and pricing", "+15551235555"));
+departments.put("Support",
+        ReceptionistAgent.phoneDepartment("For technical assistance", "+15551236666"));
+departments.put("Billing",
+        ReceptionistAgent.phoneDepartment("For payment and invoice questions", "+15551237777"));
+
+var prefab = new ReceptionistAgent(
+        "acme-receptionist",
+        "Thank you for calling ACME Corp. How may I direct your call?",
+        departments
+);
+
+prefab.run();
 ```
 
 ### Creating Your Own Prefabs
 
-You can create your own prefab agents by extending `AgentBase` or any existing prefab. Custom prefabs can be created directly within your project or packaged as reusable libraries.
+You can create your own prefab agents by wrapping an `AgentBase` and applying configuration in the constructor. The SDK's own prefabs use this composition pattern: hold an `AgentBase`, configure it, and expose `run()` (and `getAgent()`) for consumers. Custom prefabs can live in your project or be packaged as reusable libraries.
 
 #### Basic Prefab Structure
 
 A well-designed prefab should:
 
-1. Extend `AgentBase` or another prefab
+1. Wrap an `AgentBase` (or another prefab)
 2. Take configuration parameters in the constructor
 3. Apply configuration to set up the agent
 4. Provide appropriate default values
@@ -2383,133 +2529,129 @@ A well-designed prefab should:
 
 Example of a custom support agent prefab:
 
-```python
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-class CustomerSupportAgent(AgentBase):
-    def __init__(
-        self,
-        product_name,
-        knowledge_base_path=None,
-        support_email=None,
-        escalation_path=None,
-        **kwargs
-    ):
-        # Pass standard params to parent
-        super().__init__(**kwargs)
-        
-        # Store custom configuration
-        self._product_name = product_name
-        self._knowledge_base_path = knowledge_base_path
-        self._support_email = support_email
-        self._escalation_path = escalation_path
-        
-        # Configure prompt
-        self.prompt_add_section("Personality", 
-                               body=f"I am a customer support agent for {product_name}.")
-        self.prompt_add_section("Goal", 
-                               body="Help customers solve their problems effectively.")
-        
-        # Add standard instructions
-        self._configure_instructions()
-        
-        # Register default tools
-        self._register_default_tools()
-    
-    def _configure_instructions(self):
-        """Configure standard instructions based on settings"""
-        instructions = [
-            "Be professional but friendly.",
-            "Verify the customer's identity before sharing account details."
-        ]
-        
-        if self._escalation_path:
-            instructions.append(
-                f"For complex issues, offer to escalate to {self._escalation_path}."
-            )
-            
-        self.prompt_add_section("Instructions", bullets=instructions)
-    
-    def _register_default_tools(self):
-        """Register default tools if appropriate paths are configured"""
-        if self._knowledge_base_path:
-            self.register_knowledge_base_tool()
-    
-    def register_knowledge_base_tool(self):
-        """Register the knowledge base search tool if configured"""
-        # Implementation...
-        pass
-    
-    @AgentBase.tool(
-        name="escalate_issue",
-        description="Escalate a customer issue to a human agent",
-        parameters={
-            "issue_summary": {"type": "string", "description": "Brief summary of the issue"},
-            "customer_email": {"type": "string", "description": "Customer's email address"}
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class CustomerSupportAgent {
+
+    private final AgentBase agent;
+
+    public CustomerSupportAgent(String name, String route, String productName,
+                                String escalationPath) {
+        // Build the underlying agent
+        this.agent = AgentBase.builder()
+                .name(name)
+                .route(route)
+                .build();
+
+        // Configure prompt
+        agent.promptAddSection("Personality",
+                "I am a customer support agent for " + productName + ".");
+        agent.promptAddSection("Goal",
+                "Help customers solve their problems effectively.");
+
+        // Standard instructions (conditional on configuration)
+        List<String> instructions = new ArrayList<>(List.of(
+                "Be professional but friendly.",
+                "Verify the customer's identity before sharing account details."));
+        if (escalationPath != null) {
+            instructions.add("For complex issues, offer to escalate to " + escalationPath + ".");
         }
-    )
-    def escalate_issue(self, args, raw_data):
-        # Implementation...
-        return SwaigFunctionResult("Issue escalated successfully.")
-    
-    @AgentBase.tool(
-        name="send_support_email",
-        description="Send a follow-up email to the customer",
-        parameters={
-            "customer_email": {"type": "string"},
-            "issue_summary": {"type": "string"},
-            "resolution_steps": {"type": "string"}
-        }
-    )
-    def send_support_email(self, args, raw_data):
-        # Implementation...
-        return SwaigFunctionResult("Follow-up email sent successfully.")
+        agent.promptAddSection("Instructions", "", instructions);
+
+        // Register default tools
+        registerDefaultTools();
+    }
+
+    private void registerDefaultTools() {
+        agent.defineTool("escalate_issue",
+                "Escalate a customer issue to a human agent",
+                Map.of("type", "object", "properties", Map.of(
+                        "issue_summary", Map.of("type", "string",
+                                "description", "Brief summary of the issue"),
+                        "customer_email", Map.of("type", "string",
+                                "description", "Customer's email address")
+                )),
+                (args, rawData) -> new FunctionResult("Issue escalated successfully."));
+
+        agent.defineTool("send_support_email",
+                "Send a follow-up email to the customer",
+                Map.of("type", "object", "properties", Map.of(
+                        "customer_email", Map.of("type", "string"),
+                        "issue_summary", Map.of("type", "string"),
+                        "resolution_steps", Map.of("type", "string")
+                )),
+                (args, rawData) -> new FunctionResult("Follow-up email sent successfully."));
+    }
+
+    /** Expose the underlying agent for further customization. */
+    public AgentBase getAgent() {
+        return agent;
+    }
+
+    /** Start the agent's HTTP server. */
+    public void run() throws Exception {
+        agent.run();
+    }
+}
 ```
 
 #### Using the Custom Prefab
 
-```python
-# Create an instance of the custom prefab
-support_agent = CustomerSupportAgent(
-    product_name="SignalWire Voice API",
-    knowledge_base_path="./product_docs",
-    support_email="support@example.com",
-    escalation_path="tier 2 support",
-    name="voice-support",
-    route="/voice-support"
-)
+<!-- snippet: no-compile references CustomerSupportAgent, the custom prefab class defined in the preceding block (cross-block reference) -->
+```java
+// Create an instance of the custom prefab
+var supportAgent = new CustomerSupportAgent(
+        "voice-support",
+        "/voice-support",
+        "SignalWire Voice API",
+        "tier 2 support"
+);
 
-# Start the agent
-support_agent.serve(host="0.0.0.0", port=8000)
+// Start the agent
+supportAgent.run();
 ```
 
 #### Customizing Existing Prefabs
 
-You can also extend and customize the built-in prefabs:
+You can also start from a built-in prefab and customize its underlying agent via `getAgent()`:
 
-```python
-from signalwire_agents.prefabs import InfoGathererAgent
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.prefabs.InfoGathererAgent;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-class EnhancedGatherer(InfoGathererAgent):
-    def __init__(self, fields, **kwargs):
-        super().__init__(fields=fields, **kwargs)
-        
-        # Add an additional instruction
-        self.prompt_add_section("Instructions", bullets=[
-            "Verify all information carefully."
-        ])
-        
-        # Add an additional custom tool
-        
-    @AgentBase.tool(
-        name="check_customer", 
-        description="Check customer status in database",
-        parameters={"email": {"type": "string"}}
-    )
-    def check_customer(self, args, raw_data):
-        # Implementation...
-        return SwaigFunctionResult("Customer status: Active")
+import java.util.List;
+import java.util.Map;
+
+var gatherer = new InfoGathererAgent(
+        "enhanced-gatherer",
+        List.of(
+                InfoGathererAgent.question("full_name", "What is your full name?"),
+                InfoGathererAgent.question("email", "What is your email address?")
+        )
+);
+
+// Reach into the underlying agent to add customizations
+agent = gatherer.getAgent();
+
+// Add an additional instruction
+agent.promptAddSection("Instructions", "", List.of(
+        "Verify all information carefully."
+));
+
+// Add an additional custom tool
+agent.defineTool("check_customer", "Check customer status in database",
+        Map.of("type", "object", "properties", Map.of(
+                "email", Map.of("type", "string"))),
+        (args, rawData) -> new FunctionResult("Customer status: Active"));
+
+gatherer.run();
 ```
 
 ### Best Practices for Prefab Design
@@ -2526,100 +2668,94 @@ class EnhancedGatherer(InfoGathererAgent):
 
 To create distributable prefabs that can be used across multiple projects:
 
-1. **Package Structure**: Create a proper Python package
-2. **Documentation**: Include clear usage examples 
+1. **Package Structure**: Create a proper Java library (its own Gradle/Maven module)
+2. **Documentation**: Include clear usage examples
 3. **Configuration**: Support both code and file-based configuration
 4. **Testing**: Include tests for your prefab
-5. **Publishing**: Publish to PyPI or share via GitHub
+5. **Publishing**: Publish to Maven Central or share via GitHub
 
-Example package structure:
+Example project structure:
 
 ```
 my-prefab-agents/
 ├── README.md
-├── setup.py
-├── examples/
-│   └── support_agent_example.py
-└── my_prefab_agents/
-    ├── __init__.py
-    ├── support.py
-    ├── retail.py
-    └── utils/
-        ├── __init__.py
-        └── knowledge_base.py
+├── build.gradle
+└── src/
+    ├── main/java/com/example/prefabs/
+    │   ├── SupportAgent.java
+    │   ├── RetailAgent.java
+    │   └── util/
+    │       └── KnowledgeBase.java
+    └── test/java/com/example/prefabs/
+        └── SupportAgentTest.java
 ```
 
 ## API Reference
 
-### Constructor Parameters
+### Builder Parameters
 
-- `name`: Agent name/identifier (required)
-- `route`: HTTP route path (default: "/")
-- `host`: Host to bind to (default: "0.0.0.0")
-- `port`: Port to bind to (default: 3000)
-- `basic_auth`: Optional (username, password) tuple
-- `use_pom`: Whether to use POM for prompts (default: True)
-- `token_expiry_secs`: Security token expiry time (default: 3600)
-- `auto_answer`: Auto-answer calls (default: True)
-- `record_call`: Record calls (default: False)
-- `schema_path`: Optional path to schema.json file
-- `suppress_logs`: Whether to suppress structured logs (default: False)
+Agents are constructed via `AgentBase.builder()...build()`:
+
+- `.name(String)`: Agent name/identifier (default: "agent")
+- `.route(String)`: HTTP route path (default: "/")
+- `.host(String)`: Host to bind to (default: "0.0.0.0")
+- `.port(int)`: Port to bind to (default: 3000)
+- `.authUser(String)` / `.authPassword(String)`: Optional basic-auth credentials (auto-generated if unset)
+- `.autoAnswer(boolean)`: Auto-answer calls (default: true)
+- `.maxDuration(int)`: Maximum call duration in seconds (default: 3600)
+- `.recordCall(boolean)`: Record calls (default: false)
+- `.recordFormat(String)` / `.recordStereo(boolean)`: Recording format and stereo flag
+
+The Prompt Object Model (POM) is always enabled. Logging is controlled by the `SIGNALWIRE_LOG_LEVEL` / `SIGNALWIRE_LOG_MODE` environment variables.
 
 ### Prompt Methods
 
-- `prompt_add_section(title, body=None, bullets=None, numbered=False, numbered_bullets=False)`
-- `prompt_add_subsection(parent_title, title, body=None, bullets=None)`
-- `prompt_add_to_section(title, body=None, bullet=None, bullets=None)`
-- `set_prompt_text(prompt_text)` or `set_prompt(prompt_text)`
-- `set_post_prompt(prompt_text)`
+- `promptAddSection(String title, String body)` and `promptAddSection(String title, String body, List<String> bullets)`
+- `promptAddSubsection(String parentTitle, String title, String body)`
+- `promptAddToSection(String title, List<String> bullets)`
+- `setPromptText(String)`
+- `setPostPrompt(String)`
 
 ### SWAIG Methods
 
-- `@AgentBase.tool(name, description, parameters={}, secure=True, fillers=None)`
-- `define_tool(name, description, parameters, handler, secure=True, fillers=None)`
-- `set_native_functions(function_names)`
-- `add_native_function(function_name)`
-- `remove_native_function(function_name)`
-- `add_function_include(url, functions, meta_data=None)`
+- `defineTool(String name, String description, Map<String,Object> parameters, ToolHandler handler)`
+- `defineTool(ToolDefinition toolDef)` — use `new ToolDefinition(...).setSecure(boolean).setExtraFields(Map)` for security and external webhooks
+- `registerSwaigFunction(Map<String,Object> swaigFunc)`
+- `setNativeFunctions(List<String> functionNames)`
+- `addFunctionInclude(String url, Map<String,Object> functions)`
 
 ### Configuration Methods
 
-- `add_hint(hint)` and `add_hints(hints)`
-- `add_pattern_hint(hint, pattern, replace, ignore_case=False)`
-- `add_pronunciation(replace, with_text, ignore_case=False)`
-- `add_language(name, code, voice, speech_fillers=None, function_fillers=None, engine=None, model=None)`
-- `set_param(key, value)` and `set_params(params_dict)`
-- `set_global_data(data_dict)` and `update_global_data(data_dict)`
+- `addHint(String)` and `addHints(List<String>)`
+- `addPatternHint(String hint, String pattern, String replace, boolean ignoreCase)`
+- `addPronunciation(String replace, String with, boolean ignoreCase)`
+- `addLanguage(String name, String code, String voice)` and the full overload `addLanguage(name, code, voice, speechFillers, functionFillers, engine, model)`
+- `setParam(String key, Object value)` and `setParams(Map<String,Object>)`
+- `setGlobalData(Map<String,Object>)` and `updateGlobalData(Map<String,Object>)`
 
-### State Methods
+### State
 
-- `get_state(call_id)`
-- `set_state(call_id, data)` 
-- `update_state(call_id, data)`
-- `clear_state(call_id)`
-- `cleanup_expired_state()`
+Per-conversation state is carried in the SWML `global_data` object rather than a separate state store. Read the current global data from a handler's `rawData` map (`rawData.get("global_data")`) and mutate it from a tool result via `FunctionResult.updateGlobalData(Map)` / `removeGlobalData(...)`.
 
 ### SIP Routing Methods
 
-- `enable_sip_routing(auto_map=True, path="/sip")`: Enable SIP routing for an agent
-- `register_sip_username(sip_username)`: Register a SIP username for an agent
-- `auto_map_sip_usernames()`: Automatically register SIP usernames based on agent attributes
+- `enableSipRouting()`: Enable SIP routing for an agent (auto-maps usernames from the agent name/route)
+- `registerSipUsername(String sipUsername)`: Register a SIP username for an agent
 
 #### AgentServer SIP Methods
 
-- `setup_sip_routing(route="/sip", auto_map=True)`: Set up central SIP routing for a server
-- `register_sip_username(username, route)`: Map a SIP username to an agent route
+- `setupSipRouting(String route, boolean autoMap)`: Set up central SIP routing for a server
+- `registerSipUsername(String username, String route)`: Map a SIP username to an agent route
 
 ### Service Methods
 
-- `serve(host=None, port=None)`: Start the web server
-- `as_router()`: Return a FastAPI router for this agent
-- `on_swml_request(request_data=None, callback_path=None)`: Customize SWML based on request data and path
-- `on_summary(summary, raw_data=None)`: Handle post-prompt summaries
-- `on_function_call(name, args, raw_data=None)`: Process SWAIG function calls
-- `register_routing_callback(callback_fn, path="/sip")`: Register a callback for custom path routing
-- `set_web_hook_url(url)`: Override the default web_hook_url with a supplied URL string
-- `set_post_prompt_url(url)`: Override the default post_prompt_url with a supplied URL string
+- `run()`: Start the built-in HTTP server (blocks)
+- `onSwmlRequest(Map<String,Object> requestData, String callbackPath)`: Override to customize SWML based on request data and path
+- `onSummary(BiConsumer<Map,Map> callback)`: Register a post-prompt summary handler
+- `onFunctionCall(String name, Map args, Map rawData)`: Process SWAIG function calls
+- `registerRoutingCallback(BiFunction<Map,Map,String> callback, String path)`: Register a callback for custom path routing
+- `setWebHookUrl(String url)`: Override the default `web_hook_url`
+- `setPostPromptUrl(String url)`: Override the default `post_prompt_url`
 
 ### Endpoint Methods
 
@@ -2635,176 +2771,55 @@ The SDK provides several endpoints for different purposes:
 
 ## Testing
 
-The SignalWire AI Agent SDK provides comprehensive testing capabilities through the `swaig-test` CLI tool, which allows you to test agents locally and simulate serverless environments without deployment.
+The SignalWire AI Agent SDK provides testing capabilities through the `bin/swaig-test` CLI tool, which drives a running agent over HTTP (or loads an agent class in-process) to list tools, render SWML, and execute SWAIG functions.
 
 ### Local Agent Testing
 
-Test your agents locally before deployment:
+Start your agent (e.g. `java SimpleAgent`), then point the CLI at its URL. The URL includes the basic-auth credentials the agent prints on startup:
 
 ```bash
-# Discover agents in a file
-swaig-test examples/my_agent.py
-
 # List available functions
-swaig-test examples/my_agent.py --list-tools
+bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
 
-# Test SWAIG functions
-swaig-test examples/my_agent.py --exec get_weather --location "New York"
+# Test a SWAIG function (pass arguments as --param key=value)
+bin/swaig-test --url http://user:pass@localhost:3000 --exec get_weather --param city=Austin
 
-# Generate SWML documents
-swaig-test examples/my_agent.py --dump-swml
+# Generate the SWML document
+bin/swaig-test --url http://user:pass@localhost:3000 --dump-swml
 ```
 
-### Serverless Environment Simulation
+### In-Process Class Loading
 
-Test your agents in simulated serverless environments to ensure they work correctly when deployed:
-
-#### AWS Lambda Testing
+To introspect an agent or SWML service without starting an HTTP server, load its class directly. This is handy for sidecar / standalone SWAIG hosts whose tools do not appear via `--list-tools --url`:
 
 ```bash
-# Basic Lambda environment simulation
-swaig-test examples/my_agent.py --simulate-serverless lambda --dump-swml
-
-# Test with custom Lambda configuration
-swaig-test examples/my_agent.py --simulate-serverless lambda \
-  --aws-function-name my-production-function \
-  --aws-region us-west-2 \
-  --exec my_function --param value
-
-# Test function execution in Lambda context
-swaig-test examples/my_agent.py --simulate-serverless lambda \
-  --exec get_weather --location "Miami" \
-  --full-request
+# Load a Service subclass in-process and list its registered tools
+bin/swaig-test --class examples.SwmlServiceSwaigStandalone --list-tools
 ```
 
-#### CGI Environment Testing
+The `--class` FQCN must extend `com.signalwire.sdk.swml.Service` and have a public no-arg constructor. No socket is bound.
+
+### Serverless (AWS Lambda) Simulation
+
+You can route an agent class through the serverless adapter to verify it behaves correctly when deployed to AWS Lambda. Pass the agent's fully-qualified class name and `--simulate-serverless lambda`:
 
 ```bash
-# Test CGI environment
-swaig-test examples/my_agent.py --simulate-serverless cgi \
-  --cgi-host my-server.com \
-  --cgi-https \
-  --dump-swml
+# Render SWML through the Lambda adapter
+bin/swaig-test MyAgent --simulate-serverless lambda --dump-swml
 
-# Test function in CGI context
-swaig-test examples/my_agent.py --simulate-serverless cgi \
-  --cgi-host example.com \
-  --exec my_function --param value
+# Execute a SWAIG function through the Lambda adapter
+bin/swaig-test MyAgent --simulate-serverless lambda --exec get_weather --param city=Miami
 ```
 
-#### Google Cloud Functions Testing
-
-```bash
-# Test Cloud Functions environment
-swaig-test examples/my_agent.py --simulate-serverless cloud_function \
-  --gcp-project my-project \
-  --gcp-function-url https://my-function.cloudfunctions.net \
-  --dump-swml
-```
-
-#### Azure Functions Testing
-
-```bash
-# Test Azure Functions environment
-swaig-test examples/my_agent.py --simulate-serverless azure_function \
-  --azure-env production \
-  --azure-function-url https://my-function.azurewebsites.net \
-  --exec my_function
-```
-
-### Environment Variable Management
-
-Use environment files for consistent testing across different platforms:
-
-```bash
-# Create environment file for production testing
-cat > production.env << EOF
-AWS_LAMBDA_FUNCTION_NAME=prod-my-agent
-AWS_REGION=us-east-1
-API_KEY=prod_api_key_123
-DEBUG=false
-TIMEOUT=60
-EOF
-
-# Test with environment file
-swaig-test examples/my_agent.py --simulate-serverless lambda \
-  --env-file production.env \
-  --exec critical_function --input "test"
-
-# Override specific variables
-swaig-test examples/my_agent.py --simulate-serverless lambda \
-  --env-file production.env \
-  --env DEBUG=true \
-  --dump-swml
-```
-
-### Cross-Platform Testing
-
-Test the same agent across multiple platforms to ensure compatibility:
-
-```bash
-# Test across all platforms
-for platform in lambda cgi cloud_function azure_function; do
-  echo "Testing $platform..."
-  swaig-test examples/my_agent.py --simulate-serverless $platform \
-    --exec my_function --param value
-done
-
-# Compare SWML generation across platforms
-swaig-test examples/my_agent.py --simulate-serverless lambda --dump-swml > lambda.swml
-swaig-test examples/my_agent.py --simulate-serverless cgi --cgi-host example.com --dump-swml > cgi.swml
-diff lambda.swml cgi.swml
-```
-
-### Webhook URL Verification
-
-The serverless simulation automatically generates platform-appropriate webhook URLs:
-
-| Platform | Example Webhook URL |
-|----------|-------------------|
-| Lambda (Function URL) | `https://abc123.lambda-url.us-east-1.on.aws/swaig/` |
-| Lambda (API Gateway) | `https://api123.execute-api.us-east-1.amazonaws.com/prod/swaig/` |
-| CGI | `https://example.com/cgi-bin/agent.cgi/swaig/` |
-| Cloud Functions | `https://my-function-abc123.cloudfunctions.net/swaig/` |
-| Azure Functions | `https://my-function.azurewebsites.net/swaig/` |
-
-Verify webhook URLs are generated correctly:
-
-```bash
-# Check Lambda webhook URL
-swaig-test examples/my_agent.py --simulate-serverless lambda \
-  --dump-swml --format-json | jq '.sections.main[1].ai.SWAIG.defaults.web_hook_url'
-
-# Check CGI webhook URL
-swaig-test examples/my_agent.py --simulate-serverless cgi \
-  --cgi-host my-production-server.com \
-  --dump-swml --format-json | jq '.sections.main[1].ai.SWAIG.defaults.web_hook_url'
-```
+The agent class must expose a public static factory method returning an `AgentBase` — `createAgent(EnvProvider)` / `buildAgent(EnvProvider)` / `newAgent(EnvProvider)` / `getAgent(EnvProvider)` (or their no-arg equivalents). The `EnvProvider`-aware signature is recommended so the agent's build-time env reads (`SWML_BASIC_AUTH_*`, `SWML_PROXY_URL_BASE`) see the simulated values. Supported platform: `lambda`.
 
 ### Testing Best Practices
 
-1. **Test locally first**: Always test your agent in local mode before serverless simulation
-2. **Test target platforms**: Test on all platforms where you plan to deploy
-3. **Use environment files**: Create reusable environment configurations for different stages
-4. **Verify webhook URLs**: Ensure URLs are generated correctly for your target platform
-5. **Test function execution**: Verify that functions work correctly in serverless context
-6. **Use verbose mode**: Enable `--verbose` for debugging environment setup and execution
-
-### Multi-Agent Testing
-
-For files with multiple agents, specify which agent to test:
-
-```bash
-# Discover available agents
-swaig-test multi_agent_file.py --list-agents
-
-# Test specific agent
-swaig-test multi_agent_file.py --agent-class MyAgent --simulate-serverless lambda --dump-swml
-
-# Test different agents across platforms
-swaig-test multi_agent_file.py --agent-class AgentA --simulate-serverless lambda --exec function1
-swaig-test multi_agent_file.py --agent-class AgentB --simulate-serverless cgi --cgi-host example.com --exec function2
-```
+1. **List tools first**: Confirm every expected tool is registered with the right description before executing anything.
+2. **Render SWML**: Use `--dump-swml` to verify the generated document (prompt, params, SWAIG defaults) matches your intent.
+3. **Exercise functions**: Run `--exec` with representative `--param` values to confirm handler logic and results.
+4. **Simulate Lambda**: If you deploy to AWS Lambda, verify with `--simulate-serverless lambda` so build-time env reads and webhook URLs resolve correctly.
+5. **Use verbose mode**: Add `--verbose` for debugging setup and execution; `--raw` prints unformatted JSON.
 
 For more detailed testing documentation, see the [CLI Guide](cli_guide.md).
 
@@ -2812,148 +2827,135 @@ For more detailed testing documentation, see the [CLI Guide](cli_guide.md).
 
 ### Simple Question-Answering Agent
 
-```python
-from signalwire_agents import AgentBase
-from signalwire_agents.core.function_result import SwaigFunctionResult
-from datetime import datetime
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-class SimpleAgent(AgentBase):
-    def __init__(self):
-        super().__init__(
-            name="simple",
-            route="/simple",
-            use_pom=True
-        )
-        
-        # Configure agent personality
-        self.prompt_add_section("Personality", body="You are a friendly and helpful assistant.")
-        self.prompt_add_section("Goal", body="Help users with basic tasks and answer questions.")
-        self.prompt_add_section("Instructions", bullets=[
-            "Be concise and direct in your responses.",
-            "If you don't know something, say so clearly.",
-            "Use the get_time function when asked about the current time."
-        ])
-        
-    @AgentBase.tool(
-        name="get_time",
-        description="Get the current time",
-        parameters={}
-    )
-    def get_time(self, args, raw_data):
-        """Get the current time"""
-        now = datetime.now()
-        formatted_time = now.strftime("%H:%M:%S")
-        return SwaigFunctionResult(f"The current time is {formatted_time}")
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 
-def main():
-    agent = SimpleAgent()
-    print("Starting agent server...")
-    print("Note: Works in any deployment mode (server/CGI/Lambda)")
-    agent.run()
+public class SimpleAgentMain {
 
-if __name__ == "__main__":
-    main()
+    public static void main(String[] args) throws Exception {
+        var agent = AgentBase.builder()
+                .name("simple")
+                .route("/simple")
+                .build();
+
+        // Configure agent personality
+        agent.promptAddSection("Personality", "You are a friendly and helpful assistant.");
+        agent.promptAddSection("Goal", "Help users with basic tasks and answer questions.");
+        agent.promptAddSection("Instructions", "", List.of(
+                "Be concise and direct in your responses.",
+                "If you don't know something, say so clearly.",
+                "Use the get_time function when asked about the current time."
+        ));
+
+        agent.defineTool("get_time", "Get the current time",
+                Map.of("type", "object", "properties", Map.of()),
+                (toolArgs, rawData) -> {
+                    String time = LocalDateTime.now()
+                            .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                    return new FunctionResult("The current time is " + time);
+                });
+
+        System.out.println("Starting agent server...");
+        agent.run();
+    }
+}
 ```
 
 ### Multi-Language Customer Service Agent
 
-```python
-class CustomerServiceAgent(AgentBase):
-    def __init__(self):
-        super().__init__(
-            name="customer-service",
-            route="/support",
-            use_pom=True
-        )
-        
-        # Configure agent personality
-        self.prompt_add_section("Personality", 
-                               body="You are a helpful customer service representative for SignalWire.")
-        self.prompt_add_section("Knowledge", 
-                               body="You can answer questions about SignalWire products and services.")
-        self.prompt_add_section("Instructions", bullets=[
-            "Greet customers politely",
-            "Answer questions about SignalWire products",
-            "Use check_account_status when customer asks about their account",
-            "Use create_support_ticket for unresolved issues"
-        ])
-        
-        # Add language support
-        self.add_language(
-            name="English",
-            code="en-US",
-            voice="en-US-Neural2-F",
-            speech_fillers=["Let me think...", "One moment please..."],
-            function_fillers=["I'm looking that up...", "Let me check that..."]
-        )
-        
-        self.add_language(
-            name="Spanish",
-            code="es",
-            voice="rime.spore:multilingual",
-            speech_fillers=["Un momento por favor...", "Estoy pensando..."]
-        )
-        
-        # Enable languages
-        self.set_params({"languages_enabled": True})
-        
-        # Add company information
-        self.set_global_data({
-            "company_name": "SignalWire",
-            "support_hours": "9am-5pm ET, Monday through Friday",
-            "support_email": "support@signalwire.com"
-        })
-    
-    @AgentBase.tool(
-        name="check_account_status",
-        description="Check the status of a customer's account",
-        parameters={
-            "account_id": {
-                "type": "string",
-                "description": "The customer's account ID"
-            }
-        }
-    )
-    def check_account_status(self, args, raw_data):
-        account_id = args.get("account_id")
-        # In a real implementation, this would query a database
-        return SwaigFunctionResult(f"Account {account_id} is in good standing.")
-    
-    @AgentBase.tool(
-        name="create_support_ticket",
-        description="Create a support ticket for an unresolved issue",
-        parameters={
-            "issue": {
-                "type": "string",
-                "description": "Brief description of the issue"
-            },
-            "priority": {
-                "type": "string",
-                "description": "Ticket priority",
-                "enum": ["low", "medium", "high", "critical"]
-            }
-        }
-    )
-    def create_support_ticket(self, args, raw_data):
-        issue = args.get("issue", "")
-        priority = args.get("priority", "medium")
-        
-        # Generate a ticket ID (in a real system, this would create a database entry)
-        ticket_id = f"TICKET-{hash(issue) % 10000:04d}"
-        
-        return SwaigFunctionResult(
-            f"Support ticket {ticket_id} has been created with {priority} priority. " +
-            "A support representative will contact you shortly."
-        )
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 
-def main():
-    agent = CustomerServiceAgent()
-    print("Starting customer service agent...")
-    print("Note: Works in any deployment mode (server/CGI/Lambda)")
-    agent.run()
+import java.util.List;
+import java.util.Map;
 
-if __name__ == "__main__":
-    main()
+public class CustomerServiceAgentMain {
+
+    public static void main(String[] args) throws Exception {
+        var agent = AgentBase.builder()
+                .name("customer-service")
+                .route("/support")
+                .build();
+
+        // Configure agent personality
+        agent.promptAddSection("Personality",
+                "You are a helpful customer service representative for SignalWire.");
+        agent.promptAddSection("Knowledge",
+                "You can answer questions about SignalWire products and services.");
+        agent.promptAddSection("Instructions", "", List.of(
+                "Greet customers politely",
+                "Answer questions about SignalWire products",
+                "Use check_account_status when customer asks about their account",
+                "Use create_support_ticket for unresolved issues"
+        ));
+
+        // Add language support
+        agent.addLanguage(
+                "English", "en-US", "en-US-Neural2-F",
+                List.of("Let me think...", "One moment please..."),
+                List.of("I'm looking that up...", "Let me check that..."),
+                null, null);
+
+        agent.addLanguage(
+                "Spanish", "es", "rime.spore:multilingual",
+                List.of("Un momento por favor...", "Estoy pensando..."),
+                null, null, null);
+
+        // Enable languages
+        agent.setParams(Map.of("languages_enabled", true));
+
+        // Add company information
+        agent.setGlobalData(Map.of(
+                "company_name", "SignalWire",
+                "support_hours", "9am-5pm ET, Monday through Friday",
+                "support_email", "support@signalwire.com"
+        ));
+
+        agent.defineTool("check_account_status",
+                "Check the status of a customer's account",
+                Map.of("type", "object", "properties", Map.of(
+                        "account_id", Map.of("type", "string",
+                                "description", "The customer's account ID")
+                ), "required", List.of("account_id")),
+                (toolArgs, rawData) -> {
+                    String accountId = (String) toolArgs.get("account_id");
+                    // In a real implementation, this would query a database
+                    return new FunctionResult("Account " + accountId + " is in good standing.");
+                });
+
+        agent.defineTool("create_support_ticket",
+                "Create a support ticket for an unresolved issue",
+                Map.of("type", "object", "properties", Map.of(
+                        "issue", Map.of("type", "string",
+                                "description", "Brief description of the issue"),
+                        "priority", Map.of("type", "string",
+                                "description", "Ticket priority",
+                                "enum", List.of("low", "medium", "high", "critical"))
+                ), "required", List.of("issue")),
+                (toolArgs, rawData) -> {
+                    String issue = (String) toolArgs.getOrDefault("issue", "");
+                    String priority = (String) toolArgs.getOrDefault("priority", "medium");
+
+                    // Generate a ticket ID (in a real system, this would create a DB entry)
+                    String ticketId = String.format("TICKET-%04d", Math.abs(issue.hashCode()) % 10000);
+
+                    return new FunctionResult(
+                            "Support ticket " + ticketId + " has been created with "
+                                    + priority + " priority. "
+                                    + "A support representative will contact you shortly.");
+                });
+
+        System.out.println("Starting customer service agent...");
+        agent.run();
+    }
+}
 ```
 
 ### Dynamic Agent Configuration Examples

@@ -359,6 +359,80 @@ class ActionsMockTest {
     assertEquals("pac-stop", stops.get(stops.size() - 1).params().get("control_id"));
   }
 
+  @Test
+  @DisplayName("play_and_collect.pause/resume/volume journal sub-command frames")
+  void playAndCollectPauseResumeVolumeJournal() throws Exception {
+    // PlayAndCollectAction is the reference CollectAction (prefix play_and_collect):
+    // it exposes the full stop/pause/resume/volume + start_input_timers control surface.
+    Call call = answeredInboundCall("call-pac-prv");
+    Action.PlayAndCollectAction action =
+        call.playAndCollect(List.of(silence(1)), Map.of("digits", Map.of("max", 1)), "pac-prv");
+    action.pause();
+    action.pause("continuous");
+    action.resume();
+    action.volume(-2.0);
+    action.startInputTimers();
+
+    List<RelayMockTest.JournalEntry> pauses =
+        mock.journalRecv(Constants.METHOD_PLAY_AND_COLLECT_PAUSE);
+    assertEquals(2, pauses.size(), "expected two calling.play_and_collect.pause frames");
+    assertEquals("continuous", pauses.get(1).params().get("behavior"));
+    assertNull(pauses.get(0).params().get("behavior"), "no-arg pause omits behavior");
+    assertFalse(
+        mock.journalRecv(Constants.METHOD_PLAY_AND_COLLECT_RESUME).isEmpty(),
+        "no calling.play_and_collect.resume");
+    List<RelayMockTest.JournalEntry> vols =
+        mock.journalRecv(Constants.METHOD_PLAY_AND_COLLECT_VOLUME);
+    assertFalse(vols.isEmpty(), "no calling.play_and_collect.volume");
+    assertEquals(-2.0, ((Number) vols.get(vols.size() - 1).params().get("volume")).doubleValue());
+    assertFalse(
+        mock.journalRecv(Constants.METHOD_COLLECT_START_INPUT_TIMERS).isEmpty(),
+        "no collect.start_input_timers");
+  }
+
+  @Test
+  @DisplayName("concrete actions expose their oracle-projected control methods")
+  void concreteActionsExposeControlSurface() {
+    // The oracle projects the control verbs directly onto each concrete action.
+    // These are compile-time assertions that the method surface exists as required:
+    //   PlayAction/CollectAction(=PlayAndCollect): stop, pause, resume, volume
+    //   RecordAction: stop, pause, resume (NO volume)
+    //   StandaloneCollectAction(=Java CollectAction): stop (+ start_input_timers)
+    //   others: stop only
+    java.util.function.BiConsumer<Class<?>, String[]> hasMethods =
+        (cls, names) -> {
+          for (String n : names) {
+            boolean found = false;
+            for (var m : cls.getDeclaredMethods()) {
+              if (m.getName().equals(n)) {
+                found = true;
+                break;
+              }
+            }
+            assertTrue(found, cls.getSimpleName() + " must expose " + n + "()");
+          }
+        };
+    hasMethods.accept(Action.PlayAction.class, new String[] {"stop", "pause", "resume", "volume"});
+    hasMethods.accept(
+        Action.PlayAndCollectAction.class,
+        new String[] {"stop", "pause", "resume", "volume", "startInputTimers"});
+    hasMethods.accept(Action.RecordAction.class, new String[] {"stop", "pause", "resume"});
+    hasMethods.accept(Action.CollectAction.class, new String[] {"stop", "startInputTimers"});
+    hasMethods.accept(Action.DetectAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.PayAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.TapAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.StreamAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.TranscribeAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.AiAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.SendFaxAction.class, new String[] {"stop"});
+    hasMethods.accept(Action.ReceiveFaxAction.class, new String[] {"stop"});
+
+    // RecordAction must NOT expose volume (oracle: Record has stop/pause/resume only).
+    for (var m : Action.RecordAction.class.getDeclaredMethods()) {
+      assertNotEquals("volume", m.getName(), "RecordAction must not expose volume()");
+    }
+  }
+
   // ── StandaloneCollectAction ──────────────────────────────────
 
   @Test

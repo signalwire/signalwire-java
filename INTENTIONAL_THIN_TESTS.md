@@ -16,6 +16,7 @@ For a genuine thin `@Test` that must stay, prefer the in-code marker over a
 `file:line` entry (markers ride with the code through reflow; line numbers
 drift):
 
+<!-- snippet: no-compile illustrative JUnit `@Test` method shown out of class; JUnit is a test-scope dependency not on the doc-compile classpath, and `Thing` is a placeholder type -->
 ```java
 @Test
 public void smokeConstructor() {  // no-cheat: smoke test — exercises the build path only

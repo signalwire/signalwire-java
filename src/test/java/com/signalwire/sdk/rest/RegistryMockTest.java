@@ -49,7 +49,7 @@ class RegistryMockTest {
 
     @Test
     void listReturnsDict() {
-      Map<String, Object> body = client.registry().brands().list();
+      Map<String, Object> body = client.registry().brands().list(java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -60,7 +60,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().brands().get("brand-77");
+      Map<String, Object> body = client.registry().brands().get("brand-77", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -70,7 +70,8 @@ class RegistryMockTest {
 
     @Test
     void listCampaignsUsesBrandSubpath() {
-      Map<String, Object> body = client.registry().brands().listCampaigns("brand-1");
+      Map<String, Object> body =
+          client.registry().brands().listCampaigns("brand-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -104,7 +105,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().campaigns().get("camp-1");
+      Map<String, Object> body = client.registry().campaigns().get("camp-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -115,7 +116,15 @@ class RegistryMockTest {
     @Test
     void updateUsesPut() {
       Map<String, Object> body =
-          client.registry().campaigns().update("camp-2", kw("description", "Updated"));
+          client
+              .registry()
+              .campaigns()
+              .update(
+                  "camp-2",
+                  com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.UpdateRequest
+                      .builder()
+                      .extras(kw("description", "Updated"))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -128,7 +137,8 @@ class RegistryMockTest {
 
     @Test
     void listNumbersUsesNumbersSubpath() {
-      Map<String, Object> body = client.registry().campaigns().listNumbers("camp-3");
+      Map<String, Object> body =
+          client.registry().campaigns().listNumbers("camp-3", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -143,7 +153,12 @@ class RegistryMockTest {
           client
               .registry()
               .campaigns()
-              .createOrder("camp-4", kw("numbers", Arrays.asList("pn-1", "pn-2")));
+              .createOrder(
+                  "camp-4",
+                  com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.CreateOrderRequest
+                      .builder()
+                      .extras(kw("numbers", Arrays.asList("pn-1", "pn-2")))
+                      .build());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -161,7 +176,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().orders().get("order-1");
+      Map<String, Object> body = client.registry().orders().get("order-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();

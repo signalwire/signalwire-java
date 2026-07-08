@@ -37,11 +37,20 @@ class ServerlessSimulatorTest {
   }
 
   @Test
+  void parsePlatformAcceptsCgiAndGcf() {
+    // CGI and GCF are now IMPLEMENTED (ServerlessAdapter.handleCgi / handleGcf).
+    assertEquals(ServerlessSimulator.Platform.CGI, ServerlessSimulator.parsePlatform("cgi"));
+    assertEquals(ServerlessSimulator.Platform.CGI, ServerlessSimulator.parsePlatform("CGI"));
+    assertEquals(ServerlessSimulator.Platform.GCF, ServerlessSimulator.parsePlatform("gcf"));
+    assertEquals(
+        ServerlessSimulator.Platform.GCF,
+        ServerlessSimulator.parsePlatform("google_cloud_function"));
+  }
+
+  @Test
   void parsePlatformRejectsUnimplementedPlatforms() {
-    for (String unsupported :
-        new String[] {
-          "gcf", "azure", "cgi", "cloud_function", "azure_function", "gcp", "unknown"
-        }) {
+    // azure is still not implemented; unknown strings must fail loud (no silent fallback).
+    for (String unsupported : new String[] {"azure", "azure_function", "gcp", "unknown"}) {
       IllegalArgumentException ex =
           assertThrows(
               IllegalArgumentException.class,
@@ -52,7 +61,7 @@ class ServerlessSimulatorTest {
           "error message should mention 'Unsupported platform'; got: " + ex.getMessage());
       assertTrue(
           ex.getMessage().contains("lambda"),
-          "error message should list 'lambda' as the supported value; got: " + ex.getMessage());
+          "error message should list the supported values; got: " + ex.getMessage());
     }
   }
 

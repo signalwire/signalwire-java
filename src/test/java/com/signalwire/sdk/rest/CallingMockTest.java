@@ -8,6 +8,7 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,13 @@ class CallingMockTest {
 
     @Test
     void update() {
-      Map<String, Object> body = client.calling().update(kw("id", "call-1", "state", "hold"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .update(
+                  Calling.UpdateRequest.builder()
+                      .extras(kw("id", "call-1", "state", "hold"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"), "response missing 'id'");
       Map<String, Object> p = commandAssert(mock.last(), "update", null);
@@ -93,7 +100,10 @@ class CallingMockTest {
           client
               .calling()
               .transfer(
-                  "call-123", kw("destination", "+15551234567", "from_number", "+15559876543"));
+                  "call-123",
+                  Calling.TransferRequest.builder()
+                      .extras(kw("destination", "+15551234567", "from_number", "+15559876543"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"), "response missing 'id'");
       Map<String, Object> p = commandAssert(mock.last(), "calling.transfer", "call-123");
@@ -103,7 +113,12 @@ class CallingMockTest {
 
     @Test
     void disconnect() {
-      Map<String, Object> body = client.calling().disconnect("call-456", kw("reason", "busy"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .disconnect(
+                  "call-456",
+                  Calling.DisconnectRequest.builder().extras(kw("reason", "busy")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.disconnect", "call-456");
@@ -117,10 +132,13 @@ class CallingMockTest {
           client
               .calling()
               .dial(
-                  kw(
-                      "url", "https://example.com/swml",
-                      "to", "+15551234567",
-                      "codecs", codecs));
+                  Calling.DialRequest.builder()
+                      .extras(
+                          kw(
+                              "url", "https://example.com/swml",
+                              "to", "+15551234567",
+                              "codecs", codecs))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"), "response missing 'id'");
       Map<String, Object> p = commandAssert(mock.last(), "dial", null);
@@ -134,10 +152,13 @@ class CallingMockTest {
           client
               .calling()
               .dial(
-                  kw(
-                      "url", "https://example.com/swml",
-                      "to", "+15551234567",
-                      "codecs", "OPUS,G729,VP8,PCMA"));
+                  Calling.DialRequest.builder()
+                      .extras(
+                          kw(
+                              "url", "https://example.com/swml",
+                              "to", "+15551234567",
+                              "codecs", "OPUS,G729,VP8,PCMA"))
+                      .build());
       assertNotNull(body);
       Map<String, Object> p = commandAssert(mock.last(), "dial", null);
       assertEquals("OPUS,G729,VP8,PCMA", p.get("codecs"));
@@ -152,7 +173,12 @@ class CallingMockTest {
 
     @Test
     void playPause() {
-      Map<String, Object> body = client.calling().playPause("call-1", kw("control_id", "ctrl-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .playPause(
+                  "call-1",
+                  Calling.PlayPauseRequest.builder().extras(kw("control_id", "ctrl-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.play.pause", "call-1");
@@ -161,7 +187,12 @@ class CallingMockTest {
 
     @Test
     void playResume() {
-      Map<String, Object> body = client.calling().playResume("call-1", kw("control_id", "ctrl-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .playResume(
+                  "call-1",
+                  Calling.PlayResumeRequest.builder().extras(kw("control_id", "ctrl-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.play.resume", "call-1");
@@ -170,7 +201,12 @@ class CallingMockTest {
 
     @Test
     void playStop() {
-      Map<String, Object> body = client.calling().playStop("call-1", kw("control_id", "ctrl-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .playStop(
+                  "call-1",
+                  Calling.PlayStopRequest.builder().extras(kw("control_id", "ctrl-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.play.stop", "call-1");
@@ -180,7 +216,13 @@ class CallingMockTest {
     @Test
     void playVolume() {
       Map<String, Object> body =
-          client.calling().playVolume("call-1", kw("control_id", "ctrl-1", "volume", 2.5));
+          client
+              .calling()
+              .playVolume(
+                  "call-1",
+                  Calling.PlayVolumeRequest.builder()
+                      .extras(kw("control_id", "ctrl-1", "volume", 2.5))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.play.volume", "call-1");
@@ -197,7 +239,13 @@ class CallingMockTest {
     @Test
     void record() {
       Map<String, Object> body =
-          client.calling().record("call-1", kw("record", kw("format", "mp3")));
+          client
+              .calling()
+              .record(
+                  "call-1",
+                  Calling.RecordRequest.builder()
+                      .extras(kw("record", kw("format", "mp3")))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.record", "call-1");
@@ -209,7 +257,12 @@ class CallingMockTest {
 
     @Test
     void recordPause() {
-      Map<String, Object> body = client.calling().recordPause("call-1", kw("control_id", "rec-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .recordPause(
+                  "call-1",
+                  Calling.RecordPauseRequest.builder().extras(kw("control_id", "rec-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.record.pause", "call-1");
@@ -218,7 +271,12 @@ class CallingMockTest {
 
     @Test
     void recordResume() {
-      Map<String, Object> body = client.calling().recordResume("call-1", kw("control_id", "rec-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .recordResume(
+                  "call-1",
+                  Calling.RecordResumeRequest.builder().extras(kw("control_id", "rec-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.record.resume", "call-1");
@@ -235,7 +293,13 @@ class CallingMockTest {
     @Test
     void collect() {
       Map<String, Object> body =
-          client.calling().collect("call-1", kw("initial_timeout", 5, "digits", kw("max", 4)));
+          client
+              .calling()
+              .collect(
+                  "call-1",
+                  Calling.CollectRequest.builder()
+                      .extras(kw("initial_timeout", 5, "digits", kw("max", 4)))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.collect", "call-1");
@@ -244,7 +308,12 @@ class CallingMockTest {
 
     @Test
     void collectStop() {
-      Map<String, Object> body = client.calling().collectStop("call-1", kw("control_id", "col-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .collectStop(
+                  "call-1",
+                  Calling.CollectStopRequest.builder().extras(kw("control_id", "col-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.collect.stop", "call-1");
@@ -254,7 +323,13 @@ class CallingMockTest {
     @Test
     void collectStartInputTimers() {
       Map<String, Object> body =
-          client.calling().collectStartInputTimers("call-1", kw("control_id", "col-1"));
+          client
+              .calling()
+              .collectStartInputTimers(
+                  "call-1",
+                  Calling.CollectStartInputTimersRequest.builder()
+                      .extras(kw("control_id", "col-1"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p =
@@ -272,7 +347,13 @@ class CallingMockTest {
     @Test
     void detect() {
       Map<String, Object> body =
-          client.calling().detect("call-1", kw("detect", kw("type", "machine", "params", kw())));
+          client
+              .calling()
+              .detect(
+                  "call-1",
+                  Calling.DetectRequest.builder()
+                      .extras(kw("detect", kw("type", "machine", "params", kw())))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.detect", "call-1");
@@ -284,7 +365,12 @@ class CallingMockTest {
 
     @Test
     void detectStop() {
-      Map<String, Object> body = client.calling().detectStop("call-1", kw("control_id", "det-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .detectStop(
+                  "call-1",
+                  Calling.DetectStopRequest.builder().extras(kw("control_id", "det-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.detect.stop", "call-1");
@@ -301,7 +387,11 @@ class CallingMockTest {
       Map<String, Object> body =
           client
               .calling()
-              .tap("call-1", kw("tap", kw("type", "audio"), "device", kw("type", "rtp")));
+              .tap(
+                  "call-1",
+                  Calling.TapRequest.builder()
+                      .extras(kw("tap", kw("type", "audio"), "device", kw("type", "rtp")))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.tap", "call-1");
@@ -313,7 +403,12 @@ class CallingMockTest {
 
     @Test
     void tapStop() {
-      Map<String, Object> body = client.calling().tapStop("call-1", kw("control_id", "tap-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .tapStop(
+                  "call-1",
+                  Calling.TapStopRequest.builder().extras(kw("control_id", "tap-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.tap.stop", "call-1");
@@ -328,7 +423,9 @@ class CallingMockTest {
     @Test
     void stream() {
       Map<String, Object> body =
-          client.calling().stream("call-1", kw("url", "wss://example.com/audio"));
+          client.calling().stream(
+              "call-1",
+              Calling.StreamRequest.builder().extras(kw("url", "wss://example.com/audio")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.stream", "call-1");
@@ -338,7 +435,11 @@ class CallingMockTest {
     @Test
     void streamStop() {
       Map<String, Object> body =
-          client.calling().streamStop("call-1", kw("control_id", "stream-1"));
+          client
+              .calling()
+              .streamStop(
+                  "call-1",
+                  Calling.StreamStopRequest.builder().extras(kw("control_id", "stream-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.stream.stop", "call-1");
@@ -352,7 +453,8 @@ class CallingMockTest {
 
     @Test
     void denoise() {
-      Map<String, Object> body = client.calling().denoise("call-1", kw());
+      Map<String, Object> body =
+          client.calling().denoise("call-1", Calling.DenoiseRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.denoise", "call-1");
@@ -360,7 +462,12 @@ class CallingMockTest {
 
     @Test
     void denoiseStop() {
-      Map<String, Object> body = client.calling().denoiseStop("call-1", kw("control_id", "dn-1"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .denoiseStop(
+                  "call-1",
+                  Calling.DenoiseStopRequest.builder().extras(kw("control_id", "dn-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.denoise.stop", "call-1");
@@ -377,7 +484,11 @@ class CallingMockTest {
       Map<String, Object> body =
           client
               .calling()
-              .transcribe("call-1", kw("language", "en-US", "transcribe", kw("engine", "google")));
+              .transcribe(
+                  "call-1",
+                  Calling.TranscribeRequest.builder()
+                      .extras(kw("language", "en-US", "transcribe", kw("engine", "google")))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.transcribe", "call-1");
@@ -387,7 +498,11 @@ class CallingMockTest {
     @Test
     void transcribeStop() {
       Map<String, Object> body =
-          client.calling().transcribeStop("call-1", kw("control_id", "tr-1"));
+          client
+              .calling()
+              .transcribeStop(
+                  "call-1",
+                  Calling.TranscribeStopRequest.builder().extras(kw("control_id", "tr-1")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.transcribe.stop", "call-1");
@@ -403,7 +518,8 @@ class CallingMockTest {
 
     @Test
     void aiHold() {
-      Map<String, Object> body = client.calling().aiHold("call-1", kw());
+      Map<String, Object> body =
+          client.calling().aiHold("call-1", Calling.AiHoldRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.ai_hold", "call-1");
@@ -411,7 +527,10 @@ class CallingMockTest {
 
     @Test
     void aiUnhold() {
-      Map<String, Object> body = client.calling().aiUnhold("call-1", kw());
+      Map<String, Object> body =
+          client
+              .calling()
+              .aiUnhold("call-1", Calling.AiUnholdRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.ai_unhold", "call-1");
@@ -419,7 +538,8 @@ class CallingMockTest {
 
     @Test
     void aiStop() {
-      Map<String, Object> body = client.calling().aiStop("call-1", kw());
+      Map<String, Object> body =
+          client.calling().aiStop("call-1", Calling.AiStopRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.ai.stop", "call-1");
@@ -434,7 +554,12 @@ class CallingMockTest {
 
     @Test
     void liveTranscribe() {
-      Map<String, Object> body = client.calling().liveTranscribe("call-1", kw("language", "en-US"));
+      Map<String, Object> body =
+          client
+              .calling()
+              .liveTranscribe(
+                  "call-1",
+                  Calling.LiveTranscribeRequest.builder().extras(kw("language", "en-US")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.live_transcribe", "call-1");
@@ -446,7 +571,11 @@ class CallingMockTest {
       Map<String, Object> body =
           client
               .calling()
-              .liveTranslate("call-1", kw("source_language", "en", "target_language", "es"));
+              .liveTranslate(
+                  "call-1",
+                  Calling.LiveTranslateRequest.builder()
+                      .extras(kw("source_language", "en", "target_language", "es"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.live_translate", "call-1");
@@ -463,7 +592,10 @@ class CallingMockTest {
 
     @Test
     void sendFaxStop() {
-      Map<String, Object> body = client.calling().sendFaxStop("call-1", kw());
+      Map<String, Object> body =
+          client
+              .calling()
+              .sendFaxStop("call-1", Calling.SendFaxStopRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.send_fax.stop", "call-1");
@@ -471,7 +603,11 @@ class CallingMockTest {
 
     @Test
     void receiveFaxStop() {
-      Map<String, Object> body = client.calling().receiveFaxStop("call-1", kw());
+      Map<String, Object> body =
+          client
+              .calling()
+              .receiveFaxStop(
+                  "call-1", Calling.ReceiveFaxStopRequest.builder().extras(kw()).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       commandAssert(mock.last(), "calling.receive_fax.stop", "call-1");
@@ -487,7 +623,11 @@ class CallingMockTest {
     @Test
     void refer() {
       Map<String, Object> body =
-          client.calling().refer("call-1", kw("to", "sip:other@example.com"));
+          client
+              .calling()
+              .refer(
+                  "call-1",
+                  Calling.ReferRequest.builder().extras(kw("to", "sip:other@example.com")).build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.refer", "call-1");
@@ -499,7 +639,11 @@ class CallingMockTest {
       Map<String, Object> body =
           client
               .calling()
-              .userEvent("call-1", kw("event_name", "my-event", "payload", kw("foo", "bar")));
+              .userEvent(
+                  "call-1",
+                  Calling.UserEventRequest.builder()
+                      .extras(kw("event_name", "my-event", "payload", kw("foo", "bar")))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       Map<String, Object> p = commandAssert(mock.last(), "calling.user_event", "call-1");

@@ -48,7 +48,7 @@ public class RestQueuesMfaAndRecordings {
         // 3. List recordings via the recordings namespace.
         System.out.println("\nListing recordings...");
         try {
-            var recordings = client.recordings().list();
+            var recordings = client.recordings().list(Map.of());
             System.out.println("  Recordings: " + recordings);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
@@ -57,7 +57,7 @@ public class RestQueuesMfaAndRecordings {
         // 4. Fetch a specific recording by ID (demo).
         System.out.println("\nFetching a recording by ID (demo)...");
         try {
-            var recording = client.recordings().get("example-recording-id");
+            var recording = client.recordings().get("example-recording-id", Map.of());
             System.out.println("  Recording: " + recording);
         } catch (RestError e) {
             System.out.println("  Fetch failed (expected in demo): " + e.getStatusCode());

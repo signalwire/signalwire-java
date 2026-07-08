@@ -59,6 +59,8 @@ public final class Constants {
       "calling.collect.start_input_timers";
   public static final String METHOD_PLAY_AND_COLLECT = "calling.play_and_collect";
   public static final String METHOD_PLAY_AND_COLLECT_STOP = "calling.play_and_collect.stop";
+  public static final String METHOD_PLAY_AND_COLLECT_PAUSE = "calling.play_and_collect.pause";
+  public static final String METHOD_PLAY_AND_COLLECT_RESUME = "calling.play_and_collect.resume";
   public static final String METHOD_PLAY_AND_COLLECT_VOLUME = "calling.play_and_collect.volume";
   public static final String METHOD_PAY = "calling.pay";
   public static final String METHOD_PAY_STOP = "calling.pay.stop";
@@ -137,6 +139,10 @@ public final class Constants {
   public static final String EVENT_CALL_REFER = "calling.call.refer";
   public static final String EVENT_CALL_SEND_DIGITS = "calling.call.send_digits";
   public static final String EVENT_CALL_PAY = "calling.call.pay";
+  public static final String EVENT_CALL_DENOISE = "calling.call.denoise";
+  public static final String EVENT_CALL_ECHO = "calling.call.echo";
+  public static final String EVENT_CALL_HOLD = "calling.call.hold";
+  public static final String EVENT_CALLING_ERROR = "calling.error";
   public static final String EVENT_CONFERENCE = "calling.conference";
   public static final String EVENT_QUEUE = "calling.queue";
   public static final String EVENT_AUTHORIZATION_STATE = "signalwire.authorization.state";

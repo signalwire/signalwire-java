@@ -81,6 +81,18 @@ public class DatetimeSkill implements SkillBase {
     return List.of(getTime, getDate);
   }
 
+  /** Returns an empty hint list. */
+  @Override
+  public List<String> getHints() {
+    return Collections.emptyList();
+  }
+
+  /** Returns only the base schema — the datetime skill declares no custom parameters. */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    return SkillParams.base(supportsMultipleInstances(), getName());
+  }
+
   @Override
   public List<Map<String, Object>> getPromptSections() {
     Map<String, Object> section = new LinkedHashMap<>();

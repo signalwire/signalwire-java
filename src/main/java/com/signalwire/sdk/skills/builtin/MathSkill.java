@@ -7,6 +7,18 @@ import java.util.*;
 
 public class MathSkill implements SkillBase {
 
+  /** Returns an empty hint list — this skill ships no example hints. */
+  @Override
+  public List<String> getHints() {
+    return Collections.emptyList();
+  }
+
+  /** This skill has no custom parameters and returns the base schema. */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    return SkillParams.base(supportsMultipleInstances(), getName());
+  }
+
   @Override
   public String getName() {
     return "math";

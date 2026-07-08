@@ -136,8 +136,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setSwmlWebhook sends PUT with call_handler=relay_script and call_relay_script_url")
   void swmlWebhook() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setSwmlWebhook("pn-1", "https://example.com/swml");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setSwmlWebhook("pn-1", "https://example.com/swml", null);
 
     var req = lastRequest();
     assertEquals("PUT", req.method);
@@ -152,8 +152,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setCxmlWebhook (minimal) sends laml_webhooks + call_request_url")
   void cxmlWebhookMinimal() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setCxmlWebhook("pn-1", "https://example.com/voice.xml");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setCxmlWebhook("pn-1", "https://example.com/voice.xml", null, null, null);
 
     var req = lastRequest();
     assertEquals("PUT", req.method);
@@ -167,12 +167,13 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setCxmlWebhook with fallback + status callback")
   void cxmlWebhookFull() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
     ns.setCxmlWebhook(
         "pn-1",
         "https://example.com/voice.xml",
         "https://example.com/fallback.xml",
-        "https://example.com/status");
+        "https://example.com/status",
+        null);
 
     var req = lastRequest();
     var body = bodyOf(req);
@@ -185,8 +186,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setCxmlApplication sends laml_application + call_laml_application_id")
   void cxmlApplication() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setCxmlApplication("pn-1", "app-uuid");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setCxmlApplication("pn-1", "app-uuid", null);
 
     var body = bodyOf(lastRequest());
     assertEquals("laml_application", body.get("call_handler"));
@@ -196,8 +197,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setAiAgent sends ai_agent + call_ai_agent_id")
   void aiAgent() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setAiAgent("pn-1", "agent-uuid");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setAiAgent("pn-1", "agent-uuid", null);
 
     var body = bodyOf(lastRequest());
     assertEquals("ai_agent", body.get("call_handler"));
@@ -207,8 +208,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setCallFlow (no version) omits call_flow_version")
   void callFlowNoVersion() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setCallFlow("pn-1", "flow-uuid");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setCallFlow("pn-1", "flow-uuid", null, null);
 
     var body = bodyOf(lastRequest());
     assertEquals("call_flow", body.get("call_handler"));
@@ -219,8 +220,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setCallFlow (with version) includes call_flow_version")
   void callFlowWithVersion() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setCallFlow("pn-1", "flow-uuid", "current_deployed");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setCallFlow("pn-1", "flow-uuid", "current_deployed", null);
 
     var body = bodyOf(lastRequest());
     assertEquals("call_flow", body.get("call_handler"));
@@ -231,8 +232,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setRelayApplication sends relay_application + call_relay_application")
   void relayApplication() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setRelayApplication("pn-1", "my-relay-app");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setRelayApplication("pn-1", "my-relay-app", null);
 
     var body = bodyOf(lastRequest());
     assertEquals("relay_application", body.get("call_handler"));
@@ -242,8 +243,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setRelayTopic (no callback) omits call_relay_topic_status_callback_url")
   void relayTopicMinimal() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setRelayTopic("pn-1", "office");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setRelayTopic("pn-1", "office", null, null);
 
     var body = bodyOf(lastRequest());
     assertEquals("relay_topic", body.get("call_handler"));
@@ -254,8 +255,8 @@ class PhoneNumbersBindingTest {
   @Test
   @DisplayName("setRelayTopic (with callback) includes call_relay_topic_status_callback_url")
   void relayTopicWithCallback() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setRelayTopic("pn-1", "office", "https://example.com/status");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setRelayTopic("pn-1", "office", "https://example.com/status", null);
 
     var body = bodyOf(lastRequest());
     assertEquals("relay_topic", body.get("call_handler"));
@@ -269,8 +270,8 @@ class PhoneNumbersBindingTest {
   @DisplayName("Regression: setSwmlWebhook makes exactly one PUT to /phone_numbers/{sid}")
   @SuppressWarnings("unused")
   void regressionSingleRequestHappyPath() {
-    var ns = new com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace(httpClient());
-    ns.setSwmlWebhook("pn-postmortem", "https://example.com/swml");
+    var ns = new com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers(httpClient());
+    ns.setSwmlWebhook("pn-postmortem", "https://example.com/swml", null);
 
     assertEquals(1, recorded.size(), "binding should be a single HTTP call");
 

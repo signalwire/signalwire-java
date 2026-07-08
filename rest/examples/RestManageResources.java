@@ -18,6 +18,7 @@
 
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
 
 import java.util.Map;
 
@@ -52,11 +53,12 @@ public class RestManageResources {
         // 4. Place a test call via the calling command API (dial).
         System.out.println("\nPlacing a test call...");
         try {
-            var result = client.calling().dial(Map.of(
-                    "from", "+15559876543",
-                    "to", "+15551234567",
-                    "url", "https://example.com/call-handler"
-            ));
+            var result = client.calling().dial(
+                    Calling.DialRequest.builder()
+                            .from("+15559876543")
+                            .to("+15551234567")
+                            .url("https://example.com/call-handler")
+                            .build());
             System.out.println("  Call initiated: " + result);
         } catch (RestError e) {
             System.out.println("  Call failed (expected in demo): " + e.getStatusCode());

@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.datamap.DataMap;
+```
+
 ## Project Overview
 
 This is the **SignalWire AI Agents SDK for Java** -- a Java 21+ framework for building, deploying, and managing AI agents as microservices. The SDK provides tools for creating self-contained web applications that expose HTTP endpoints to interact with the SignalWire platform.
@@ -10,23 +17,43 @@ The Java SDK mirrors the Python SignalWire Agents SDK, offering the same agent p
 
 ## Development Commands
 
+Test / lint / format go through the canonical `scripts/run-*.sh` entry points.
+They self-bootstrap their tool environment (resolve the repo root from the
+script's own path, locate the Gradle **wrapper** `./gradlew`, and resolve
+`JAVA_HOME`) and run correctly from ANY directory — call them instead of raw
+`gradle test` / `spotless*` / `checkstyle*` directly (see
+porting-sdk/RUN_LINT_FORMAT_SPEC.md). `scripts/run-ci.sh` invokes these same
+scripts for its TEST/FMT/LINT gates, so local == CI. The shared bootstrap lives
+in `scripts/_env.sh`.
+
 ### Build & Test
 ```bash
-# Set environment
-export JAVA_HOME=/home/devuser/jdk-21
-GRADLE=/home/devuser/gradle/gradle-8.5/bin/gradle
+# Run the full test suite (canonical entry point; self-bootstraps, any CWD)
+bash scripts/run-tests.sh
 
-# Full build with tests
-$GRADLE clean test
+# Run a subset — pass a test class or method as the filter
+# (forwarded as gradle `--tests <filter>`)
+bash scripts/run-tests.sh "com.signalwire.sdk.AgentBaseTest"
+bash scripts/run-tests.sh "com.signalwire.sdk.rest.*"
+```
 
-# Build only (skip tests)
-$GRADLE build -x test
+### Formatting and Linting
+```bash
+# Format (spotless / google-java-format): APPLY in place (default)
+bash scripts/run-format.sh
+# Format VERIFY-ONLY (what CI runs): fails if anything is unformatted
+bash scripts/run-format.sh --check
 
-# Run a specific test class
-$GRADLE test --tests "com.signalwire.sdk.AgentBaseTest"
+# Lint (Error Prone warnings-as-errors + Checkstyle, zero findings):
+# report-only — Java's linters have no safe autofix
+bash scripts/run-lint.sh
+```
 
-# Run with verbose output
-$GRADLE test --info
+### Raw Gradle (when you need a task the scripts don't wrap)
+```bash
+# The scripts use the Gradle WRAPPER; use it directly for other tasks:
+./gradlew build -x test        # build only (skip tests)
+./gradlew jar                  # build the jar
 ```
 
 ### CLI Tool
@@ -86,6 +113,7 @@ Skills are self-contained modules in `skills/builtin/`. Each implements `SkillBa
 
 #### DataMap Tools
 ```java
+var agent = AgentBase.builder().name("my-agent").route("/").build();
 var dm = new DataMap("weather")
     .purpose("Get current weather")
     .parameter("city", "string", "City name", true)

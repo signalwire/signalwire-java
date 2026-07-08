@@ -2,6 +2,12 @@
 
 This guide explains the unified configuration system available in SignalWire AI Agents SDK.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.core.ConfigLoader;
+```
+
 ## Overview
 
 All SignalWire services (SWML-based agents, Search, MCP Gateway) now support optional JSON configuration files with environment variable substitution. SWML (SignalWire Markup Language) is the JSON document format that defines agent behavior during calls. Services continue to work without any configuration file, maintaining full backward compatibility.
@@ -9,19 +15,25 @@ All SignalWire services (SWML-based agents, Search, MCP Gateway) now support opt
 ## Quick Start
 
 ### Zero Configuration (Default)
-```python
-# Works exactly as before - no config needed
-agent = MyAgent()
-agent.run()
+```java
+// Works with no config file — builder defaults and env vars only
+var agent = AgentBase.builder().name("my-agent").build();
+agent.run();
 ```
 
 ### With Configuration File
-```python
-# Automatically detects config.json if present
-agent = MyAgent()
+```java
+import com.signalwire.sdk.core.ConfigLoader;
 
-# Or specify a config file
-agent = MyAgent(config_file="production_config.json")
+// Load a config file and feed its values into the builder
+var loader = new ConfigLoader(java.util.List.of("production_config.json"));
+var builder = AgentBase.builder().name("my-agent");
+if (loader.hasConfig()) {
+    builder.port(((Number) loader.get("service.port", 3000)).intValue());
+    builder.authUser((String) loader.get("security.auth.basic.user", "signalwire"));
+    builder.authPassword((String) loader.get("security.auth.basic.password", null));
+}
+var agent = builder.build();
 ```
 
 ## Configuration Files
@@ -175,7 +187,7 @@ Before:
 ```bash
 export SWML_SSL_ENABLED=true
 export SWML_SSL_CERT_PATH=/etc/ssl/cert.pem
-python my_agent.py
+java -jar my-agent.jar
 ```
 
 After (Option 1 - Keep using env vars):
@@ -183,7 +195,7 @@ After (Option 1 - Keep using env vars):
 # Still works exactly the same
 export SWML_SSL_ENABLED=true
 export SWML_SSL_CERT_PATH=/etc/ssl/cert.pem
-python my_agent.py
+java -jar my-agent.jar
 ```
 
 After (Option 2 - Use config file):
@@ -248,37 +260,42 @@ After (Option 3 - Mix config and env vars):
 
 ### Loading Configuration
 
-```python
-from signalwire_agents.core.config_loader import ConfigLoader
+```java
+import com.signalwire.sdk.core.ConfigLoader;
+import java.util.List;
+import java.util.Map;
 
-# Load config
-loader = ConfigLoader(["my_config.json"])
-if loader.has_config():
-    config = loader.get_config()
-    
-    # Get specific value with substitution
-    port = loader.get("service.port", default=3000)
-    
-    # Get entire section
-    security = loader.get_section("security")
+// Load config
+var loader = new ConfigLoader(List.of("my_config.json"));
+if (loader.hasConfig()) {
+    Map<String, Object> config = loader.getConfig();
+
+    // Get specific value with substitution
+    Object port = loader.get("service.port", 3000);
+
+    // Get entire section
+    Map<String, Object> security = loader.getSection("security");
+}
 ```
 
 ### Using with Services
 
-```python
-# SWML Service
-from signalwire_agents import AgentBase
+```java
+// SWML Service / Agent
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.core.ConfigLoader;
+import java.util.List;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        # Auto-detects config.json if present
-        super().__init__(name="my-agent", config_file="agent_config.json")
-
-# MCP Gateway
-from mcp_gateway.gateway_service import MCPGateway
-
-gateway = MCPGateway(config_path="mcp_config.json")
+var loader = new ConfigLoader(List.of("agent_config.json"));
+var builder = AgentBase.builder().name("my-agent");
+if (loader.hasConfig()) {
+    builder.port(((Number) loader.get("service.port", 3000)).intValue());
+}
+var agent = builder.build();
 ```
+
+To integrate external MCP servers with an agent, or expose the agent's tools as an
+MCP server, see [MCP Integration](mcp_integration.md).
 
 ## Troubleshooting
 
@@ -286,13 +303,12 @@ gateway = MCPGateway(config_path="mcp_config.json")
 
 1. Check file exists and is valid JSON:
    ```bash
-   python -m json.tool config.json
+   cat config.json | python3 -m json.tool   # or any JSON validator
    ```
 
-2. Enable debug logging:
-   ```python
-   import logging
-   logging.basicConfig(level=logging.DEBUG)
+2. Enable debug logging (the SDK reads `SIGNALWIRE_LOG_LEVEL`):
+   ```bash
+   export SIGNALWIRE_LOG_LEVEL=debug
    ```
 
 3. Check for syntax errors in variable substitution

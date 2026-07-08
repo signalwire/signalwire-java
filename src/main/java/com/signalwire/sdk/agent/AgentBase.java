@@ -63,8 +63,14 @@ public class AgentBase extends Service {
   private final List<Map<String, Object>> pomSections = new ArrayList<>();
 
   // --- AI Config ---
-  private final List<String> hints = new ArrayList<>();
+  // Hints are either bare strings (addHint/addHints) or structured pattern-hint objects
+  // (addPatternHint → {hint, pattern, replace, ignore_case}); both render into ai.hints.
+  private final List<Object> hints = new ArrayList<>();
   private final List<Map<String, Object>> languages = new ArrayList<>();
+  // ASR-driven multilingual mode (set_multilingual). When set, emitted as the
+  // top-level ``multilingual`` object on the AI verb (mutually exclusive with
+  // languages — the server prefers multilingual). Null until configured.
+  private Map<String, Object> multilingual;
   private final List<Map<String, Object>> pronunciations = new ArrayList<>();
   private final Map<String, Object> params = new LinkedHashMap<>();
   private final Map<String, Object> promptLlmParams = new LinkedHashMap<>();
@@ -125,10 +131,12 @@ public class AgentBase extends Service {
   // httpServer is now inherited from Service.
 
   /**
-   * Package-private constructor — use the Builder. Calls Service's full constructor with all
-   * configuration.
+   * Protected constructor — use the Builder for standard agents. Calls Service's full constructor
+   * with all configuration. Exposed as {@code protected} (was package-private) so out-of-package
+   * subclasses such as {@link com.signalwire.sdk.agents.BedrockAgent} can chain to it via {@code
+   * super(...)}; the Builder remains the recommended path for {@code AgentBase} itself.
    */
-  AgentBase(
+  protected AgentBase(
       String name, String route, String host, int port, String authUser, String authPassword) {
     super(name, route, host, port, authUser, authPassword);
     this.autoAnswer = true;
@@ -449,7 +457,12 @@ public class AgentBase extends Service {
 
   public Object getPrompt() {
     if (usePom && !pomSections.isEmpty()) {
-      return Map.of("pom", new ArrayList<>(pomSections));
+      // Normalize the raw section maps through the POM model so the emitted
+      // pom matches Python's PomBuilder.to_dict(): empty `body` is dropped,
+      // empty `bullets` omitted, keys ordered title/body/bullets/subsections
+      // (pom.py Section.to_dict). Emitting the raw pomSections would leak an
+      // empty "body": "" for a bullets-only section — a wire divergence.
+      return Map.of("pom", new PromptObjectModel(new ArrayList<>(pomSections)).toMap());
     } else if (promptText != null) {
       return Map.of("text", promptText);
     }
@@ -499,8 +512,7 @@ public class AgentBase extends Service {
    * map-based section list so callers get the rich Section / render API without mutating internal
    * state.
    *
-   * <p>Python parity: {@code agent.pom} instance attribute (agent_base.py line 209). Returns {@code
-   * null} when {@code usePom} is false (mirroring Python's {@code self.pom = None}).
+   * <p>Returns {@code null} when {@code usePom} is false.
    *
    * @return typed POM wrapper, or {@code null} when POM mode is off.
    */
@@ -657,9 +669,8 @@ public class AgentBase extends Service {
   /**
    * Mint a per-call SWAIG-function token via the agent's SessionManager.
    *
-   * <p>Python parity: {@code state_mixin.StateMixin._create_tool_token}. Returns an empty string
-   * when the underlying SessionManager throws (Python catches all exceptions and returns "" on
-   * error).
+   * <p>Returns an empty string when the underlying SessionManager throws (all exceptions are caught
+   * and return "" on error).
    */
   public String createToolToken(String toolName, String callId) {
     try {
@@ -673,8 +684,7 @@ public class AgentBase extends Service {
    * Validate a per-call SWAIG-function token. Returns false when the function is not registered,
    * when the SessionManager rejects the token, or on any underlying exception.
    *
-   * <p>Python parity: {@code state_mixin.StateMixin.validate_tool_token} — rejects unknown
-   * functions up-front and swallows exceptions.
+   * <p>Rejects unknown functions up-front and swallows exceptions (returning false).
    */
   public boolean validateToolToken(String functionName, String token, String callId) {
     if (!hasTool(functionName)) {
@@ -701,46 +711,118 @@ public class AgentBase extends Service {
     return this;
   }
 
-  public AgentBase addPatternHint(String pattern) {
-    hints.add(pattern);
+  /** Convenience overload — a pattern hint with case-sensitive matching. */
+  public AgentBase addPatternHint(String hint, String pattern, String replace) {
+    return addPatternHint(hint, pattern, replace, false);
+  }
+
+  /**
+   * Add a complex hint with pattern matching. Appends a STRUCTURED hint object {@code {hint,
+   * pattern, replace, ignore_case}} to the hints list (NOT a bare string), which renders into the
+   * SWML {@code ai.hints} array. All three of {@code hint}/{@code pattern}/{@code replace} must be
+   * non-empty or the call is a no-op.
+   *
+   * @param hint the hint text to match
+   * @param pattern regular-expression pattern
+   * @param replace text to replace the hint with
+   * @param ignoreCase whether to ignore case when matching
+   * @return this agent, for chaining
+   */
+  public AgentBase addPatternHint(String hint, String pattern, String replace, boolean ignoreCase) {
+    if (hint != null
+        && !hint.isEmpty()
+        && pattern != null
+        && !pattern.isEmpty()
+        && replace != null
+        && !replace.isEmpty()) {
+      Map<String, Object> structured = new LinkedHashMap<>();
+      structured.put("hint", hint);
+      structured.put("pattern", pattern);
+      structured.put("replace", replace);
+      structured.put("ignore_case", ignoreCase);
+      hints.add(structured);
+    }
     return this;
   }
 
   public AgentBase addLanguage(String name, String code, String voice) {
-    return addLanguage(name, code, voice, null, null, null, null);
-  }
-
-  public AgentBase addLanguage(
-      String name,
-      String code,
-      String voice,
-      String speechModel,
-      String fillerWord,
-      String engine) {
-    return addLanguage(name, code, voice, speechModel, fillerWord, engine, null);
+    return addLanguage(name, code, voice, null, null, null, null, null);
   }
 
   /**
-   * Add a language configuration with an optional per-language ``params`` dict (engine-specific
-   * tuning, voice settings, etc.). The ``params`` key is only emitted into SWML when non-empty so
-   * existing language entries stay byte-identical when no params are passed. Mirrors Python's
-   * add_language(params=...) addition.
+   * Add a language configuration carrying speech/function fillers plus an explicit engine and
+   * model. Mirrors Python's {@code add_language(name, code, voice, speech_fillers,
+   * function_fillers, engine, model, params)}.
    */
   public AgentBase addLanguage(
       String name,
       String code,
       String voice,
-      String speechModel,
-      String fillerWord,
+      List<String> speechFillers,
+      List<String> functionFillers,
       String engine,
+      String model) {
+    return addLanguage(name, code, voice, speechFillers, functionFillers, engine, model, null);
+  }
+
+  /**
+   * Add a language configuration to support multilingual conversations. Mirrors Python {@code
+   * AIConfigMixin.add_language(name, code, voice, speech_fillers=None, function_fillers=None,
+   * engine=None, model=None, params=None)} exactly, including:
+   *
+   * <ul>
+   *   <li><b>Voice parsing</b>: when {@code engine}/{@code model} are given they win; otherwise a
+   *       combined {@code "engine.voice:model"} string is split into the {@code engine}/{@code
+   *       voice}/{@code model} keys; a plain voice string is used as-is.
+   *   <li><b>Fillers</b>: both speech + function fillers emit {@code speech_fillers} and {@code
+   *       function_fillers}; only one emits the deprecated combined {@code fillers} key.
+   *   <li><b>params</b>: emitted only when non-empty.
+   * </ul>
+   *
+   * <p>Every field survives into the rendered SWML {@code ai.languages} entry.
+   */
+  public AgentBase addLanguage(
+      String name,
+      String code,
+      String voice,
+      List<String> speechFillers,
+      List<String> functionFillers,
+      String engine,
+      String model,
       Map<String, Object> params) {
     Map<String, Object> lang = new LinkedHashMap<>();
     lang.put("name", name);
     lang.put("code", code);
-    lang.put("voice", voice);
-    if (speechModel != null) lang.put("speech_model", speechModel);
-    if (fillerWord != null) lang.put("filler_word", fillerWord);
-    if (engine != null) lang.put("engine", engine);
+
+    // Voice formatting: explicit engine/model win; else parse a combined "engine.voice:model".
+    if ((engine != null && !engine.isEmpty()) || (model != null && !model.isEmpty())) {
+      lang.put("voice", voice);
+      if (engine != null && !engine.isEmpty()) lang.put("engine", engine);
+      if (model != null && !model.isEmpty()) lang.put("model", model);
+    } else if (voice != null && voice.contains(".") && voice.contains(":")) {
+      try {
+        String[] engineVoiceModel = voice.split(":", 2);
+        String[] engineVoice = engineVoiceModel[0].split("\\.", 2);
+        lang.put("voice", engineVoice[1]);
+        lang.put("engine", engineVoice[0]);
+        lang.put("model", engineVoiceModel[1]);
+      } catch (RuntimeException e) {
+        lang.put("voice", voice);
+      }
+    } else {
+      lang.put("voice", voice);
+    }
+
+    // Fillers: both → speech_fillers + function_fillers; only one → deprecated combined "fillers".
+    boolean hasSpeech = speechFillers != null && !speechFillers.isEmpty();
+    boolean hasFunction = functionFillers != null && !functionFillers.isEmpty();
+    if (hasSpeech && hasFunction) {
+      lang.put("speech_fillers", new ArrayList<>(speechFillers));
+      lang.put("function_fillers", new ArrayList<>(functionFillers));
+    } else if (hasSpeech || hasFunction) {
+      lang.put("fillers", new ArrayList<>(hasSpeech ? speechFillers : functionFillers));
+    }
+
     if (params != null && !params.isEmpty()) {
       lang.put("params", new LinkedHashMap<>(params));
     }
@@ -788,6 +870,24 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Configure ASR-driven multilingual mode (Mode B). Emits a top-level {@code multilingual} object
+   * on the AI verb — the recognizer runs in code-switching mode and the agent answers in whatever
+   * language the caller actually spoke. Mutually exclusive with {@link #setLanguages}: if both are
+   * set the server uses {@code multilingual} and ignores {@code languages}. Mirrors
+   * AIConfigMixin.set_multilingual.
+   *
+   * @param config the multilingual config object (languages, allowed, start_language,
+   *     min_switch_words, fillers, etc.)
+   * @return this agent, for chaining
+   */
+  public AgentBase setMultilingual(Map<String, Object> config) {
+    if (config != null && !config.isEmpty()) {
+      this.multilingual = new LinkedHashMap<>(config);
+    }
+    return this;
+  }
+
   public AgentBase addPronunciation(String replace, String with, boolean ignoreCase) {
     Map<String, Object> pron = new LinkedHashMap<>();
     pron.put("replace", replace);
@@ -814,8 +914,13 @@ public class AgentBase extends Service {
   }
 
   public AgentBase setGlobalData(Map<String, Object> data) {
-    globalData.clear();
-    globalData.putAll(data);
+    // MERGE (not replace) — mirrors Python AIConfigMixin.set_global_data, which
+    // does self._global_data.update(data) so skills and other callers can each
+    // contribute keys without clobbering each other. A clear-then-putAll would
+    // drop keys accumulated by earlier calls (state_global_data_merge divergence).
+    if (data != null) {
+      globalData.putAll(data);
+    }
     return this;
   }
 
@@ -984,13 +1089,16 @@ public class AgentBase extends Service {
   }
 
   public AgentBase setPromptLlmParams(Map<String, Object> llmParams) {
-    promptLlmParams.clear();
+    // MERGE (not replace) — mirrors Python's self._prompt_llm_params.update(params)
+    // (ai_config_mixin.py). Successive calls with distinct keys accumulate; a
+    // repeated key overwrites. A clear-then-putAll would drop earlier params.
     promptLlmParams.putAll(llmParams);
     return this;
   }
 
   public AgentBase setPostPromptLlmParams(Map<String, Object> llmParams) {
-    postPromptLlmParams.clear();
+    // MERGE (not replace) — mirrors Python's
+    // self._post_prompt_llm_params.update(params) (ai_config_mixin.py).
     postPromptLlmParams.putAll(llmParams);
     return this;
   }
@@ -1138,6 +1246,43 @@ public class AgentBase extends Service {
   public AgentBase manualSetProxyUrl(String url) {
     this.proxyUrlBase = url;
     return this;
+  }
+
+  /**
+   * Get the underlying HTTP application/server instance for deployment adapters. Mirrors
+   * WebMixin.get_app — Python returns the FastAPI app for adapters like Mangum/Lambda; Java has no
+   * web framework, so this returns the JDK {@link com.sun.net.httpserver.HttpServer} (lazily
+   * started if not already running).
+   *
+   * @return the bound HttpServer instance
+   */
+  public com.sun.net.httpserver.HttpServer getApp() {
+    if (httpServer == null) {
+      try {
+        serve();
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to initialize the HTTP server", e);
+      }
+    }
+    return httpServer;
+  }
+
+  /**
+   * Register a JVM shutdown hook for graceful shutdown (useful under Kubernetes). Mirrors
+   * WebMixin.setup_graceful_shutdown — Python installs SIGTERM/SIGINT handlers; Java uses a JVM
+   * shutdown hook that stops the HTTP server cleanly.
+   */
+  public void setupGracefulShutdown() {
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    stop();
+                  } catch (RuntimeException e) {
+                    // Best-effort cleanup during JVM shutdown; nothing else to do.
+                  }
+                }));
   }
 
   public AgentBase addSwaigQueryParams(Map<String, String> params) {
@@ -1345,7 +1490,10 @@ public class AgentBase extends Service {
 
   public AgentBase registerSipUsername(String username) {
     if (username != null && SIP_USERNAME_PATTERN.matcher(username).matches()) {
-      sipUsernames.add(username);
+      // Store lowercased — mirrors Python agent_base.register_sip_username,
+      // which does self._sip_usernames.add(sip_username.lower()). The set then
+      // dedups case-insensitively ("Bob"/"BOB"/"bob" collapse to one).
+      sipUsernames.add(username.toLowerCase(Locale.ROOT));
     } else {
       log.warn("Invalid SIP username rejected: %s", username);
     }
@@ -1466,8 +1614,7 @@ public class AgentBase extends Service {
   /**
    * Public delegate around {@link #validateSignedWebhook} so external front-doors (e.g. {@link
    * com.signalwire.sdk.server.AgentServer}, a Lambda adapter, etc.) can run the same logic the
-   * in-process HTTP server does. Mirrors the no-op-when-unset behavior described in
-   * porting-sdk/webhooks.md.
+   * in-process HTTP server does. It is a no-op when no signing key is configured.
    *
    * @param exchange the inbound HttpExchange.
    * @param rawBody raw UTF-8 body string.
@@ -1480,9 +1627,9 @@ public class AgentBase extends Service {
   /**
    * Override the {@link Service} hook to enforce SignalWire webhook signature validation when a
    * {@link #signingKey} is configured. Returns {@code true} (no-op) when {@code signingKey} is
-   * unset; per porting-sdk/webhooks.md, the AgentBase MUST NOT silently reject unsigned requests
-   * when no key is configured (a prominent startup warning is the documented behavior instead —
-   * emitted in {@link Builder#build()}).
+   * unset; the AgentBase MUST NOT silently reject unsigned requests when no key is configured (a
+   * prominent startup warning is the documented behavior instead — emitted in {@link
+   * Builder#build()}).
    *
    * <p>The signature header is read from {@code X-SignalWire-Signature} (or its {@code
    * X-Twilio-Signature} legacy alias). The URL is reconstructed from proxy headers / {@code
@@ -1690,6 +1837,12 @@ public class AgentBase extends Service {
       ai.put("languages", new ArrayList<>(languages));
     }
 
+    // ASR-driven multilingual mode (set_multilingual) — emitted as the
+    // top-level ``multilingual`` object; the server prefers it over languages.
+    if (multilingual != null && !multilingual.isEmpty()) {
+      ai.put("multilingual", new LinkedHashMap<>(multilingual));
+    }
+
     // Pronunciations
     if (!pronunciations.isEmpty()) {
       ai.put("pronounce", new ArrayList<>(pronunciations));
@@ -1820,6 +1973,9 @@ public class AgentBase extends Service {
     copy.pomSections.addAll(deepCopyList(this.pomSections));
     copy.hints.addAll(this.hints);
     copy.languages.addAll(deepCopyList(this.languages));
+    if (this.multilingual != null) {
+      copy.multilingual = new LinkedHashMap<>(this.multilingual);
+    }
     copy.pronunciations.addAll(deepCopyList(this.pronunciations));
     copy.params.putAll(this.params);
     copy.promptLlmParams.putAll(this.promptLlmParams);
@@ -2016,6 +2172,78 @@ public class AgentBase extends Service {
       dynamicConfigCallback.configure(queryParams, bodyParams, headerMap, renderAgent);
     }
     return renderAgent.renderSwml(baseUrl);
+  }
+
+  /**
+   * Framework-free request-dispatch core for AgentBase.
+   *
+   * <p>Overrides {@link com.signalwire.sdk.swml.Service#handleRequest} so the primitive dispatch
+   * surface renders SWML via AgentBase's 5-phase pipeline ({@link #renderSwml}) — mirroring the
+   * embedded server's {@code renderMainSwml} path — instead of the base {@code renderDocument}.
+   * Performs basic-auth and the routing-callback check over plain primitives, returning a {@code
+   * (status, headers, body)} triple with the 401-auth and 307-redirect behavior preserved.
+   *
+   * @param method HTTP method, e.g. {@code "GET"} or {@code "POST"}.
+   * @param url the full request URL.
+   * @param headers request headers as a plain map.
+   * @param body the already-parsed JSON body for POST requests, or {@code null}.
+   * @return a {@code (status, headers, body)} triple.
+   */
+  @Override
+  public HttpResult handleRequest(
+      String method, String url, Map<String, String> headers, Map<String, Object> body) {
+    Map<String, Object> reqBody = body != null ? body : new LinkedHashMap<>();
+    String callbackPath = callbackPathForUrl(url);
+
+    // Auth
+    if (!checkBasicAuthHeaders(headers)) {
+      return new HttpResult(
+          401, Map.of("WWW-Authenticate", "Basic"), gson.toJson(Map.of("error", "Unauthorized")));
+    }
+
+    // Routing callback: (body, headers) -> route | null (POST with a non-empty body only).
+    if ("POST".equalsIgnoreCase(method)
+        && !reqBody.isEmpty()
+        && callbackPath != null
+        && routingCallback != null) {
+      try {
+        String route = routingCallback.apply(reqBody, headers);
+        if (route != null) {
+          log.info("routing_request route=%s", route);
+          return new HttpResult(307, Map.of("Location", route), "");
+        }
+      } catch (Exception e) {
+        log.error("error_in_routing_callback", e);
+      }
+    }
+
+    // Render via AgentBase's SWML pipeline (proxy-base URL when configured).
+    // Apply the per-request dynamic-config callback (multi-tenancy) the same way
+    // the embedded-server renderMainSwml path does: clone the agent, hand the
+    // clone the request's query/body/header context, and render from the clone.
+    // This keeps the served path (which now delegates here) applying dynamic
+    // config, and mirrors Python's _handle_root_request -> _render_swml.
+    String baseUrl = proxyUrlBase != null ? proxyUrlBase : "";
+    AgentBase renderAgent = this;
+    if (dynamicConfigCallback != null) {
+      renderAgent = this.clone();
+      Map<String, String> queryParams = parseQueryParams(queryStringOf(url));
+      Map<String, List<String>> headerMap = new LinkedHashMap<>();
+      if (headers != null) {
+        headers.forEach((k, v) -> headerMap.put(k, List.of(v)));
+      }
+      dynamicConfigCallback.configure(queryParams, reqBody, headerMap, renderAgent);
+    }
+    return new HttpResult(200, new LinkedHashMap<>(), renderAgent.renderSwmlJson(baseUrl));
+  }
+
+  /** Extract the raw query string (after {@code ?}) from a full or path-only URL, or empty. */
+  private static String queryStringOf(String url) {
+    if (url == null) {
+      return "";
+    }
+    int q = url.indexOf('?');
+    return q >= 0 ? url.substring(q + 1) : "";
   }
 
   @Override

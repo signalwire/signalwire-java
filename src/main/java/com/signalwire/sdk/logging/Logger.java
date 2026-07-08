@@ -87,6 +87,65 @@ public final class Logger {
     globalLevel = level;
   }
 
+  // -------- logging_config module-level configuration helpers --------
+  // The Python reference exposes these as free functions in
+  // signalwire.core.logging_config; Java groups them as static helpers on
+  // Logger (projected to the module-level free-function names by the surface
+  // enumerator). configure_logging is idempotent (one-time global setup);
+  // reset_logging_configuration clears the guard so it can run again;
+  // strip_control_chars sanitizes log messages of ASCII control characters.
+
+  private static volatile boolean loggingConfigured = false;
+
+  /**
+   * One-time global logging configuration. Idempotent — a second call is a no-op until {@link
+   * #resetLoggingConfiguration()} runs. Mirrors logging_config.configure_logging.
+   */
+  public static synchronized void configureLogging() {
+    if (loggingConfigured) {
+      return;
+    }
+    String envLevel = System.getenv("SIGNALWIRE_LOG_LEVEL");
+    if (envLevel != null && !envLevel.isEmpty()) {
+      try {
+        globalLevel = Level.valueOf(envLevel.trim().toUpperCase(java.util.Locale.ROOT));
+      } catch (IllegalArgumentException ignored) {
+        // Unknown level name — keep the current global level.
+      }
+    }
+    loggingConfigured = true;
+  }
+
+  /**
+   * Reset the one-time configuration guard so {@link #configureLogging()} can run again. Mirrors
+   * logging_config.reset_logging_configuration.
+   */
+  public static synchronized void resetLoggingConfiguration() {
+    loggingConfigured = false;
+    configureLogging();
+  }
+
+  /**
+   * Remove ASCII control characters (except tab/newline/carriage-return) from a log string. Mirrors
+   * logging_config.strip_control_chars (a structlog processor in Python).
+   *
+   * @param value the raw log string (null-safe → returns null)
+   * @return the sanitized string
+   */
+  public static String stripControlChars(String value) {
+    if (value == null) {
+      return null;
+    }
+    StringBuilder out = new StringBuilder(value.length());
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (c >= 0x20 || c == '\t' || c == '\n' || c == '\r') {
+        out.append(c);
+      }
+    }
+    return out.toString();
+  }
+
   public static Level getGlobalLevel() {
     return globalLevel;
   }

@@ -116,7 +116,7 @@ class LogsMockTest {
 
     @Test
     void listReturnsDict() {
-      Map<String, Object> body = client.logs().conferences().list();
+      Map<String, Object> body = client.logs().conferences().list(java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();

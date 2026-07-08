@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -34,15 +35,39 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 PORT_ROOT = HERE.parent
-PSDK = (PORT_ROOT.parent / "porting-sdk").resolve()
-if not PSDK.is_dir():
-    PSDK = Path("/usr/local/home/devuser/src/porting-sdk")
+# Locate porting-sdk without a machine-specific hardcode:
+# $PORTING_SDK -> adjacency (sibling of this repo, the CI + local layout) ->
+# legacy ~/src fallback.
+_psdk_candidates = [
+    Path(os.environ["PORTING_SDK"]) if os.environ.get("PORTING_SDK") else None,
+    PORT_ROOT.parent / "porting-sdk",
+    Path.home() / "src" / "porting-sdk",
+]
+PSDK = next((c.resolve() for c in _psdk_candidates if c and c.is_dir()),
+            (PORT_ROOT.parent / "porting-sdk").resolve())
 
 sys.path.insert(0, str(HERE))
 from enumerate_surface import (  # type: ignore
     _CLASS_RENAMES, _METHOD_RENAMES, _PY_KEYWORDS, build_class_to_module_map,
     camel_to_snake, translate_method_name,
+    _gen_type_module, _gen_type_unrename,
 )
+
+
+# Hard Java keywords generate_rest.type_field_name suffixes with `_` when a wire
+# key collides (``default`` → ``default_``, ``enum`` → ``enum_``). The gen-type
+# field-accessor recording strips that suffix back to the bare wire key the oracle
+# records. Kept in sync with generate_rest.JAVA_KEYWORDS.
+_JAVA_FIELD_KEYWORDS = {
+    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+    "class", "const", "continue", "default", "do", "double", "else", "enum",
+    "extends", "final", "finally", "float", "for", "goto", "if", "implements",
+    "import", "instanceof", "int", "interface", "long", "native", "new",
+    "package", "private", "protected", "public", "return", "short", "static",
+    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
+    "transient", "try", "void", "volatile", "while", "true", "false", "null",
+    "var", "record", "yield",
+}
 
 
 class TypeTranslationError(RuntimeError):
@@ -52,6 +77,47 @@ class TypeTranslationError(RuntimeError):
 def load_aliases() -> dict[str, str]:
     data = yaml.safe_load((PSDK / "type_aliases.yaml").read_text(encoding="utf-8"))
     return {str(k): str(v) for k, v in data.get("aliases", {}).get("java", {}).items()}
+
+
+# ---------------------------------------------------------------------------
+# Generated-REST typed-input sidecar (rest_signatures.json)
+# ---------------------------------------------------------------------------
+#
+# The generated REST resource methods take the Java NAMED idiom for keyword
+# params — a builder ``<Method>Request`` object (``create(CreateRequest req)``)
+# — which reflection sees as a SINGLE ``request`` param (L13: the builder is the
+# user-facing idiom, never flattened to positionals). The oracle records the
+# exploded flat keyword set (body fields → keyword, ``extras`` → keyword, a
+# leading path-id → positional, a GET/list query bag → ``var_keyword``). Java
+# reflection cannot express keyword-only params, so the generator emits a
+# canonical unfold sidecar next to the generated resources; this enumerator
+# REPLACES the reflected builder-``request`` param list with the sidecar's flat
+# set so the drift gate compares count+kind against the oracle (L10 — the
+# generator explodes, the enumerator reclassifies). Body-field types are the
+# open value type (``optional<any>`` / ``string`` / …) — the gate compares
+# param count+kind, not the static field type, so this is idiom-safe.
+#
+# Static-typed Java has no ``**kwargs`` mechanism, so (like go/dotnet) the
+# unfold keeps ``extras`` only and does NOT synthesize the oracle's trailing
+# ``**kwargs`` var_keyword. The 1-param residual that leaves (methods whose
+# oracle signature carries a trailing ``kwargs``) is documented per-method in
+# PORT_SIGNATURE_OMISSIONS.md with a ``java-no-kwargs`` honest reason — never a
+# BACKLOG/loose-body tag.
+_GENERATED_PKG = "com.signalwire.sdk.rest.namespaces.generated"
+
+
+def load_rest_sidecar() -> dict[str, list[dict]]:
+    """Load the generator's canonical typed-param records for generated REST
+    resource methods. Keyed by ``<ResourceClass>::<javaMethod>`` → param list
+    (each ``{name, kind, type, required[, default]}``)."""
+    path = (
+        PORT_ROOT / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
+        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+    )
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data.get("methods", {})
 
 
 # ---------------------------------------------------------------------------
@@ -267,13 +333,22 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
     # RestClient.Builder (nested in RestClient.java)
     ("com.signalwire.sdk.rest", "Builder"):
         ("RestClientBuilder", "signalwire.rest.rest_client_builder"),
-    # Action subtypes nested under Call.java's relay package — Java's
-    # ``Call.PlayAndCollectAction`` etc. are exposed at the same path as
-    # the surface, but we keep the symbol stable here for diff continuity.
+    # Action subtypes nested under Call.java's relay package. The reference
+    # projects each concrete action's control methods (stop/pause/resume/volume)
+    # directly onto the action class in ``signalwire.relay.call``, so these must
+    # land there (matching the SURFACE enumerator's folds) rather than in their
+    # own per-class modules. Semantics fix (pass-2 reconcile): Java's
+    # ``PlayAndCollectAction`` (prefix ``play_and_collect``, carries
+    # stop/pause/resume/volume + start_input_timers) IS the reference's
+    # ``CollectAction``; Java's ``CollectAction`` (prefix ``collect``,
+    # stop + start_input_timers) IS the reference's ``StandaloneCollectAction``.
+    # Java's inbound ``ReceiveFaxAction`` is the reference's ``FaxAction``.
     ("com.signalwire.sdk.relay", "PlayAndCollectAction"):
-        ("CallPlayAndCollectAction", "signalwire.relay.call_play_and_collect_action"),
+        ("CollectAction", "signalwire.relay.call"),
+    ("com.signalwire.sdk.relay", "CollectAction"):
+        ("StandaloneCollectAction", "signalwire.relay.call"),
     ("com.signalwire.sdk.relay", "ReceiveFaxAction"):
-        ("CallReceiveFaxAction", "signalwire.relay.call_receive_fax_action"),
+        ("FaxAction", "signalwire.relay.call"),
     ("com.signalwire.sdk.relay", "SendFaxAction"):
         ("CallSendFaxAction", "signalwire.relay.call_send_fax_action"),
     # AuthorizationStateEvent — nested under RelayEvent in Java
@@ -389,13 +464,31 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("FunctionResult", "send_sms"),       # +region
     ("FunctionResult", "rpc_dial"),       # +device_type (was hard-coded "phone")
     ("FunctionResult", "rpc_ai_message"), # +role (was hard-coded "system")
+    # RELAY action pause() exposes the reference's optional ``behavior`` kwarg via
+    # a ``pause(String behavior)`` overload alongside the no-arg convenience
+    # ``pause()``. The full overload is the parity surface (matches the oracle's
+    # ``pause(behavior: str | None)``); the 0-arg form would hide the param.
+    ("PlayAction", "pause"),
+    ("RecordAction", "pause"),
+    ("CollectAction", "pause"),
+    # AgentBase.addPatternHint now exposes the full Python
+    # add_pattern_hint(hint, pattern, replace, ignore_case) — a STRUCTURED hint,
+    # not a bare string (contract #74). AgentBase.addLanguage now exposes the
+    # full add_language(name, code, voice, speech_fillers, function_fillers,
+    # engine, model, params) carrying engine/model/fillers. The convenience
+    # overloads (bare string / (name,code,voice)) delegate; the full overload is
+    # the parity surface. (The PORT_SIGNATURE_OMISSIONS entries that excused the
+    # old collapsed shapes are removed — these are now drift-0 parity.)
+    ("AgentBase", "add_pattern_hint"),
+    ("AgentBase", "add_language"),
 }
 
 # Java skill class renames to match Python casing
 JAVA_SKILL_RENAMES = {
     "DatasphereSkill": "DataSphereSkill",
     "DatasphereServerlessSkill": "DataSphereServerlessSkill",
-    "McpGatewaySkill": "MCPGatewaySkill",
+    "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
+    "DatetimeSkill": "DateTimeSkill",
     "SwmlTransferSkill": "SWMLTransferSkill",
 }
 
@@ -403,7 +496,12 @@ JAVA_SKILL_RENAMES = {
 # Key: Java fully-qualified package.Class
 JAVA_MODULE_OVERRIDES = {
     "com.signalwire.sdk.swml.Service": "signalwire.core.swml_service",
-    "com.signalwire.sdk.swml.Document": "signalwire.core.swml_builder",
+    # Java's SWML ``Document`` (the doc model) is port-only — the reference
+    # ``swml_builder`` module records ``SWMLBuilder``, not ``Document``. Pin it
+    # to the same port-only home the SURFACE enumerator uses
+    # (signalwire.swml.document) so both gates agree and its methods are
+    # PORT_ADDITIONS, not a spurious swml_builder.Document overlay.
+    "com.signalwire.sdk.swml.Document": "signalwire.swml.document",
     # SchemaUtils.java is the canonical SchemaUtils port (Python parity
     # at signalwire.utils.schema_utils.SchemaUtils); class-name lookup
     # routes it automatically.  The pre-existing Schema.java is a
@@ -454,11 +552,23 @@ JAVA_MODULE_OVERRIDES = {
 FREE_FUNCTION_PROJECTIONS = {
     ("com.signalwire.sdk.utils.UrlValidator", "validateUrl"):
         ("signalwire.utils.url_validator", "validate_url"),
+    # RelayEvent.parseEvent → module-level signalwire.relay.event.parse_event
+    # (Python free function; Java groups it as a static factory on RelayEvent).
+    ("com.signalwire.sdk.relay.RelayEvent", "parseEvent"):
+        ("signalwire.relay.event", "parse_event"),
     # ExecutionMode helpers — Python ships them as free functions in
     # two distinct modules; Java groups both static methods on the
     # ExecutionMode enum for cohesion.
     ("com.signalwire.sdk.runtime.ExecutionMode", "getExecutionMode"):
         ("signalwire.core.logging_config", "get_execution_mode"),
+    # logging_config module-level free functions grouped on Logger's static
+    # helpers (mirrors _FREE_FUNCTION_SURFACE_PROJECTIONS in enumerate_surface.py).
+    ("com.signalwire.sdk.logging.Logger", "configureLogging"):
+        ("signalwire.core.logging_config", "configure_logging"),
+    ("com.signalwire.sdk.logging.Logger", "resetLoggingConfiguration"):
+        ("signalwire.core.logging_config", "reset_logging_configuration"),
+    ("com.signalwire.sdk.logging.Logger", "stripControlChars"):
+        ("signalwire.core.logging_config", "strip_control_chars"),
     ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"):
         ("signalwire.utils", "is_serverless_mode"),
     # Top-level Signalwire class projects each static helper onto the
@@ -474,6 +584,8 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire", "add_skill_directory"),
     ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"):
         ("signalwire", "list_skills_with_params"),
+    ("com.signalwire.sdk.Signalwire", "listSkills"):
+        ("signalwire", "list_skills"),
     # WebhookValidator static methods → Python module-level free functions
     # in signalwire.core.security.webhook_validator. Java collapses both
     # entry points onto a static-only utility class for namespacing; the
@@ -483,6 +595,16 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
     ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"):
         ("signalwire.core.security.webhook_validator", "validate_request"),
+    # WebhookValidator.validate → the framework-free decomposed webhook-validation
+    # core (signalwire.core.security.webhook_middleware.validate). Java's method
+    # returns a WebhookRejection record (status, headers, body) or null; the oracle
+    # records the language-neutral tuple<int,dict<string,string>,string>? shape, so
+    # this projection's reflected return type is overridden via
+    # FREE_FUNCTION_SIGNATURE_OVERRIDES below to the canonical tuple (same as .NET's
+    # ValueTuple-based WebhookValidationMiddleware.Validate). The WebhookFilter
+    # servlet wrapper on top of it stays a PORT_ADDITION idiom.
+    ("com.signalwire.sdk.security.WebhookValidator", "validate"):
+        ("signalwire.core.security.webhook_middleware", "validate"),
     # SecurityUtils static methods → Python module-level free functions in
     # signalwire.core.security.security_utils. The Python reference exports
     # these as bare module functions (filter_sensitive_headers, redact_url,
@@ -494,25 +616,128 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.security.security_utils", "redact_url"),
     ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"):
         ("signalwire.core.security.security_utils", "is_valid_hostname"),
+    # TypeInference static methods → Python module-level free functions in
+    # signalwire.core.agent.tools.type_inference. Python reflects a handler's
+    # signature; Java has no runtime lambda-parameter reflection, so the typed
+    # params are supplied via the ParameterSchema typed-params builder and
+    # inferSchema decomposes that built schema into the canonical tuple (the
+    # static-port idiom — mirrors .NET/Ruby building from a types override).
+    # Java groups both on a static-only utility class; lift them back to the
+    # canonical free-function home. Native shapes are recorded canonically via
+    # FREE_FUNCTION_SIGNATURE_OVERRIDES below.
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"):
+        ("signalwire.core.agent.tools.type_inference", "infer_schema"),
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"):
+        ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
+}
+
+
+# Signature overrides for free-function projections whose native Java shape does
+# not translate to the canonical oracle shape via reflection alone. Keyed by the
+# same ``(java_fqcn, java_method)`` as FREE_FUNCTION_PROJECTIONS; the value is the
+# exact canonical signature to emit (params + returns), mirroring the Python
+# reference. Java has no value-tuple type, so the decomposed webhook ``validate``
+# core (which returns a ``WebhookRejection`` record standing in for the
+# language-neutral ``(status, headers, body)`` triple) needs its return type
+# recorded as the oracle's ``tuple<int,dict<string,string>,string>?`` directly —
+# the same shape .NET emits from a ``System.ValueTuple``. The ``signing_key``
+# param is keyword-only in the Python reference (``*, signing_key``); recording
+# it as ``kind: keyword`` keeps the drift compare exact.
+FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    ("com.signalwire.sdk.security.WebhookValidator", "validate"): {
+        "params": [
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "string", "required": True},
+            {"name": "signing_key", "kind": "keyword", "type": "string", "required": True},
+        ],
+        "returns": "optional<tuple<int,dict<string,string>,string>>",
+    },
+    # infer_schema(func) -> (parameters, required, description, is_typed, has_raw_data).
+    # Java's inferSchema takes the built ParameterSchema (a typed-params-builder
+    # Map) + a description and returns an InferredSchema record; the oracle records
+    # the language-neutral (func) -> 5-tuple shape (the callable param is the typed
+    # handler the schema describes — mirrors .NET/Ruby recording `func`).
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"): {
+        "params": [
+            {"name": "func", "type": "callable<list<any>,any>", "required": True},
+        ],
+        "returns":
+            "tuple<dict<string,dict<string,any>>,list<string>,optional<string>,bool,bool>",
+    },
+    # create_typed_handler_wrapper(func, has_raw_data) -> callable. Java's method
+    # takes a ToolHandler + boolean and returns a ToolHandler; recorded as the
+    # canonical callable shape.
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"): {
+        "params": [
+            {"name": "func", "type": "callable<list<any>,any>", "required": True},
+            {"name": "has_raw_data", "type": "bool", "required": True},
+        ],
+        "returns": "callable<list<any>,any>",
+    },
+}
+
+
+# Method-level signature overrides for regular (non-free-function) methods whose
+# native Java shape does not translate to the canonical oracle shape via
+# reflection alone. Keyed by ``(canonical_class, method_canonical)`` — the
+# canonical class name (post-rename, e.g. ``SWMLService``) and the canonical
+# (snake_case) method name. The value is the exact canonical signature to emit
+# (params + returns), mirroring the Python reference.
+#
+# ``handle_request`` is the framework-free dispatch core: Java has no value-tuple
+# type, so it returns an ``HttpResult`` record standing in for the language-neutral
+# ``(status, headers, body)`` triple. Reflection resolves that record to a bare
+# ``class:`` ref; record the oracle's ``tuple<int,dict<string,string>,string>``
+# return directly (the same shape .NET emits from its ``(int, Dictionary, string)``
+# ValueTuple). The trailing ``body`` param is optional in the reference
+# (``body=None``); mark it non-required so the drift compare is exact. It lives on
+# both SWMLService (the base core) and AgentBase (the render-override), matching the
+# reference which declares it on both.
+METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    ("SWMLService", "handle_request"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
+             "default": None},
+        ],
+        "returns": "tuple<int,dict<string,string>,string>",
+    },
+    ("AgentBase", "handle_request"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "method", "type": "string", "required": True},
+            {"name": "url", "type": "string", "required": True},
+            {"name": "headers", "type": "dict<string,string>", "required": True},
+            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
+             "default": None},
+        ],
+        "returns": "tuple<int,dict<string,string>,string>",
+    },
 }
 
 
 MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
         "add_function_include", "add_hint", "add_hints", "add_internal_filler",
-        "add_language", "add_pattern_hint", "add_pronunciation",
-        "enable_debug_events", "get_language_params", "set_function_includes",
-        "set_global_data", "set_internal_fillers", "set_language_params",
-        "set_languages", "set_native_functions",
-        "set_param", "set_params", "set_post_prompt_llm_params",
-        "set_prompt_llm_params", "set_pronunciations", "update_global_data",
+        "add_language", "add_mcp_server", "add_pattern_hint", "add_pronunciation",
+        "enable_debug_events", "enable_mcp_server", "get_language_params",
+        "set_function_includes", "set_global_data", "set_internal_fillers",
+        "set_language_params", "set_languages", "set_multilingual",
+        "set_native_functions", "set_param", "set_params",
+        "set_post_prompt_llm_params", "set_prompt_llm_params",
+        "set_pronunciations", "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
-        "define_contexts", "get_post_prompt", "get_prompt",
+        "contexts", "define_contexts", "get_post_prompt", "get_prompt",
         "prompt_add_section",
         "prompt_add_subsection", "prompt_add_to_section",
         "prompt_has_section", "reset_contexts", "set_post_prompt",
-        "set_prompt_text",
+        "set_prompt_pom", "set_prompt_text",
     ],
     # Python additionally extracted a ``PromptManager`` class that
     # PromptMixin delegates to. The user-facing surface is identical
@@ -530,7 +755,8 @@ MIXIN_PROJECTIONS = {
         "add_skill", "has_skill", "list_skills", "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "on_function_call", "register_swaig_function",
+        "define_tool", "define_tools", "on_function_call",
+        "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
         "define_tool", "register_swaig_function",
@@ -541,11 +767,9 @@ MIXIN_PROJECTIONS = {
         "validate_basic_auth", "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "enable_debug_routes", "manual_set_proxy_url", "run", "serve",
-        "set_dynamic_config_callback", "on_request", "on_swml_request",
-    ],
-    ("signalwire.core.mixins.mcp_server_mixin", "MCPServerMixin"): [
-        "add_mcp_server",
+        "as_router", "enable_debug_routes", "get_app", "manual_set_proxy_url",
+        "on_request", "on_swml_request", "register_routing_callback", "run",
+        "serve", "set_dynamic_config_callback", "setup_graceful_shutdown",
     ],
     ("signalwire.core.mixins.state_mixin", "StateMixin"): [
         "validate_tool_token",
@@ -553,9 +777,83 @@ MIXIN_PROJECTIONS = {
 }
 
 
-def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
+# Methods whose Python reference carries a trailing ``**kwargs`` / ``**llm_params``
+# var-keyword tail that the port mirrors as a single trailing open ``Map`` param.
+# Since porting-sdk #58 the oracle STRIPS every var-keyword tail from the extracted
+# signature (the cross-port floor is the ``extras`` door, not a kwargs param — see
+# enumerate_python_signatures.py). Java (static, no ``**kwargs``) still exposes the
+# door as one trailing ``Map<String,Object>`` param; reflection defaults it to
+# ``required: True`` (Java has no defaults), which now reads as a port-side EXTRA
+# required param vs the stripped oracle → param-count-mismatch. The var-keyword door
+# is optional by construction (a caller may pass zero extra keys), so mark that
+# trailing param ``required: false``: the diff's ``extras_all_optional`` rule then
+# excuses it as an optional port extra — the honest shape (an optional kwargs door),
+# not an omission. Keyed by fully-qualified ``(module, class_or_None, method)``; a
+# ``None`` class targets a module-level free function. The tail param is matched by
+# position (last param) so the specific open-map value type doesn't matter.
+KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
+    ("signalwire", None, "RestClient"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_prompt_llm_params"),
+    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_post_prompt_llm_params"),
+    ("signalwire.core.swml_handler", "SWMLVerbHandler", "build_config"),
+}
+
+
+def _mark_kwargs_tails_optional(out_modules: dict) -> None:
+    """Flip the trailing var-keyword-door param of each KWARGS_TAIL_OPTIONAL
+    method to ``required: false`` (see the set's docstring). Fail loud if a
+    keyed symbol/param can't be found — a rename would otherwise silently stop
+    excusing it and re-red the drift gate."""
+    for module, cls, method in KWARGS_TAIL_OPTIONAL:
+        mod_entry = out_modules.get(module)
+        if not mod_entry:
+            raise RuntimeError(f"KWARGS_TAIL_OPTIONAL: module {module!r} not found")
+        if cls is None:
+            sig = mod_entry.get("functions", {}).get(method)
+        else:
+            sig = mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+        if not sig:
+            raise RuntimeError(
+                f"KWARGS_TAIL_OPTIONAL: symbol {module}.{cls or ''}.{method} not found"
+            )
+        params = sig.get("params", [])
+        # The tail is the last non-receiver param.
+        tail = [p for p in params if p.get("kind") not in ("self", "cls")]
+        if not tail:
+            raise RuntimeError(
+                f"KWARGS_TAIL_OPTIONAL: {module}.{cls or ''}.{method} has no value param to mark"
+            )
+        tail[-1]["required"] = False
+
+
+# Idiom-scaffolding Java simple names to DROP (mirrors enumerate_surface.py's
+# _SURFACE_EXCLUDED_CLASSES; here keyed by the bare simple name SignatureDump
+# emits for the nested/helper type). All are port-only value/builder types with
+# no reference counterpart.
+_SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
+    "RenderOptions",            # SwmlRenderer options-builder
+    "SWAIGFunctionBuilder",     # SWAIGFunction options-builder
+    "ValidationResult",         # (valid, errors) tuple record (swml/swaig/security)
+    "AuthException",            # AuthHandler nested exception
+    "AuthResult",               # AuthHandler nested result
+    "BasicCredentials",         # AuthHandler nested credential type
+    "BearerCredentials",        # AuthHandler nested credential type
+    "RequestHandler",           # AuthHandler framework-neutral middleware wrapper
+    "Response",                 # AuthHandler nested response value
+    "LoggingLevel",             # logging enum helper (Logger.Level is the surface)
+    "SkillParams",              # package-private skill base-schema helper
+    "SWAIGFunctionHandler",     # @FunctionalInterface handler
+    "ToolRegistryTool",         # ToolRegistry nested tool value
+    "WebhookRejection",         # WebhookValidator.validate reject-triple record
+    "HttpResult",               # Service.handleRequest (status, headers, body) triple record
+    "InferredSchema",           # TypeInference.inferSchema 5-tuple stand-in record
+}
+
+
+def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = None) -> tuple[dict, list]:
     out_modules: dict = {}
     failures: list = []
+    sidecar = sidecar or {}
 
     for type_entry in raw.get("types", []):
         pkg = type_entry.get("package", "")
@@ -563,6 +861,88 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
         if not java_name:
             continue
         if type_entry.get("kind") in ("annotation",):
+            continue
+
+        # Idiom-scaffolding types (mirror enumerate_surface.py's
+        # _SURFACE_EXCLUDED_CLASSES). These are the Java expression of a Python
+        # kwargs bundle / return tuple / value object — a static-typing
+        # NECESSITY, not reference surface: options-builders (the NAMED-param
+        # idiom for many-optional-arg methods), validation-RESULT records
+        # (Python returns a ``(bool, list)`` tuple), credential/exception/
+        # response value types nested inside AuthHandler, the SWAIGFunction
+        # builder, the LoggingLevel enum, and the private SkillParams helper.
+        # The reference has no counterpart, so drop them on BOTH sides rather
+        # than launder them as PORT_ADDITIONS (keeps the surface + signature
+        # additions sets consistent). Guarded to hand packages only so a
+        # generated DTO that happens to share a name is never dropped.
+        if java_name in _SIG_EXCLUDED_SIMPLE_NAMES and not (
+            pkg == _GENERATED_PKG or _gen_type_module(pkg) is not None
+        ):
+            continue
+
+        # Generated-REST scaffolding drop (mirror enumerate_surface.py §8).
+        # The generated package's typed-input BUILDER scaffolding — every
+        # write/command/set method emits a nested ``<Method>Request`` + its
+        # ``Builder`` (the Java NAMED idiom for keyword params, L13) — is
+        # implementation detail of the typed input, not a route/resource, so
+        # the oracle has no counterpart. Drop these here exactly as the
+        # surface enumerator drops all nested classes in the package. Also
+        # drop the ``ResourceTree`` plumbing base entirely (the oracle has no
+        # ResourceTree; the RestClient's namespace accessors map to Python
+        # instance attributes and are covered by PORT_ADDITIONS). The resource
+        # classes (Mfa, Calling, …) and the namespace CONTAINERS
+        # (RegistryNamespace, …) are kept.
+        if pkg == _GENERATED_PKG:
+            if java_name == "ResourceTree" or java_name.endswith("Request") or java_name == "Builder":
+                continue
+
+        # Generated wire-type / read-side-payload classes (item A/H + D). Route BY
+        # PACKAGE to the oracle <ns>_types_generated / *_generated module (wins over
+        # CLASS_TO_MODULE — a type name recurs / collides with an SDK class). Emit
+        # each PUBLIC FIELD as a zero-arg accessor member carrying the EXACT wire-key
+        # name (verbatim — the reference records the raw wire field name, NOT
+        # snake-folded), returning the field's (loose) type. For the sig-oracle-ABSENT
+        # modules (REST types / relay-proto / swaig_actions) these members are port
+        # extras EXCUSED by the diff's port-state-accessor rule (loose return); for
+        # the sig-oracle-PRESENT gen-payload modules (swml_verbs / post_prompt /
+        # swaig_request) they satisfy the reference's class-typed field accessors (the
+        # gen-payload fold + gen-type return equivalence tolerate loose vs class:).
+        # An ENUM's own constants (static self-typed fields) are NOT data members —
+        # skip them so a class-typed self-ref does not leak as un-excused drift.
+        gen_type_mod = _gen_type_module(pkg)
+        if gen_type_mod is not None:
+            canonical_name = _gen_type_unrename(java_name)
+            members: dict = {}
+            for m in type_entry.get("methods", []):
+                if not m.get("is_field"):
+                    continue
+                if m.get("is_static"):
+                    continue  # enum constants / static tables are not data members
+                wire = m.get("name", "")
+                if not wire or wire.startswith("$"):
+                    continue
+                # Undo the generator's reserved-word field suffix (`default_` →
+                # `default`, `enum_` → `enum`) so the recorded name is the bare wire
+                # key the oracle records. The generator suffixed on a JAVA keyword.
+                recorded = wire[:-1] if (wire.endswith("_") and wire[:-1] in _JAVA_FIELD_KEYWORDS) else wire
+                # The wire-type DTO fields are LOOSELY typed (boxed scalar / Map /
+                # List / Object — never a ref to another generated class, to keep the
+                # emitter deterministic). The reference records the RICH field type
+                # (``class:...AIParams`` / ``union<int,SWMLVar>``). Record the accessor
+                # return as ``any`` — the wire-neutral loose form (mirrors php, whose
+                # ?array/mixed properties translate to ``any``). ``any`` matches the
+                # reference's rich type via the diff's any-rule (for the sig-oracle-
+                # PRESENT gen-payload modules), and is port-state-accessor-excused for
+                # the sig-oracle-ABSENT modules — so no un-excused return-mismatch and
+                # no diff-tool change needed. (The RICH types live in the SURFACE, which
+                # records only the class name; the field-level shape is not compared.)
+                members[recorded] = {"params": [{"name": "self", "kind": "self"}],
+                                     "returns": "any"}
+            if members:
+                out_modules.setdefault(gen_type_mod, {"classes": {}})
+                out_modules[gen_type_mod]["classes"][canonical_name] = {
+                    "methods": dict(sorted(members.items())),
+                }
             continue
 
         # First check explicit Java module overrides
@@ -612,6 +992,15 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             ff_key = (full_pkg, native)
             if ff_key in FREE_FUNCTION_PROJECTIONS:
                 target_mod, target_fn = FREE_FUNCTION_PROJECTIONS[ff_key]
+                override = FREE_FUNCTION_SIGNATURE_OVERRIDES.get(ff_key)
+                if override is not None:
+                    # Native Java shape doesn't translate to the canonical shape
+                    # via reflection (no value-tuple type); emit the recorded
+                    # oracle-exact signature. Deep-copy so later mutation (overload
+                    # collapse) can't corrupt the shared table.
+                    sig = json.loads(json.dumps(override))
+                    free_functions_out.append((target_mod, target_fn, sig))
+                    continue
                 ctx = f"{target_mod}.{target_fn}"
                 try:
                     sig = build_signature(m, aliases, ctx, target_mod, canonical_name)
@@ -633,6 +1022,41 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
             except TypeTranslationError as e:
                 failures.append(str(e))
                 continue
+            # Method-level signature override (regular methods whose native Java
+            # shape — e.g. a value-tuple stand-in record return — doesn't
+            # translate via reflection alone). Replace the reflected signature
+            # with the canonical one keyed by (canonical_class, method).
+            mo = METHOD_SIGNATURE_OVERRIDES.get((canonical_name, method_canonical))
+            if mo is not None:
+                sig = {"params": [dict(p) for p in mo["params"]], "returns": mo["returns"]}
+                methods_out[method_canonical] = sig
+                continue
+            # Generated-REST typed-input unfold (L10). Java reflection sees a
+            # write/command/set method as a single builder-``request`` param;
+            # the generator's sidecar records the canonical flat keyword set the
+            # oracle expects (body fields → keyword, ``extras`` → keyword, a
+            # leading path-id → positional, a query bag → var_keyword). Replace
+            # the reflected params with the sidecar's — keeping the implicit
+            # ``self`` receiver — so the drift gate compares the oracle's shape.
+            if pkg == _GENERATED_PKG and native != "<init>":
+                unfold = sidecar.get(f"{java_name}::{native}")
+                if unfold is not None:
+                    new_params: list = []
+                    if sig["params"] and sig["params"][0].get("kind") == "self":
+                        new_params.append(sig["params"][0])
+                    for p in unfold:
+                        param: dict = {
+                            "name": p["name"],
+                            "type": p.get("type", "any"),
+                            "required": bool(p.get("required", True)),
+                        }
+                        kind = p.get("kind", "keyword")
+                        if kind != "positional":
+                            param["kind"] = kind
+                        if "default" in p:
+                            param["default"] = p["default"]
+                        new_params.append(param)
+                    sig["params"] = new_params
             # Public fields project as zero-arg accessor methods only when
             # their type names an SDK class — primitive state fields drop
             # out (matches Python adapter's _is_sdk_class_type filter).
@@ -714,10 +1138,24 @@ def collect(raw: dict, aliases: dict) -> tuple[dict, list]:
         # Drop projected methods from AgentBase only.
         for n in projected:
             ab_methods.pop(n, None)
+        # ``handle_request`` is declared on both Java classes (SWMLService is the
+        # framework-free dispatch core; AgentBase overrides it to render via its
+        # own SWML pipeline). The SIGNATURE oracle records it only once — on the
+        # base SWMLService — so drop AgentBase's identical override copy here to
+        # avoid a spurious port-only signature (the SURFACE oracle DOES list it on
+        # both, and the surface enumerator keeps both). Only drop when the base
+        # already carries it, so this never hides a genuinely AgentBase-only method.
+        if "handle_request" in svc_methods:
+            ab_methods.pop("handle_request", None)
         if ab_entry and not ab_methods:
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"].get("classes"):
                 out_modules.pop("signalwire.core.agent_base", None)
+
+    # Mark the trailing var-keyword-door param optional on collapsed-kwargs
+    # methods (post-#58 the oracle strips the tail; keep the port's optional
+    # kwargs door excused as an optional extra, not an omission).
+    _mark_kwargs_tails_optional(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):
@@ -841,13 +1279,14 @@ def main() -> int:
     CLASS_TO_MODULE = build_class_to_module_map(PSDK / "python_surface.json")
 
     aliases = load_aliases()
+    sidecar = load_rest_sidecar()
 
     if args.raw and args.raw.is_file():
         raw = json.loads(args.raw.read_text(encoding="utf-8"))
     else:
         raw = run_dump()
 
-    canonical, failures = collect(raw, aliases)
+    canonical, failures = collect(raw, aliases, sidecar)
     if failures:
         print(f"enumerate_signatures: {len(failures)} translation failure(s)", file=sys.stderr)
         for f in failures[:30]:

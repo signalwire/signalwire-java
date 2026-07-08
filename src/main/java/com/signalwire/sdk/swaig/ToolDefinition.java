@@ -53,14 +53,19 @@ public class ToolDefinition {
     return extraFields;
   }
 
-  /** Serialize to SWAIG function format for SWML. */
+  /**
+   * Serialize to SWAIG function format for SWML. Mirrors the Python reference ({@code
+   * SWAIGFunction.to_swaig} / {@code AgentBase._render_swaig_functions}): the function definition
+   * carries {@code function} (name), {@code description}, and {@code parameters} — the latter
+   * passed through {@link #ensureParameterStructure()} so a complete {@code {type,properties}}
+   * schema renders FLAT (not double-wrapped) and a bare property map is wrapped in {@code
+   * {type:object,properties:…}}.
+   */
   public Map<String, Object> toSwaigFunction(String webhookUrl, String metaDataToken) {
     Map<String, Object> func = new LinkedHashMap<>();
     func.put("function", name);
-    func.put("purpose", description);
-    if (!parameters.isEmpty()) {
-      func.put("argument", parameters);
-    }
+    func.put("description", description);
+    func.put("parameters", ensureParameterStructure());
     if (webhookUrl != null) {
       func.put("web_hook_url", webhookUrl);
     }
@@ -71,6 +76,28 @@ public class ToolDefinition {
       func.putAll(extraFields);
     }
     return func;
+  }
+
+  /**
+   * Structure the parameters for the SWML wire — the Java mirror of Python's {@code
+   * SWAIGFunction._ensure_parameter_structure}: an empty map becomes {@code
+   * {type:object,properties:{}}}; a map already carrying {@code type} + {@code properties} passes
+   * through unchanged (a complete schema is NOT double-wrapped); otherwise the map is treated as a
+   * bare property set and wrapped in {@code {type:object,properties:…}}.
+   */
+  private Map<String, Object> ensureParameterStructure() {
+    Map<String, Object> result = new LinkedHashMap<>();
+    if (parameters.isEmpty()) {
+      result.put("type", "object");
+      result.put("properties", new LinkedHashMap<>());
+      return result;
+    }
+    if (parameters.containsKey("type") && parameters.containsKey("properties")) {
+      return parameters;
+    }
+    result.put("type", "object");
+    result.put("properties", parameters);
+    return result;
   }
 
   /** Check if this tool has a handler (as opposed to DataMap tools which don't). */

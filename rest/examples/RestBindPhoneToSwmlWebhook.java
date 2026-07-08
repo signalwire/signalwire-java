@@ -37,7 +37,7 @@ public class RestBindPhoneToSwmlWebhook {
 
         // The typed helper — one line:
         System.out.printf("Binding %s to %s ...%n", pnSid, webhookUrl);
-        client.phoneNumbers().setSwmlWebhook(pnSid, webhookUrl);
+        client.phoneNumbers().setSwmlWebhook(pnSid, webhookUrl, Map.of());
 
         // The equivalent wire-level form (use this if you need unusual fields):
         //

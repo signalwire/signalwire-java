@@ -23,11 +23,12 @@ var agent = client.fabric().aiAgents().create(Map.of(
 var results = client.phoneNumbers().search(Map.of("area_code", "512"));
 
 // Place a call via REST
-client.calling().execute("dial", Map.of(
-    "from", "+15559876543",
-    "to", "+15551234567",
-    "url", "https://example.com/call-handler"
-));
+client.calling().dial(
+    com.signalwire.sdk.rest.namespaces.generated.Calling.DialRequest.builder()
+        .from("+15559876543")
+        .to("+15551234567")
+        .url("https://example.com/call-handler")
+        .build());
 ```
 
 ## Features
@@ -37,7 +38,6 @@ client.calling().execute("dial", Map.of(
 - Full Fabric API: resource types with CRUD + addresses, tokens, and generic resources
 - Datasphere: document management and semantic search
 - Video: rooms, sessions, recordings, conferences, tokens, streams
-- Compatibility API: full Twilio-compatible LAML surface
 - Phone number management, 10DLC registry, MFA, logs, and more
 - Uses `java.net.http.HttpClient` for connection pooling across all calls
 - Map returns -- raw JSON decoded to Maps, no wrapper objects to learn
@@ -48,7 +48,6 @@ client.calling().execute("dial", Map.of(
 - [Client Reference](docs/client-reference.md) -- RestClient constructor, namespaces, error handling
 - [Fabric Resources](docs/fabric.md) -- managing AI agents, SWML scripts, subscribers, call flows
 - [Calling Commands](docs/calling.md) -- REST-based call control (dial, play, record, collect, AI)
-- [Compatibility API](docs/compat.md) -- Twilio-compatible LAML endpoints
 - [All Namespaces](docs/namespaces.md) -- phone numbers, video, datasphere, logs, registry
 
 ## Examples
@@ -57,7 +56,6 @@ client.calling().execute("dial", Map.of(
 - [RestDatasphereSearch.java](examples/RestDatasphereSearch.java) -- upload a document and run a semantic search
 - [RestCallingPlayAndRecord.java](examples/RestCallingPlayAndRecord.java) -- play audio and record on a call
 - [RestCallingIvrAndAi.java](examples/RestCallingIvrAndAi.java) -- IVR with AI agent handoff
-- [RestCompatLaml.java](examples/RestCompatLaml.java) -- Twilio-compatible LAML API
 - [RestFabricConferencesAndRouting.java](examples/RestFabricConferencesAndRouting.java) -- conference and routing management
 - [RestFabricSubscribersAndSip.java](examples/RestFabricSubscribersAndSip.java) -- subscriber and SIP management
 - [RestFabricSwmlAndCallflows.java](examples/RestFabricSwmlAndCallflows.java) -- SWML scripts and call flows
@@ -89,6 +87,5 @@ com.signalwire.sdk.rest/
         PhoneNumbersNamespace.java  -- Phone number management
         DatasphereNamespace.java    -- Document management and search
         VideoNamespace.java         -- Video rooms and sessions
-        CompatNamespace.java        -- Twilio-compatible API
         ... and 15 more
 ```

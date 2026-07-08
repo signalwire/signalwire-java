@@ -78,11 +78,14 @@ class SmallNamespacesMockTest {
           client
               .addresses()
               .create(
-                  kw(
-                      "address_type", "commercial",
-                      "first_name", "Ada",
-                      "last_name", "Lovelace",
-                      "country", "US"));
+                  com.signalwire.sdk.rest.namespaces.generated.Addresses.CreateRequest.builder()
+                      .extras(
+                          kw(
+                              "address_type", "commercial",
+                              "first_name", "Ada",
+                              "last_name", "Lovelace",
+                              "country", "US"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
 
@@ -98,7 +101,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void getById() {
-      Map<String, Object> body = client.addresses().get("addr-123");
+      Map<String, Object> body = client.addresses().get("addr-123", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
 
@@ -141,7 +144,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void getById() {
-      Map<String, Object> body = client.recordings().get("rec-123");
+      Map<String, Object> body = client.recordings().get("rec-123", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -180,7 +183,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void getById() {
-      Map<String, Object> body = client.shortCodes().get("sc-1");
+      Map<String, Object> body = client.shortCodes().get("sc-1", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -190,7 +193,14 @@ class SmallNamespacesMockTest {
 
     @Test
     void update() {
-      Map<String, Object> body = client.shortCodes().update("sc-1", kw("name", "Marketing SMS"));
+      Map<String, Object> body =
+          client
+              .shortCodes()
+              .update(
+                  "sc-1",
+                  com.signalwire.sdk.rest.namespaces.generated.ShortCodes.UpdateRequest.builder()
+                      .extras(kw("name", "Marketing SMS"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -215,11 +225,15 @@ class SmallNamespacesMockTest {
           client
               .importedNumbers()
               .create(
-                  kw(
-                      "number", "+15551234567",
-                      "sip_username", "alice",
-                      "sip_password", "secret",
-                      "sip_proxy", "sip.example.com"));
+                  com.signalwire.sdk.rest.namespaces.generated.ImportedNumbers.CreateRequest
+                      .builder()
+                      .extras(
+                          kw(
+                              "number", "+15551234567",
+                              "sip_username", "alice",
+                              "sip_password", "secret",
+                              "sip_proxy", "sip.example.com"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -245,10 +259,13 @@ class SmallNamespacesMockTest {
           client
               .mfa()
               .call(
-                  kw(
-                      "to", "+15551234567",
-                      "from_", "+15559876543",
-                      "message", "Your code is {code}"));
+                  com.signalwire.sdk.rest.namespaces.generated.Mfa.CallRequest.builder()
+                      .extras(
+                          kw(
+                              "to", "+15551234567",
+                              "from_", "+15559876543",
+                              "message", "Your code is {code}"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -274,11 +291,14 @@ class SmallNamespacesMockTest {
           client
               .sipProfile()
               .update(
-                  kw(
-                      "domain",
-                      "myco.sip.signalwire.com",
-                      "default_codecs",
-                      Arrays.asList("PCMU", "PCMA")));
+                  com.signalwire.sdk.rest.namespaces.generated.SipProfile.UpdateRequest.builder()
+                      .extras(
+                          kw(
+                              "domain",
+                              "myco.sip.signalwire.com",
+                              "default_codecs",
+                              Arrays.asList("PCMU", "PCMA")))
+                      .build());
       assertNotNull(body);
       assertTrue(
           body.containsKey("domain") || body.containsKey("default_codecs"),
@@ -333,7 +353,14 @@ class SmallNamespacesMockTest {
     @Test
     void update() {
       Map<String, Object> body =
-          client.project().tokens().update("tok-1", kw("name", "renamed-token"));
+          client
+              .project()
+              .tokens()
+              .update(
+                  "tok-1",
+                  com.signalwire.sdk.rest.namespaces.generated.ProjectTokens.UpdateRequest.builder()
+                      .extras(kw("name", "renamed-token"))
+                      .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -364,7 +391,8 @@ class SmallNamespacesMockTest {
 
     @Test
     void getChunk() {
-      Map<String, Object> body = client.datasphere().documents().getChunk("doc-1", "chunk-99");
+      Map<String, Object> body =
+          client.datasphere().documents().getChunk("doc-1", "chunk-99", java.util.Map.of());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
       MockTest.JournalEntry j = mock.last();
@@ -381,7 +409,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void getMember() {
-      Map<String, Object> body = client.queues().getMember("q-1", "mem-7");
+      Map<String, Object> body = client.queues().getMember("q-1", "mem-7", java.util.Map.of());
       assertNotNull(body);
       assertTrue(
           body.containsKey("queue_id") || body.containsKey("call_id"),

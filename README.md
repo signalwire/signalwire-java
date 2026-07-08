@@ -43,6 +43,7 @@ See [Installation](#installation) for the Maven coordinates.
 
 Each agent is a self-contained microservice that generates [SWML](docs/swml_service_guide.md) (SignalWire Markup Language) and handles [SWAIG](docs/swaig_reference.md) (SignalWire AI Gateway) tool calls. The SignalWire platform runs the entire AI pipeline (STT, LLM, TTS) -- your agent just defines the behavior.
 
+<!-- include: examples/QuickstartAgent.java#quickstart -->
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
@@ -51,7 +52,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
-public class MyAgent {
+public class QuickstartAgent {
     public static void main(String[] args) throws Exception {
         var agent = AgentBase.builder()
                 .name("my-agent")
@@ -127,30 +128,35 @@ See [examples/README.md](examples/README.md) for the full list organized by cate
 
 Real-time call control and messaging over WebSocket. The RELAY client connects to SignalWire via the Blade protocol and gives you imperative control over live phone calls and SMS/MMS, powered by Java virtual threads.
 
+<!-- include: examples/QuickstartRelay.java#quickstart -->
 ```java
 import com.signalwire.sdk.relay.RelayClient;
 
 import java.util.List;
 import java.util.Map;
 
-var client = RelayClient.builder()
-        .project("your-project-id")
-        .token("your-api-token")
-        .space("example.signalwire.com")
-        .contexts(List.of("default"))
-        .build();
+public class QuickstartRelay {
+    public static void main(String[] args) throws Exception {
+        var client = RelayClient.builder()
+                .project("your-project-id")
+                .token("your-api-token")
+                .space("example.signalwire.com")
+                .contexts(List.of("default"))
+                .build();
 
-client.onCall(call -> {
-    call.answer();
-    var action = call.play(List.of(Map.of(
-            "type", "tts",
-            "params", Map.of("text", "Welcome to SignalWire!")
-    )));
-    action.waitForCompletion();
-    call.hangup();
-});
+        client.onCall(call -> {
+            call.answer();
+            var action = call.play(List.of(Map.of(
+                    "type", "tts",
+                    "params", Map.of("text", "Welcome to SignalWire!")
+            )));
+            action.waitForCompletion();
+            call.hangup();
+        });
 
-client.run();
+        client.run();
+    }
+}
 ```
 
 - All calling methods: play, record, collect, connect, detect, fax, tap, stream, AI, conferencing, and more
@@ -166,37 +172,46 @@ See the **[RELAY documentation](relay/README.md)** for the full guide, API refer
 
 Synchronous REST client for managing SignalWire resources and controlling calls over HTTP. No WebSocket required.
 
+<!-- include: examples/QuickstartRest.java#quickstart -->
 ```java
 import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+import com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments;
 
 import java.util.List;
 import java.util.Map;
 
-var client = RestClient.builder()
-        .project("your-project-id")
-        .token("your-api-token")
-        .space("example.signalwire.com")
-        .build();
+public class QuickstartRest {
+    public static void main(String[] args) throws Exception {
+        var client = RestClient.builder()
+                .project("your-project-id")
+                .token("your-api-token")
+                .space("example.signalwire.com")
+                .build();
 
-// Create an AI agent
-client.fabric().aiAgents().create(Map.of(
-        "name", "Support Bot",
-        "prompt", Map.of("text", "You are a helpful support agent.")
-));
+        // Create an AI agent
+        client.fabric().aiAgents().create(Map.of(
+                "name", "Support Bot",
+                "prompt", Map.of("text", "You are a helpful support agent.")
+        ));
 
-// Control a live call
-client.calling().play(callId, Map.of(
-        "play", List.of(Map.of("type", "tts", "text", "Hello!"))
-));
+        // Control a live call
+        client.calling().play("call-id", Calling.PlayRequest.builder()
+                .play(List.of(Map.of("type", "tts", "text", "Hello!")))
+                .build());
 
-// Search for phone numbers
-client.phoneNumbers().search(Map.of("area_code", "512"));
+        // Search for phone numbers
+        client.phoneNumbers().search(Map.of("area_code", "512"));
 
-// Semantic search across documents
-client.datasphere().documents().search(Map.of("query_string", "billing policy"));
+        // Semantic search across documents
+        client.datasphere().documents().search(DatasphereDocuments.SearchRequest.builder()
+                .queryString("billing policy")
+                .build());
+    }
+}
 ```
 
-- 21 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Compat (Twilio-compatible), Phone Numbers, SIP, Queues, Recordings, and more
+- 20 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
 - Uses `java.net.http.HttpClient` for connection pooling
 - Map returns -- raw JSON decoded to Maps, no wrapper objects
 
@@ -250,7 +265,7 @@ Guides are also available in the [`docs/`](docs/) directory:
 
 - [Skills System](docs/skills_system.md) -- built-in skills and the modular framework
 - [Third-Party Skills](docs/third_party_skills.md) -- creating and publishing custom skills
-- [MCP Gateway](docs/mcp_gateway_reference.md) -- Model Context Protocol integration
+- [MCP Integration](docs/mcp_integration.md) -- Model Context Protocol integration (add external MCP servers, expose tools as an MCP server)
 
 ### Deployment
 
@@ -283,18 +298,30 @@ Guides are also available in the [`docs/`](docs/) directory:
 
 ## Testing
 
+Test / lint / format go through the canonical `scripts/run-*.sh` entry points.
+They self-bootstrap their tool environment (locate the Gradle wrapper, resolve
+`JAVA_HOME`) and run from **any** directory:
+
 ```bash
-# Build the SDK
-./gradlew build
+# Run the full test suite
+bash scripts/run-tests.sh
 
-# Run the test suite
-./gradlew test
+# Run a specific test class (or a glob) — forwarded as gradle --tests
+bash scripts/run-tests.sh "com.signalwire.sdk.AgentBaseTest"
 
-# Run a specific test class
-./gradlew test --tests "com.signalwire.sdk.AgentBaseTest"
+# Format the code (spotless / google-java-format)
+bash scripts/run-format.sh          # apply in place
+bash scripts/run-format.sh --check  # verify-only (what CI runs)
 
-# Build without running tests
-./gradlew build -x test
+# Lint (Error Prone + Checkstyle, zero findings)
+bash scripts/run-lint.sh
+```
+
+For other Gradle tasks, use the wrapper directly:
+
+```bash
+./gradlew build          # build the SDK
+./gradlew build -x test  # build without running tests
 ```
 
 ## License

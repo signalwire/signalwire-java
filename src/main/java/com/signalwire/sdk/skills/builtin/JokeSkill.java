@@ -68,4 +68,28 @@ public class JokeSkill implements SkillBase {
   public Map<String, Object> getGlobalData() {
     return Map.of("joke_skill_enabled", true);
   }
+
+  /** Returns an empty hint list. */
+  @Override
+  public List<String> getHints() {
+    return Collections.emptyList();
+  }
+
+  /**
+   * Parameter schema: base schema plus {@code api_key} (required, hidden, env_var API_NINJAS_KEY)
+   * and {@code tool_name} (default "get_joke", optional).
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(supportsMultipleInstances(), getName());
+    SkillParams.addString(
+        schema, "api_key", "API Ninjas API key for joke service", true, true, "API_NINJAS_KEY");
+    Map<String, Object> toolNameParam = new LinkedHashMap<>();
+    toolNameParam.put("type", "string");
+    toolNameParam.put("description", "Custom name for the joke tool");
+    toolNameParam.put("default", "get_joke");
+    toolNameParam.put("required", false);
+    schema.put("tool_name", toolNameParam);
+    return schema;
+  }
 }

@@ -2,6 +2,11 @@
 
 This guide explains how to customize Language Model (LLM) parameters in SignalWire AI Agents to fine-tune the AI's behavior for your specific use case.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+```
+
 ## Overview
 
 SignalWire AI Agents SDK provides methods to customize LLM parameters for both the main prompt and post-prompt, allowing precise control over the AI's response characteristics.
@@ -10,31 +15,35 @@ SignalWire AI Agents SDK provides methods to customize LLM parameters for both t
 
 ## Available Methods
 
-### set_prompt_llm_params(**params)
+### setPromptLlmParams(Map<String, Object> llmParams)
 
 Sets LLM parameters for the main agent prompt. Accepts any parameters that will be passed to the server.
 
-```python
-agent.set_prompt_llm_params(
-    temperature=0.7,
-    top_p=0.9,
-    barge_confidence=0.6,
-    presence_penalty=0.0,
-    frequency_penalty=0.0
-)
+```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.7,
+    "top_p", 0.9,
+    "barge_confidence", 0.6,
+    "presence_penalty", 0.0,
+    "frequency_penalty", 0.0
+));
 ```
 
-### set_post_prompt_llm_params(**params)
+### setPostPromptLlmParams(Map<String, Object> llmParams)
 
 Sets LLM parameters for the post-prompt (conversation summary). Accepts any parameters that will be passed to the server.
 
-```python
-agent.set_post_prompt_llm_params(
-    temperature=0.3,
-    top_p=0.95,
-    presence_penalty=0.0,
-    frequency_penalty=0.0
-)
+```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
+
+agent.setPostPromptLlmParams(Map.of(
+    "temperature", 0.3,
+    "top_p", 0.95,
+    "presence_penalty", 0.0,
+    "frequency_penalty", 0.0
+));
 ```
 
 Note: barge_confidence is not applicable to post-prompt as interruption doesn't apply to summaries.
@@ -78,81 +87,89 @@ Repetition control. Penalizes tokens based on their frequency in the conversatio
 ## Use Case Examples
 
 ### Customer Service Agent
-```python
-class CustomerServiceAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="customer-service", route="/support")
-        
-        self.prompt_add_section("Role", "You are a professional customer service representative.")
-        
-        # Consistent, helpful responses
-        self.set_prompt_llm_params(
-            temperature=0.3,        # Low randomness for consistency
-            top_p=0.9,             # Focused token selection
-            barge_confidence=0.6,  # Moderate interruption threshold (default 0.0 is too easy)
-            presence_penalty=0.1,  # Slight penalty to avoid repetition
-            frequency_penalty=0.1  # Encourage varied language
-        )
+```java
+var agent = AgentBase.builder()
+    .name("customer-service")
+    .route("/support")
+    .port(3000)
+    .build();
+
+agent.promptAddSection("Role", "You are a professional customer service representative.");
+
+// Consistent, helpful responses
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.3,        // Low randomness for consistency
+    "top_p", 0.9,              // Focused token selection
+    "barge_confidence", 0.6,   // Moderate interruption threshold (default 0.0 is too easy)
+    "presence_penalty", 0.1,   // Slight penalty to avoid repetition
+    "frequency_penalty", 0.1   // Encourage varied language
+));
 ```
 
 ### Creative Writing Assistant
-```python
-class CreativeWritingAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="creative-writer", route="/writer")
-        
-        self.prompt_add_section("Role", "You are a creative writing assistant.")
-        
-        # Creative, diverse responses
-        self.set_prompt_llm_params(
-            temperature=0.8,        # High randomness for creativity
-            top_p=0.95,            # Wide token selection
-            barge_confidence=0.3,  # Easy to interrupt for collaboration (but not default 0.0)
-            presence_penalty=-0.1, # Allow topic revisiting
-            frequency_penalty=0.3  # Encourage vocabulary diversity
-        )
+```java
+var agent = AgentBase.builder()
+    .name("creative-writer")
+    .route("/writer")
+    .port(3000)
+    .build();
+
+agent.promptAddSection("Role", "You are a creative writing assistant.");
+
+// Creative, diverse responses
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.8,        // High randomness for creativity
+    "top_p", 0.95,             // Wide token selection
+    "barge_confidence", 0.3,   // Easy to interrupt for collaboration (but not default 0.0)
+    "presence_penalty", -0.1,  // Allow topic revisiting
+    "frequency_penalty", 0.3   // Encourage vocabulary diversity
+));
 ```
 
 ### Technical Documentation Bot
-```python
-class TechnicalDocsAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="tech-docs", route="/docs")
-        
-        self.prompt_add_section("Role", "You are a technical documentation assistant.")
-        
-        # Precise, accurate responses
-        self.set_prompt_llm_params(
-            temperature=0.2,        # Very low randomness
-            top_p=0.8,             # More focused token selection
-            barge_confidence=0.8,  # Hard to interrupt - let it finish
-            presence_penalty=0.0,  # Neutral on repetition
-            frequency_penalty=0.2  # Some vocabulary variety
-        )
-        
-        # Even more focused for summaries
-        self.set_post_prompt_llm_params(
-            temperature=0.1       # Extremely consistent
-        )
+```java
+var agent = AgentBase.builder()
+    .name("tech-docs")
+    .route("/docs")
+    .port(3000)
+    .build();
+
+agent.promptAddSection("Role", "You are a technical documentation assistant.");
+
+// Precise, accurate responses
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.2,        // Very low randomness
+    "top_p", 0.8,              // More focused token selection
+    "barge_confidence", 0.8,   // Hard to interrupt - let it finish
+    "presence_penalty", 0.0,   // Neutral on repetition
+    "frequency_penalty", 0.2   // Some vocabulary variety
+));
+
+// Even more focused for summaries
+agent.setPostPromptLlmParams(Map.of(
+    "temperature", 0.1         // Extremely consistent
+));
 ```
 
 ### Legal Advisor Bot
-```python
-class LegalAdvisorAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="legal-advisor", route="/legal")
-        
-        self.prompt_add_section("Role", "You are a legal information assistant.")
-        self.prompt_add_section("Disclaimer", "Always remind users to consult a real attorney.")
-        
-        # Cautious, precise responses
-        self.set_prompt_llm_params(
-            temperature=0.2,        # Very consistent
-            top_p=0.85,            # Focused selection
-            barge_confidence=0.9,  # Very hard to interrupt - legal accuracy important
-            presence_penalty=0.0,  # Allow legal term repetition
-            frequency_penalty=0.0  # Legal language often repeats
-        )
+```java
+var agent = AgentBase.builder()
+    .name("legal-advisor")
+    .route("/legal")
+    .port(3000)
+    .build();
+
+agent.promptAddSection("Role", "You are a legal information assistant.");
+agent.promptAddSection("Disclaimer", "Always remind users to consult a real attorney.");
+
+// Cautious, precise responses
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.2,        // Very consistent
+    "top_p", 0.85,             // Focused selection
+    "barge_confidence", 0.9,   // Very hard to interrupt - legal accuracy important
+    "presence_penalty", 0.0,   // Allow legal term repetition
+    "frequency_penalty", 0.0   // Legal language often repeats
+));
 ```
 
 ## Best Practices
@@ -214,7 +231,7 @@ Presence and frequency penalties can be used together:
 
 ## Parameter Behavior
 
-**No Default Values:** The SDK does not send any LLM parameters unless explicitly set using `set_prompt_llm_params()` or `set_post_prompt_llm_params()`. When parameters are not specified, the SignalWire server will apply appropriate defaults based on the model being used.
+**No Default Values:** The SDK does not send any LLM parameters unless explicitly set using `setPromptLlmParams()` or `setPostPromptLlmParams()`. When parameters are not specified, the SignalWire server will apply appropriate defaults based on the model being used.
 
 **Server-Side Validation:** All parameter validation is handled by the SignalWire server. The SDK accepts any parameters and passes them through without modification. This allows:
 - Use of model-specific parameters without SDK updates
@@ -222,18 +239,19 @@ Presence and frequency penalties can be used together:
 - Server-side optimization based on model capabilities
 
 **Partial Configuration:** You can set only the parameters you want to customize. For example:
-```python
-# Only set temperature, let server handle other parameters
-agent.set_prompt_llm_params(temperature=0.7)
+```java
+var agent = AgentBase.builder().name("assistant").route("/").build();
 
-# Or set multiple specific parameters
-agent.set_prompt_llm_params(
-    temperature=0.5,
-    barge_confidence=0.6
-)
+// Only set temperature, let server handle other parameters
+agent.setPromptLlmParams(Map.of("temperature", 0.7));
+
+// Or set multiple specific parameters
+agent.setPromptLlmParams(Map.of(
+    "temperature", 0.5,
+    "barge_confidence", 0.6
+));
 ```
 
 ## Examples
 
-- `examples/llm_params_demo.py` - Three agent personas (customer service, creative, technical) demonstrating different LLM parameter configurations
-- `examples/simple_agent.py` - Basic LLM parameter tuning with `set_prompt_llm_params()`
+- `examples/LlmParamsDemo.java` - Three agent personas (precise, creative, customer service) demonstrating different LLM parameter configurations with `setPromptLlmParams()` and `setPostPromptLlmParams()`

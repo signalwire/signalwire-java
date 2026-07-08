@@ -1,5 +1,11 @@
 # MCP Integration
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+```
+
 The SDK supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) in two ways:
 
 1. **MCP Client** -- Connect to external MCP servers and use their tools in your agent
@@ -37,6 +43,8 @@ agent.addMcpServer(
 MCP servers can expose read-only data as resources. When enabled, resources are fetched at session start and merged into `global_data`:
 
 ```java
+var agent = AgentBase.builder().name("my-agent").route("/agent").build();
+
 agent.addMcpServer(
     "https://mcp.example.com/crm",
     Map.of("Authorization", "Bearer sk-xxx"),
@@ -50,6 +58,8 @@ Resource data is available in prompts via `${global_data.key}` and included in e
 ### Multiple Servers
 
 ```java
+var agent = AgentBase.builder().name("my-agent").route("/agent").build();
+
 agent.addMcpServer("https://mcp-search.example.com/tools",
     Map.of("Authorization", "Bearer search-key"));
 agent.addMcpServer("https://mcp-crm.example.com/tools",
@@ -101,6 +111,8 @@ Add your agent as an MCP server in Claude Desktop's config:
 The two features are independent:
 
 ```java
+var agent = AgentBase.builder().name("my-agent").route("/agent").build();
+
 agent.enableMcpServer();
 agent.addMcpServer("https://mcp.example.com/crm",
     Map.of("Authorization", "Bearer sk-xxx"),

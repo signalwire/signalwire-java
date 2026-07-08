@@ -10,6 +10,7 @@ import java.util.*;
 public class ReceptionistAgent {
 
   private final AgentBase agent;
+  private java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> summaryHandler;
 
   public ReceptionistAgent(
       String name, String greeting, Map<String, Map<String, Object>> departments) {
@@ -54,6 +55,27 @@ public class ReceptionistAgent {
     transferParams.put("transfers", transfers);
     transferParams.put("description", "Transfer caller to a department");
     agent.addSkill("swml_transfer", transferParams);
+  }
+
+  /**
+   * Register a post-prompt summary callback. Ported from the Python ReceptionistAgent.on_summary
+   * hook (a no-op override point in Python): invoked with the parsed conversation summary and the
+   * raw post-prompt payload once the call completes. Wires through to {@link AgentBase#onSummary}.
+   *
+   * @param handler callback receiving (summary, rawData); {@code null} clears any handler
+   * @return this prefab for chaining
+   */
+  public ReceptionistAgent onSummary(
+      java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> handler) {
+    this.summaryHandler = handler;
+    agent.onSummary(handler);
+    return this;
+  }
+
+  /** The registered summary callback, or {@code null} if none set. */
+  public java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>>
+      getSummaryHandler() {
+    return summaryHandler;
   }
 
   public AgentBase getAgent() {

@@ -4,6 +4,7 @@
 
 `RestClient` is created with a builder. Each value falls back to its corresponding environment variable when not supplied:
 
+<!-- snippet-setup -->
 ```java
 import com.signalwire.sdk.rest.RestClient;
 
@@ -60,7 +61,7 @@ Reached via `client.fabric()`:
 | `client.numberGroups()` | Number group management (+ memberships) |
 | `client.verifiedCallers()` | Verified caller ID management (+ verification flow) |
 | `client.sipProfile()` | Project SIP profile (get/update) |
-| `client.numberLookup()` | Phone number lookup |
+| `client.lookup()` | Phone number lookup |
 | `client.shortCodes()` | Short code management |
 | `client.importedNumbers()` | Import external phone numbers |
 | `client.mfa()` | Multi-factor authentication (SMS/call/verify) |
@@ -74,9 +75,8 @@ Reached via `client.fabric()`:
 | `client.video()` | Video rooms, sessions, recordings, conferences |
 | `client.logs()` | Message, voice, fax, and conference logs |
 | `client.project()` | API token management |
-| `client.pubSub()` | PubSub token creation |
+| `client.pubsub()` | PubSub token creation |
 | `client.chat()` | Chat token creation |
-| `client.compat()` | Twilio-compatible LAML API |
 
 ## Error Handling
 

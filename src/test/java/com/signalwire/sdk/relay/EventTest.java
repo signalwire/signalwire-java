@@ -106,4 +106,93 @@ class EventTest {
     assertEquals("+15551234567", event.getFromNumber());
     assertEquals("Hello", event.getBody());
   }
+
+  // ── from_payload factories + parseEvent (Python parity) ──────────
+
+  private static Map<String, Object> payload(String eventType, Map<String, Object> inner) {
+    Map<String, Object> outer = new LinkedHashMap<>();
+    outer.put("event_type", eventType);
+    outer.put("params", inner);
+    return outer;
+  }
+
+  @Test
+  void testBaseFromPayloadDispatchesToSubclass() {
+    RelayEvent e =
+        RelayEvent.fromPayload(
+            payload(Constants.EVENT_CALL_STATE, Map.of("call_id", "c1", "call_state", "answered")));
+    assertInstanceOf(RelayEvent.CallStateEvent.class, e);
+    assertEquals("answered", ((RelayEvent.CallStateEvent) e).getCallState());
+  }
+
+  @Test
+  void testParseEventDispatchesByType() {
+    RelayEvent e =
+        RelayEvent.parseEvent(payload(Constants.EVENT_CALL_PLAY, Map.of("state", "finished")));
+    assertInstanceOf(RelayEvent.CallPlayEvent.class, e);
+    // Unknown type falls back to the base RelayEvent.
+    RelayEvent unknown = RelayEvent.parseEvent(payload("some.unknown.event", Map.of()));
+    assertEquals(RelayEvent.class, unknown.getClass());
+  }
+
+  @Test
+  void testSubclassFromPayloadBuildsTypedEvent() {
+    RelayEvent.CallStateEvent e =
+        RelayEvent.CallStateEvent.fromPayload(
+            payload(
+                Constants.EVENT_CALL_STATE,
+                Map.of("call_id", "c9", "call_state", "ended", "end_reason", "hangup")));
+    assertEquals("c9", e.getCallId());
+    assertEquals("ended", e.getCallState());
+    assertEquals("hangup", e.getEndReason());
+  }
+
+  // ── New event classes (denoise / echo / hold / calling.error) ────
+
+  @Test
+  void testDenoiseEventFromPayload() {
+    RelayEvent.DenoiseEvent e =
+        RelayEvent.DenoiseEvent.fromPayload(
+            payload(Constants.EVENT_CALL_DENOISE, Map.of("call_id", "c1", "denoised", true)));
+    assertEquals("c1", e.getCallId());
+    assertTrue(e.isDenoised());
+    // Dispatch also routes to it.
+    assertInstanceOf(
+        RelayEvent.DenoiseEvent.class,
+        RelayEvent.parseEvent(payload(Constants.EVENT_CALL_DENOISE, Map.of("denoised", false))));
+  }
+
+  @Test
+  void testEchoEventFromPayload() {
+    RelayEvent.EchoEvent e =
+        RelayEvent.EchoEvent.fromPayload(
+            payload(Constants.EVENT_CALL_ECHO, Map.of("call_id", "c2", "state", "finished")));
+    assertEquals("finished", e.getState());
+    assertInstanceOf(
+        RelayEvent.EchoEvent.class,
+        RelayEvent.parseEvent(payload(Constants.EVENT_CALL_ECHO, Map.of("state", "playing"))));
+  }
+
+  @Test
+  void testHoldEventFromPayload() {
+    RelayEvent.HoldEvent e =
+        RelayEvent.HoldEvent.fromPayload(
+            payload(Constants.EVENT_CALL_HOLD, Map.of("call_id", "c3", "state", "holding")));
+    assertEquals("holding", e.getState());
+    assertInstanceOf(
+        RelayEvent.HoldEvent.class,
+        RelayEvent.parseEvent(payload(Constants.EVENT_CALL_HOLD, Map.of("state", "holding"))));
+  }
+
+  @Test
+  void testCallingErrorEventFromPayload() {
+    RelayEvent.CallingErrorEvent e =
+        RelayEvent.CallingErrorEvent.fromPayload(
+            payload(Constants.EVENT_CALLING_ERROR, Map.of("code", "21", "message", "boom")));
+    assertEquals("21", e.getCode());
+    assertEquals("boom", e.getMessage());
+    assertInstanceOf(
+        RelayEvent.CallingErrorEvent.class,
+        RelayEvent.parseEvent(payload(Constants.EVENT_CALLING_ERROR, Map.of("code", "1"))));
+  }
 }

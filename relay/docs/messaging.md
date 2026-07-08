@@ -2,138 +2,142 @@
 
 Send and receive SMS/MMS messages through the RELAY client.
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+
+RelayClient client = RelayClient.builder().build();
+```
+
 ## Sending Messages
 
-Use `client.send_message()` to send an outbound SMS or MMS.
+Use `client.sendMessage()` to send an outbound SMS or MMS. The parameter order is
+`(context, fromNumber, toNumber, body, mediaUrls)` with an overload adding `tags`.
+Pass `null` for `context` to use the connected protocol context.
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello from SignalWire!",
-)
+```java
+import java.util.List;
+
+var message = client.sendMessage(
+    null,               // context (null → protocol/default)
+    "+15551111111",     // fromNumber
+    "+15552222222",     // toNumber
+    "Hello from SignalWire!",
+    List.of());         // mediaUrls (empty for SMS)
 ```
 
 ### Wait for delivery
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello!",
-)
-event = await message.wait()  # blocks until delivered/failed
-print(f"Final state: {message.state}")
-if message.reason:
-    print(f"Reason: {message.reason}")
+```java
+var message = client.sendMessage(null, "+15551111111", "+15552222222", "Hello!", List.of());
+
+var event = message.waitForCompletion();  // blocks until delivered/failed
+System.out.println("Final state: " + message.getState());
+message.getReason().ifPresent(r -> System.out.println("Reason: " + r));
 ```
 
 ### Fire and forget
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello!",
-)
-# don't call message.wait() — continue immediately
+```java
+var message = client.sendMessage(null, "+15551111111", "+15552222222", "Hello!", List.of());
+// don't call message.waitForCompletion() — continue immediately
 ```
 
 ### Callback on completion
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello!",
-    on_completed=lambda event: print(f"Delivery: {event.params.get('message_state')}"),
-)
+```java
+var message = client.sendMessage(null, "+15551111111", "+15552222222", "Hello!", List.of());
+message.setOnCompleted(m ->
+    System.out.println("Delivery: " + m.getState()));
 ```
 
 ### MMS (media messages)
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Check this out!",
-    media=["https://example.com/image.jpg"],
-)
+```java
+import java.util.List;
+
+var message = client.sendMessage(
+    null,
+    "+15551111111",
+    "+15552222222",
+    "Check this out!",
+    List.of("https://example.com/image.jpg"));  // media URLs
 ```
 
 ### All parameters
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",       # required — E.164 format
-    from_number="+15551111111",     # required — E.164 format
-    body="Message text",            # required if no media
-    media=["https://..."],          # required if no body
-    context="my_context",           # context for state events (default: relay protocol)
-    tags=["vip", "support"],        # optional tags for searching in UI
-    region="us",                    # optional origination region
-    on_completed=callback_fn,       # optional completion callback
-)
+The `tags` overload exposes every field:
+
+```java
+import java.util.List;
+
+var message = client.sendMessage(
+    "my_context",                     // context for state events (null → relay protocol)
+    "+15551111111",                   // fromNumber — required, E.164 format
+    "+15552222222",                   // toNumber — required, E.164 format
+    "Message text",                   // body — required if no media
+    List.of("https://..."),           // mediaUrls — required if no body
+    List.of("vip", "support"));       // tags — optional, for searching in UI
+
+// Register a completion callback if desired:
+message.setOnCompleted(m -> System.out.println("done: " + m.getState()));
 ```
 
 ## Receiving Messages
 
-Register a handler with `@client.on_message` to receive inbound SMS/MMS.
+Register a handler with `client.onMessage(...)` to receive inbound SMS/MMS.
 
-```python
-from signalwire_agents.relay import RelayClient
+```java
+import java.util.List;
 
-client = RelayClient(
-    project="your-project-id",
-    token="your-api-token",
-    host="example.signalwire.com",
-    contexts=["default"],
-)
+// client = RelayClient.builder().contexts(List.of("default")).build();
+client.onMessage(message -> {
+    System.out.println("From: " + message.getFromNumber().orElse(""));
+    System.out.println("To: " + message.getToNumber().orElse(""));
+    System.out.println("Body: " + message.getBody().orElse(""));
+    if (!message.getMedia().isEmpty()) {
+        System.out.println("Media: " + message.getMedia());
+    }
 
-@client.on_message
-async def handle_message(message):
-    print(f"From: {message.from_number}")
-    print(f"To: {message.to_number}")
-    print(f"Body: {message.body}")
-    if message.media:
-        print(f"Media: {message.media}")
+    // Reply back
+    client.sendMessage(
+        null,
+        message.getToNumber().orElse(""),    // from = the number that received it
+        message.getFromNumber().orElse(""),  // to = the original sender
+        "You said: " + message.getBody().orElse(""),
+        List.of());
+});
 
-    # Reply back
-    await client.send_message(
-        to_number=message.from_number,
-        from_number=message.to_number,
-        body=f"You said: {message.body}",
-    )
-
-client.run()
+client.run();
 ```
 
 ## Message Object
 
-### Properties
+### Accessors
 
-| Property | Type | Description |
+| Accessor | Type | Description |
 |----------|------|-------------|
-| `message_id` | `str` | Unique message identifier |
-| `context` | `str` | Context the message belongs to |
-| `direction` | `str` | `inbound` or `outbound` |
-| `from_number` | `str` | Sender phone number (E.164) |
-| `to_number` | `str` | Recipient phone number (E.164) |
-| `body` | `str` | Text body of the message |
-| `media` | `list[str]` | Media URLs (MMS) |
-| `segments` | `int` | Number of message segments |
-| `state` | `str` | Current message state |
-| `reason` | `str` | Failure reason (on `undelivered` or `failed`) |
-| `tags` | `list[str]` | Tags attached to the message |
-| `is_done` | `bool` | `True` if message reached a terminal state |
-| `result` | `RelayEvent` | Terminal event (or `None` if not done) |
+| `getMessageId()` | `String` | Unique message identifier |
+| `getContext()` | `Optional<String>` | Context the message belongs to |
+| `getDirection()` | `Optional<String>` | `inbound` or `outbound` |
+| `getFromNumber()` | `Optional<String>` | Sender phone number (E.164) |
+| `getToNumber()` | `Optional<String>` | Recipient phone number (E.164) |
+| `getBody()` | `Optional<String>` | Text body of the message |
+| `getMedia()` | `List<String>` | Media URLs (MMS) |
+| `getSegments()` | `int` | Number of message segments |
+| `getState()` | `String` | Current message state |
+| `getReason()` | `Optional<String>` | Failure reason (on `undelivered` or `failed`) |
+| `getTags()` | `List<String>` | Tags attached to the message |
+| `isDone()` | `boolean` | `true` if message reached a terminal state |
+| `getResult()` | `Optional<RelayEvent>` | Terminal event (empty if not done) |
 
 ### Methods
 
 | Method | Description |
 |--------|-------------|
-| `await message.wait(timeout=None)` | Block until terminal state. Returns the terminal `RelayEvent`. |
-| `message.on(handler)` | Register a listener for state change events. |
+| `waitForCompletion()` / `waitForCompletion(timeoutMs)` | Block until terminal state. Returns the terminal `RelayEvent`. |
+| `on(listener)` | Register a `Consumer<RelayEvent>` for state change events. |
+| `setOnCompleted(callback)` | Register a `Consumer<Message>` invoked once when the message reaches a terminal state. |
 
 ### Message States
 
@@ -145,8 +149,8 @@ Outbound messages progress through these states:
 | `initiated` | Sending has started |
 | `sent` | Message sent to carrier |
 | `delivered` | Message delivered to recipient (terminal) |
-| `undelivered` | Delivery failed (terminal) — check `reason` |
-| `failed` | Message failed to send (terminal) — check `reason` |
+| `undelivered` | Delivery failed (terminal) — check `getReason()` |
+| `failed` | Message failed to send (terminal) — check `getReason()` |
 
 Inbound messages always arrive with state `received`.
 
@@ -154,29 +158,33 @@ Inbound messages always arrive with state `received`.
 
 | Event | Description |
 |-------|-------------|
-| `MessageReceiveEvent` | Inbound message received |
-| `MessageStateEvent` | Outbound message state change |
+| `RelayEvent.MessagingReceiveEvent` | Inbound message received |
+| `RelayEvent.MessagingStateEvent` | Outbound message state change |
 
-```python
-from signalwire_agents.relay import MessageReceiveEvent, MessageStateEvent
+```java
+import com.signalwire.sdk.relay.RelayEvent;
+// RelayEvent.MessagingReceiveEvent, RelayEvent.MessagingStateEvent
 ```
 
 ## Combining Calls and Messages
 
 The same `RelayClient` handles both calls and messages:
 
-```python
-client = RelayClient(project="...", token="...", contexts=["default"])
+```java
+import java.util.List;
+import java.util.Map;
 
-@client.on_call
-async def handle_call(call):
-    await call.answer()
-    await call.play([{"type": "tts", "params": {"text": "Hello!"}}])
-    await call.hangup()
+// client = RelayClient.builder().contexts(List.of("default")).build();
+client.onCall(call -> {
+    call.answer();
+    call.play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))
+        .waitForCompletion();
+    call.hangup();
+});
 
-@client.on_message
-async def handle_message(message):
-    print(f"SMS from {message.from_number}: {message.body}")
+client.onMessage(message ->
+    System.out.println("SMS from " + message.getFromNumber().orElse("")
+        + ": " + message.getBody().orElse("")));
 
-client.run()
+client.run();
 ```

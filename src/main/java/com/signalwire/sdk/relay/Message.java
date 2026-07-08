@@ -85,7 +85,7 @@ public class Message {
 
   /**
    * The current message state as a typed {@link MessageState}, <em>alongside</em> the raw string
-   * {@link #getState()} (which stays canonical for parity and forward-compat). Returns {@code
+   * {@link #getState()} (which stays canonical and forward-compatible). Returns {@code
    * Optional.empty()} when the live wire state is not one of the seven known {@link MessageState}
    * values — the set mirrors server-emitted values that can grow, so an unrecognised state is
    * tolerated here rather than crashing the caller. The present value always agrees with {@code
@@ -233,6 +233,36 @@ public class Message {
     } catch (Exception e) {
       return result;
     }
+  }
+
+  /**
+   * The terminal {@link RelayEvent}, or {@code null} if the message has not yet reached a terminal
+   * state. Python-surface name for the reference's {@code Message.result} property (the {@link
+   * #getResult()} accessor returns the same value wrapped in an {@link Optional}).
+   */
+  public RelayEvent result() {
+    return done ? result : null;
+  }
+
+  /**
+   * Block until the message reaches a terminal state, returning the terminal event. Java-idiom name
+   * for the reference's {@code Message.wait}: the bare name {@code wait} collides with {@code
+   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
+   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   */
+  public RelayEvent await() {
+    return waitForCompletion();
+  }
+
+  /**
+   * Block until the message reaches a terminal state, with a timeout. Java-idiom name for the
+   * reference's {@code Message.wait(timeout)} (see {@link #await()}).
+   *
+   * @param timeoutMs timeout in milliseconds
+   * @return the terminal event, or null on timeout
+   */
+  public RelayEvent await(long timeoutMs) {
+    return waitForCompletion(timeoutMs);
   }
 
   /** Resolve the message completion. */

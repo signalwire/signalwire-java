@@ -46,7 +46,7 @@ public class Rest10dlcRegistration {
         // 2. List brands.
         System.out.println("\nListing 10DLC brands...");
         try {
-            var brands = client.registry().brands().list();
+            var brands = client.registry().brands().list(Map.of());
             System.out.println("  Brands: " + brands);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());
@@ -55,7 +55,7 @@ public class Rest10dlcRegistration {
         // 3. Inspect a campaign by id.
         System.out.println("\nRetrieving a 10DLC campaign...");
         try {
-            var campaign = client.registry().campaigns().get("campaign-id");
+            var campaign = client.registry().campaigns().get("campaign-id", Map.of());
             System.out.println("  Campaign: " + campaign);
         } catch (RestError e) {
             System.out.println("  Retrieve failed: " + e.getStatusCode());

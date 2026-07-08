@@ -22,8 +22,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * RouteRegistry — enumerate the REST routes the Java SDK ACTUALLY IMPLEMENTS ("Set B" for the
- * cross-port SPEC-PARITY gate).
+ * RouteRegistry — enumerate the REST routes the Java SDK actually implements.
  *
  * <p>This is the set of routes the live {@link RestClient} actually dispatches, captured from the
  * REAL code path — not parsed from source (an AST scraper would have to re-implement the
@@ -63,9 +62,9 @@ import java.util.TreeMap;
  *   ./gradlew --no-daemon -q routeRegistry
  * </pre>
  *
- * <p>Package-private: this is the registry tool the SPEC-PARITY gate runs (a {@code main()} entry
- * point — no {@code public} needed to launch it), NOT a public SDK API, so it stays out of the
- * enumerated public surface (matching how every port keeps its registry tool out of the surface).
+ * <p>Package-private: this is an internal registry tool (a {@code main()} entry point — no {@code
+ * public} needed to launch it), NOT a public SDK API, so it stays out of the enumerated public
+ * surface.
  */
 final class RouteRegistry {
 
@@ -90,14 +89,12 @@ final class RouteRegistry {
   private static final Map<String, String> REGISTRY_SKIP = new LinkedHashMap<>();
 
   static {
-    // cXML applications expose the CRUD surface for symmetry but create is
-    // intentionally unsupported (throws UnsupportedOperationException) — there is
-    // no POST /cxml_applications canonical route, so it is not in Set B. Mirrors
-    // python's fabric.cxml_applications.create skip.
-    REGISTRY_SKIP.put(
-        "fabric.cxmlApplications.create",
-        "no create route — throws UnsupportedOperationException by design "
-            + "(cXML apps cannot be created via API)");
+    // (No entries.) The generated cXML applications resource (CxmlApplications
+    // extends BaseResource) declares only list/get/update/delete/listAddresses —
+    // it has NO create method at all (there is no POST /cxml_applications
+    // canonical route), matching the Python oracle. The walker therefore never
+    // sees a fabric.cxmlApplications.create method, so the old skip entry for it
+    // is obsolete and removed.
   }
 
   /** A captured (method, path) pair recorded by the recording HTTP client. */
@@ -116,7 +113,7 @@ final class RouteRegistry {
    * /fabric/resources}); the SDK's {@link HttpClient#buildUrl} prepends the base URL's path
    * component ({@code /api}) before dispatch. We record that SAME on-the-wire path so Set B lines
    * up with the spec's {@code path_template}, which carries the server prefix (e.g. {@code
-   * /api/laml/2010-04-01/…}). This mirrors Go's registry recording {@code req.URL.Path} (the full
+   * /api/relay/rest/…}). This mirrors Go's registry recording {@code req.URL.Path} (the full
    * dispatched path) rather than the resource-relative argument.
    */
   private static final class RecordingHttpClient extends HttpClient {
@@ -271,7 +268,46 @@ final class RouteRegistry {
     if (t == double.class || t == Double.class || t == float.class || t == Float.class) {
       return 0.0;
     }
+    // Generated typed-input request objects (the write/command/set methods take a
+    // closed `<Method>Request` builder arg instead of a raw Map — the Java NAMED
+    // idiom for keyword params). They expose a static `builder()` → `build()`; an
+    // all-unset request builds fine and its toBody() yields an empty body, which
+    // is exactly what the recording client needs to capture the route. Without
+    // this, sentinelFor would return null and the route method would NPE inside
+    // request.toBody(), dropping every write route from Set B.
+    Object built = tryBuildRequest(t);
+    if (built != null) {
+      return built;
+    }
     return null; // best-effort for any unforeseen reference type
+  }
+
+  /**
+   * If {@code t} is a generated {@code <Method>Request} type (has a static no-arg {@code builder()}
+   * whose result has a no-arg {@code build()}), construct {@code t.builder().build()}. Returns null
+   * for any type that is not a builder-backed request object.
+   */
+  private static Object tryBuildRequest(Class<?> t) {
+    Package p = t.getPackage();
+    if (p == null || !p.getName().startsWith(REST_PKG)) {
+      return null;
+    }
+    try {
+      Method builderFactory = t.getMethod("builder");
+      if (!Modifier.isStatic(builderFactory.getModifiers())) {
+        return null;
+      }
+      builderFactory.setAccessible(true);
+      Object builder = builderFactory.invoke(null);
+      if (builder == null) {
+        return null;
+      }
+      Method build = builder.getClass().getMethod("build");
+      build.setAccessible(true);
+      return build.invoke(builder);
+    } catch (ReflectiveOperationException e) {
+      return null;
+    }
   }
 
   /** Invoke a route method with sentinel args; returns null on success or an error message. */

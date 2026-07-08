@@ -255,11 +255,13 @@ class ConnectMockTest {
   @Test
   @DisplayName("Builder rejects empty creds (no JWT, no project/token)")
   void builderRejectsEmptyCreds() {
-    // Java equivalent of "RelayClient(project='', token='')" — the SDK
-    // throws NPE when project/token are null. Empty strings get past
-    // Objects.requireNonNull but the wire layer handles them.
-    // Per the existing builder contract, project=null throws NPE.
-    assertThrows(NullPointerException.class, () -> RelayClient.builder().space("anywhere").build());
+    // Java equivalent of "RelayClient(project='', token='')" with no JWT — the
+    // builder reads SIGNALWIRE_PROJECT_ID/_API_TOKEN/_JWT_TOKEN as a fallback
+    // (Python parity) and, when project/token are still absent and there is no
+    // JWT, throws IllegalArgumentException (mirroring Python's ValueError).
+    // Unit tests run without SIGNALWIRE_* creds in the env.
+    assertThrows(
+        IllegalArgumentException.class, () -> RelayClient.builder().space("anywhere").build());
   }
 
   @Test

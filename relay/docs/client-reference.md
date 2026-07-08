@@ -1,19 +1,26 @@
 # RelayClient Reference
 
-## Constructor
+## Construction (Builder)
 
-```python
-RelayClient(
-    project: str = None,          # SIGNALWIRE_PROJECT_ID
-    token: str = None,            # SIGNALWIRE_API_TOKEN
-    jwt_token: str = None,        # SIGNALWIRE_JWT_TOKEN
-    host: str = None,             # SIGNALWIRE_SPACE (default: relay.signalwire.com)
-    contexts: list[str] = None,   # Topics to subscribe to
-    max_active_calls: int = None, # RELAY_MAX_ACTIVE_CALLS (default: 1000)
-)
+`RelayClient` is created via its builder:
+
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.RelayClient;
+import com.signalwire.sdk.relay.Call;
+import java.util.List;
+
+var client = RelayClient.builder()
+    .project("...")                  // SIGNALWIRE_PROJECT_ID
+    .token("...")                    // SIGNALWIRE_API_TOKEN
+    .jwtToken("...")                 // SIGNALWIRE_JWT_TOKEN
+    .space("example.signalwire.com") // SIGNALWIRE_SPACE (or .host(...))
+    .contexts(List.of("default"))    // Topics to subscribe to
+    .build();
+Call call = new Call("call-id", "node-id");
 ```
 
-Authentication requires either `project` + `token` (legacy) or `jwt_token` (faster, no server roundtrip). All parameters fall back to their corresponding environment variables.
+Authentication requires either `project` + `token` (legacy) or `jwtToken` (faster, no server roundtrip). When the credential setters are omitted, the client falls back to the corresponding environment variables (`SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, `SIGNALWIRE_JWT_TOKEN`, `SIGNALWIRE_SPACE`).
 
 ## Methods
 
@@ -21,122 +28,134 @@ Authentication requires either `project` + `token` (legacy) or `jwt_token` (fast
 
 Blocking entry point. Connects, authenticates, and runs the event loop with auto-reconnect until interrupted.
 
-```python
-client.run()
+```java
+client.run();
 ```
 
 ### `connect()` / `disconnect()`
 
-Manual lifecycle control for use in async code.
+Manual lifecycle control.
 
-```python
-await client.connect()
-# ... use client ...
-await client.disconnect()
+```java
+client.connect();       // or client.connect(timeoutMs)
+// ... use client ...
+client.disconnect();
 ```
 
-Also supports async context manager:
+`RelayClient` also implements `AutoCloseable`, so it works with try-with-resources:
 
-```python
-async with RelayClient(contexts=["default"]) as client:
-    ...
+```java
+try (var scopedClient = RelayClient.builder().contexts(List.of("default")).build()) {
+    scopedClient.connect();
+    // ...
+}
 ```
 
-### `on_call(handler)`
+### `onCall(handler)`
 
-Decorator to register the inbound call handler. The handler receives a `Call` object.
+Register the inbound call handler. The handler receives a `Call` object.
 
-```python
-@client.on_call
-async def handle(call):
-    await call.answer()
+```java
+client.onCall(incoming -> {
+    incoming.answer();
+});
 ```
 
-### `dial(devices, *, tag=None, max_duration=None, dial_timeout=None) -> Call`
+### `dial(devices, options, timeout) -> Call`
 
 Place an outbound call. Returns a `Call` once the remote party answers.
 
-- `devices` -- nested list of device objects (serial/parallel dial)
-- `tag` -- optional correlation tag (auto-generated if omitted)
-- `max_duration` -- max call duration in minutes
-- `dial_timeout` -- seconds to wait before raising `TimeoutError` (default: 120)
+- `devices` -- nested list of device objects (outer = sequential, inner = parallel dial)
+- `options` -- optional parameters map (e.g. `tag`, `region`, `max_price_per_minute`); `tag` is auto-generated if omitted
+- `timeout` -- milliseconds to wait before a `RelayError` is thrown
 
-```python
-call = await client.dial([
-    [{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]
-])
+A convenience overload `dial(devices)` uses a default timeout of 120 seconds.
+
+```java
+import java.util.List;
+import java.util.Map;
+
+var outbound = client.dial(List.of(
+    List.of(Map.of("type", "phone",
+        "params", Map.of("to_number", "+15551234567", "from_number", "+15559876543")))
+));
 ```
 
-### `on_message(handler)`
+### `onMessage(handler)`
 
-Decorator to register the inbound message handler. The handler receives a `Message` object.
+Register the inbound message handler. The handler receives a `Message` object.
 
-```python
-@client.on_message
-async def handle(message):
-    print(f"SMS from {message.from_number}: {message.body}")
+```java
+client.onMessage(message -> {
+    System.out.println("SMS from " + message.getFromNumber().orElse("")
+        + ": " + message.getBody().orElse(""));
+});
 ```
 
-### `send_message(*, to_number, from_number, body=None, media=None, ...) -> Message`
+### `sendMessage(context, fromNumber, toNumber, body, mediaUrls) -> Message`
 
-Send an outbound SMS/MMS. Returns a `Message` that tracks delivery state.
+Send an outbound SMS/MMS. Returns a `Message` that tracks delivery state. An overload accepts an additional `tags` list. Pass `null` (or empty) for `context` to use the connected protocol context.
 
-```python
-message = await client.send_message(
-    to_number="+15552222222",
-    from_number="+15551111111",
-    body="Hello!",
-)
-event = await message.wait()  # block until delivered/failed
+```java
+import java.util.List;
+
+var message = client.sendMessage(
+    null,                 // context (null → protocol/default)
+    "+15551111111",       // fromNumber
+    "+15552222222",       // toNumber
+    "Hello!",             // body
+    List.of());           // mediaUrls (empty for SMS)
+
+var event = message.waitForCompletion();  // block until delivered/failed
 ```
 
 See [Messaging](messaging.md) for full details.
 
-### `execute(method, params) -> dict`
+### `execute(method, params) -> Map<String, Object>`
 
 Send a raw JSON-RPC request. Used internally by Call methods, but available for custom commands.
 
-### `receive(contexts) / unreceive(contexts)`
+### `receive(newContexts)` / `unreceive(removeContexts)`
 
 Dynamically subscribe to or unsubscribe from contexts after connecting.
 
-```python
-await client.receive(["new-context"])
-await client.unreceive(["old-context"])
+```java
+client.receive(List.of("new-context"));
+client.unreceive(List.of("old-context"));
 ```
 
-## Properties
+## Properties (accessors)
 
-| Property | Type | Description |
+| Accessor | Type | Description |
 |----------|------|-------------|
-| `relay_protocol` | `str` | Server-assigned protocol string from connect response |
-| `project` | `str` | Project ID |
-| `host` | `str` | Relay host |
-| `contexts` | `list[str]` | Initial contexts |
+| `getRelayProtocol()` | `String` | Server-assigned protocol string from connect response |
+| `getProject()` | `String` | Project ID |
+| `getSpace()` | `String` | Relay host/space |
+| `getContexts()` | `List<String>` | Initial contexts |
+| `isConnected()` | `boolean` | Whether the WebSocket is currently connected |
 
 ## Connection Behavior
 
 - **Auto-reconnect**: On connection loss, the client reconnects with exponential backoff (1s to 30s).
-- **Ping/pong**: Client sends periodic pings and monitors server pings. After 3 consecutive failures, the connection is force-closed and reconnected.
+- **Ping/pong**: Client sends periodic pings and monitors server pings. After consecutive failures, the connection is force-closed and reconnected.
 - **Request queueing**: Requests made while disconnected are queued and sent after re-authentication.
-- **Authorization state**: The server sends encrypted auth state via events. On reconnect, this is sent back for fast re-authentication without a full auth roundtrip.
+- **Authorization state**: The server sends encrypted auth state via events (see `getAuthorizationState()`). On reconnect, this is sent back for fast re-authentication without a full auth roundtrip.
 - **Server disconnect**: The server can request a graceful disconnect (e.g. during deployment). The client auto-reconnects afterward.
 
 ## Concurrency
 
-Each inbound call handler runs as an independent `asyncio.Task`, so multiple calls are handled concurrently. The `max_active_calls` parameter (default: 1000) caps concurrent calls to prevent unbounded memory growth.
-
-For multiple WebSocket connections in one process, set `RELAY_MAX_CONNECTIONS` (default: 1).
+Each inbound call handler runs on the JDK virtual-thread executor, so multiple calls are handled concurrently without blocking the event loop.
 
 ## Error Handling
 
-```python
-from signalwire_agents.relay import RelayError
+```java
+import com.signalwire.sdk.relay.RelayError;
 
-try:
-    await call.play([...])
-except RelayError as e:
-    print(f"Error {e.code}: {e.message}")
+try {
+    call.play(List.of(/* ... */));
+} catch (RelayError e) {
+    System.out.println("Relay error: " + e.getMessage());
+}
 ```
 
-`RelayError` is raised when the server returns a non-2xx response code. Errors 404 and 410 (call gone) are silently swallowed by Call methods since the call no longer exists.
+`RelayError` (a `RuntimeException`) is thrown when the server returns a non-2xx response code, or on dial timeout/failure. Errors 404 and 410 (call gone) are silently swallowed by Call methods since the call no longer exists.

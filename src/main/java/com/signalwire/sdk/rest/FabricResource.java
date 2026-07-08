@@ -11,9 +11,11 @@ import java.util.Map;
 /**
  * Fabric CRUD resource with address listing.
  *
- * <p>Mirrors Python's {@code signalwire.rest.namespaces.fabric.FabricResource} (which extends
- * {@code CrudWithAddresses}): standard CRUD where {@link #update(String, Map)} sends PATCH, plus
- * {@link #listAddresses(String)} → GET {@code {base}/{id}/addresses}.
+ * <p>Standard CRUD where {@link #update(String, Map)} sends PATCH, plus {@link
+ * #listAddresses(String)} → GET {@code {base}/{id}/addresses}. The address-listing route is
+ * available on every fabric resource. Fabric resources whose address sub-path is non-standard
+ * (singular collection: {@code CallFlows}, {@code ConferenceRooms}) OVERRIDE this with their own
+ * generated {@code listAddresses}.
  *
  * <p>The PUT-update variant is {@link FabricResourcePUT}.
  */
@@ -40,13 +42,15 @@ public class FabricResource extends CrudResource {
     super(httpClient, basePath, updateMethod);
   }
 
-  /** List the addresses bound to this resource: GET {@code {base}/{id}/addresses}. */
-  public Map<String, Object> listAddresses(String resourceId) {
-    return getHttpClient().get(getBasePath() + "/" + resourceId + "/addresses");
-  }
-
-  /** List addresses with query parameters. */
+  /**
+   * List the addresses bound to this resource: GET {@code {base}/{id}/addresses}.
+   *
+   * <p>Single {@code (id, params)} form (matching the generated per-resource {@code listAddresses}
+   * and the reference/Go {@code ListAddresses(id, params)}), so a fabric resource that OVERRIDES
+   * this with a non-standard address path ({@code CallFlows}, {@code ConferenceRooms}) fully
+   * replaces it — no inherited overload leaks the standard plural path.
+   */
   public Map<String, Object> listAddresses(String resourceId, Map<String, String> queryParams) {
-    return getHttpClient().get(getBasePath() + "/" + resourceId + "/addresses", queryParams);
+    return restGet(getBasePath() + "/" + resourceId + "/addresses", queryParams);
   }
 }

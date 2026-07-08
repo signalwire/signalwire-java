@@ -179,15 +179,44 @@ public class RelayClient implements AutoCloseable {
       return this;
     }
 
+    /** Default RELAY host, matching Python's DEFAULT_RELAY_HOST (relay/constants.py). */
+    private static final String DEFAULT_RELAY_HOST = "relay.signalwire.com";
+
     public RelayClient build() {
-      // JWT-only path: skip project/token requirement. Otherwise both
-      // project and token are required (existing contract: throws NPE).
-      if (jwtToken == null || jwtToken.isEmpty()) {
-        Objects.requireNonNull(project, "project is required");
-        Objects.requireNonNull(token, "token is required");
+      // Env-var fallback for any credential not set explicitly — parity with
+      // Python's relay Client() (relay/client.py), which reads
+      // SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / SIGNALWIRE_JWT_TOKEN and
+      // defaults the host to SIGNALWIRE_SPACE or DEFAULT_RELAY_HOST.
+      if (project == null) {
+        project = envOrNull("SIGNALWIRE_PROJECT_ID");
       }
-      Objects.requireNonNull(space, "space is required");
+      if (token == null) {
+        token = envOrNull("SIGNALWIRE_API_TOKEN");
+      }
+      if (jwtToken == null) {
+        jwtToken = envOrNull("SIGNALWIRE_JWT_TOKEN");
+      }
+      if (space == null) {
+        String envSpace = envOrNull("SIGNALWIRE_SPACE");
+        space = (envSpace != null) ? envSpace : DEFAULT_RELAY_HOST;
+      }
+      // JWT-only path: project/token not required (project_id is inside the
+      // token). Otherwise both project and token are required. Mirrors Python's
+      // ValueError; space always defaults, so it is never itself an error.
+      if (jwtToken == null || jwtToken.isEmpty()) {
+        if (project == null || token == null) {
+          throw new IllegalArgumentException(
+              "project and token are required (or provide a JWT token). Pass them via the "
+                  + "builder or set SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / "
+                  + "SIGNALWIRE_JWT_TOKEN environment variables.");
+        }
+      }
       return new RelayClient(this);
+    }
+
+    private static String envOrNull(String key) {
+      String v = System.getenv(key);
+      return (v != null && !v.isEmpty()) ? v : null;
     }
   }
 
@@ -474,15 +503,14 @@ public class RelayClient implements AutoCloseable {
     request.put("id", requestId);
     request.put("method", method);
 
-    // Add protocol and project_id to params if we have them
-    Map<String, Object> fullParams = new LinkedHashMap<>();
-    if (protocol != null) {
-      fullParams.put("protocol", protocol);
-    }
-    fullParams.put("project_id", project);
-    if (params != null) {
-      fullParams.putAll(params);
-    }
+    // Send params verbatim. The Python reference's RelayClient.execute forwards
+    // params unchanged to _send_request — project_id/protocol are carried ONLY
+    // in the signalwire.connect handshake (see authenticate()), NOT injected
+    // into every calling.*/messaging.* RPC. Injecting them here was a wire
+    // divergence: the platform correlates a call by node_id/call_id, and the
+    // handshake already scopes the session to the project + protocol.
+    Map<String, Object> fullParams =
+        params != null ? new LinkedHashMap<>(params) : new LinkedHashMap<>();
     request.put("params", fullParams);
 
     CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
@@ -914,11 +942,10 @@ public class RelayClient implements AutoCloseable {
   }
 
   /**
-   * Send a raw JSON-RPC frame on the underlying socket. Production code uses {@link
-   * #execute(String, Map)}, which adds project_id/protocol automatically. This helper exists for
-   * the porting-sdk RELAY-handshake audit harness, which has to emit a {@code
-   * method:"signalwire.event"} frame from inside the on-event callback so the fixture's dispatch
-   * counter fires (see SUBAGENT_PLAYBOOK lesson on event-ACK semantics).
+   * Send a raw JSON-RPC frame on the underlying socket. Most callers use {@link #execute(String,
+   * Map)}, which adds project_id/protocol automatically. This lower-level helper lets a caller emit
+   * an arbitrary frame (for example a {@code method:"signalwire.event"} frame from inside an
+   * on-event callback) when the higher-level API is not sufficient.
    *
    * @param frame a Gson-serializable map representing the frame
    */

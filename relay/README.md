@@ -44,11 +44,10 @@ client.run();
 - [Events](docs/events.md) -- event types, typed event classes, call states
 - [Messaging](docs/messaging.md) -- sending and receiving SMS/MMS messages
 - [Client Reference](docs/client-reference.md) -- RelayClient configuration, methods, connection behavior
-- [Implementation Guide](RELAY_IMPLEMENTATION_GUIDE.md) -- internal architecture and protocol details
 
 ## Examples
 
-- [RelayAnswerAndWelcome.java](examples/RelayAnswerAndWelcome.java) -- answer an inbound call and play a TTS greeting
+- [RelayAnswerAndWelcome.java](../examples/RelayAnswerAndWelcome.java) -- answer an inbound call and play a TTS greeting
 - [RelayDialAndPlay.java](examples/RelayDialAndPlay.java) -- dial a number and play a TTS message
 - [RelayIvrConnect.java](examples/RelayIvrConnect.java) -- IVR menu with DTMF, playback, and call connect
 

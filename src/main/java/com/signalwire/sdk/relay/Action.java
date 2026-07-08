@@ -95,6 +95,27 @@ public class Action {
     }
   }
 
+  /**
+   * Wait for the action to complete, returning the terminal event. Java-idiom name for the
+   * reference's {@code Action.wait}: the bare name {@code wait} collides with {@code
+   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
+   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   */
+  public RelayEvent await() {
+    return waitForCompletion();
+  }
+
+  /**
+   * Wait for the action to complete with a timeout. Java-idiom name for the reference's {@code
+   * Action.wait(timeout)} (see {@link #await()} for why the name differs).
+   *
+   * @param timeoutMs timeout in milliseconds
+   * @return the terminal event, or null on timeout
+   */
+  public RelayEvent await(long timeoutMs) {
+    return waitForCompletion(timeoutMs);
+  }
+
   /** Stop the action. */
   public void stop() {
     // Subclasses override with specific stop method
@@ -158,8 +179,24 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_PLAY_STOP, baseParams());
     }
 
+    /** Pause playback. Mirrors the reference PlayAction.pause. */
     public void pause() {
-      getCall().executeOnCall(Constants.METHOD_PLAY_PAUSE, baseParams());
+      pause(null);
+    }
+
+    /**
+     * Pause playback with an optional {@code behavior} hint. Mirrors the reference {@code
+     * PlayAction.pause(behavior: str | None)} — when {@code behavior} is non-null it rides in the
+     * request params.
+     *
+     * @param behavior optional pause behavior; may be {@code null}
+     */
+    public void pause(String behavior) {
+      Map<String, Object> params = baseParams();
+      if (behavior != null) {
+        params.put("behavior", behavior);
+      }
+      getCall().executeOnCall(Constants.METHOD_PLAY_PAUSE, params);
     }
 
     public void resume() {
@@ -192,13 +229,23 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_RECORD_STOP, baseParams());
     }
 
+    /** Pause the recording. Mirrors the reference RecordAction.pause. */
     public void pause() {
-      getCall().executeOnCall(Constants.METHOD_RECORD_PAUSE, baseParams());
+      pause(null);
     }
 
-    public void pauseWithBehavior(String behavior) {
+    /**
+     * Pause the recording with an optional {@code behavior} hint. Mirrors the reference {@code
+     * RecordAction.pause(behavior: str | None)} — when {@code behavior} is non-null it rides in the
+     * request params.
+     *
+     * @param behavior optional pause behavior; may be {@code null}
+     */
+    public void pause(String behavior) {
       Map<String, Object> params = baseParams();
-      params.put("behavior", behavior);
+      if (behavior != null) {
+        params.put("behavior", behavior);
+      }
       getCall().executeOnCall(Constants.METHOD_RECORD_PAUSE, params);
     }
 
@@ -269,20 +316,58 @@ public class Action {
 
     @Override
     public void stop() {
-      Map<String, Object> params = new LinkedHashMap<>();
-      params.put("node_id", getCall().getNodeId().orElse(null));
-      params.put("call_id", getCall().getCallId());
-      params.put("control_id", getControlId());
-      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_STOP, params);
+      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_STOP, baseParams());
+    }
+
+    /** Pause the play-and-collect operation. Mirrors the reference CollectAction.pause. */
+    public void pause() {
+      pause(null);
+    }
+
+    /**
+     * Pause the play-and-collect operation with an optional {@code behavior} hint. Mirrors the
+     * reference {@code CollectAction.pause(behavior: str | None)} — when {@code behavior} is
+     * non-null it rides in the request params.
+     *
+     * @param behavior optional pause behavior; may be {@code null}
+     */
+    public void pause(String behavior) {
+      Map<String, Object> params = baseParams();
+      if (behavior != null) {
+        params.put("behavior", behavior);
+      }
+      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_PAUSE, params);
+    }
+
+    /** Resume the play-and-collect operation. Mirrors the reference CollectAction.resume. */
+    public void resume() {
+      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_RESUME, baseParams());
     }
 
     public void volume(double volumeDb) {
+      Map<String, Object> params = baseParams();
+      params.put("volume", volumeDb);
+      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_VOLUME, params);
+    }
+
+    private Map<String, Object> baseParams() {
       Map<String, Object> params = new LinkedHashMap<>();
       params.put("node_id", getCall().getNodeId().orElse(null));
       params.put("call_id", getCall().getCallId());
       params.put("control_id", getControlId());
-      params.put("volume", volumeDb);
-      getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_VOLUME, params);
+      return params;
+    }
+
+    /**
+     * Restart the digit/speech input timers on this standalone collect. Mirrors the reference
+     * StandaloneCollectAction.start_input_timers (same wire method as CollectAction).
+     */
+    public void startInputTimers() {
+      Map<String, Object> params = new LinkedHashMap<>();
+      params.put("node_id", getCall().getNodeId().orElse(null));
+      params.put("call_id", getCall().getCallId());
+      params.put("control_id", getControlId());
+      getCall().executeOnCall(Constants.METHOD_COLLECT_START_INPUT_TIMERS, params);
     }
   }
 

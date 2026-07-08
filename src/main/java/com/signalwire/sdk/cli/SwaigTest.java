@@ -86,6 +86,40 @@ public class SwaigTest {
    */
   public static int run(String[] args) {
     var cli = new SwaigTest();
+    // Detect --parse-only / --dry-run FIRST and strip it from argv, so it is
+    // position-independent — honored whether it precedes OR follows other
+    // flags, including trailing an `--exec <tool>` (which otherwise consumes
+    // the following token as a function argument). It only validates the
+    // invocation's arguments: on success it prints "parse OK" and exits 0
+    // WITHOUT loading the agent, touching the filesystem, or making any
+    // network call. This is the canonical cross-port contract mirrored from
+    // the python reference (signalwire/cli/test_swaig.py).
+    boolean parseOnly = false;
+    for (String a : args) {
+      if ("--parse-only".equals(a) || "--dry-run".equals(a)) {
+        parseOnly = true;
+        break;
+      }
+    }
+    if (parseOnly) {
+      String[] filtered =
+          Arrays.stream(args)
+              .filter(a -> !"--parse-only".equals(a) && !"--dry-run".equals(a))
+              .toArray(String[]::new);
+      try {
+        cli.parseArgs(filtered);
+      } catch (HelpRequested e) {
+        return 0;
+      } catch (IllegalArgumentException e) {
+        System.err.println("Error: " + e.getMessage());
+        if (filtered.length == 0 || argsContainHelp(filtered)) printUsage();
+        return 1;
+      }
+      // Args parsed into a valid invocation. Do NOT run() — no agent load,
+      // no network. Emit the one canonical line and exit 0.
+      System.out.println("parse OK");
+      return 0;
+    }
     try {
       cli.parseArgs(args);
       cli.run();
@@ -401,13 +435,13 @@ public class SwaigTest {
   private static void printRawSwaigFunction(java.util.Map<String, Object> fn) {
     Object name = fn.get("function");
     System.out.println("  - " + (name != null ? name.toString() : "(unnamed)"));
-    Object purpose = fn.get("purpose");
-    if (purpose != null) {
-      System.out.println("      description: " + purpose);
+    Object description = fn.get("description");
+    if (description != null) {
+      System.out.println("      description: " + description);
     }
-    Object args = fn.get("argument");
-    if (args != null) {
-      System.out.println("      parameters: " + args);
+    Object params = fn.get("parameters");
+    if (params != null) {
+      System.out.println("      parameters: " + params);
     }
   }
 
@@ -461,6 +495,8 @@ public class SwaigTest {
 
       switch (platform) {
         case LAMBDA -> runLambdaSimulation(agent, simEnv);
+        case CGI -> runCgiSimulation(agent, simEnv);
+        case GCF -> runGcfSimulation(agent);
         default ->
             throw new IllegalArgumentException("No adapter wired up for platform: " + platform);
       }
@@ -493,6 +529,84 @@ public class SwaigTest {
     if (verbose) System.err.println("[verbose] Dispatching SWML render: GET " + path);
     LambdaResponse response = handler.handle(event);
     emitResponse(response);
+  }
+
+  /**
+   * Dispatch the requested action through the Google Cloud Functions adapter ({@link
+   * com.signalwire.sdk.runtime.ServerlessAdapter#handleGcf}), the same framework-free {@code
+   * handleRequest} core the in-process server uses.
+   */
+  private void runGcfSimulation(AgentBase agent) throws Exception {
+    String route = normaliseAgentRoute(agent);
+    String path = route.isEmpty() ? "/" : route;
+
+    if (execTool != null) {
+      String body = buildSwaigRequestJson(execTool, params);
+      if (verbose) System.err.println("[verbose] Dispatching SWAIG (gcf): " + body);
+      var resp =
+          com.signalwire.sdk.runtime.ServerlessAdapter.handleGcf(
+              agent, "POST", route + "/swaig", basicAuthHeader(agent), body);
+      emitBody(resp.status(), resp.body());
+      return;
+    }
+
+    if (verbose) System.err.println("[verbose] Dispatching SWML render (gcf): GET " + path);
+    var resp =
+        com.signalwire.sdk.runtime.ServerlessAdapter.handleGcf(
+            agent, "GET", path, basicAuthHeader(agent), null);
+    emitBody(resp.status(), resp.body());
+  }
+
+  /**
+   * Dispatch the requested action through the CGI adapter ({@link
+   * com.signalwire.sdk.runtime.ServerlessAdapter#handleCgi}). The CGI env is derived from the
+   * simulated {@link EnvProvider}, augmented with the request method/path for this invocation; the
+   * adapter returns the full CGI payload (status line + headers + blank line + body).
+   */
+  private void runCgiSimulation(AgentBase agent, EnvProvider simEnv) throws Exception {
+    String route = normaliseAgentRoute(agent);
+    String path = route.isEmpty() ? "/" : route;
+
+    boolean exec = execTool != null;
+    String body = exec ? buildSwaigRequestJson(execTool, params) : null;
+    String reqPath = exec ? route + "/swaig" : path;
+    String method = exec ? "POST" : "GET";
+
+    // Overlay the per-request CGI meta-variables (REQUEST_METHOD / PATH_INFO) on
+    // top of the simulated env so the adapter reads this invocation's method+path.
+    EnvProvider cgiEnv =
+        name -> {
+          if ("REQUEST_METHOD".equals(name)) return method;
+          if ("PATH_INFO".equals(name)) return reqPath;
+          return simEnv.get(name);
+        };
+
+    if (verbose) System.err.println("[verbose] Dispatching (cgi): " + method + " " + reqPath);
+    String cgiResponse =
+        com.signalwire.sdk.runtime.ServerlessAdapter.handleCgi(
+            agent, cgiEnv, basicAuthHeader(agent), body);
+
+    // The CGI payload is "Status: <code> <text>\r\n<headers>\r\n\r\n<body>";
+    // print the body (or the whole payload in --raw mode).
+    if (raw) {
+      System.out.println(cgiResponse);
+      return;
+    }
+    int sep = cgiResponse.indexOf("\r\n\r\n");
+    String cgiBody = sep >= 0 ? cgiResponse.substring(sep + 4) : cgiResponse;
+    System.out.println(prettyPrintJson(cgiBody));
+  }
+
+  private void emitBody(int status, String body) {
+    if (status >= 400) {
+      System.err.println("[warning] serverless adapter returned HTTP " + status);
+    }
+    String b = body == null ? "" : body;
+    if (raw) {
+      System.out.println(b);
+    } else {
+      System.out.println(prettyPrintJson(b));
+    }
   }
 
   private void emitResponse(LambdaResponse response) {
@@ -866,6 +980,9 @@ public class SwaigTest {
                   --exec NAME                     Execute a SWAIG tool by name
                   --param key=value               Pass a parameter to the tool (repeatable)
                   --raw                           Output raw JSON without pretty-printing
+                  --parse-only, --dry-run         Validate the arguments and exit (prints 'parse OK')
+                                                  without loading the agent or making any network call.
+                                                  Position-independent; honored even trailing an --exec.
                   --verbose                       Show verbose debug output
                   --help, -h                      Show this help message
 

@@ -16,22 +16,15 @@
  *
  * <p>Operations supported by this harness:
  * <ul>
- *   <li>{@code calling.list_calls}        GET LAML
- *       {@code /api/laml/2010-04-01/Accounts/{proj}/Calls.json}</li>
- *   <li>{@code messaging.send}            POST LAML
- *       {@code /api/laml/2010-04-01/Accounts/{proj}/Messages.json}</li>
  *   <li>{@code phone_numbers.list}        GET
  *       {@code /api/phone_numbers}</li>
  *   <li>{@code fabric.subscribers.list}   GET
  *       {@code /api/fabric/subscribers}</li>
- *   <li>{@code compatibility.calls.list}  GET LAML Calls (alias for
- *       {@code calling.list_calls}; both list LAML calls)</li>
  * </ul>
  */
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.RestClient;
 
 import java.util.LinkedHashMap;
@@ -55,22 +48,10 @@ public class RestAuditHarness {
         // factory normalizes the trailing /api so existing namespace paths
         // (e.g. /phone_numbers) end up in the right place.
         RestClient client = RestClient.withBaseUrl(fixtureUrl, projectId, token);
-        // LAML operations use paths shaped like
-        // {@code /api/laml/2010-04-01/Accounts/{proj}/...} where the {@code /api}
-        // prefix is part of the documented path. The fixture asserts on
-        // {@code /api/laml/2010-04-01/Accounts}, so we point the LAML
-        // HttpClient at the fixture's bare host (NO {@code /api} suffix)
-        // and pass the full {@code /api/laml/...} path explicitly below.
-        String trimmedFixture = fixtureUrl.replaceAll("/$", "");
-        HttpClient lamlHttp = HttpClient.withBaseUrl(trimmedFixture, projectId, token);
 
         Object result;
         try {
             result = switch (operation) {
-                case "calling.list_calls", "compatibility.calls.list" ->
-                        callingListCalls(lamlHttp, projectId, opArgs);
-                case "messaging.send" ->
-                        messagingSend(lamlHttp, projectId, opArgs);
                 case "phone_numbers.list" ->
                         client.phoneNumbers().list(stringQuery(opArgs));
                 case "fabric.subscribers.list" ->
@@ -89,28 +70,6 @@ public class RestAuditHarness {
 
         System.out.println(GSON.toJson(result));
         System.exit(0);
-    }
-
-    /**
-     * GET /api/laml/2010-04-01/Accounts/{projectId}/Calls.json
-     * The fixture only checks for /api/laml/2010-04-01/Accounts in the path
-     * and a Basic-auth header; the body is the canned response.
-     */
-    private static Map<String, Object> callingListCalls(
-            HttpClient http, String projectId, Map<String, Object> args) {
-        String path = "/api/laml/2010-04-01/Accounts/" + projectId + "/Calls.json";
-        return http.get(path, stringQuery(args));
-    }
-
-    /**
-     * POST /api/laml/2010-04-01/Accounts/{projectId}/Messages.json
-     * Audit fixture checks for "Messages" in path + Basic auth + a 2xx JSON
-     * response body containing the canned sentinel.
-     */
-    private static Map<String, Object> messagingSend(
-            HttpClient http, String projectId, Map<String, Object> args) {
-        String path = "/api/laml/2010-04-01/Accounts/" + projectId + "/Messages.json";
-        return http.post(path, args);
     }
 
     private static Map<String, String> stringQuery(Map<String, Object> args) {

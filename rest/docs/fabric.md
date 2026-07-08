@@ -6,12 +6,22 @@ The Fabric API (`/api/fabric`) manages resource types in your SignalWire project
 
 Each handle exposes list/get/create/update/delete via `CrudResource`:
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.PhoneCallHandler;
+import com.signalwire.sdk.rest.RestError;
+
+RestClient client = RestClient.builder().build();
+String pnSid = "pn-uuid";
+```
+
 ```java
 // List all fabric resources
-var items = client.fabric().resources().list();
+var items = client.fabric().resources().list(Map.of());
 
 // Get a resource by ID
-var resource = client.fabric().resources().get("resource-uuid");
+var resource = client.fabric().resources().get("resource-uuid", Map.of());
 
 // Create a subscriber
 var sub = client.fabric().subscribers().create(Map.of(
@@ -33,28 +43,26 @@ client.fabric().resources().delete("resource-uuid");
 Phone-number bindings live on `client.phoneNumbers()`, not on Fabric. The server materializes the Fabric webhook resource automatically when you set `call_handler` on the phone number. Use the typed helpers:
 
 ```java
-import com.signalwire.sdk.rest.PhoneCallHandler;
-
 // SWML webhook — your backend returns an SWML document per call
-client.phoneNumbers().setSwmlWebhook(pnSid, "https://example.com/swml");
+client.phoneNumbers().setSwmlWebhook(pnSid, "https://example.com/swml", Map.of());
 
-// cXML (Twilio-compat / LAML) webhook
-client.phoneNumbers().setCxmlWebhook(pnSid, "https://example.com/voice.xml");
+// cXML (Twilio-compat / LAML) webhook (optional fallback + status callback URLs)
+client.phoneNumbers().setCxmlWebhook(pnSid, "https://example.com/voice.xml", null, null, Map.of());
 
 // Existing cXML application by ID
-client.phoneNumbers().setCxmlApplication(pnSid, "app-uuid");
+client.phoneNumbers().setCxmlApplication(pnSid, "app-uuid", Map.of());
 
 // AI Agent by ID
-client.phoneNumbers().setAiAgent(pnSid, "agent-uuid");
+client.phoneNumbers().setAiAgent(pnSid, "agent-uuid", Map.of());
 
 // Call flow (optionally pin a version)
-client.phoneNumbers().setCallFlow(pnSid, "flow-uuid", "current_deployed");
+client.phoneNumbers().setCallFlow(pnSid, "flow-uuid", "current_deployed", Map.of());
 
 // Named RELAY application
-client.phoneNumbers().setRelayApplication(pnSid, "my-relay-app");
+client.phoneNumbers().setRelayApplication(pnSid, "my-relay-app", Map.of());
 
 // RELAY topic (client subscription)
-client.phoneNumbers().setRelayTopic(pnSid, "office");
+client.phoneNumbers().setRelayTopic(pnSid, "office", null, Map.of());
 ```
 
 The wire-level form is always available:
@@ -77,8 +85,8 @@ The Java SDK does not surface `assignPhoneRoute`, `swmlWebhooks().create()`, or 
 `client.fabric().resources()` is the generic handle for fabric resources referenced by ID regardless of type:
 
 ```java
-var all = client.fabric().resources().list();
-var one = client.fabric().resources().get("resource-uuid");
+var all = client.fabric().resources().list(Map.of());
+var one = client.fabric().resources().get("resource-uuid", Map.of());
 client.fabric().resources().delete("resource-uuid");
 ```
 
@@ -101,7 +109,7 @@ Every CRUD call throws `RestError` on non-2xx:
 
 ```java
 try {
-    client.fabric().resources().get("bad-id");
+    client.fabric().resources().get("bad-id", Map.of());
 } catch (RestError e) {
     System.out.println(e.getStatusCode()); // 404
     System.out.println(e.getMethod());     // "GET"

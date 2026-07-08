@@ -1,10 +1,21 @@
 # Calling Commands
 
-The Calling API provides REST-based call control. All commands are dispatched via a single `POST /api/calling/calls` endpoint with a `command` field. No WebSocket connection is needed.
+The Calling API provides REST-based call control. All commands are dispatched via a single `POST /calling/calls` endpoint with a `command` field. No WebSocket connection is needed.
+
+Access the namespace through `client.calling()`. Every method takes a typed, closed request object built with a fluent builder. Optional/unmodeled wire keys go through the builder's `extras(Map)` door. Each method returns a `Map<String, Object>` decoded from the JSON response.
+
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.namespaces.generated.Calling;
+
+RestClient client = RestClient.builder().build();
+String callId = "call-uuid";
+```
 
 ## How It Works
 
-Every method on `client.calling` sends a POST request with this structure:
+Every method on `client.calling()` sends a POST request with this structure:
 
 ```json
 {
@@ -14,260 +25,321 @@ Every method on `client.calling` sends a POST request with this structure:
 }
 ```
 
-For `dial` and `update`, the call details are inside `params` (no top-level `id`). For all other commands, `id` is the UUID of the call to control.
+For `dial` and `update`, the call details are inside `params` (no top-level `id`). For all other commands, `id` is the call UUID passed as the first argument.
 
 ## Call Lifecycle
 
-### `dial(**params) -> dict`
+### `dial(DialRequest request) -> Map<String, Object>`
 
 Initiate an outbound call.
 
-```python
-result = client.calling.dial(
-    from_="+15559876543",
-    to="+15551234567",
-    url="https://example.com/call-handler",
-)
-call_id = result.get("id")
+```java
+var result = client.calling().dial(
+    Calling.DialRequest.builder()
+        .from("+15559876543")
+        .to("+15551234567")
+        .url("https://example.com/call-handler")
+        .build());
+callId = (String) result.get("id");
 ```
 
-### `update(**params) -> dict`
+### `update(UpdateRequest request) -> Map<String, Object>`
 
 Update an active call's dialplan mid-call.
 
-```python
-client.calling.update(id=call_id, url="https://example.com/new-handler")
+```java
+client.calling().update(
+    Calling.UpdateRequest.builder()
+        .id(callId)
+        .url("https://example.com/new-handler")
+        .build());
 ```
 
-### `end(call_id, **params) -> dict`
+### `end(String callId, EndRequest request) -> Map<String, Object>`
 
 Terminate a call.
 
-```python
-client.calling.end(call_id, reason="hangup")
+```java
+client.calling().end(callId,
+    Calling.EndRequest.builder().reason("hangup").build());
 ```
 
-### `transfer(call_id, **params) -> dict`
+### `transfer(String callId, TransferRequest request) -> Map<String, Object>`
 
 Transfer a call to a new destination.
 
-```python
-client.calling.transfer(call_id, dest="sip:agent@example.com")
+```java
+client.calling().transfer(callId,
+    Calling.TransferRequest.builder()
+        .dest(Map.of("to", "sip:agent@example.com"))
+        .build());
 ```
 
-### `disconnect(call_id) -> dict`
+### `disconnect(String callId, DisconnectRequest request) -> Map<String, Object>`
 
 Disconnect bridged calls without hanging up either leg.
 
-```python
-client.calling.disconnect(call_id)
+```java
+client.calling().disconnect(callId,
+    Calling.DisconnectRequest.builder().build());
 ```
 
 ## Audio Playback
 
-### `play(call_id, **params) -> dict`
+### `play(String callId, PlayRequest request) -> Map<String, Object>`
 
 Play audio, TTS, silence, or ringtone.
 
-```python
-client.calling.play(call_id,
-    play=[{"type": "tts", "text": "Hello!"}],
-    volume=5.0,
-)
+```java
+client.calling().play(callId,
+    Calling.PlayRequest.builder()
+        .play(List.of(Map.of("type", "tts", "text", "Hello!")))
+        .volume(5.0)
+        .build());
 ```
 
-### `play_pause(call_id, **params)` / `play_resume(call_id, **params)`
+### `playPause` / `playResume`
 
 Pause or resume active playback.
 
-```python
-client.calling.play_pause(call_id, control_id="ctrl-1")
-client.calling.play_resume(call_id, control_id="ctrl-1")
+```java
+client.calling().playPause(callId,
+    Calling.PlayPauseRequest.builder().controlId("ctrl-1").build());
+client.calling().playResume(callId,
+    Calling.PlayResumeRequest.builder().controlId("ctrl-1").build());
 ```
 
-### `play_stop(call_id, **params)`
+### `playStop`
 
 Stop active playback.
 
-```python
-client.calling.play_stop(call_id, control_id="ctrl-1")
+```java
+client.calling().playStop(callId,
+    Calling.PlayStopRequest.builder().controlId("ctrl-1").build());
 ```
 
-### `play_volume(call_id, **params)`
+### `playVolume`
 
 Adjust playback volume.
 
-```python
-client.calling.play_volume(call_id, control_id="ctrl-1", volume=-3.0)
+```java
+client.calling().playVolume(callId,
+    Calling.PlayVolumeRequest.builder().controlId("ctrl-1").volume(-3.0).build());
 ```
 
 ## Recording
 
-### `record(call_id, **params)` / `record_pause` / `record_resume` / `record_stop`
+### `record` / `recordPause` / `recordResume` / `recordStop`
 
-```python
-client.calling.record(call_id,
-    control_id="rec-1",
-    audio={"beep": True, "format": "wav", "stereo": True},
-)
-client.calling.record_pause(call_id, control_id="rec-1")
-client.calling.record_resume(call_id, control_id="rec-1")
-client.calling.record_stop(call_id, control_id="rec-1")
+```java
+client.calling().record(callId,
+    Calling.RecordRequest.builder()
+        .controlId("rec-1")
+        .audio(Map.of("beep", true, "format", "wav", "stereo", true))
+        .build());
+client.calling().recordPause(callId,
+    Calling.RecordPauseRequest.builder().controlId("rec-1").build());
+client.calling().recordResume(callId,
+    Calling.RecordResumeRequest.builder().controlId("rec-1").build());
+client.calling().recordStop(callId,
+    Calling.RecordStopRequest.builder().controlId("rec-1").build());
 ```
 
 ## Input Collection
 
-### `collect(call_id, **params)` / `collect_stop` / `collect_start_input_timers`
+### `collect` / `collectStop` / `collectStartInputTimers`
 
-```python
-client.calling.collect(call_id,
-    control_id="coll-1",
-    digits={"max": 4, "terminators": "#"},
-    speech={"end_silence_timeout": 2.0},
-)
-client.calling.collect_stop(call_id, control_id="coll-1")
-client.calling.collect_start_input_timers(call_id, control_id="coll-1")
+```java
+client.calling().collect(callId,
+    Calling.CollectRequest.builder()
+        .controlId("coll-1")
+        .digits(Map.of("max", 4, "terminators", "#"))
+        .speech(Map.of("end_silence_timeout", 2.0))
+        .build());
+client.calling().collectStop(callId,
+    Calling.CollectStopRequest.builder().controlId("coll-1").build());
+client.calling().collectStartInputTimers(callId,
+    Calling.CollectStartInputTimersRequest.builder().controlId("coll-1").build());
 ```
 
 ## Detection
 
-### `detect(call_id, **params)` / `detect_stop`
+### `detect` / `detectStop`
 
-```python
-client.calling.detect(call_id,
-    control_id="det-1",
-    detect={"type": "machine", "params": {"initial_timeout": 4.5}},
-)
-client.calling.detect_stop(call_id, control_id="det-1")
+```java
+client.calling().detect(callId,
+    Calling.DetectRequest.builder()
+        .controlId("det-1")
+        .detect(Map.of("type", "machine", "params", Map.of("initial_timeout", 4.5)))
+        .build());
+client.calling().detectStop(callId,
+    Calling.DetectStopRequest.builder().controlId("det-1").build());
 ```
 
 ## Tap & Stream
 
-### `tap(call_id, **params)` / `tap_stop`
+### `tap` / `tapStop`
 
-```python
-client.calling.tap(call_id,
-    control_id="tap-1",
-    tap={"type": "audio", "params": {"direction": "both"}},
-    device={"type": "rtp", "params": {"addr": "192.168.1.1", "port": 1234}},
-)
-client.calling.tap_stop(call_id, control_id="tap-1")
+```java
+client.calling().tap(callId,
+    Calling.TapRequest.builder()
+        .controlId("tap-1")
+        .tap(Map.of("type", "audio", "params", Map.of("direction", "both")))
+        .device(Map.of("type", "rtp", "params", Map.of("addr", "192.168.1.1", "port", 1234)))
+        .build());
+client.calling().tapStop(callId,
+    Calling.TapStopRequest.builder().controlId("tap-1").build());
 ```
 
-### `stream(call_id, **params)` / `stream_stop`
+### `stream` / `streamStop`
 
-```python
-client.calling.stream(call_id,
-    control_id="str-1",
-    url="wss://example.com/audio-stream",
-    codec="PCMU",
-)
-client.calling.stream_stop(call_id, control_id="str-1")
+```java
+client.calling().stream(callId,
+    Calling.StreamRequest.builder()
+        .controlId("str-1")
+        .url("wss://example.com/audio-stream")
+        .codec("PCMU")
+        .build());
+client.calling().streamStop(callId,
+    Calling.StreamStopRequest.builder().controlId("str-1").build());
 ```
 
 ## Denoise
 
-### `denoise(call_id)` / `denoise_stop(call_id)`
+### `denoise` / `denoiseStop`
 
-```python
-client.calling.denoise(call_id)
-client.calling.denoise_stop(call_id)
+```java
+client.calling().denoise(callId, Calling.DenoiseRequest.builder().build());
+client.calling().denoiseStop(callId, Calling.DenoiseStopRequest.builder().build());
 ```
 
 ## Transcription
 
-### `transcribe(call_id, **params)` / `transcribe_stop`
+### `transcribe` / `transcribeStop`
 
-```python
-client.calling.transcribe(call_id, control_id="tx-1", status_url="https://example.com/hook")
-client.calling.transcribe_stop(call_id, control_id="tx-1")
+```java
+client.calling().transcribe(callId,
+    Calling.TranscribeRequest.builder()
+        .controlId("tx-1")
+        .statusUrl("https://example.com/hook")
+        .build());
+client.calling().transcribeStop(callId,
+    Calling.TranscribeStopRequest.builder().controlId("tx-1").build());
 ```
 
 ## AI
 
-### `ai_message(call_id, **params)`
+### `aiMessage`
 
 Inject a message into an active AI session.
 
-```python
-client.calling.ai_message(call_id, role="user", message_text="Transfer me to billing")
+```java
+client.calling().aiMessage(callId,
+    Calling.AiMessageRequest.builder()
+        .role("user")
+        .messageText("Transfer me to billing")
+        .build());
 ```
 
-### `ai_hold(call_id, **params)` / `ai_unhold(call_id, **params)`
+### `aiHold` / `aiUnhold`
 
-```python
-client.calling.ai_hold(call_id, timeout=60, prompt="Please wait while I transfer you.")
-client.calling.ai_unhold(call_id, prompt="I'm back, how can I help?")
+```java
+client.calling().aiHold(callId,
+    Calling.AiHoldRequest.builder()
+        .timeout(60L)
+        .prompt("Please wait while I transfer you.")
+        .build());
+client.calling().aiUnhold(callId,
+    Calling.AiUnholdRequest.builder()
+        .prompt("I'm back, how can I help?")
+        .build());
 ```
 
-### `ai_stop(call_id, **params)`
+### `aiStop`
 
-```python
-client.calling.ai_stop(call_id, control_id="ai-1")
+```java
+client.calling().aiStop(callId,
+    Calling.AiStopRequest.builder().controlId("ai-1").build());
 ```
 
 ## Live Transcribe & Translate
 
-```python
-client.calling.live_transcribe(call_id, action="start", lang="en")
-client.calling.live_translate(call_id, action="start", from_lang="en", to_lang="es")
+The `action` field is a structured object passed as a `Map`.
+
+```java
+client.calling().liveTranscribe(callId,
+    Calling.LiveTranscribeRequest.builder()
+        .action(Map.of("start", Map.of("lang", "en")))
+        .build());
+client.calling().liveTranslate(callId,
+    Calling.LiveTranslateRequest.builder()
+        .action(Map.of("start", Map.of("from_lang", "en", "to_lang", "es")))
+        .build());
 ```
 
 ## Fax
 
-```python
-client.calling.send_fax_stop(call_id, control_id="fax-1")
-client.calling.receive_fax_stop(call_id, control_id="fax-1")
+```java
+client.calling().sendFaxStop(callId,
+    Calling.SendFaxStopRequest.builder().controlId("fax-1").build());
+client.calling().receiveFaxStop(callId,
+    Calling.ReceiveFaxStopRequest.builder().controlId("fax-1").build());
 ```
 
 ## SIP & Custom Events
 
-```python
-# SIP REFER transfer
-client.calling.refer(call_id, device={"to": "sip:agent@example.com"})
+```java
+// SIP REFER transfer
+client.calling().refer(callId,
+    Calling.ReferRequest.builder()
+        .device(Map.of("to", "sip:agent@example.com"))
+        .build());
 
-# Custom event
-client.calling.user_event(call_id, event={"type": "custom", "data": {"key": "value"}})
+// Custom event
+client.calling().userEvent(callId,
+    Calling.UserEventRequest.builder()
+        .event(Map.of("type", "custom", "data", Map.of("key", "value")))
+        .build());
 ```
 
 ## Complete Method List
 
-| Method | Command | Requires call_id |
+| Method | Command | Requires callId |
 |--------|---------|:-:|
-| `dial(**params)` | `dial` | No |
-| `update(**params)` | `update` | No |
-| `end(call_id, **params)` | `calling.end` | Yes |
-| `transfer(call_id, **params)` | `calling.transfer` | Yes |
-| `disconnect(call_id)` | `calling.disconnect` | Yes |
-| `play(call_id, **params)` | `calling.play` | Yes |
-| `play_pause(call_id, **params)` | `calling.play.pause` | Yes |
-| `play_resume(call_id, **params)` | `calling.play.resume` | Yes |
-| `play_stop(call_id, **params)` | `calling.play.stop` | Yes |
-| `play_volume(call_id, **params)` | `calling.play.volume` | Yes |
-| `record(call_id, **params)` | `calling.record` | Yes |
-| `record_pause(call_id, **params)` | `calling.record.pause` | Yes |
-| `record_resume(call_id, **params)` | `calling.record.resume` | Yes |
-| `record_stop(call_id, **params)` | `calling.record.stop` | Yes |
-| `collect(call_id, **params)` | `calling.collect` | Yes |
-| `collect_stop(call_id, **params)` | `calling.collect.stop` | Yes |
-| `collect_start_input_timers(call_id, **params)` | `calling.collect.start_input_timers` | Yes |
-| `detect(call_id, **params)` | `calling.detect` | Yes |
-| `detect_stop(call_id, **params)` | `calling.detect.stop` | Yes |
-| `tap(call_id, **params)` | `calling.tap` | Yes |
-| `tap_stop(call_id, **params)` | `calling.tap.stop` | Yes |
-| `stream(call_id, **params)` | `calling.stream` | Yes |
-| `stream_stop(call_id, **params)` | `calling.stream.stop` | Yes |
-| `denoise(call_id)` | `calling.denoise` | Yes |
-| `denoise_stop(call_id)` | `calling.denoise.stop` | Yes |
-| `transcribe(call_id, **params)` | `calling.transcribe` | Yes |
-| `transcribe_stop(call_id, **params)` | `calling.transcribe.stop` | Yes |
-| `ai_message(call_id, **params)` | `calling.ai_message` | Yes |
-| `ai_hold(call_id, **params)` | `calling.ai_hold` | Yes |
-| `ai_unhold(call_id, **params)` | `calling.ai_unhold` | Yes |
-| `ai_stop(call_id, **params)` | `calling.ai.stop` | Yes |
-| `live_transcribe(call_id, **params)` | `calling.live_transcribe` | Yes |
-| `live_translate(call_id, **params)` | `calling.live_translate` | Yes |
-| `send_fax_stop(call_id, **params)` | `calling.send_fax.stop` | Yes |
-| `receive_fax_stop(call_id, **params)` | `calling.receive_fax.stop` | Yes |
-| `refer(call_id, **params)` | `calling.refer` | Yes |
-| `user_event(call_id, **params)` | `calling.user_event` | Yes |
+| `dial(DialRequest)` | `dial` | No |
+| `update(UpdateRequest)` | `update` | No |
+| `end(callId, EndRequest)` | `calling.end` | Yes |
+| `transfer(callId, TransferRequest)` | `calling.transfer` | Yes |
+| `disconnect(callId, DisconnectRequest)` | `calling.disconnect` | Yes |
+| `play(callId, PlayRequest)` | `calling.play` | Yes |
+| `playPause(callId, PlayPauseRequest)` | `calling.play.pause` | Yes |
+| `playResume(callId, PlayResumeRequest)` | `calling.play.resume` | Yes |
+| `playStop(callId, PlayStopRequest)` | `calling.play.stop` | Yes |
+| `playVolume(callId, PlayVolumeRequest)` | `calling.play.volume` | Yes |
+| `record(callId, RecordRequest)` | `calling.record` | Yes |
+| `recordPause(callId, RecordPauseRequest)` | `calling.record.pause` | Yes |
+| `recordResume(callId, RecordResumeRequest)` | `calling.record.resume` | Yes |
+| `recordStop(callId, RecordStopRequest)` | `calling.record.stop` | Yes |
+| `collect(callId, CollectRequest)` | `calling.collect` | Yes |
+| `collectStop(callId, CollectStopRequest)` | `calling.collect.stop` | Yes |
+| `collectStartInputTimers(callId, CollectStartInputTimersRequest)` | `calling.collect.start_input_timers` | Yes |
+| `detect(callId, DetectRequest)` | `calling.detect` | Yes |
+| `detectStop(callId, DetectStopRequest)` | `calling.detect.stop` | Yes |
+| `tap(callId, TapRequest)` | `calling.tap` | Yes |
+| `tapStop(callId, TapStopRequest)` | `calling.tap.stop` | Yes |
+| `stream(callId, StreamRequest)` | `calling.stream` | Yes |
+| `streamStop(callId, StreamStopRequest)` | `calling.stream.stop` | Yes |
+| `denoise(callId, DenoiseRequest)` | `calling.denoise` | Yes |
+| `denoiseStop(callId, DenoiseStopRequest)` | `calling.denoise.stop` | Yes |
+| `transcribe(callId, TranscribeRequest)` | `calling.transcribe` | Yes |
+| `transcribeStop(callId, TranscribeStopRequest)` | `calling.transcribe.stop` | Yes |
+| `aiMessage(callId, AiMessageRequest)` | `calling.ai_message` | Yes |
+| `aiHold(callId, AiHoldRequest)` | `calling.ai_hold` | Yes |
+| `aiUnhold(callId, AiUnholdRequest)` | `calling.ai_unhold` | Yes |
+| `aiStop(callId, AiStopRequest)` | `calling.ai.stop` | Yes |
+| `liveTranscribe(callId, LiveTranscribeRequest)` | `calling.live_transcribe` | Yes |
+| `liveTranslate(callId, LiveTranslateRequest)` | `calling.live_translate` | Yes |
+| `sendFaxStop(callId, SendFaxStopRequest)` | `calling.send_fax.stop` | Yes |
+| `receiveFaxStop(callId, ReceiveFaxStopRequest)` | `calling.receive_fax.stop` | Yes |
+| `refer(callId, ReferRequest)` | `calling.refer` | Yes |
+| `userEvent(callId, UserEventRequest)` | `calling.user_event` | Yes |

@@ -70,11 +70,11 @@ public class Call {
 
   /**
    * The current call state as a typed {@link CallState}, <em>alongside</em> the raw string {@link
-   * #getState()} (which stays canonical for parity and forward-compat). Returns {@code
-   * Optional.empty()} when the live wire state is not one of the five known {@link CallState}
-   * values — the set mirrors server-emitted values that can grow, so an unrecognised state is
-   * tolerated here rather than crashing the caller. The present value always agrees with {@code
-   * getState()}: {@code getCallState().get().getValue().equals(getState())}.
+   * #getState()} (which stays canonical and forward-compatible). Returns {@code Optional.empty()}
+   * when the live wire state is not one of the five known {@link CallState} values — the set
+   * mirrors server-emitted values that can grow, so an unrecognised state is tolerated here rather
+   * than crashing the caller. The present value always agrees with {@code getState()}: {@code
+   * getCallState().get().getValue().equals(getState())}.
    *
    * @return the typed state, or empty if the raw state is unknown/unset.
    */
@@ -143,6 +143,110 @@ public class Call {
 
   public boolean isEnded() {
     return Constants.CALL_STATE_ENDED.equals(state);
+  }
+
+  // ── State-wait helpers (Python parity: Call.wait_for*) ────────────
+  //
+  // Blocking counterparts to the observe-via-on(listener) model. Mirror the
+  // reference's Call.wait_for / wait_for_answered / wait_for_ringing /
+  // wait_for_ending / wait_for_ended: block until the call reaches the target
+  // state, returning immediately (the current CallStateEvent) if the call is
+  // already at or past it. A one-shot listener resolves the wait when a later
+  // calling.call.state event carries the target. These are the Java analog of
+  // Python's asyncio futures — a CountDownLatch + volatile holder.
+
+  private static final java.util.List<String> STATE_ORDER =
+      java.util.Arrays.asList(
+          Constants.CALL_STATE_CREATED,
+          Constants.CALL_STATE_RINGING,
+          Constants.CALL_STATE_ANSWERED,
+          Constants.CALL_STATE_ENDING,
+          Constants.CALL_STATE_ENDED);
+
+  private static int stateRank(String s) {
+    int i = STATE_ORDER.indexOf(s);
+    return i < 0 ? -1 : i;
+  }
+
+  /**
+   * Block until this call reaches {@code targetState}, returning the matching state event. Returns
+   * immediately (synthesising a state event for the current state) if the call is already at or
+   * past the target. Waits indefinitely.
+   *
+   * @param targetState one of the {@code Constants.CALL_STATE_*} values
+   * @return the {@link RelayEvent.CallStateEvent} carrying the target state
+   */
+  public RelayEvent waitFor(String targetState) {
+    return waitFor(targetState, 0L);
+  }
+
+  /**
+   * Block until this call reaches {@code targetState}, returning the matching state event, or until
+   * {@code timeoutMs} elapses. A {@code timeoutMs <= 0} waits indefinitely.
+   *
+   * @param targetState one of the {@code Constants.CALL_STATE_*} values
+   * @param timeoutMs the maximum time to wait, in milliseconds ({@code <= 0} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitFor(String targetState, long timeoutMs) {
+    // Already at or past the target? Resolve immediately.
+    int targetRank = stateRank(targetState);
+    if (targetRank >= 0 && stateRank(this.state) >= targetRank) {
+      Map<String, Object> params = new LinkedHashMap<>();
+      params.put("call_state", this.state);
+      return new RelayEvent.CallStateEvent(Constants.EVENT_CALL_STATE, 0.0, params);
+    }
+
+    final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+    final java.util.concurrent.atomic.AtomicReference<RelayEvent> holder =
+        new java.util.concurrent.atomic.AtomicReference<>();
+    Consumer<RelayEvent> listener =
+        event -> {
+          if (Constants.EVENT_CALL_STATE.equals(event.getEventType())
+              && event instanceof RelayEvent.CallStateEvent) {
+            String cs = ((RelayEvent.CallStateEvent) event).getCallState();
+            if (targetState.equals(cs) || (targetRank >= 0 && stateRank(cs) >= targetRank)) {
+              holder.compareAndSet(null, event);
+              latch.countDown();
+            }
+          }
+        };
+    on(listener);
+    try {
+      if (timeoutMs > 0) {
+        if (!latch.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+          return null;
+        }
+      } else {
+        latch.await();
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return null;
+    } finally {
+      eventListeners.remove(listener);
+    }
+    return holder.get();
+  }
+
+  /** Block until the call is answered (immediate if already answered or past it). */
+  public RelayEvent waitForAnswered() {
+    return waitFor(Constants.CALL_STATE_ANSWERED);
+  }
+
+  /** Block until the call is ringing (immediate if already ringing or past it). */
+  public RelayEvent waitForRinging() {
+    return waitFor(Constants.CALL_STATE_RINGING);
+  }
+
+  /** Block until the call is ending (immediate if already ending or past it). */
+  public RelayEvent waitForEnding() {
+    return waitFor(Constants.CALL_STATE_ENDING);
+  }
+
+  /** Block until the call has ended. */
+  public RelayEvent waitForEnded() {
+    return waitFor(Constants.CALL_STATE_ENDED);
   }
 
   // ── Event dispatch ───────────────────────────────────────────────

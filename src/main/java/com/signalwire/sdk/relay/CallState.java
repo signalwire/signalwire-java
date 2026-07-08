@@ -16,13 +16,12 @@ package com.signalwire.sdk.relay;
  * {@link Constants#CALL_STATE_ENDED}).
  *
  * <p>It is exposed <em>alongside</em> the existing string getter, never instead of it: {@link
- * Call#getState()} keeps returning the raw wire string (parity with Python, forward-compatible with
- * any value the server later adds), while {@link Call#getCallState()} returns {@code
- * Optional<CallState>} for callers who want a typed, switch-exhaustive handle and a {@link
- * #isTerminal()} predicate.
+ * Call#getState()} keeps returning the raw wire string (forward-compatible with any value the
+ * server later adds), while {@link Call#getCallState()} returns {@code Optional<CallState>} for
+ * callers who want a typed, switch-exhaustive handle and a {@link #isTerminal()} predicate.
  *
  * <pre>{@code
- * String raw = call.getState();              // "answered" (always present, parity)
+ * String raw = call.getState();              // "answered" (always present)
  * Optional<CallState> typed = call.getCallState();
  * if (typed.map(CallState::isTerminal).orElse(false)) {
  *     // call has reached ENDED

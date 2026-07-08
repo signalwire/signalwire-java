@@ -8,15 +8,14 @@ package com.signalwire.sdk.rest;
 
 /**
  * Values accepted for {@code call_handler} on {@link
- * com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace#update(String, java.util.Map)
- * phoneNumbers().update}.
+ * com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers phoneNumbers().update}.
  *
  * <p>Named {@code PhoneCallHandler} (not {@code CallHandler}) to avoid colliding with the RELAY
  * client's inbound-call-handler callback type.
  *
  * <p>Setting a phone number's {@code call_handler} + the handler-specific companion field routes
  * inbound calls and auto-materializes the matching Fabric resource on the server. See the typed
- * helpers on {@link com.signalwire.sdk.rest.namespaces.PhoneNumbersNamespace} ({@code
+ * helpers on {@link com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers} ({@code
  * setSwmlWebhook}, {@code setCxmlWebhook}, ...).
  *
  * <p>Binding table:

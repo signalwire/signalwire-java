@@ -18,8 +18,8 @@ package com.signalwire.sdk.relay;
  * dial-completion logic in {@code RelayClient.handleDialEvent}.
  *
  * <p>It is exposed <em>alongside</em> the existing string getter, never instead of it: {@link
- * RelayEvent.CallDialEvent#getDialState()} keeps returning the raw wire string (parity with Python,
- * forward-compatible), while {@link RelayEvent.CallDialEvent#getDialStateEnum()} returns {@code
+ * RelayEvent.CallDialEvent#getDialState()} keeps returning the raw wire string
+ * (forward-compatible), while {@link RelayEvent.CallDialEvent#getDialStateEnum()} returns {@code
  * Optional<DialState>} for callers who want a typed handle and an {@link #isTerminal()} predicate.
  *
  * <p><strong>Terminal semantics.</strong> Unlike {@link CallState} (where only {@code ended} is
@@ -30,7 +30,7 @@ package com.signalwire.sdk.relay;
  * RelayClient}.
  *
  * <pre>{@code
- * event.getDialState();                       // "answered" (always present, parity)
+ * event.getDialState();                       // "answered" (always present)
  * event.getDialStateEnum()
  *      .filter(DialState::isTerminal)          // ANSWERED or FAILED
  *      .ifPresent(s -> ...);

@@ -3,16 +3,15 @@ package com.signalwire.sdk.swml;
 /**
  * Media codec for the SWML {@code tap} verb, as a typed, compile-time-checked closed set.
  *
- * <p>The Python reference {@code FunctionResult.tap} validates {@code codec} against {@code
- * ["PCMU", "PCMA"]} and raises {@code ValueError} on anything else. The methods that take a tap
- * codec ({@link com.signalwire.sdk.swaig.FunctionResult#tap(String, String, String, Codec)}) accept
- * this enum <em>or</em> a plain {@link String}. The enum gives editor autocompletion and makes a
- * typo fail at compile time (a bare string like {@code "PCMX"} only fails at runtime, on the
- * server). Strings keep parity with the Python reference (which uses a bare {@code str}):
+ * <p>The tap {@code codec} is one of {@code "PCMU"} or {@code "PCMA"}; anything else is rejected.
+ * The methods that take a tap codec ({@link com.signalwire.sdk.swaig.FunctionResult#tap(String,
+ * String, String, Codec)}) accept this enum <em>or</em> a plain {@link String}. The enum gives
+ * editor autocompletion and makes a typo fail at compile time (a bare string like {@code "PCMX"}
+ * only fails at runtime, on the server). A plain {@link String} is also accepted:
  *
  * <pre>{@code
  * result.tap("wss://x", "t1", "both", Codec.PCMA);   // typed, autocompleted
- * result.tap("wss://x", "t1", "both", "PCMA");       // string still works (parity)
+ * result.tap("wss://x", "t1", "both", "PCMA");       // string still works
  * }</pre>
  *
  * <p><strong>This is the SWAIG {@code tap} codec set only — do NOT reuse it for RELAY {@code

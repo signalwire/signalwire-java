@@ -109,21 +109,24 @@ class SwaigTestSimulateServerlessTest {
   // -----------------------------------------------------------------
 
   @Test
-  void rejectsUnimplementedPlatformGcf() throws Exception {
+  void acceptsImplementedPlatformGcf() throws Exception {
+    // GCF is now implemented (ServerlessAdapter.handleGcf); --dump-swml must succeed
+    // and the simulated GCF env must be visible through the injected provider.
     int code =
         SwaigTest.run(
             new String[] {
               RootAgentFixture.class.getName(), "--simulate-serverless", "gcf", "--dump-swml"
             });
     String streams = restoreStreams();
-    assertNotEquals(0, code, "unimplemented platform should exit non-zero. " + streams);
-    assertTrue(
-        stderr.toString(StandardCharsets.UTF_8).contains("Unsupported platform"),
-        "stderr should contain 'Unsupported platform'. " + streams);
+    assertEquals(0, code, "dump-swml through gcf should succeed. " + streams);
+    EnvProvider seen = RootAgentFixture.lastEnvSeen;
+    assertNotNull(seen, "fixture never received an EnvProvider");
+    assertNotNull(seen.get("FUNCTION_TARGET"), "simulated GCF env should expose FUNCTION_TARGET");
   }
 
   @Test
   void rejectsUnimplementedPlatformAzure() throws Exception {
+    // azure is still unimplemented and must fail loud (no silent fallback).
     int code =
         SwaigTest.run(
             new String[] {
@@ -137,17 +140,20 @@ class SwaigTestSimulateServerlessTest {
   }
 
   @Test
-  void rejectsUnimplementedPlatformCgi() throws Exception {
+  void acceptsImplementedPlatformCgi() throws Exception {
+    // CGI is now implemented (ServerlessAdapter.handleCgi); --dump-swml must succeed
+    // and the simulated CGI env must be visible through the injected provider.
     int code =
         SwaigTest.run(
             new String[] {
               RootAgentFixture.class.getName(), "--simulate-serverless", "cgi", "--dump-swml"
             });
     String streams = restoreStreams();
-    assertNotEquals(0, code);
-    assertTrue(
-        stderr.toString(StandardCharsets.UTF_8).contains("Unsupported platform"),
-        "stderr=[" + streams + "]");
+    assertEquals(0, code, "dump-swml through cgi should succeed. " + streams);
+    EnvProvider seen = RootAgentFixture.lastEnvSeen;
+    assertNotNull(seen, "fixture never received an EnvProvider");
+    assertNotNull(
+        seen.get("GATEWAY_INTERFACE"), "simulated CGI env should expose GATEWAY_INTERFACE");
   }
 
   // -----------------------------------------------------------------

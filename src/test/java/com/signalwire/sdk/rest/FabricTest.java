@@ -2,7 +2,7 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.signalwire.sdk.rest.namespaces.FabricNamespace;
+import com.signalwire.sdk.rest.namespaces.generated.FabricNamespace;
 import org.junit.jupiter.api.Test;
 
 /** Tests for REST Fabric namespace. */

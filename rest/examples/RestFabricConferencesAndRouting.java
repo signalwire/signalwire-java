@@ -39,7 +39,7 @@ public class RestFabricConferencesAndRouting {
         // 2. List Fabric resources (filter client-side to type="conference_room").
         System.out.println("\nListing Fabric resources...");
         try {
-            var items = client.fabric().resources().list();
+            var items = client.fabric().resources().list(Map.of());
             System.out.println("  Items: " + items);
         } catch (RestError e) {
             System.out.println("  List failed: " + e.getStatusCode());

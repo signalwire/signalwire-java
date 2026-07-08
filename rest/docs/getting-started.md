@@ -22,6 +22,7 @@ You need three things to connect:
 
 ## Minimal Example
 
+<!-- snippet-setup -->
 ```java
 import com.signalwire.sdk.rest.RestClient;
 
@@ -36,7 +37,7 @@ var agents = client.fabric().aiAgents().list();
 System.out.println(agents);
 ```
 
-Or use environment variables and skip the constructor args:
+Or use environment variables and skip the credential setters (the builder falls back to them):
 
 ```bash
 export SIGNALWIRE_PROJECT_ID=your-project-id
@@ -44,52 +45,55 @@ export SIGNALWIRE_API_TOKEN=your-api-token
 export SIGNALWIRE_SPACE=example.signalwire.com
 ```
 
-```python
-from signalwire_agents.rest import RestClient
-
-client = RestClient()
-agents = client.fabric.ai_agents.list()
+```java
+// Environment-only construction: reads SIGNALWIRE_PROJECT_ID / _API_TOKEN / _SPACE.
+// var client = RestClient.builder().build();
+var envAgents = client.fabric().aiAgents().list();
 ```
 
 ## CRUD Pattern
 
-Most resources follow the same CRUD pattern:
+Most resources follow the same CRUD pattern. Requests and responses are
+`Map<String, Object>`:
 
-```python
-# List
-items = client.fabric.ai_agents.list()
+```java
+import java.util.Map;
 
-# Create
-agent = client.fabric.ai_agents.create(name="Support", prompt={"text": "Be helpful"})
+// List
+var items = client.fabric().aiAgents().list();
 
-# Get by ID
-agent = client.fabric.ai_agents.get("agent-uuid")
+// Create
+var agent = client.fabric().aiAgents().create(Map.of(
+    "name", "Support",
+    "prompt", Map.of("text", "Be helpful")));
 
-# Update
-client.fabric.ai_agents.update("agent-uuid", name="Updated Name")
+// Get by ID
+var fetched = client.fabric().aiAgents().get("agent-uuid");
 
-# Delete
-client.fabric.ai_agents.delete("agent-uuid")
+// Update
+client.fabric().aiAgents().update("agent-uuid", Map.of("name", "Updated Name"));
+
+// Delete
+client.fabric().aiAgents().delete("agent-uuid");
 ```
 
 Fabric resources also support listing addresses:
 
-```python
-addresses = client.fabric.ai_agents.list_addresses("agent-uuid")
+```java
+var addresses = client.fabric().aiAgents().listAddresses("agent-uuid", Map.of());
 ```
 
 ## Error Handling
 
-```python
-from signalwire_agents.rest import RestClient, RestError
+```java
+import com.signalwire.sdk.rest.RestError;
 
-client = RestClient()
-
-try:
-    agent = client.fabric.ai_agents.get("nonexistent-id")
-except RestError as e:
-    print(f"HTTP {e.status_code}: {e.body}")
-    # HTTP 404: {'error': 'not found'}
+try {
+    var agent = client.fabric().aiAgents().get("nonexistent-id");
+} catch (RestError e) {
+    System.out.println("HTTP " + e.getStatusCode() + ": " + e.getResponseBody());
+    // HTTP 404: {"error": "not found"}
+}
 ```
 
 ## Debug Logging

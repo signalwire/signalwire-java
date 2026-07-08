@@ -72,4 +72,42 @@ public class WeatherApiSkill implements SkillBase {
 
     return List.of(dm.toSwaigFunction());
   }
+
+  /**
+   * Returns this skill's tools. The DataMap tool is built in {@link #getSwaigFunctions()}, so
+   * {@code getTools()} returns exactly that list.
+   */
+  public List<Map<String, Object>> getTools() {
+    return getSwaigFunctions();
+  }
+
+  /**
+   * Parameter schema: base schema (single-instance skill) plus {@code api_key} (hidden, required,
+   * env_var WEATHER_API_KEY), {@code tool_name} (default get_weather), and {@code temperature_unit}
+   * (enum fahrenheit/celsius).
+   */
+  @Override
+  public Map<String, Object> getParameterSchema() {
+    Map<String, Object> schema = SkillParams.base(false, getName());
+
+    SkillParams.addString(
+        schema, "api_key", "WeatherAPI.com API key", true, true, "WEATHER_API_KEY");
+
+    Map<String, Object> toolNameField = new LinkedHashMap<>();
+    toolNameField.put("type", "string");
+    toolNameField.put("description", "Custom name for the weather tool");
+    toolNameField.put("default", "get_weather");
+    toolNameField.put("required", false);
+    schema.put("tool_name", toolNameField);
+
+    Map<String, Object> temperatureUnitField = new LinkedHashMap<>();
+    temperatureUnitField.put("type", "string");
+    temperatureUnitField.put("description", "Temperature unit to display");
+    temperatureUnitField.put("default", "fahrenheit");
+    temperatureUnitField.put("required", false);
+    temperatureUnitField.put("enum", List.of("fahrenheit", "celsius"));
+    schema.put("temperature_unit", temperatureUnitField);
+
+    return schema;
+  }
 }

@@ -1,474 +1,509 @@
 # Call Methods Reference
 
-A `Call` object represents a live phone call. You get one from `@client.on_call` (inbound) or `client.dial()` (outbound).
+A `Call` object represents a live phone call. You get one from `client.onCall(handler)` (inbound) or `client.dial(devices)` (outbound).
+
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.relay.*;
+
+Call call = new Call("call-id", "node-id");
+```
 
 ## Properties
 
-| Property | Type | Description |
+`Call` exposes its state through accessor methods. Nullable scalars are returned as `Optional<String>` (empty until the server pushes the relevant event).
+
+| Accessor | Type | Description |
 |----------|------|-------------|
-| `call_id` | `str` | Unique call identifier |
-| `node_id` | `str` | Server node handling the call |
-| `state` | `str` | Current state: `created`, `ringing`, `answered`, `ending`, `ended` |
-| `direction` | `str` | `inbound` or `outbound` |
-| `tag` | `str` | Correlation tag |
-| `device` | `dict` | Device info (type, params) |
-| `segment_id` | `str` | Segment identifier |
+| `getCallId()` | `String` | Unique call identifier |
+| `getNodeId()` | `Optional<String>` | Server node handling the call |
+| `getState()` | `String` | Current state: `created`, `ringing`, `answered`, `ending`, `ended` |
+| `getCallState()` | `Optional<CallState>` | Typed view of `getState()` |
+| `getDirection()` | `Optional<String>` | `inbound` or `outbound` |
+| `getTag()` | `Optional<String>` | Dial-correlation tag |
+| `getDevice()` | `Map<String, Object>` | Device info (type, params) |
+| `getEndReason()` | `Optional<String>` | End reason once the call has ended |
+| `isEnded()` | `boolean` | `true` when the call has ended |
 
 ## Actions: Blocking vs Fire-and-Forget
 
-Methods like `play()`, `record()`, `detect()`, etc. return **Action** objects. The `await call.play(...)` itself only waits for the server to accept the command — the actual operation runs asynchronously on the server. You choose how to handle completion:
+Methods like `play()`, `record()`, `detect()`, etc. return **`Action`** objects. The call itself only waits for the server to accept the command — the actual operation runs asynchronously on the server. You choose how to handle completion:
 
 ### Wait inline (blocking)
 
-```python
-action = await call.play([{"type": "tts", "params": {"text": "Hello"}}])
-await action.wait()  # blocks until playback finishes
-# execution continues only after play is done
+```java
+Action.PlayAction action = call.play(List.of(
+    Map.of("type", "tts", "params", Map.of("text", "Hello"))));
+action.waitForCompletion(); // blocks until playback finishes
+// execution continues only after play is done
 ```
 
 ### Fire and forget (background)
 
-```python
-action = await call.play([{"type": "tts", "params": {"text": "Hello"}}])
-# don't call action.wait() — continue immediately while audio plays
-await call.send_digits("1234")
+```java
+Action.PlayAction action = call.play(List.of(
+    Map.of("type", "tts", "params", Map.of("text", "Hello"))));
+// don't call waitForCompletion() — continue immediately while audio plays
+call.sendDigits("1234");
 
-# check later if needed
-if action.is_done:
-    print(f"Play result: {action.result}")
+// check later if needed
+if (action.isDone()) {
+    System.out.println("Play result: " + action.getResult());
+}
 ```
 
 ### Fire with callback
 
-```python
-# Sync callback
-action = await call.play(
-    [{"type": "tts", "params": {"text": "Hello"}}],
-    on_completed=lambda event: print(f"Done: {event.params}"),
-)
-# continues immediately; callback fires when playback finishes
+```java
+// Callback fires on terminal state; continues immediately.
+Action.PlayAction action = call.play(List.of(
+    Map.of("type", "tts", "params", Map.of("text", "Hello"))));
+action.setOnCompleted(completed ->
+    System.out.println("Done: " + completed.getResult().getParams()));
 
-# Async callback
-async def on_recording_done(event):
-    print(f"Recording URL: {event.params.get('url')}")
-    await call.hangup()
-
-action = await call.record(on_completed=on_recording_done)
+// The same pattern works for record, etc.
+Action.RecordAction recording = call.record(
+    Map.of("audio", Map.of("format", "wav")), null);
+recording.setOnCompleted(completed -> {
+    RelayEvent event = completed.getResult();
+    System.out.println("Recording URL: " + event.getStringParam("url"));
+    call.hangup();
+});
 ```
 
-The `on_completed` callback is available on all action-based methods: `play`, `record`, `play_and_collect`, `collect`, `detect`, `pay`, `send_fax`, `receive_fax`, `tap`, `stream`, `transcribe`, and `ai`. It accepts both sync and async functions. Errors in callbacks are caught and logged, never crash the event loop. The callback also fires when the call is gone (404/410).
+The `setOnCompleted` callback is available on every `Action` subclass returned by `play`, `record`, `playAndCollect`, `collect`, `detect`, `pay`, `sendFax`, `receiveFax`, `tap`, `stream`, `transcribe`, and `ai`. Exceptions thrown in the callback are caught and logged, never crash the event loop. The callback also fires when the call is gone (404/410).
 
 ### Action methods summary
 
 | Method | Returns |
 |--------|---------|
-| `action.wait(timeout=None)` | Blocks until the action completes, returns the terminal `RelayEvent` |
-| `action.is_done` | `True` if the action has completed |
-| `action.result` | The terminal `RelayEvent` (or `None` if not done) |
-| `action.completed` | `True` if the action reached a terminal state |
+| `action.waitForCompletion()` / `action.await()` | Blocks until the action completes, returns the terminal `RelayEvent` |
+| `action.waitForCompletion(long timeoutMs)` | Same, with a timeout (`null` on timeout) |
+| `action.isDone()` | `true` if the action has completed |
+| `action.getResult()` | The terminal `RelayEvent` (or `null` if not done) |
+| `action.getState()` | The last observed action state |
 | `action.stop()` | Stop the operation on the server |
 
-Some actions also have `pause()`, `resume()`, and `volume()`.
+Some actions also have `pause()`, `resume()`, and `volume(double)`.
 
 ## Lifecycle
 
-### `answer(**kwargs) -> dict`
+### `answer() -> Map<String, Object>`
 
 Answer an inbound call.
 
-```python
-await call.answer()
+```java
+call.answer();
 ```
 
-### `hangup(reason="hangup") -> dict`
+### `hangup() -> Map<String, Object>` / `hangup(String reason)`
 
 End the call.
 
-```python
-await call.hangup()
-await call.hangup(reason="busy")
+```java
+call.hangup();
+call.hangup("busy");
 ```
 
-### `pass_() -> dict`
+### `pass() -> Map<String, Object>`
 
 Decline control, returning the call to routing.
 
-```python
-await call.pass_()
+```java
+call.pass();
 ```
 
 ## Audio Playback
 
-### `play(media, *, volume=None, direction=None, loop=None, control_id=None) -> PlayAction`
+### `play(List<Map<String, Object>> media, Map<String, Object> options) -> Action.PlayAction`
 
-Play audio. Returns a `PlayAction` with `stop()`, `pause()`, `resume()`, `volume()`, and `wait()`.
+Play audio. Returns a `PlayAction` with `stop()`, `pause()`, `resume()`, `volume(double)`, and `waitForCompletion()`. An overload `play(media)` uses default options.
 
-```python
-# TTS
-action = await call.play([{"type": "tts", "params": {"text": "Hello!"}}])
-await action.wait()
+```java
+// TTS
+Action.PlayAction action = call.play(List.of(
+    Map.of("type", "tts", "params", Map.of("text", "Hello!"))));
+action.waitForCompletion();
 
-# Audio file
-action = await call.play([{"type": "audio", "params": {"url": "https://example.com/sound.mp3"}}])
+// Audio file
+call.play(List.of(
+    Map.of("type", "audio", "params", Map.of("url", "https://example.com/sound.mp3"))));
 
-# Silence
-action = await call.play([{"type": "silence", "params": {"duration": 2}}])
+// Silence
+call.play(List.of(
+    Map.of("type", "silence", "params", Map.of("duration", 2))));
 
-# Ringtone
-action = await call.play([{"type": "ringtone", "params": {"name": "us"}}])
+// Ringtone
+call.play(List.of(
+    Map.of("type", "ringtone", "params", Map.of("name", "us"))));
 
-# Control playback
-await action.pause()
-await action.resume()
-await action.volume(-3.0)
-await action.stop()
+// Control playback
+action.pause();
+action.resume();
+action.volume(-3.0);
+action.stop();
+```
+
+Typed convenience wrappers build the media shape for you: `playTts(String text)`, `playAudio(String url)`, `playSilence(double duration)`, `playRingtone(String name)` (each with an optional trailing options map).
+
+```java
+call.playTts("Hello!");
+call.playAudio("https://example.com/sound.mp3");
 ```
 
 ## Recording
 
-### `record(audio=None, *, control_id=None) -> RecordAction`
+### `record(Map<String, Object> recordConfig, Map<String, Object> options) -> Action.RecordAction`
 
-Record the call. Returns a `RecordAction` with `stop()`, `pause()`, `resume()`, and `wait()`.
+Record the call. Returns a `RecordAction` with `stop()`, `pause()`, `resume()`, and `waitForCompletion()`.
 
-```python
-action = await call.record(audio={"format": "wav", "stereo": True, "direction": "both"})
-# ... later ...
-await action.stop()
-event = await action.wait()
-print(f"Recording URL: {event.params.get('url')}")
+```java
+Action.RecordAction action = call.record(
+    Map.of("audio", Map.of("format", "wav", "stereo", true, "direction", "both")),
+    null);
+// ... later ...
+action.stop();
+RelayEvent event = action.waitForCompletion();
+System.out.println("Recording URL: " + event.getStringParam("url"));
 ```
 
 ## Input Collection
 
-### `play_and_collect(media, collect, *, volume=None, control_id=None) -> CollectAction`
+### `playAndCollect(List<Map<String, Object>> media, Map<String, Object> collectConfig, Map<String, Object> options) -> Action.PlayAndCollectAction`
 
-Play audio and collect DTMF or speech input. Returns a `CollectAction`.
+Play audio and collect DTMF or speech input. Returns a `PlayAndCollectAction`.
 
-```python
-action = await call.play_and_collect(
-    [{"type": "tts", "params": {"text": "Press 1 for sales, 2 for support."}}],
-    {"digits": {"max": 1, "digit_timeout": 5.0}},
-)
-event = await action.wait()
-digit = event.params.get("result", {}).get("params", {}).get("digits", "")
+```java
+Action.PlayAndCollectAction action = call.playAndCollect(
+    List.of(Map.of("type", "tts",
+        "params", Map.of("text", "Press 1 for sales, 2 for support."))),
+    Map.of("digits", Map.of("max", 1, "digit_timeout", 5.0)),
+    Map.of());
+RelayEvent event = action.waitForCompletion();
+@SuppressWarnings("unchecked")
+Map<String, Object> result = (Map<String, Object>) event.getParams().get("result");
 ```
 
-### `collect(*, digits=None, speech=None, ..., control_id=None) -> StandaloneCollectAction`
+### `collect(Map<String, Object> collectConfig, Map<String, Object> options) -> Action.CollectAction`
 
 Collect input without playing audio.
 
-```python
-action = await call.collect(
-    digits={"max": 4, "terminators": "#"},
-    speech={"language": "en-US"},
-    partial_results=True,
-)
-event = await action.wait()
+```java
+Action.CollectAction action = call.collect(
+    Map.of(
+        "digits", Map.of("max", 4, "terminators", "#"),
+        "speech", Map.of("language", "en-US"),
+        "partial_results", true),
+    null);
+RelayEvent event = action.waitForCompletion();
 ```
 
 ## Bridging
 
-### `connect(devices, *, ringback=None, tag=None, max_duration=None, max_price_per_minute=None, status_url=None) -> dict`
+### `connect(List<List<Map<String, Object>>> devices, Map<String, Object> options) -> Map<String, Object>`
 
-Bridge the call to another destination.
+Bridge the call to another destination. The devices matrix is `outer = sequential, inner = parallel`. There is no ring-back media parameter — play any ring-back TTS separately beforehand.
 
-```python
-await call.connect(
-    [[{"type": "phone", "params": {"to_number": "+15551234567", "from_number": "+15559876543"}}]],
-    ringback=[{"type": "ringtone", "params": {"name": "us"}}],
-)
+```java
+call.connect(
+    List.of(List.of(Map.of(
+        "type", "phone",
+        "params", Map.of("to_number", "+15551234567", "from_number", "+15559876543")))),
+    Map.of());
 ```
 
-### `disconnect() -> dict`
+### `disconnect() -> Map<String, Object>`
 
 Unbridge a connected call.
 
-```python
-await call.disconnect()
+```java
+call.disconnect();
 ```
 
 ## DTMF
 
-### `send_digits(digits, *, control_id=None) -> dict`
+### `sendDigits(String digits) -> Map<String, Object>`
 
 Send DTMF tones.
 
-```python
-await call.send_digits("1234#")
+```java
+call.sendDigits("1234#");
 ```
 
 ## Detection
 
-### `detect(detect, *, timeout=None, control_id=None) -> DetectAction`
+### `detect(Map<String, Object> detectConfig, Map<String, Object> options) -> Action.DetectAction`
 
 Detect machine, fax, or digits.
 
-```python
-action = await call.detect({"type": "machine"}, timeout=30.0)
-event = await action.wait()
+```java
+Action.DetectAction action = call.detect(
+    Map.of("type", "machine"),
+    Map.of("timeout", 30.0));
+RelayEvent event = action.waitForCompletion();
 ```
+
+Typed convenience wrappers: `detectDigit()`, `detectAnsweringMachine()`, `detectFax()` (each with an optional options map).
 
 ## SIP Refer
 
-### `refer(device, *, status_url=None) -> dict`
+### `refer(Map<String, Object> device, Map<String, Object> options) -> Map<String, Object>`
 
 Transfer via SIP REFER.
 
-```python
-await call.refer({"type": "sip", "params": {"to": "sip:user@example.com"}})
+```java
+call.refer(
+    Map.of("type", "sip", "params", Map.of("to", "sip:user@example.com")),
+    null);
 ```
 
 ## Transfer
 
-### `transfer(dest) -> dict`
+### `transfer(String dest) -> Map<String, Object>`
 
 Transfer call control to another RELAY app or SWML script.
 
-```python
-await call.transfer("https://example.com/swml-endpoint")
+```java
+call.transfer("https://example.com/swml-endpoint");
 ```
 
 ## Fax
 
-### `send_fax(document, *, identity=None, header_info=None, control_id=None) -> FaxAction`
+### `sendFax(String documentUrl, Map<String, Object> options) -> Action.SendFaxAction`
 
-```python
-action = await call.send_fax("https://example.com/document.pdf", identity="+15551234567")
-event = await action.wait()
+```java
+Action.SendFaxAction action = call.sendFax(
+    "https://example.com/document.pdf",
+    Map.of("identity", "+15551234567"));
+RelayEvent event = action.waitForCompletion();
 ```
 
-### `receive_fax(*, control_id=None) -> FaxAction`
+### `receiveFax(Map<String, Object> options) -> Action.ReceiveFaxAction`
 
-```python
-action = await call.receive_fax()
-event = await action.wait()
+```java
+Action.ReceiveFaxAction action = call.receiveFax(Map.of());
+RelayEvent event = action.waitForCompletion();
 ```
 
 ## Tap (Media Interception)
 
-### `tap(tap, device, *, control_id=None) -> TapAction`
+### `tap(Map<String, Object> tapConfig, Map<String, Object> tapDevice, Map<String, Object> options) -> Action.TapAction`
 
 Intercept call media and stream to an RTP endpoint.
 
-```python
-action = await call.tap(
-    {"type": "audio", "params": {"direction": "both"}},
-    {"type": "rtp", "params": {"addr": "192.168.1.100", "port": 5000}},
-)
+```java
+Action.TapAction action = call.tap(
+    Map.of("type", "audio", "params", Map.of("direction", "both")),
+    Map.of("type", "rtp", "params", Map.of("addr", "192.168.1.100", "port", 5000)),
+    Map.of());
 ```
 
 ## Streaming
 
-### `stream(url, *, name=None, codec=None, track=None, control_id=None, ...) -> StreamAction`
+### `stream(String url, Map<String, Object> options) -> Action.StreamAction`
 
 Stream call audio to a WebSocket endpoint.
 
-```python
-action = await call.stream(
+```java
+Action.StreamAction action = call.stream(
     "wss://example.com/audio",
-    name="my_stream",
-    codec="PCMU",
-    track="inbound_track",
-)
-# Stop streaming
-await action.stop()
+    Map.of("name", "my_stream", "codec", "PCMU", "track", "inbound_track"));
+// Stop streaming
+action.stop();
 ```
 
 ## Payment
 
-### `pay(payment_connector_url, *, control_id=None, charge_amount=None, currency=None, ...) -> PayAction`
+### `pay(String paymentConnectorUrl, Map<String, Object> options) -> Action.PayAction`
 
 Collect a payment via DTMF.
 
-```python
-action = await call.pay(
+```java
+Action.PayAction action = call.pay(
     "https://pay.example.com",
-    charge_amount="25.99",
-    currency="usd",
-    input_method="dtmf",
-)
-event = await action.wait()
+    Map.of("charge_amount", "25.99", "currency", "usd", "input_method", "dtmf"));
+RelayEvent event = action.waitForCompletion();
 ```
 
 ## Conference
 
-### `join_conference(name, *, muted=None, beep=None, max_participants=None, record=None, ...) -> dict`
+### `joinConference(String name, Map<String, Object> options) -> Map<String, Object>`
 
-```python
-await call.join_conference("my_conference", muted=False, beep="onEnter")
+```java
+call.joinConference("my_conference", Map.of("muted", false, "beep", "onEnter"));
 ```
 
-### `leave_conference(conference_id) -> dict`
+### `leaveConference(String conferenceId) -> Map<String, Object>`
 
-```python
-await call.leave_conference("conf-123")
+```java
+call.leaveConference("conf-123");
 ```
 
 ## Hold
 
-### `hold() -> dict` / `unhold() -> dict`
+### `hold() -> Map<String, Object>` / `unhold() -> Map<String, Object>`
 
-```python
-await call.hold()
-# ... later ...
-await call.unhold()
+```java
+call.hold();
+// ... later ...
+call.unhold();
 ```
 
 ## Denoise
 
-### `denoise() -> dict` / `denoise_stop() -> dict`
+### `denoise() -> Map<String, Object>` / `denoiseStop() -> Map<String, Object>`
 
-```python
-await call.denoise()
-# ... later ...
-await call.denoise_stop()
+```java
+call.denoise();
+// ... later ...
+call.denoiseStop();
 ```
 
 ## Transcription
 
-### `transcribe(*, control_id=None, status_url=None) -> TranscribeAction`
+### `transcribe(Map<String, Object> options) -> Action.TranscribeAction`
 
-```python
-action = await call.transcribe(status_url="https://example.com/transcription")
-# ... later ...
-await action.stop()
+```java
+Action.TranscribeAction action = call.transcribe(
+    Map.of("status_url", "https://example.com/transcription"));
+// ... later ...
+action.stop();
 ```
 
 ## Live Transcribe / Translate
 
-### `live_transcribe(action_obj) -> dict`
+### `liveTranscribe(Map<String, Object> action) -> Map<String, Object>`
 
-```python
-await call.live_transcribe({"start": {"language": "en-US"}})
+```java
+call.liveTranscribe(Map.of("start", Map.of("language", "en-US")));
 ```
 
-### `live_translate(action_obj, *, status_url=None) -> dict`
+### `liveTranslate(Map<String, Object> action, Map<String, Object> options) -> Map<String, Object>`
 
-```python
-await call.live_translate({"start": {"source": "en-US", "target": "es"}})
+```java
+call.liveTranslate(Map.of("start", Map.of("source", "en-US", "target", "es")), null);
 ```
 
 ## Echo
 
-### `echo(*, timeout=None, status_url=None) -> dict`
+### `echo(Map<String, Object> options) -> Map<String, Object>`
 
 Echo audio back to the caller (useful for testing).
 
-```python
-await call.echo(timeout=30.0)
+```java
+call.echo(Map.of("timeout", 30.0));
 ```
 
 ## AI Agent
 
-### `ai(*, control_id=None, prompt=None, SWAIG=None, ai_params=None, ...) -> AIAction`
+### `ai(Map<String, Object> aiConfig) -> Action.AiAction`
 
 Start an AI agent session on the call.
 
-```python
-action = await call.ai(
-    prompt={"text": "You are a helpful support agent."},
-    SWAIG={"functions": [...]},
-    ai_params={"end_of_speech_timeout": 3000},
-)
-event = await action.wait()
+```java
+Action.AiAction action = call.ai(Map.of(
+    "prompt", Map.of("text", "You are a helpful support agent."),
+    "SWAIG", Map.of("functions", List.of()),
+    "params", Map.of("end_of_speech_timeout", 3000)));
+RelayEvent event = action.waitForCompletion();
 ```
 
-### `amazon_bedrock(*, prompt=None, SWAIG=None, ...) -> dict`
+### `amazonBedrock(Map<String, Object> config) -> Map<String, Object>`
 
 Connect to an Amazon Bedrock AI agent.
 
-### `ai_message(*, message_text=None, role=None, ...) -> dict`
+### `aiMessage(Map<String, Object> messageConfig) -> Map<String, Object>`
 
 Send a message to an active AI session.
 
-### `ai_hold(*, timeout=None, prompt=None) -> dict` / `ai_unhold(*, prompt=None) -> dict`
+### `aiHold(Map<String, Object> options) -> Map<String, Object>` / `aiUnhold(Map<String, Object> options) -> Map<String, Object>`
 
 Put an AI session on/off hold.
 
 ## Rooms
 
-### `join_room(name, *, status_url=None) -> dict`
+### `joinRoom(String name, Map<String, Object> options) -> Map<String, Object>`
 
-```python
-await call.join_room("my_room")
+```java
+call.joinRoom("my_room", null);
 ```
 
-### `leave_room() -> dict`
+### `leaveRoom() -> Map<String, Object>`
 
-```python
-await call.leave_room()
+```java
+call.leaveRoom();
 ```
 
 ## Queue
 
-### `queue_enter(queue_name, *, control_id=None, status_url=None) -> dict`
+### `queueEnter(String queueName, Map<String, Object> options) -> Map<String, Object>`
 
-```python
-await call.queue_enter("support")
+```java
+call.queueEnter("support", null);
 ```
 
-### `queue_leave(queue_name, *, control_id=None, queue_id=None, status_url=None) -> dict`
+### `queueLeave(String queueName, Map<String, Object> options) -> Map<String, Object>`
 
-```python
-await call.queue_leave("support", queue_id="q-123")
+```java
+call.queueLeave("support", Map.of("queue_id", "q-123"));
 ```
 
 ## Digit Bindings
 
-### `bind_digit(digits, bind_method, *, bind_params=None, realm=None, max_triggers=None) -> dict`
+### `bindDigit(String digits, String bindMethod, Map<String, Object> options) -> Map<String, Object>`
 
 Bind a DTMF sequence to trigger a RELAY method.
 
-```python
-await call.bind_digit(
+```java
+call.bindDigit(
     "*1",
     "calling.play",
-    bind_params={"play": [{"type": "tts", "params": {"text": "You pressed star-1"}}]},
-)
+    Map.of("bind_params", Map.of(
+        "play", List.of(Map.of("type", "tts",
+            "params", Map.of("text", "You pressed star-1"))))));
 ```
 
-### `clear_digit_bindings(*, realm=None) -> dict`
+### `clearDigitBindings() -> Map<String, Object>` / `clearDigitBindings(String realm)`
 
-```python
-await call.clear_digit_bindings()
+```java
+call.clearDigitBindings();
 ```
 
 ## User Events
 
-### `user_event(*, event=None, **kwargs) -> dict`
+### `userEvent(String event) -> Map<String, Object>`
 
 Send a custom event.
 
-```python
-await call.user_event(event="order_placed", order_id="12345")
+```java
+call.userEvent("order_placed");
 ```
 
 ## Event Handling
 
-### `on(event_type, handler)`
+### `on(Consumer<RelayEvent> listener)`
 
-Register an event listener on this call.
+Register an event listener on this call. The listener receives every event routed to the call; branch on `event.getEventType()`.
 
-```python
-def on_play(event):
-    print(f"Play state: {event.params.get('state')}")
-
-call.on("calling.call.play", on_play)
+```java
+call.on(event -> {
+    if (Constants.EVENT_CALL_PLAY.equals(event.getEventType())) {
+        System.out.println("Play state: " + event.getStringParam("state"));
+    }
+});
 ```
 
-### `wait_for(event_type, predicate=None, timeout=None) -> RelayEvent`
+### `waitFor(String targetState) -> RelayEvent` / `waitFor(String targetState, long timeoutMs)`
 
-Wait for a specific event.
+Block until the call reaches a target state (one of the `Constants.CALL_STATE_*` values). Returns immediately if the call is already at or past that state.
 
-```python
-event = await call.wait_for("calling.call.play", timeout=30.0)
+```java
+RelayEvent event = call.waitFor(Constants.CALL_STATE_ANSWERED, 30_000);
 ```
 
-### `wait_for_ended(timeout=None) -> RelayEvent`
+Convenience wrappers: `waitForRinging()`, `waitForAnswered()`, `waitForEnding()`, `waitForEnded()`.
 
-Wait for the call to end.
-
-```python
-event = await call.wait_for_ended()
-print(f"End reason: {event.params.get('end_reason')}")
+```java
+RelayEvent event = call.waitForEnded();
+System.out.println("End reason: " + call.getEndReason().orElse(""));
 ```

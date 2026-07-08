@@ -1,10 +1,24 @@
 # SignalWire AI Agents SDK: Why the SDK, Not Raw SWML
 
+<!-- snippet-setup -->
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.contexts.ContextBuilder;
+import com.signalwire.sdk.contexts.Context;
+import com.signalwire.sdk.contexts.Step;
+
+AgentBase agent = AgentBase.builder().name("features-agent").route("/agent").build();
+AgentBase salesAgent = AgentBase.builder().name("sales").route("/sales").build();
+AgentBase supportAgent = AgentBase.builder().name("support").route("/support").build();
+AgentBase triageAgent = AgentBase.builder().name("triage").route("/triage").build();
+```
+
 ## The Problem with Raw SWML
 
 SWML (SignalWire Markup Language) is a JSON document format that defines how an agent behaves during a call -- 30+ verbs, an AI verb with dozens of parameters, SWAIG (SignalWire AI Gateway) function definitions with JSON Schema, post-prompt URLs, webhook authentication, language arrays, pronunciation rules, hints, global data, contexts, steps, gather configs. Writing it by hand means constructing deeply nested JSON, manually building authenticated webhook URLs, hand-coding parameter schemas, and deploying separate webhook servers for your tools. Every agent becomes a bespoke JSON engineering project.
 
-The SDK eliminates all of this. You write Python. The SDK generates correct SWML, serves it over HTTP, and handles its own webhook callbacks -- all in one process, deployable to any platform.
+The SDK eliminates all of this. You write Java. The SDK generates correct SWML, serves it over HTTP, and handles its own webhook callbacks -- all in one process, deployable to any platform.
 
 ---
 
@@ -26,25 +40,34 @@ Call ends → SignalWire POSTs analytics to agent's /post_prompt/ endpoint
 
 The agent auto-detects its own public URL -- including behind ngrok, load balancers, API Gateway, or any reverse proxy (via `X-Forwarded-Host`, `Forwarded` header, or `SWML_PROXY_URL_BASE` env var). It embeds Basic Auth credentials directly into the webhook URLs. It generates per-call security tokens for each function. The developer writes none of this:
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
+import java.util.List;
+import java.util.Map;
 
-class WeatherAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="weather", route="/weather")
-        self.prompt_add_section("Role", body="You help with weather.")
+var weatherAgent = AgentBase.builder()
+    .name("weather")
+    .route("/weather")
+    .port(3000)
+    .build();
 
-    @AgentBase.tool(name="get_weather", description="Get weather",
-                    parameters={"type": "object",
-                                "properties": {"city": {"type": "string"}},
-                                "required": ["city"]})
-    def get_weather(self, args, raw_data):
-        city = args["city"]
-        # ... fetch weather ...
-        return SwaigFunctionResult(f"72°F and sunny in {city}")
+weatherAgent.promptAddSection("Role", "You help with weather.");
 
-agent = WeatherAgent()
-agent.run()
+weatherAgent.defineTool(
+    "get_weather",
+    "Get weather",
+    Map.of(
+        "type", "object",
+        "properties", Map.of("city", Map.of("type", "string")),
+        "required", List.of("city")),
+    (args, rawData) -> {
+      String city = (String) args.get("city");
+      // ... fetch weather ...
+      return new FunctionResult("72°F and sunny in " + city);
+    });
+
+weatherAgent.run();
 ```
 
 That's a complete agent: HTTP server, SWML generation, authenticated webhook routing, function execution, and response formatting. The generated SWML contains the full AI configuration, function schemas, and webhook URLs pointing back to the running process -- all computed automatically.
@@ -55,13 +78,13 @@ That's a complete agent: HTTP server, SWML generation, authenticated webhook rou
 
 Raw SWML prompts are flat strings. The SDK provides structured prompt building:
 
-```python
-agent.prompt_add_section("Role", body="You are a travel booking assistant.")
-agent.prompt_add_section("Rules",
-    bullets=["Never make up flight information",
-             "Always confirm before booking",
-             "Use the search tool for real data"])
-agent.prompt_add_section("Personality", body="Friendly but professional.")
+```java
+agent.promptAddSection("Role", "You are a travel booking assistant.");
+agent.promptAddSection("Rules", "", List.of(
+    "Never make up flight information",
+    "Always confirm before booking",
+    "Use the search tool for real data"));
+agent.promptAddSection("Personality", "Friendly but professional.");
 ```
 
 POM sections are rendered by the platform into a format the LLM understands with proper hierarchy. You can add subsections, append to existing sections, check if sections exist, and compose prompts programmatically -- including from skills that inject their own sections.
@@ -70,59 +93,52 @@ POM sections are rendered by the platform into a format the LLM understands with
 
 ## Tools: Three Ways
 
-### 1. Decorated Functions (Local Execution)
+### 1. Defined Functions (Local Execution)
 
-```python
-@AgentBase.tool(name="lookup_order", description="Look up an order",
-                parameters={"type": "object",
-                            "properties": {"order_id": {"type": "string"}},
-                            "required": ["order_id"]})
-def lookup_order(self, args, raw_data):
-    order = db.get(args["order_id"])
-    result = SwaigFunctionResult(f"Order {order.id}: {order.status}")
-    result.add_action("set_global_data", {"current_order": order.to_dict()})
-    return result
+<!-- snippet: no-compile illustrative handler using a reader-supplied `db` handle and `order` domain type (not defined here) -->
+```java
+agent.defineTool(
+    "lookup_order",
+    "Look up an order",
+    Map.of(
+        "type", "object",
+        "properties", Map.of("order_id", Map.of("type", "string")),
+        "required", List.of("order_id")),
+    (args, rawData) -> {
+      var order = db.get((String) args.get("order_id"));
+      FunctionResult result = new FunctionResult("Order " + order.id + ": " + order.status);
+      result.addAction("set_global_data", Map.of("current_order", order.toMap()));
+      return result;
+    });
 ```
 
-The SDK converts this into a SWAIG function definition with JSON Schema parameters, creates a secure webhook URL, routes inbound POST requests to the handler, parses arguments, and formats the response -- including the 20+ SWAIG actions (transfer, hold, context_switch, toggle_functions, etc.) that tools can return.
+The SDK converts this into a SWAIG function definition with JSON Schema parameters, creates a secure webhook URL, routes inbound POST requests to the handler, parses arguments, and formats the response -- including the 40+ SWAIG actions (transfer, hold, context_switch, toggle_functions, etc.) that tools can return via `FunctionResult`.
 
-Decorated functions also support **type-hinted parameters** -- skip the JSON Schema and let the SDK infer it from Python type hints:
-
-```python
-@AgentBase.tool(name="lookup_order")
-def lookup_order(self, order_id: str):
-    """Look up an order by ID.
-
-    Args:
-        order_id: The order identifier
-    """
-    order = db.get(order_id)
-    return SwaigFunctionResult(f"Order {order.id}: {order.status}")
-```
-
-The SDK infers the parameter schema, required fields, and description from the function signature and docstring. Explicit `parameters=` always takes precedence.
+The handler is a `ToolHandler` lambda receiving `(Map<String, Object> args, Map<String, Object> rawData)`. In Java the parameter schema is always supplied explicitly to `defineTool` (there is no reflective inference from a method signature); the closed `Map`-based JSON-Schema shape is the parity surface for Python's `parameters=`.
 
 ### 2. DataMap (Server-Side Execution)
 
-```python
-data_map = (DataMap("check_stock")
-    .purpose("Check product stock levels")
-    .parameter("sku", "string", "Product SKU", required=True)
-    .webhook("GET", "https://api.warehouse.com/stock/${args.sku}")
-    .output(SwaigFunctionResult("Stock for ${args.sku}: ${response.quantity} units"))
-    .fallback_output(SwaigFunctionResult("Could not check stock right now")))
+```java
+import com.signalwire.sdk.datamap.DataMap;
 
-agent.register_swaig_function(data_map.to_swaig_function())
+DataMap dataMap = new DataMap("check_stock")
+    .purpose("Check product stock levels")
+    .parameter("sku", "string", "Product SKU", true)
+    .webhook("GET", "https://api.warehouse.com/stock/${args.sku}")
+    .output(new FunctionResult("Stock for ${args.sku}: ${response.quantity} units"))
+    .fallbackOutput(new FunctionResult("Could not check stock right now"));
+
+agent.registerSwaigFunction(dataMap.toSwaigFunction());
 ```
 
 DataMap tools execute on SignalWire's servers -- no webhook needed. The SDK generates the `data_map` structure in the SWML with variable expansion (`${args.*}`, `${response.*}`, `${global_data.*}`), foreach iteration, expression matching, and error handling. Your agent never receives the callback; SignalWire handles the entire API call.
 
 ### 3. Skills (Packaged Integrations)
 
-```python
-agent.add_skill("web_search", {"api_key": "...", "engine_id": "..."})
-agent.add_skill("datetime")
-agent.add_skill("math")
+```java
+agent.addSkill("web_search", Map.of("api_key", "...", "engine_id", "..."));
+agent.addSkill("datetime", Map.of());
+agent.addSkill("math", Map.of());
 ```
 
 One line. The skill auto-registers its tools, injects prompt sections, adds speech hints, and validates dependencies. No manual wiring.
@@ -131,19 +147,19 @@ One line. The skill auto-registers its tools, injects prompt sections, adds spee
 
 ## The Skills System
 
-Skills are self-contained modules that package tools, prompts, hints, and configuration into a single `add_skill()` call. Each skill:
+Skills are self-contained modules that package tools, prompts, hints, and configuration into a single `addSkill()` call. Each skill:
 
-- Inherits from `SkillBase` with required `setup()` and `register_tools()` methods
-- Declares `REQUIRED_PACKAGES` and `REQUIRED_ENV_VARS` for dependency validation
-- Calls `self.define_tool()` to register SWAIG functions
-- Can inject prompt sections via `get_prompt_sections()`
-- Can provide speech hints via `get_hints()`
-- Can contribute global data via `get_global_data()`
-- Supports multiple instances with different configs (e.g., two `web_search` skills with different engines)
+- Implements the `SkillBase` interface with required `setup(params)` and `registerTools()` methods
+- Declares required packages and env vars (via `getRequiredPackages()` / `getRequiredEnvVars()`) for dependency validation
+- Builds SWAIG functions in `registerTools()` (or `getSwaigFunctions()` for DataMap-based skills)
+- Can inject prompt sections via `getPromptSections()`
+- Can provide speech hints via `getHints()`
+- Can contribute global data via `getGlobalData()`
+- Supports multiple instances with different configs (e.g., two `web_search` skills with different engines) via `supportsMultipleInstances()` / `getInstanceKey()`
 
-**Built-in skills:** `datetime`, `math`, `web_search`, `wikipedia_search`, `weather_api`, `google_maps`, `datasphere`, `datasphere_serverless`, `native_vector_search`, `spider`, `mcp_gateway`, `swml_transfer`, `play_background_file`, `info_gatherer`, `api_ninjas_trivia`, `joke`, `claude_skills`.
+**Built-in skills:** `datetime`, `math`, `web_search`, `wikipedia_search`, `weather_api`, `google_maps`, `datasphere`, `datasphere_serverless`, `native_vector_search`, `spider`, `swml_transfer`, `play_background_file`, `info_gatherer`, `api_ninjas_trivia`, `joke`, `claude_skills`, `custom_skills`.
 
-The elegance is composability: skills don't know about each other, but they all register cleanly into the same agent. A single agent can combine web search, datetime, a custom booking tool, and a DataMap stock checker -- all declared in `__init__`, all generating correct SWML with proper function definitions, all routed to the right handler.
+The elegance is composability: skills don't know about each other, but they all register cleanly into the same agent. A single agent can combine web search, datetime, a custom booking tool, and a DataMap stock checker -- all declared at construction, all generating correct SWML with proper function definitions, all routed to the right handler.
 
 ---
 
@@ -151,31 +167,36 @@ The elegance is composability: skills don't know about each other, but they all 
 
 The contexts/steps system lets you define structured workflows declaratively. Instead of hoping the LLM follows instructions about conversation flow, you mechanically enforce it:
 
-```python
-ctx = agent.define_contexts()
+```java
+import com.signalwire.sdk.contexts.ContextBuilder;
+import com.signalwire.sdk.contexts.Context;
+import com.signalwire.sdk.contexts.Step;
 
-greeting = ctx.add_context("default")
-step1 = greeting.add_step("welcome")
-step1.set_text("Greet the user and ask how you can help.")
-step1.set_valid_steps(["collect_info"])
-step1.set_functions(["check_hours"])  # Only this tool available here
+ContextBuilder ctx = agent.defineContexts();
 
-step2 = greeting.add_step("collect_info")
-step2.set_text("Collect the user's name and email.")
-step2.set_step_criteria("User has provided both name and email")
-step2.set_gather_info("user_profile")
-step2.add_gather_question("name", "What is your name?", type="string")
-step2.add_gather_question("email", "What is your email?", type="string", confirm=True)
-step2.set_valid_steps(["confirm"])
+Context greeting = ctx.addContext("default");
 
-step3 = greeting.add_step("confirm")
-step3.set_text("Confirm the information and say goodbye.")
-step3.set_functions("none")  # No tools -- just confirm and end
+Step step1 = greeting.addStep("welcome");
+step1.setText("Greet the user and ask how you can help.");
+step1.setValidSteps(List.of("collect_info"));
+step1.setFunctions(List.of("check_hours")); // Only this tool available here
+
+Step step2 = greeting.addStep("collect_info");
+step2.setText("Collect the user's name and email.");
+step2.setStepCriteria("User has provided both name and email");
+step2.setGatherInfo("user_profile", null, null);
+step2.addGatherQuestion("name", "What is your name?", "string", false, null, null);
+step2.addGatherQuestion("email", "What is your email?", "string", true, null, null);
+step2.setValidSteps(List.of("confirm"));
+
+Step step3 = greeting.addStep("confirm");
+step3.setText("Confirm the information and say goodbye.");
+step3.setFunctions("none"); // No tools -- just confirm and end
 ```
 
 This generates SWML with a complete contexts/steps structure. The platform enforces navigation rules, restricts which functions are available at each step, collects structured data with typed questions and confirmation, and tracks transitions with trigger attribution in the enriched call_log. The LLM can't skip steps, can't call restricted tools, and can't navigate to disallowed contexts -- not because it was told not to, but because the mechanisms don't exist in its world. This is PGI (Programmatically Governed Inference) in practice.
 
-**Multi-context** agents can define separate conversation modes (e.g., "sales" and "support") with isolated function sets, and use `set_valid_contexts()` to control switching. Context transitions support 4-mode reset (consolidate x full_reset) with conversation history summarization or archival.
+**Multi-context** agents can define separate conversation modes (e.g., "sales" and "support") with isolated function sets, and use `setValidContexts()` to control switching. Context transitions support 4-mode reset (consolidate x full_reset) with conversation history summarization or archival.
 
 ---
 
@@ -199,18 +220,21 @@ PGI is enforced through four layers of constraint, each operating independently.
 
 ### PGI in Practice: Blackjack
 
-```python
-betting = ctx.add_step("betting")
-betting.set_functions(["place_bet"])
-betting.set_valid_steps(["playing"])
+```java
+ContextBuilder ctx = agent.defineContexts();
+Context game = ctx.addContext("blackjack");
 
-playing = ctx.add_step("playing")
-playing.set_functions(["hit", "stand", "double_down"])
-playing.set_valid_steps(["hand_complete"])
+Step betting = game.addStep("betting");
+betting.setFunctions(List.of("place_bet"));
+betting.setValidSteps(List.of("playing"));
 
-lost = ctx.add_step("you_lost")
-lost.set_functions([])
-lost.set_valid_steps([])
+Step playing = game.addStep("playing");
+playing.setFunctions(List.of("hit", "stand", "double_down"));
+playing.setValidSteps(List.of("hand_complete"));
+
+Step lost = game.addStep("you_lost");
+lost.setFunctions(List.of());
+lost.setValidSteps(List.of());
 ```
 
 During the betting step, the model can only call `place_bet`. It cannot deal cards, draw cards, or resolve hands because those functions are not in its schema. When the tool handler transitions to the playing step, `place_bet` disappears and `hit`, `stand`, `double_down` appear. The model's capabilities change not because it was told to behave differently, but because the available operations were mechanically replaced.
@@ -219,22 +243,31 @@ The `you_lost` step has zero functions and zero valid transitions. The game is o
 
 The tool handler demonstrates execution authority -- the model has no idea a step change is about to happen:
 
-```python
-def handle_hit(args, raw_data):
-    game = raw_data["global_data"]["game_state"]
-    card = game["deck"].pop()
-    game["player_hand"].append(card)
-    score = calculate_hand(game["player_hand"])
+<!-- snippet: no-compile illustrative handler using reader-supplied game helpers (deckPop/playerHand/calculateHand/formatCard) not defined here -->
+```java
+agent.defineTool(
+    "hit",
+    "Draw a card",
+    Map.of("type", "object", "properties", Map.of()),
+    (args, rawData) -> {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> game =
+          (Map<String, Object>)
+              ((Map<String, Object>) rawData.get("global_data")).get("game_state");
+      var card = deckPop(game);
+      playerHand(game).add(card);
+      int score = calculateHand(playerHand(game));
 
-    result = SwaigFunctionResult(
-        f"You drew {format_card(card)}. Your total is {score}."
-    )
-    result.update_global_data({"game_state": game})
+      FunctionResult result =
+          new FunctionResult("You drew " + formatCard(card) + ". Your total is " + score + ".");
+      result.updateGlobalData(Map.of("game_state", game));
 
-    if score > 21:
-        result.swml_change_step("you_lost")
+      if (score > 21) {
+        result.swmlChangeStep("you_lost");
+      }
 
-    return result
+      return result;
+    });
 ```
 
 The model speaks the result. The platform changes the step. The model's world changes without its participation.
@@ -257,41 +290,30 @@ The SDK's contexts/steps/function restrictions are the primitives that make PGI 
 
 ## Deployment: One `run()` Call
 
-```python
-agent = MyAgent()
-agent.run()
+```java
+agent.run();
 ```
 
-That single call auto-detects the environment and does the right thing:
-
-| Environment | Detection | What Happens |
-|-------------|-----------|--------------|
-| **Standalone** | Default | Starts uvicorn HTTP server with FastAPI |
-| **AWS Lambda** | Lambda context object | Returns Lambda-formatted response |
-| **Google Cloud Functions** | GCF environment markers | Returns Flask-compatible response |
-| **Azure Functions** | Azure context object | Returns Azure HttpResponse |
-| **CGI** | CGI environment variables | Reads stdin, writes stdout |
-
-Each mode handles authentication differently (HTTP Basic Auth, API Gateway authorizers, function-level auth), constructs webhook URLs using the correct public endpoint (Lambda function URL, GCF URL, Azure app URL), and formats request/response bodies per platform. You write one agent, deploy it anywhere.
+That single call starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer` backed by virtual threads -- no external web framework), generates SWML, and routes its own SWAIG and post-prompt callbacks. The port defaults to 3000 and is configurable via the `PORT` env var or the builder's `.port(...)`.
 
 For standalone mode, the SDK provides:
 - Kubernetes health (`/health`) and readiness (`/ready`) probes
 - SSL/TLS support via `SWML_SSL_ENABLED`, `SWML_SSL_CERT`, `SWML_SSL_KEY`
-- CORS configuration
-- Debug endpoint (`/debug`) for inspection
+- Security headers on all authenticated endpoints (`X-Content-Type-Options`, `X-Frame-Options`, `Cache-Control`)
+- Proxy-aware public URL detection (`X-Forwarded-Host`, `Forwarded`, `SWML_PROXY_URL_BASE`)
 
 ---
 
 ## Multi-Agent Hosting
 
-```python
-from signalwire_agents import AgentServer
+```java
+import com.signalwire.sdk.server.AgentServer;
 
-server = AgentServer(host="0.0.0.0", port=3000)
-server.register(SalesAgent(), "/sales")
-server.register(SupportAgent(), "/support")
-server.register(TriageAgent(), "/triage")
-server.run()
+AgentServer server = new AgentServer("0.0.0.0", 3000);
+server.register(salesAgent, "/sales");
+server.register(supportAgent, "/support");
+server.register(triageAgent, "/triage");
+server.run();
 ```
 
 One process, multiple agents, route-based dispatch. Each agent gets its own SWML endpoint and SWAIG callback routing. SIP routing can map usernames to specific agents.
@@ -300,19 +322,21 @@ One process, multiple agents, route-based dispatch. Each agent gets its own SWML
 
 ## Dynamic Configuration and Multi-Tenancy
 
-```python
-def tenant_config(query_params, body_params, headers, agent):
-    tenant = headers.get("X-Tenant-ID", "default")
-    config = load_tenant_config(tenant)
-    agent.prompt_add_section("Company", body=config["company_info"])
-    agent.set_global_data({"tenant_id": tenant, "tier": config["tier"]})
-    if config["tier"] == "premium":
-        agent.add_skill("advanced_search")
-
-agent.set_dynamic_config_callback(tenant_config)
+<!-- snippet: no-compile illustrative callback using a reader-supplied `loadTenantConfig(tenant)` helper (not defined here) -->
+```java
+agent.setDynamicConfigCallback((queryParams, bodyParams, headers, ephemeralAgent) -> {
+  List<String> tenantHeader = headers.getOrDefault("X-Tenant-ID", List.of("default"));
+  String tenant = tenantHeader.get(0);
+  Map<String, Object> config = loadTenantConfig(tenant);
+  ephemeralAgent.promptAddSection("Company", (String) config.get("company_info"));
+  ephemeralAgent.setGlobalData(Map.of("tenant_id", tenant, "tier", config.get("tier")));
+  if ("premium".equals(config.get("tier"))) {
+    ephemeralAgent.addSkill("advanced_search", Map.of());
+  }
+});
 ```
 
-Each inbound request creates an **ephemeral copy** of the agent. The callback customizes it per-request -- different prompts, skills, global data, languages, tools. The original agent is unchanged. This enables multi-tenancy from a single deployment: one agent instance serves hundreds of tenants with tailored behavior.
+Each inbound request creates an **ephemeral copy** of the agent. The callback (`DynamicConfigCallback.configure(queryParams, bodyParams, headers, agent)`) customizes it per-request -- different prompts, skills, global data, languages, tools. The original agent is unchanged. This enables multi-tenancy from a single deployment: one agent instance serves hundreds of tenants with tailored behavior.
 
 ---
 
@@ -321,13 +345,12 @@ Each inbound request creates an **ephemeral copy** of the agent. The callback cu
 The `native_vector_search` skill adds document search by querying a **remote** vector-search server over HTTP. (The Java port supports remote mode only; it does not build or read local index files.)
 
 **In agents:**
-```python
-agent.add_skill("native_vector_search", {
-    "remote_url": "http://localhost:8001/search",
-    "index_name": "docs",
-    "tool_name": "search_docs",
-    "description": "Search product documentation"
-})
+```java
+agent.addSkill("native_vector_search", Map.of(
+    "remote_url", "http://localhost:8001/search",
+    "index_name", "docs",
+    "tool_name", "search_docs",
+    "description", "Search product documentation"));
 ```
 
 The skill POSTs the user's query (and optional `index_name`) to the configured `remote_url` and surfaces the returned results to the agent. Configure the number of results with `count` and add speech `hints` as needed.
@@ -338,23 +361,25 @@ The skill POSTs the user's query (and optional `index_name`) to the configured `
 
 Production-ready patterns for common use cases:
 
-```python
-from signalwire_agents.prefabs import InfoGathererAgent, ReceptionistAgent
+```java
+import com.signalwire.sdk.prefabs.InfoGathererAgent;
+import com.signalwire.sdk.prefabs.ReceptionistAgent;
 
-# Collect structured data
-agent = InfoGathererAgent(questions=[
-    {"key_name": "name", "question_text": "What is your name?"},
-    {"key_name": "issue", "question_text": "Describe your issue", "confirm": True}
-])
+// Collect structured data
+var gatherer = new InfoGathererAgent("intake", List.of(
+    Map.of("key_name", "name", "question_text", "What is your name?"),
+    Map.of("key_name", "issue", "question_text", "Describe your issue", "confirm", true)));
 
-# Route calls to departments
-agent = ReceptionistAgent(departments=[
-    {"name": "Sales", "number": "+15551234567", "description": "Product inquiries"},
-    {"name": "Support", "number": "+15559876543", "description": "Technical help"}
-])
+// Route calls to departments
+var receptionist = new ReceptionistAgent(
+    "front-desk",
+    "Welcome to SignalWire.",
+    Map.of(
+        "Sales", ReceptionistAgent.phoneDepartment("Product inquiries", "+15551234567"),
+        "Support", ReceptionistAgent.phoneDepartment("Technical help", "+15559876543")));
 ```
 
-Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQ**, **Concierge**. Each generates complete SWML with appropriate prompts, tools, and workflows. You instantiate, customize, deploy.
+Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQBot**, **Concierge**. Each generates complete SWML with appropriate prompts, tools, and workflows. You instantiate, customize, deploy.
 
 ---
 
@@ -362,39 +387,38 @@ Five prefabs: **InfoGatherer**, **Survey**, **Receptionist**, **FAQ**, **Concier
 
 Everything the platform supports, the SDK exposes as methods:
 
-```python
-# LLM tuning
-agent.set_prompt_llm_params(temperature=0.3, top_p=0.9, barge_confidence=0.7)
+```java
+// LLM tuning
+agent.setPromptLlmParams(Map.of("temperature", 0.3, "top_p", 0.9, "barge_confidence", 0.7));
 
-# Multi-language
-agent.add_language("Spanish", "es", "google.es-ES-Neural2-A",
-                   speech_fillers=["Un momento..."], function_fillers=["Buscando..."])
+// Multi-language (name, code, voice, speechFillers, functionFillers, engine, model)
+agent.addLanguage("Spanish", "es", "google.es-ES-Neural2-A",
+    List.of("Un momento..."), List.of("Buscando..."), null, null);
 
-# Speech recognition
-agent.add_hints(["SignalWire", "SWML", "SWAIG"])
-agent.add_pronunciation("SignalWire", "Signal Wire")
+// Speech recognition
+agent.addHints(List.of("SignalWire", "SWML", "SWAIG"));
+agent.addPronunciation("SignalWire", "Signal Wire", false);
 
-# Vision, thinking, inner dialog
-agent.set_params({"enable_vision": True, "vision_model": "gpt-4o"})
-agent.set_params({"enable_thinking": True, "thinking_model": "o4-mini"})
+// Vision, thinking, inner dialog
+agent.setParams(Map.of("enable_vision", true, "vision_model", "gpt-4o"));
+agent.setParams(Map.of("enable_thinking", true, "thinking_model", "o4-mini"));
 
-# Interruption control
-agent.set_params({
-    "barge_match_string": "^(stop|cancel|nevermind)$",
-    "barge_min_words": 2,
-    "barge_confidence": 0.8
-})
+// Interruption control
+agent.setParams(Map.of(
+    "barge_match_string", "^(stop|cancel|nevermind)$",
+    "barge_min_words", 2,
+    "barge_confidence", 0.8));
 
-# Native functions with custom fillers
-agent.set_native_functions(["check_time", "wait_for_user"])
-agent.add_internal_filler("check_time", "en", ["Let me check the time..."])
+// Native functions with custom fillers
+agent.setNativeFunctions(List.of("check_time", "wait_for_user"));
+agent.addInternalFiller("check_time", "en", List.of("Let me check the time..."));
 
-# Call recording
-agent.enable_record_call(format="wav", stereo=True)
+// Call recording (enabled via the builder)
+var recordingAgent = AgentBase.builder().name("rec").recordCall(true).build();
 
-# Call flow verbs
-agent.add_pre_answer_verb("play", {"url": "ringback.wav"})
-agent.add_post_ai_verb("hangup", {})
+// Call flow verbs
+agent.addPreAnswerVerb("play", Map.of("url", "ringback.wav"));
+agent.addPostAiVerb("hangup", Map.of());
 ```
 
 Each of these would require understanding and manually constructing the correct SWML JSON structure. The SDK provides named methods with proper defaults.
@@ -403,24 +427,17 @@ Each of these would require understanding and manually constructing the correct 
 
 ## swaig-test CLI
 
-Test without deploying:
+Test without deploying. Point it at a running agent's HTTP endpoint:
 
 ```bash
 # List available tools
-swaig-test my_agent.py --list-tools
+bin/swaig-test --url http://user:pass@localhost:3000 --list-tools
 
 # Execute a specific tool
-swaig-test my_agent.py --exec get_weather --city "San Francisco"
+bin/swaig-test --url http://user:pass@localhost:3000 --exec get_weather --param city="San Francisco"
 
 # Dump generated SWML for inspection
-swaig-test my_agent.py --dump-swml
-
-# Test with serverless environment simulation
-swaig-test my_agent.py --simulate-serverless lambda --dump-swml
-
-# Multi-agent: select by route or class
-swaig-test multi_agent.py --route /support --list-tools
-swaig-test multi_agent.py --agent-class SalesAgent --exec check_inventory
+bin/swaig-test --url http://user:pass@localhost:3000 --dump-swml
 ```
 
 ---
@@ -429,11 +446,11 @@ swaig-test multi_agent.py --agent-class SalesAgent --exec check_inventory
 
 The SDK handles auth automatically:
 
-- **Auto-generated credentials:** If no env vars set, generates `user_XXXX` / random password and prints to console
+- **Auto-generated credentials:** If no env vars are set, a `SecureRandom` password is generated (never a weak default) and printed to the console
 - **Environment variables:** `SWML_BASIC_AUTH_USER` / `SWML_BASIC_AUTH_PASSWORD`
 - **Embedded in URLs:** Webhook URLs include `user:pass@host` automatically
-- **Per-function tokens:** Secure functions get `__token=...` query params with expiration
-- **Platform-specific:** Different auth handling for Lambda, CGI, GCF, Azure (each platform has its own auth mechanism)
+- **Per-function tokens:** Secure functions get `__token=...` query params with expiration, HMAC-SHA256 signed
+- **Timing-safe comparison:** Basic auth uses `MessageDigest.isEqual()` to avoid timing attacks
 
 ---
 
@@ -441,22 +458,21 @@ The SDK handles auth automatically:
 
 | Capability | Without SDK | With SDK |
 |-----------|-------------|----------|
-| SWML document | Hand-craft JSON | Auto-generated from Python |
+| SWML document | Hand-craft JSON | Auto-generated from Java |
 | Webhook server | Build and deploy separately | Built into the agent process |
-| URL routing | Manual FastAPI/Flask setup | Automatic route registration |
+| URL routing | Manual HTTP server setup | Automatic route registration |
 | Auth tokens | Manual JWT/token system | Auto-generated per call/function |
 | Proxy detection | Parse headers yourself | Automatic (ngrok, LB, CDN) |
-| Tool schemas | Write JSON Schema by hand | `@tool` decorator or `define_tool()` |
-| Serverless deploy | Platform-specific handler code | `agent.run()` auto-detects |
-| Multi-language | Manually construct language arrays | `add_language()` one-liner |
-| State machine | Manually build contexts JSON | Fluent `define_contexts()` API |
-| Structured data collection | Build gather configs by hand | `add_gather_question()` chain |
-| Search/RAG | Build entire pipeline | `add_skill("native_vector_search")` |
+| Tool schemas | Write JSON Schema by hand | `defineTool()` / `DataMap` |
+| Multi-language | Manually construct language arrays | `addLanguage()` one-liner |
+| State machine | Manually build contexts JSON | Fluent `defineContexts()` API |
+| Structured data collection | Build gather configs by hand | `addGatherQuestion()` chain |
+| Search/RAG | Build entire pipeline | `addSkill("native_vector_search")` |
 | Multi-agent | Separate deployments + router | `AgentServer` with route registration |
-| Dynamic config | Custom middleware | `set_dynamic_config_callback()` |
-| Post-call analytics | Parse raw webhook payload | `on_summary()` callback |
+| Dynamic config | Custom middleware | `setDynamicConfigCallback()` |
+| Post-call analytics | Parse raw webhook payload | `onSummary()` callback |
 | Health checks | Manual endpoints | Built-in `/health` and `/ready` |
-| Call recording | Manual SWML verb insertion | `enable_record_call()` |
+| Call recording | Manual SWML verb insertion | `.recordCall(true)` on the builder |
 | SSL/TLS | Manual cert configuration | Env var driven |
 
-The SDK turns what would be a multi-file infrastructure project into a single Python class. The SWML is correct by construction. The webhooks route themselves. The auth is automatic. The deployment is universal. The developer focuses on what the agent should *do*, not how to wire it together.
+The SDK turns what would be a multi-file infrastructure project into a single Java class. The SWML is correct by construction. The webhooks route themselves. The auth is automatic. The developer focuses on what the agent should *do*, not how to wire it together.

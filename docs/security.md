@@ -70,17 +70,18 @@ export SWML_BASIC_AUTH_PASSWORD=mysecurepassword
 
 SWML-based services automatically use the unified security configuration:
 
-```python
-from signalwire_agents import AgentBase
+```java
+import com.signalwire.sdk.agent.AgentBase;
 
-class MyAgent(AgentBase):
-    def __init__(self):
-        super().__init__(name="secure-agent", route="/agent")
-        # Security is automatically configured from environment
+// Security is automatically configured from environment
+// (SWML_SSL_ENABLED, SWML_BASIC_AUTH_USER, SWML_BASIC_AUTH_PASSWORD, ...)
+var agent = AgentBase.builder()
+    .name("secure-agent")
+    .route("/agent")
+    .build();
 
-# The agent will use HTTPS if SWML_SSL_ENABLED=true
-agent = MyAgent()
-agent.run()
+// The agent will use HTTPS if SWML_SSL_ENABLED=true
+agent.run();
 ```
 
 ## Security Headers
@@ -166,12 +167,12 @@ export SWML_RATE_LIMIT=20
 
 Monitor security-related logs:
 
-```python
+```text
 # Security events are logged with structured data
 # Look for log entries with:
 # - "security_config_loaded" - Configuration details
 # - "ssl_config_invalid" - SSL configuration errors
-# - "starting_search_service" / "starting_server" - Service startup with security info
+# - "starting_server" - Service startup with security info
 ```
 
 ## Migration Guide

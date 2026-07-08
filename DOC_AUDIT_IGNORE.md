@@ -19,7 +19,6 @@ and never will be.
 ### java.lang
 
 Thread: java.lang.Thread (JDK) — used for background workers in examples
-start: Thread#start() / Server#start() (JDK / HttpServer) — not a SDK method
 exit: System.exit(int) (JDK) — CLI error exit in examples
 equals: Object#equals(Object) (JDK) — string / value comparison in examples
 equalsIgnoreCase: String#equalsIgnoreCase (JDK) — case-insensitive compare
@@ -53,7 +52,6 @@ indexOf: String#indexOf (JDK) — template-expansion math in harnesses
 substring: String#substring (JDK) — string slicing in harnesses
 startsWith: String#startsWith (JDK) — prefix tests in examples / harnesses
 endsWith: String#endsWith (JDK) — suffix tests in examples / harnesses
-replaceAll: String#replaceAll (JDK) — regex helpers in examples / harnesses
 getBytes: String#getBytes (JDK) — UTF-8 bytes for HTTP I/O in examples
 min: Math.min (JDK) — numeric min in examples / harnesses
 
@@ -114,75 +112,20 @@ tool: the `@AgentBase.tool(...)` Python decorator — Java uses defineTool()
 
 ### Python stdlib and logging
 
-abspath: os.path.abspath (Python stdlib) — example filesystem helper
-isoformat: datetime.datetime.isoformat (Python stdlib) — example timestamp
-fromisoformat: datetime.datetime.fromisoformat (Python stdlib)
-total_seconds: datetime.timedelta.total_seconds (Python stdlib)
-basicConfig: logging.basicConfig (Python stdlib) — log setup in doc snippets
-setLevel: logging.Logger.setLevel (Python stdlib) — log level in doc snippets
 warning: logging.Logger.warning (Python stdlib)
 
 ### FastAPI / ASGI router (Python hosting, not ported)
 
-as_router: FastAPI convenience on AgentBase for ASGI embedding (Python only)
-include_router: FastAPI APIRouter.include_router (Python web framework)
 
 ### Python AgentBase methods not ported to Java
 
 See PORT_OMISSIONS.md for the corresponding entries and rationale.
 
-_check_basic_auth: private helper on Python AgentBase (not public API)
-_configure_instructions: private helper on Python AgentBase (not public API)
-_get_new_messages: private helper on Python AgentBase (not public API)
-_register_custom_tools: private helper on Python AgentBase (not public API)
-_register_default_tools: private helper on Python AgentBase (not public API)
-_setup_contexts: private helper on Python AgentBase (not public API)
-_setup_static_config: private helper on Python AgentBase (not public API)
-_test_api_connection: private helper on Python AgentBase (not public API)
 setPersonality: Python-docs artifact; Java uses promptAddSection("Personality", ...)
 setGoal: Python-docs artifact; Java uses promptAddSection("Goal", ...)
 setInstructions: Python-docs artifact; Java uses promptAddSection("Instructions", ...)
 setGoal: Python-docs artifact; Java uses promptAddSection("Goal", ...)
-enable_record_call: builder-option in Java (record_call=true on AgentBaseBuilder), not a runtime method
-delete_state: state-manager method on Python AgentBase; Java session management is internal
-add_application: Python web-service helper; Java uses Service-based routing
-add_directory: Python web-service static-file helper; Java uses Service-based routing
-remove_directory: Python web-service static-file helper; Java uses Service-based routing
-get_full_url: Python AgentBase helper; Java computes URLs via Service#getRouteUrl
-get_parameter_schema: Python Skill introspection; Java Skill surface is narrower
-validate_env_vars: Python Skill helper; Java skills validate at instantiation
-validate_packages: Python Skill helper; Java skills validate at instantiation
-handle_serverless_request: Python cloud-functions helper; Java uses LambdaAgent wrapper
-setup_google_search: Python convenience on AgentBase for the google-search skill
-setup_sip_routing: Python convenience on AgentBase; Java uses AgentBase#enableSipRouting
-register_default_tools: Python helper; Java exposes defineTool() directly
-register_knowledge_base_tool: Python helper; Java uses addSkill("knowledge_base", ...)
-register_routing_callback: Python SWMLService helper; Java uses builder routing
-register_verb_handler: Python SWMLService helper; Java uses Document.registerVerbHandler (removed for now)
-register_customer_route: user-defined example method, not SDK API
-register_product_route: user-defined example method, not SDK API
-build_document: user-defined example method, not SDK API
-build_voicemail_document: user-defined example method, not SDK API
-reset_document: Python SWMLService method; Java rebuilds via new Service(...) per-request
-load_skill: Python SkillManager; Java uses AgentBase#addSkill
-unload_skill: Python SkillManager; Java skills persist for the agent lifetime
-list_all_skill_sources: Python SkillRegistry; Java registry is static
-on_completion_go_to: Python Context builder helper; Java uses Context#setCompletionStep
-allow_functions: Python Step helper; Java uses Step#setFunctions
-apply_custom_config: user-defined example method, not SDK API
-apply_default_config: user-defined example method, not SDK API
-alert_ops_team: user-defined example function, not SDK API
-get_customer_config: user-defined example method, not SDK API
-get_customer_settings: user-defined example method, not SDK API
-get_customer_tier: user-defined example method, not SDK API
 get_config: user-defined example method, not SDK API
-get_section: user-defined example method, not SDK API
-has_config: user-defined example method, not SDK API
-is_valid_customer: user-defined example method, not SDK API
-load_user_preferences: user-defined example method, not SDK API
-schedule_follow_up: user-defined example method, not SDK API
-send_to_analytics: user-defined example method, not SDK API
-webhook_expressions: Python DataMap builder method; Java uses DataMap#webhook
 
 ### Python REST namespace methods (documented for conceptual parity)
 
@@ -192,70 +135,174 @@ on `CrudResource` handles; Python's per-operation convenience methods
 CRUD + a generic calling-control endpoint. See PORT_OMISSIONS.md and
 `rest/docs/*.md` Java-native sections for the equivalent Java call.
 
-add_membership: Python chat-channel helper — Java uses CrudResource CRUD
-delete_membership: Python chat-channel helper — Java uses CrudResource CRUD
-get_membership: Python chat-channel helper — Java uses CrudResource CRUD
-list_memberships: Python chat-channel helper — Java uses CrudResource CRUD
-ai_stop: Python calling-control RPC — not surfaced in Java's calling().calls()
-collect_stop: Python calling-control RPC — not surfaced in Java's calling().calls()
-collect_start_input_timers: Python calling-control RPC — not surfaced
-detect_stop: Python calling-control RPC — not surfaced
-play_pause: Python calling-control RPC — not surfaced
-play_resume: Python calling-control RPC — not surfaced
-play_stop: Python calling-control RPC — not surfaced
-play_volume: Python calling-control RPC — not surfaced
-receive_fax_stop: Python calling-control RPC — not surfaced
-record_pause: Python calling-control RPC — not surfaced
-record_resume: Python calling-control RPC — not surfaced
-record_stop: Python calling-control RPC — not surfaced
-send_fax_stop: Python calling-control RPC — not surfaced
 start_recording: Python calling-control RPC — not surfaced
-start_stream: Python calling-control RPC — not surfaced
-stop_stream: Python calling-control RPC — not surfaced
-stream_stop: Python calling-control RPC — not surfaced
-tap_stop: Python calling-control RPC — not surfaced
-transcribe_stop: Python calling-control RPC — not surfaced
-update_recording: Python recording helper — not surfaced (recordings are read-only)
-create_campaign: Python campaign helper — Java uses client.registry().brands().createCampaign
-create_order: Python order helper — Java uses client.registry().campaigns().createOrder
-list_campaigns: Python campaign helper — Java uses client.registry().brands().listCampaigns
-list_orders: Python order helper — Java uses client.registry().campaigns().listOrders
-create_stream: Python stream helper — Java uses client.video().rooms().createStream
-list_streams: Python stream helper — Java uses client.video().rooms().listStreams
-delete_chunk: Python datasphere helper — Java uses client.datasphere().documents()
-get_chunk: Python datasphere helper — Java uses client.datasphere().documents()
-list_chunks: Python datasphere helper — Java uses client.datasphere().documents()
-list_conference_tokens: Python conference helper — Java uses client.video().conferences().listConferenceTokens
-list_events: Python events helper — not ported (use REST listeners)
-delete_media: Python compat helper — Java uses client.compat().messages().delete
-list_media: Python compat helper — Java uses client.compat().messages().list
-delete_recording: Python recording helper — Java uses recordings().recordings().delete
-get_recording: Python recording helper — Java uses recordings().recordings().get
-list_recordings: Python recording helper — Java uses recordings().recordings().list
-list_members: Python chat/queue helper — Java uses CrudResource.list with filter
-get_member: Python chat/queue helper — Java uses CrudResource.get
-get_next_member: Python queue helper — not surfaced; list + client-side next
-dequeue_member: Python queue helper — not surfaced
-list_numbers: Python phone-numbers convenience — Java uses phoneNumbers().list
-list_participants: Python conference helper — Java uses client.conferences().participants().list
-get_participant: Python conference helper — Java uses participants().get
-update_participant: Python conference helper — Java uses participants().update
-remove_participant: Python conference helper — Java uses participants().delete
-list_addresses: Python Fabric helper — Java uses fabric().addresses().list
-list_available_countries: Python phone-numbers helper — not ported
-import_number: Python compat number import — not ported
 purchase: Python phone-numbers helper — Java uses phoneNumbers().create(body-with-number)
 verify: Python verified-callers helper — Java uses compliance().cnamRegistrations()
-redial_verification: Python verified-callers helper — not ported
-submit_verification: Python verified-callers helper — not ported
-search_local: Python compat number search — Java uses phoneNumbers().search
-search_toll_free: Python compat number search — Java uses phoneNumbers().search
 sms: Python messaging namespace — Java uses client.messaging().messages()
 phone_number: doc-link reference, not a callable
 end: Python Call.end — Java uses Call#hangup
 
 ### Relay (Python Call)
 
-from_payload: Python RelayEvent classmethod — Java parses via RelayClient internals
-wait_for: Python Call.wait_for — Java uses polling or Action#waitForCompletion
-wait_for_ended: Python Call.wait_for_ended — Java uses Call#isEnded polling
+await: real Action#await() / Message#await() RELAY accessor (relay/Action.java, relay/Message.java) — fluent alias of waitForCompletion(); real generated/hand SDK method, surface fold-gap, enumerator does not surface the bare name
+
+
+### Generated-namespace accessors not yet enumerated by the surface tool
+
+Real accessors on the generated ResourceTree / namespace classes
+(client.phoneNumbers(), client.queues(), client.recordings(),
+LogsNamespace.conferences()/VideoNamespace.conferences()) that the current
+enumerator does not surface under their bare accessor name. Pre-existing
+enumerator gap from the REST-generation (changeset A) layout; tracked
+separately. Listed here so legitimate example references resolve.
+
+phoneNumbers: real ResourceTree.phoneNumbers() accessor; enumerator does not surface the bare name
+queues: real ResourceTree.queues() accessor; enumerator does not surface the bare name
+recordings: real ResourceTree.recordings() accessor; enumerator does not surface the bare name
+conferences: real LogsNamespace/VideoNamespace conferences() accessor; enumerator does not surface the bare name
+fabric: real ResourceTree.fabric() top-level namespace accessor; mirrors Python client.fabric attribute (not method-surface in either language)
+video: real ResourceTree.video() top-level namespace accessor; mirrors Python client.video attribute
+calling: real ResourceTree.calling() top-level namespace accessor; mirrors Python client.calling attribute
+datasphere: real ResourceTree.datasphere() top-level namespace accessor; mirrors Python client.datasphere attribute
+registry: real ResourceTree.registry() top-level namespace accessor; mirrors Python client.registry attribute
+resources: real FabricNamespace.resources() sub-resource accessor; mirrors Python client.fabric.resources attribute
+aiAgents: real FabricNamespace.aiAgents() sub-resource accessor; mirrors Python client.fabric.ai_agents attribute
+subscribers: real FabricNamespace.subscribers() sub-resource accessor; mirrors Python client.fabric.subscribers attribute
+addresses: real FabricNamespace.addresses() sub-resource accessor; mirrors Python client.fabric.addresses attribute
+callFlows: real FabricNamespace.callFlows() sub-resource accessor; mirrors Python client.fabric.call_flows attribute
+conferenceRooms: real FabricNamespace.conferenceRooms() sub-resource accessor; mirrors Python client.fabric.conference_rooms attribute
+sipEndpoints: real FabricNamespace.sipEndpoints() sub-resource accessor; mirrors Python client.fabric.sip_endpoints attribute
+swmlScripts: real FabricNamespace.swmlScripts() sub-resource accessor; mirrors Python client.fabric.swml_scripts attribute
+rooms: real VideoNamespace.rooms() sub-resource accessor; mirrors Python client.video.rooms attribute
+roomSessions: real VideoNamespace.roomSessions() sub-resource accessor; mirrors Python client.video.room_sessions attribute
+roomRecordings: real VideoNamespace.roomRecordings() sub-resource accessor; mirrors Python client.video.room_recordings attribute
+documents: real DatasphereNamespace.documents() sub-resource accessor; mirrors Python client.datasphere.documents attribute
+brands: real RegistryNamespace.brands() sub-resource accessor; mirrors Python client.registry.brands attribute
+campaigns: real RegistryNamespace.campaigns() sub-resource accessor; mirrors Python client.registry.campaigns attribute
+cxmlApplications: real FabricNamespace.cxmlApplications() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+cxmlScripts: real FabricNamespace.cxmlScripts() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+cxmlWebhooks: real FabricNamespace.cxmlWebhooks() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+freeswitchConnectors: real FabricNamespace.freeswitchConnectors() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+relayApplications: real FabricNamespace.relayApplications() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+sipGateways: real FabricNamespace.sipGateways() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+swmlWebhooks: real FabricNamespace.swmlWebhooks() accessor (generated/FabricNamespace.java); real generated client-tree accessor, surface fold-gap, same class as ledgered siblings
+
+### Typed-REST request-builder setters (Java idiom for Python kwargs)
+
+The generated REST command/resource methods take a closed typed *Request
+object built via a fluent builder (e.g. Calling.DialRequest.builder()
+.from(..).to(..).build()). Each builder setter carries one wire field;
+`extras(Map)` is the escape door for fields outside the closed set. Python
+passes these same wire fields as keyword arguments, so the setter *name* has
+no method-surface analog in either language's enumerated surface — it is the
+Java typed-request idiom for a Python kwarg. Real, compiling public builder
+methods; listed so example references resolve.
+
+extras: Calling.*Request.Builder#extras(Map) etc. — arbitrary-field escape door on every typed *Request builder
+from: Calling.DialRequest.Builder#from(String) — 'from' wire field (dial)
+to: Calling.DialRequest.Builder#to(String) — 'to' wire field (dial)
+url: Calling.DialRequest.Builder#url(String) — 'url' wire field (dial)
+initialTimeout: Calling.CollectRequest.Builder#initialTimeout(Double) — 'initial_timeout' wire field (collect)
+digits: Calling.CollectRequest.Builder#digits(Map) — 'digits' wire field (collect)
+audio: Calling.RecordRequest.Builder#audio(Map) — 'audio' wire field (record)
+queryString: DatasphereDocuments.SearchRequest.Builder#queryString(String) — 'query_string' wire field (document search)
+username: Subscribers.CreateSipEndpointRequest.Builder#username(String) — 'username' wire field (create SIP endpoint)
+password: Subscribers.CreateSipEndpointRequest.Builder#password(String) — 'password' wire field (create SIP endpoint)
+
+### More REST namespace / sub-resource accessors (enumerator does not surface the bare name)
+
+Real fluent accessors on the generated ResourceTree / namespace classes
+(`rest/namespaces/generated/*.java`), same category as phoneNumbers/queues/recordings
+above; the surface enumerator does not emit them under their bare accessor name.
+Listed so legitimate example references resolve.
+
+channels: real PubSub.channels()/ChatNamespace accessor; enumerator does not surface the bare name
+chat: real ResourceTree.chat() namespace accessor; enumerator does not surface the bare name
+conferenceTokens: real VideoNamespace.conferenceTokens() accessor; enumerator does not surface the bare name
+importedNumbers: real ResourceTree.importedNumbers() accessor; enumerator does not surface the bare name
+logs: real ResourceTree.logs() namespace accessor; enumerator does not surface the bare name
+messages: real LogsNamespace.messages() / MessagingNamespace accessor; enumerator does not surface the bare name
+mfa: real ResourceTree.mfa() namespace accessor; enumerator does not surface the bare name
+numberGroups: real ResourceTree.numberGroups() accessor; enumerator does not surface the bare name
+numbers: real RegistryNamespace.numbers() accessor; enumerator does not surface the bare name
+orders: real RegistryNamespace.orders() accessor; enumerator does not surface the bare name
+pubsub: real ResourceTree.pubsub() namespace accessor; enumerator does not surface the bare name
+roomTokens: real VideoNamespace.roomTokens() accessor; enumerator does not surface the bare name
+shortCodes: real ResourceTree.shortCodes() accessor; enumerator does not surface the bare name
+sipProfile: real ResourceTree.sipProfile() accessor; enumerator does not surface the bare name
+streams: real VideoNamespace.streams() accessor; enumerator does not surface the bare name
+tokens: real ProjectNamespace.tokens() accessor; enumerator does not surface the bare name
+verifiedCallers: real ResourceTree.verifiedCallers() accessor; enumerator does not surface the bare name
+voice: real LogsNamespace.voice() accessor; enumerator does not surface the bare name
+permissions: real ProjectTokens.permissions() accessor; enumerator does not surface the bare name
+lookup: real ResourceTree.lookup() namespace accessor; enumerator does not surface the bare name
+fax: real LogsNamespace.fax() accessor; enumerator does not surface the bare name
+
+### More typed-REST request-builder setters (Java idiom for a Python kwarg / wire field)
+
+Real, compiling public builder setters on the generated `*Request` builders (each
+carries one wire field); the enumerated surface has no method-surface analog for the
+setter name in either language. Listed so example references resolve.
+
+action: Calling.*Request.Builder#action(Map) — 'action' wire field
+city: Addresses.CreateRequest.Builder#city(String) — 'city' wire field (address create)
+state: Addresses.CreateRequest.Builder#state(String) — 'state' wire field (address create)
+streetName: Addresses.CreateRequest.Builder#streetName(String) — 'street_name' wire field (address create)
+streetNumber: Addresses.CreateRequest.Builder#streetNumber(String) — 'street_number' wire field (address create)
+roomName: VideoRoomTokens.CreateRequest.Builder#roomName(String) — 'room_name' wire field (room token create)
+userName: VideoRoomTokens.CreateRequest.Builder#userName(String) — 'user_name' wire field (room token create)
+codec: Calling.*Request.Builder#codec(String) — 'codec' wire field
+controlId: Calling.*Request.Builder#controlId(String) — 'control_id' wire field
+dest: Calling.*Request.Builder#dest(Map) — 'destination' wire field
+device: Calling.*Request.Builder#device(Map) — 'device' wire field
+domainIdentifier: SipProfile.UpdateRequest.Builder#domainIdentifier(String) — 'domain_identifier' wire field
+event: Calling.*Request.Builder#event(Map) — 'event' wire field
+id: Calling.*Request.Builder#id(String) — resource id path/wire field
+memberId: *Request.Builder#memberId(String) — 'member_id' wire field
+message: *Request.Builder#message(String) — 'message' wire field
+messageText: *Request.Builder#messageText(String) — 'message_text' wire field
+phoneNumberId: NumberGroups.AddMembershipRequest.Builder#phoneNumberId(String) — 'phone_number_id' wire field
+reason: Calling.EndRequest.Builder#reason(String) — 'reason' wire field
+role: *Request.Builder#role(String) — 'role' wire field
+speech: Calling.CollectRequest.Builder#speech(Map) — 'speech' wire field
+statusUrl: *Request.Builder#statusUrl(String) — 'status_url' wire field
+tags: *Request.Builder#tags(List) — 'tags' wire field
+timeout: Calling.*Request.Builder#timeout(Long) — 'timeout' wire field
+ttl: *Request.Builder#ttl(Long) — 'ttl' wire field
+verificationCode: VerifiedCallers.SubmitVerificationRequest.Builder#verificationCode(String) — 'verification_code' wire field
+
+### JDK / stdlib methods and example-local helpers (not SDK surface)
+
+These appear in Java example code blocks: JDK/standard-library methods, the Azure/AWS
+serverless-runtime API used by the cloud-functions guide, or user-defined helper
+methods local to an example. They are not part of the SignalWire SDK surface.
+
+abs: Math.abs (JDK) — example id math
+add: List/Collection#add (JDK) — example list mutation
+isEqual: MessageDigest.isEqual (JDK) — timing-safe credential compare cited in api_reference/sdk_features/swml_service_guide prose
+size: Map/Collection#size (JDK) — example field-count in agent_guide analytics snippet
+WeatherSkill: user-defined example skill class (com.example.skills.WeatherSkill), not SDK API — reader's own third-party-skill in third_party_skills.md
+between: java.time.Duration.between (JDK) — example duration math
+computeIfAbsent: Map#computeIfAbsent (JDK) — example config cache
+contains: String/Collection#contains (JDK) — example membership test
+containsKey: Map#containsKey (JDK) — example request-body check
+encodeToString: Base64.Encoder#encodeToString (JDK) — example basic-auth header
+getEncoder: Base64.getEncoder (JDK) — example basic-auth header
+getSeconds: Duration#getSeconds (JDK) — example duration math
+getUri: Azure Functions HttpRequestMessage#getUri — external serverless runtime, cloud-functions guide
+getWriter: HttpServletResponse#getWriter (Servlet API) — example serverless handler output
+ifPresent: Optional#ifPresent (JDK) — example optional handling
+intValue: Number#intValue (JDK) — example JSON-Schema type cast
+joining: Collectors.joining (JDK) — example stream collection
+lines: BufferedReader#lines (JDK) — example request-body read
+max: Math.max (JDK) — example numeric clamp
+orElse: Optional#orElse (JDK) — example optional handling
+trim: String#trim (JDK) — example arg normalization
+getHttpMethod: Azure Functions HttpRequestMessage#getHttpMethod — external serverless runtime, cloud-functions guide
+setStatusCode: Azure/serverless HttpResponse#setStatusCode — external serverless runtime, cloud-functions guide
+createResponseBuilder: Azure Functions HttpRequestMessage#createResponseBuilder — external serverless runtime, cloud-functions guide
+getCustomerSettings: user-defined example database helper, not SDK API
+registerAll: user-defined example skill-bootstrap method, not SDK API
+toAbsolutePath: java.nio.file.Path#toAbsolutePath (JDK) — example static-dir path
+status: user-defined example serverless-result accessor, not SDK API
+headers: user-defined example serverless-result accessor / JDK HttpResponse, not SDK API

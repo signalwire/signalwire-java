@@ -9,6 +9,9 @@ import java.util.*;
 public class ConciergeAgent {
 
   private final AgentBase agent;
+  private final String venueName;
+  private final List<Map<String, Object>> amenities;
+  private java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> summaryHandler;
 
   public ConciergeAgent(String name, String venueName, List<Map<String, Object>> amenities) {
     this(name, venueName, amenities, "/", 3000);
@@ -16,6 +19,8 @@ public class ConciergeAgent {
 
   public ConciergeAgent(
       String name, String venueName, List<Map<String, Object>> amenities, String route, int port) {
+    this.venueName = venueName;
+    this.amenities = amenities;
     this.agent = AgentBase.builder().name(name).route(route).port(port).build();
 
     agent.promptAddSection(
@@ -108,21 +113,112 @@ public class ConciergeAgent {
             "check_availability",
             "Check availability of an amenity or service",
             availParams,
-            (args, raw) -> {
-              String amenityName = (String) args.get("amenity");
-              String date = (String) args.getOrDefault("date", "today");
-              String time = (String) args.getOrDefault("time", "now");
-              // In a real implementation, this would check actual availability
-              return new FunctionResult(
-                  amenityName
-                      + " is available on "
-                      + date
-                      + " at "
-                      + time
-                      + ". Would you like to make a reservation?");
-            }));
+            this::checkAvailability));
+
+    // Register directions tool (SWAIG handler -> getDirections)
+    Map<String, Object> dirParams = new LinkedHashMap<>();
+    dirParams.put("type", "object");
+    dirParams.put(
+        "properties",
+        Map.of(
+            "location",
+            Map.of(
+                "type", "string", "description", "The location or amenity to get directions to")));
+    dirParams.put("required", List.of("location"));
+
+    agent.defineTool(
+        new ToolDefinition(
+            "get_directions",
+            "Get directions to a specific location or amenity",
+            dirParams,
+            this::getDirections));
 
     agent.updateGlobalData(Map.of("venue_name", venueName));
+  }
+
+  /**
+   * SWAIG tool handler: check availability of an amenity/service on a date and time. Ported from
+   * the Python ConciergeAgent.check_availability -- returns an availability confirmation when the
+   * requested amenity is offered, otherwise lists the available amenities.
+   */
+  public FunctionResult checkAvailability(Map<String, Object> args, Map<String, Object> rawData) {
+    String amenityName = (String) args.getOrDefault("amenity", "");
+    String date = (String) args.getOrDefault("date", "today");
+    String time = (String) args.getOrDefault("time", "now");
+
+    for (Map<String, Object> amenity : amenities) {
+      if (amenityName.equalsIgnoreCase((String) amenity.get("name"))) {
+        return new FunctionResult(
+            amenityName
+                + " is available on "
+                + date
+                + " at "
+                + time
+                + ". Would you like to make a reservation?");
+      }
+    }
+
+    List<String> names = new ArrayList<>();
+    for (Map<String, Object> amenity : amenities) {
+      names.add((String) amenity.get("name"));
+    }
+    return new FunctionResult(
+        "I'm sorry, we don't offer "
+            + amenityName
+            + " at "
+            + venueName
+            + ". Our available amenities are: "
+            + String.join(", ", names)
+            + ".");
+  }
+
+  /**
+   * SWAIG tool handler: provide directions to a location or amenity. Ported from the Python
+   * ConciergeAgent.get_directions -- if the location is a known amenity with a "location" field it
+   * returns that; otherwise it points the guest at the front desk.
+   */
+  public FunctionResult getDirections(Map<String, Object> args, Map<String, Object> rawData) {
+    String location = (String) args.getOrDefault("location", "");
+
+    for (Map<String, Object> amenity : amenities) {
+      if (location.equalsIgnoreCase((String) amenity.get("name"))
+          && amenity.containsKey("location")) {
+        Object amenityLocation = amenity.get("location");
+        return new FunctionResult(
+            "The "
+                + location
+                + " is located at "
+                + amenityLocation
+                + ". From the main entrance, follow the signs to "
+                + amenityLocation
+                + ".");
+      }
+    }
+    return new FunctionResult(
+        "I don't have specific directions to "
+            + location
+            + ". You can ask our staff at the front desk for assistance.");
+  }
+
+  /**
+   * Register a post-prompt summary callback. Ported from the Python ConciergeAgent.on_summary hook:
+   * the callback is invoked with the parsed summary and the raw post-prompt payload after the
+   * conversation completes. Wires through to {@link AgentBase#onSummary}.
+   *
+   * @param handler callback receiving (summary, rawData); {@code null} clears any handler
+   * @return this prefab for chaining
+   */
+  public ConciergeAgent onSummary(
+      java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> handler) {
+    this.summaryHandler = handler;
+    agent.onSummary(handler);
+    return this;
+  }
+
+  /** The registered summary callback, or {@code null} if none set. */
+  public java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>>
+      getSummaryHandler() {
+    return summaryHandler;
   }
 
   public AgentBase getAgent() {

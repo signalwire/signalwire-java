@@ -276,11 +276,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "see rest/docs/fabric.md for the mapping",
     ),
     (
-        "signalwire.rest.namespaces.compat.",
-        "Java exposes the Compat API through a flat CompatNamespace + "
-        "CrudResource accessors; Python splits into one class per resource",
-    ),
-    (
         "signalwire.rest.namespaces.video.",
         "Java exposes the Video API through a flat VideoNamespace + "
         "CrudResource accessors; Python splits into one class per resource",

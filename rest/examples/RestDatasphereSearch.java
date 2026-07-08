@@ -8,6 +8,7 @@
  */
 
 import com.signalwire.sdk.rest.RestClient;
+import com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments;
 
 import java.util.Map;
 
@@ -29,10 +30,11 @@ public class RestDatasphereSearch {
 
         // 2. Search
         System.out.println("\nSearching for 'voice API'...");
-        var results = client.datasphere().search(Map.of(
-                "query", "voice API",
-                "max_results", 5
-        ));
+        var results = client.datasphere().documents().search(
+                DatasphereDocuments.SearchRequest.builder()
+                        .queryString("voice API")
+                        .count(5L)
+                        .build());
         System.out.println("  Results: " + results);
 
         // 3. List all documents

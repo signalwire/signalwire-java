@@ -154,6 +154,67 @@ tasks.register('printRuntimeClasspath') {
     }
 }
 
+// ── examples/ build+run target (EXAMPLES-RUN gate) ──────────────────
+// The examples/ dir holds default-package standalone mains (SimpleAgent,
+// RestDemo, ...). Prior to this there was NO gradle target that built + ran
+// them, so porting-sdk/scripts/examples_run.py SKIPPED java entirely and the
+// runtime-crash-on-load class (a builder that throws before its first network
+// call, a deleted SDK method, a wrong-arity call) went uncaught by any gate.
+//
+// An `examples` source set compiles every examples/*.java against the SDK's
+// own runtime classpath (so examples resolve Gson etc. without re-pinning),
+// and `runExample -PexampleClass=<ClassName>` runs one built example. The
+// examples-run gate invokes this once per example, injecting the mock
+// SIGNALWIRE_* env + MOCK_SIGNALWIRE_PORT the same way the REST-COVERAGE gate
+// and tests do.
+sourceSets {
+    examples {
+        java {
+            srcDir 'examples'
+            // Default package (no package decl), on the SDK runtime classpath.
+            compileClasspath += sourceSets.main.runtimeClasspath
+            runtimeClasspath += sourceSets.main.runtimeClasspath
+        }
+    }
+}
+
+// Examples are illustrative user code, NOT part of the SDK's shipped surface,
+// so they are exempt from the SDK's LINT floor (Error Prone warnings-as-errors
+// + Checkstyle). Turn both OFF on the examples source set — an unused import in
+// a demo must not fail the SDK build/gates. (Spotless already skips examples/:
+// its target is src/**/*.java only.)
+tasks.named('compileExamplesJava') {
+    options.errorprone.enabled = false
+}
+tasks.matching { it.name == 'checkstyleExamples' }.configureEach {
+    enabled = false
+}
+
+// runExample — compile every example, run the one named by -PexampleClass.
+// Used by porting-sdk/scripts/examples_run.py (EXAMPLES-RUN gate) which calls
+//   ./gradlew --no-daemon -q runExample -PexampleClass=<ClassName>
+// once per example under the mock env. A server example that blocks past
+// startup is killed by the gate's per-example timeout and counts as a PASS
+// (it got past load); a crash-on-load exits non-zero with its stack trace.
+tasks.register('runExample', JavaExec) {
+    group = 'verification'
+    description = 'Build + run one examples/ main by simple class name (-PexampleClass=SimpleAgent).'
+    classpath = sourceSets.examples.runtimeClasspath
+    // Default-package examples: the class name IS the main class.
+    mainClass = providers.gradleProperty('exampleClass').orElse('')
+    doFirst {
+        if (!project.hasProperty('exampleClass') || project.property('exampleClass').toString().isEmpty()) {
+            throw new GradleException(
+                "runExample requires -PexampleClass=<ClassName> (e.g. -PexampleClass=SimpleAgent)")
+        }
+    }
+    // Inherit the invoking process env (the gate exports SIGNALWIRE_* +
+    // MOCK_SIGNALWIRE_PORT); pass through stdin/out so a crash surfaces.
+    environment System.getenv()
+    standardOutput = System.out
+    errorOutput = System.err
+}
+
 // emitCorpus — the Java port's EMISSION-DUMP entry point for the cross-port
 // emission differ (porting-sdk/scripts/diff_port_emission.py). Runs
 // com.signalwire.sdk.tools.EmitCorpus, which builds the shared 81-entry
@@ -206,6 +267,69 @@ tasks.register('routeRegistry', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// routeTestPlan — the per-via call plan the REST wire-test generator
+// (scripts/generate_rest_tests.py) consumes. Runs com.signalwire.sdk.rest.
+// RouteTestPlan, which drives the live RestClient through a recording HttpClient
+// (same shape as RouteRegistry) and reflects over every route method, emitting
+// per via the accessor chain, terminal member, and type-correct Java literal
+// args. Prints ONE JSON object {plan,errors} to stdout, exits non-zero if any
+// route is unreflectable. Invoke quietly so only that JSON reaches stdout:
+//   ./gradlew --no-daemon -q routeTestPlan
+tasks.register('routeTestPlan', JavaExec) {
+    group = 'verification'
+    description = 'Per-via REST call plan (chain/member/typed args) for the wire-test generator.'
+    mainClass = 'com.signalwire.sdk.rest.RouteTestPlan'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// ── Layer-D per-surface dump programs ───────────────────────────────
+// Each is a main() entry point in com.signalwire.sdk.tools that runs the
+// shared behavioral corpus against the Java SDK's native API and prints ONE
+// canonical JSON object {case-id -> observable-artifact} to stdout (logs to
+// stderr). The porting-sdk differ (diff_port_<surface>.py) runs the task via
+// `./gradlew --no-daemon -q <task>` and byte-compares each entry against the
+// Python oracle. Mirrors Go's cmd/{wire,swml,wire-relay,http,state}-dump.
+
+// wireDump — WIRE-CRYPTO differ (porting-sdk/scripts/diff_port_wire.py).
+tasks.register('wireDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the wire-crypto corpus observations as JSON (cross-port wire differ).'
+    mainClass = 'com.signalwire.sdk.tools.WireDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// swmlDump — SWML differ (porting-sdk/scripts/diff_port_swml.py).
+tasks.register('swmlDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the SWML render corpus fragments as JSON (cross-port SWML differ).'
+    mainClass = 'com.signalwire.sdk.tools.SwmlDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// stateDump — STATE differ (porting-sdk/scripts/diff_port_state.py).
+tasks.register('stateDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the state-mutation corpus observations as JSON (cross-port state differ).'
+    mainClass = 'com.signalwire.sdk.tools.StateDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// httpDump — HTTP differ (porting-sdk/scripts/diff_port_http.py).
+tasks.register('httpDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the HTTP dispatch corpus observations as JSON (cross-port HTTP differ).'
+    mainClass = 'com.signalwire.sdk.tools.HttpDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// wireRelayDump — RELAY differ (porting-sdk/scripts/diff_port_wire_relay.py).
+tasks.register('wireRelayDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the RELAY frame + event corpus observations as JSON (cross-port relay differ).'
+    mainClass = 'com.signalwire.sdk.tools.WireRelayDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',
@@ -220,7 +344,7 @@ mavenPublishing {
     pom {
         name = 'SignalWire AI Agents SDK'
         description = 'Java SDK for building, deploying, and managing SignalWire AI agents as microservices'
-        url = 'https://github.com/signalwire/signalwire-agents-java'
+        url = 'https://github.com/signalwire/signalwire-java'
 
         licenses {
             license {
@@ -238,9 +362,9 @@ mavenPublishing {
         }
 
         scm {
-            connection = 'scm:git:git://github.com/signalwire/signalwire-agents-java.git'
-            developerConnection = 'scm:git:ssh://github.com/signalwire/signalwire-agents-java.git'
-            url = 'https://github.com/signalwire/signalwire-agents-java'
+            connection = 'scm:git:git://github.com/signalwire/signalwire-java.git'
+            developerConnection = 'scm:git:ssh://github.com/signalwire/signalwire-java.git'
+            url = 'https://github.com/signalwire/signalwire-java'
         }
     }
 }

@@ -30,6 +30,7 @@ Or in `pom.xml`:
 
 ## Import Changes
 
+<!-- snippet: no-compile before/after migration illustration; the "Before" half references the pre-2.0 `com.signalwire.agents.*` packages that no longer exist -->
 ```java
 // Before
 import com.signalwire.agents.AgentBase;
@@ -40,8 +41,8 @@ import com.signalwire.agents.rest.SignalWireRestError;
 SignalWireClient client = new SignalWireClient(projectId, token, spaceUrl);
 
 // After
-import com.signalwire.sdk.AgentBase;
-import com.signalwire.sdk.core.FunctionResult;
+import com.signalwire.sdk.agent.AgentBase;
+import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
 
