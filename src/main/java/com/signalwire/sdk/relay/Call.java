@@ -9,6 +9,7 @@ package com.signalwire.sdk.relay;
 import com.signalwire.sdk.logging.Logger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -42,8 +43,15 @@ public class Call {
   /** Actions map: control_id -> Action */
   private final ConcurrentHashMap<String, Action> actions = new ConcurrentHashMap<>();
 
-  /** Event listeners */
-  private final List<Consumer<RelayEvent>> eventListeners = new ArrayList<>();
+  /**
+   * Event listeners. {@link CopyOnWriteArrayList} because {@link #dispatchEvent} iterates on the
+   * client's event thread while user threads mutate concurrently ({@link #on} adds; {@link
+   * #waitFor}'s teardown removes its one-shot listener) — a plain list throws {@code
+   * ConcurrentModificationException} out of dispatch. Dispatch is read-heavy (every event iterates;
+   * add/remove is rare), which is exactly COW's sweet spot, and its snapshot iterator keeps
+   * dispatch lock-free.
+   */
+  private final List<Consumer<RelayEvent>> eventListeners = new CopyOnWriteArrayList<>();
 
   /** Reference back to the client for executing RPC calls */
   private volatile RelayClient client;
