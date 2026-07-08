@@ -1,6 +1,6 @@
 # SignalWire RELAY Client (Java)
 
-Real-time call control and messaging over WebSocket using Java's virtual threads. The RELAY client connects to SignalWire via the Blade protocol (JSON-RPC 2.0 over WebSocket) and gives you imperative control over live phone calls and SMS/MMS messaging.
+Real-time call control and messaging over WebSocket using a cached platform-thread worker pool. The RELAY client connects to SignalWire via the Blade protocol (JSON-RPC 2.0 over WebSocket) and gives you imperative control over live phone calls and SMS/MMS messaging.
 
 ## Quick Start
 

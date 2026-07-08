@@ -157,7 +157,7 @@ com.signalwire.sdk/
 - No passwords are logged anywhere
 
 ### HTTP Server
-- Uses JDK built-in `com.sun.net.httpserver.HttpServer` with virtual threads
+- Uses JDK built-in `com.sun.net.httpserver.HttpServer` with its default executor
 - No external web framework dependency
 - Port defaults to 3000, configurable via `PORT` env var or builder
 

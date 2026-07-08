@@ -126,7 +126,7 @@ public class MyAgentMain {
 }
 ```
 
-The `run()` method starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer`, backed by virtual threads — no external web framework). The `PORT` environment variable overrides the builder's port when set.
+The `run()` method starts the built-in HTTP server (JDK `com.sun.net.httpserver.HttpServer`, using its default executor — no external web framework). The `PORT` environment variable overrides the builder's port when set.
 
 ### Logging Configuration
 

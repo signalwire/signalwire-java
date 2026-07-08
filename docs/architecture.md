@@ -45,7 +45,7 @@ The SDK is built around a clear class hierarchy:
    - Handler registry for function execution
 
 4. **HTTP Routing**
-   - JDK built-in `HttpServer` (virtual threads), no external web framework
+   - JDK built-in `HttpServer` (default executor), no external web framework
    - Endpoint routing for SWML, SWAIG, and other services
    - Custom routing callbacks for dynamic endpoint handling
    - SIP request routing for voice applications

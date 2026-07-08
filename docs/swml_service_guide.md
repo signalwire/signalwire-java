@@ -25,7 +25,7 @@ The `Service` class (`com.signalwire.sdk.swml.Service`) provides a foundation fo
 
 - SWML document creation and manipulation
 - Schema-driven verb validation
-- Web service functionality (JDK `HttpServer`, virtual threads)
+- Web service functionality (JDK `HttpServer`, default executor)
 - Authentication
 - Centralized logging
 
