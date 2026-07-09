@@ -397,18 +397,11 @@ sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressi
 
 # ---- §D1 packaging ----------------------------------------------------------
 # PACKAGE-SMOKE runs `gradle publishToMavenLocal` into a private m2, then resolves +
-# compiles + runs a tiny consumer against the published jar. Shells out to ./gradlew
-# → res=gradle, deferred behind the cheap wave (heavy: real publish build).
-# REPORT-ONLY (temporary): the java publishable artifact is correct — build.gradle
-# signs only when a signing key is present (so publishToMavenLocal works in a clean
-# env) and the published POM declares gson/snakeyaml/Java-WebSocket as runtime deps.
-# The gate's own smoke step, however, runs `java -cp <sdk-jar-only>` and does NOT add
-# those POM runtime deps to the classpath, so it hits NoClassDefFoundError: Gson —
-# a gate-classpath limitation, not a packaging defect. Kept report-only until the
-# gate resolves the POM's transitive runtime deps onto the smoke classpath; then drop
-# --report-only.
-sched_gate PACKAGE-SMOKE res=gradle defer=1 desc="the real publishable jar builds + resolves + imports from a clean env (report-only: gate smoke classpath omits POM runtime deps)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/package_smoke.py" --port java --repo "$PORT_ROOT" --report-only
+# compiles + runs a tiny consumer against the published jar (SDK jar + its runtime
+# deps, sourced from the port's `printRuntimeClasspath` task). Shells out to
+# ./gradlew → res=gradle, deferred behind the cheap wave (heavy: real publish build).
+sched_gate PACKAGE-SMOKE res=gradle defer=1 desc="the real publishable jar builds + resolves + imports from a clean env" \
+    -- python3 "$PORTING_SDK_DIR/scripts/package_smoke.py" --port java --repo "$PORT_ROOT"
 
 # Day-one deterministic gates (enforced, non-report-only).
 sched_gate DOC-LANG-PURITY res=dayone desc="no python-verbatim docs in a non-python port" \
