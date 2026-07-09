@@ -4841,11 +4841,6 @@
                   "name": "skill_name",
                   "type": "class:signalwire.skills.SkillName",
                   "required": true
-                },
-                {
-                  "name": "params",
-                  "type": "dict<string,any>",
-                  "required": true
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"
@@ -9901,24 +9896,6 @@
               ],
               "returns": "any"
             },
-            "audible_debug": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "audible_latency": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
             "background_file": {
               "params": [
                 {
@@ -9965,15 +9942,6 @@
               "returns": "any"
             },
             "barge_min_words": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "cache_mode": {
               "params": [
                 {
                   "name": "self",
@@ -10082,15 +10050,6 @@
               "returns": "any"
             },
             "eleven_labs_stability": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "enable_accounting": {
               "params": [
                 {
                   "name": "self",
@@ -10568,15 +10527,6 @@
               "returns": "any"
             },
             "vad_config": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "verbose_logs": {
               "params": [
                 {
                   "name": "self",
@@ -31389,24 +31339,6 @@
               ],
               "returns": "any"
             },
-            "audible_debug": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "audible_latency": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
             "background_file": {
               "params": [
                 {
@@ -31453,15 +31385,6 @@
               "returns": "any"
             },
             "barge_min_words": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "cache_mode": {
               "params": [
                 {
                   "name": "self",
@@ -31570,15 +31493,6 @@
               "returns": "any"
             },
             "eleven_labs_stability": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "enable_accounting": {
               "params": [
                 {
                   "name": "self",
@@ -32056,15 +31970,6 @@
               "returns": "any"
             },
             "vad_config": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "verbose_logs": {
               "params": [
                 {
                   "name": "self",
@@ -41594,24 +41499,6 @@
               ],
               "returns": "any"
             },
-            "audible_debug": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "audible_latency": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
             "background_file": {
               "params": [
                 {
@@ -41658,15 +41545,6 @@
               "returns": "any"
             },
             "barge_min_words": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "cache_mode": {
               "params": [
                 {
                   "name": "self",
@@ -41775,15 +41653,6 @@
               "returns": "any"
             },
             "eleven_labs_stability": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "enable_accounting": {
               "params": [
                 {
                   "name": "self",
@@ -42261,15 +42130,6 @@
               "returns": "any"
             },
             "vad_config": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "verbose_logs": {
               "params": [
                 {
                   "name": "self",
