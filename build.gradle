@@ -339,7 +339,17 @@ jar {
 
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-    signAllPublications()
+    // Sign publications ONLY when a signing key is configured. Maven Central
+    // requires a GPG signature, so the release CI (publish.yml) supplies
+    // ORG_GRADLE_PROJECT_signingInMemoryKey and this branch fires. A plain
+    // `publishToMavenLocal` / local install (no key) must NOT drag in the
+    // `signMavenPublication` task — otherwise every clean-environment local
+    // publish fails "no configured signatory". Guarding the call keeps the
+    // remote release signed while letting a local install (and the
+    // package-smoke gate) resolve the artifact without a GPG key.
+    if (project.hasProperty('signingInMemoryKey') || project.hasProperty('signing.keyId')) {
+        signAllPublications()
+    }
 
     pom {
         name = 'SignalWire AI Agents SDK'
