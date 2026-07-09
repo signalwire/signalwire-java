@@ -46,7 +46,8 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
 
-RestClient client = new RestClient(projectId, token, spaceUrl);
+RestClient client = RestClient.builder()
+    .project(projectId).token(token).space(spaceUrl).build();
 ```
 
 ## Class Renames
