@@ -374,8 +374,7 @@ sched_gate SWAIG-CLI deps=SIGNATURES desc="swaig-test shared mini-contract (verb
 # build the jar → res=gradle, mutually exclusive with the other Gradle gates. It is
 # otherwise cheap → NOT deferred. DOC-CLI line-detects documented swaig-test
 # invocations (java's AOT CLI is not built/probed by the gate) → pure-python, cheap.
-sched_gate SNIPPET-COMPILE res=gradle desc="documented code snippets compile against the real SDK jar" \
-    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port java --repo "$PORT_ROOT"
+sched_gate SNIPPET-COMPILE tier=nightly res=gradle desc="documented code snippets compile against the real SDK jar" \    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port java --repo "$PORT_ROOT"
 
 sched_gate DOC-CLI desc="documented swaig-test invocations parse against the real CLI" \
     -- python3 "$PORTING_SDK_DIR/scripts/doc_cli.py" --port java --repo "$PORT_ROOT"
@@ -383,13 +382,11 @@ sched_gate DOC-CLI desc="documented swaig-test invocations parse against the rea
 # EXAMPLES-RUN builds + runs every shipped examples/*.java via `gradle runExample`
 # against the shared mock (modulo EXAMPLES_RUN_ALLOW.md) → res=gradle, deferred
 # behind the cheap wave (heavy: one JVM per example).
-sched_gate EXAMPLES-RUN res=gradle defer=1 desc="shipped examples build+run against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port java --repo "$PORT_ROOT"
+sched_gate EXAMPLES-RUN tier=nightly res=gradle defer=1 desc="shipped examples build+run against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port java --repo "$PORT_ROOT"
 
 # SNIPPET-RUN is dynamic-ports-only; for java (compiled/heavy) it self-skips —
 # SNIPPET-COMPILE covers it — but is wired report-only so the self-skip never fails.
-sched_gate SNIPPET-RUN defer=1 desc="dynamic-port doc snippets run to a zero exit (java: self-skips, SNIPPET-COMPILE covers it)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port java --repo "$PORT_ROOT" --report-only
+sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit (java: self-skips, SNIPPET-COMPILE covers it)" \    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port java --repo "$PORT_ROOT" --report-only
 
 # ---- §G anti-laundering ledger ----------------------------------------------
 sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions" \
