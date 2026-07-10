@@ -239,6 +239,69 @@ class ContextsTest {
     assertThrows(IllegalStateException.class, () -> step.addGatherQuestion("key", "question"));
   }
 
+  @SuppressWarnings("unchecked")
+  private static Map<String, Object> firstGatherQuestion(Step step) {
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    return ((List<Map<String, Object>>) gatherInfo.get("questions")).get(0);
+  }
+
+  @Test
+  void testGatherLevelIsolatedTrue() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", "next_step", "Answer", true)
+        .addGatherQuestion("name", "What is your name?");
+
+    @SuppressWarnings("unchecked")
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    assertEquals(true, gatherInfo.get("isolated"));
+  }
+
+  @Test
+  void testGatherLevelIsolatedFalseOmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", "next_step", "Answer")
+        .addGatherQuestion("name", "What is your name?");
+
+    @SuppressWarnings("unchecked")
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    assertFalse(gatherInfo.containsKey("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedNullOmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null)
+        .addGatherQuestion("name", "What is your name?");
+
+    assertFalse(firstGatherQuestion(step).containsKey("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedTrueEmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null)
+        .addGatherQuestion("name", "What is your name?", "string", false, null, null, true);
+
+    assertEquals(true, firstGatherQuestion(step).get("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedFalseEmitted() {
+    // Explicit False IS on the wire — it overrides an isolated gather.
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null, true)
+        .addGatherQuestion("name", "What is your name?", "string", false, null, null, false);
+
+    var q = firstGatherQuestion(step);
+    assertTrue(q.containsKey("isolated"));
+    assertEquals(false, q.get("isolated"));
+  }
+
   // ======== Context Tests ========
 
   @Test

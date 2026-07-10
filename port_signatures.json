@@ -2639,6 +2639,11 @@
                   "name": "prompt",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "isolated",
+                  "type": "bool",
+                  "required": true
                 }
               ],
               "returns": "class:signalwire.core.contexts.Step"

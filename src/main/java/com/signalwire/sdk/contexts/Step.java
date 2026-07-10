@@ -200,10 +200,27 @@ public class Step {
     return this;
   }
 
-  /** Enable info gathering for this step. */
-  public Step setGatherInfo(String outputKey, String completionAction, String prompt) {
-    this.gatherInfo = new GatherInfo(outputKey, completionAction, prompt);
+  /**
+   * Enable info gathering for this step.
+   *
+   * @param outputKey key in global_data to store answers under (null for top-level).
+   * @param completionAction where to go when all questions are answered ({@code "next_step"}, a
+   *     step name, or null to return to normal step mode).
+   * @param prompt preamble text injected once when entering the gather step.
+   * @param isolated gather-level default: when true, every question is asked with the sibling
+   *     Q&amp;A hidden from the model (not from the call log). A question's own {@code isolated}
+   *     overrides this.
+   * @return this step for chaining.
+   */
+  public Step setGatherInfo(
+      String outputKey, String completionAction, String prompt, boolean isolated) {
+    this.gatherInfo = new GatherInfo(outputKey, completionAction, prompt, isolated);
     return this;
+  }
+
+  /** Enable info gathering for this step (with {@code isolated=false}). */
+  public Step setGatherInfo(String outputKey, String completionAction, String prompt) {
+    return setGatherInfo(outputKey, completionAction, prompt, false);
   }
 
   /**
@@ -233,16 +250,27 @@ public class Step {
       String type,
       boolean confirm,
       String prompt,
-      List<String> functions) {
+      List<String> functions,
+      Boolean isolated) {
     if (gatherInfo == null) {
       throw new IllegalStateException("Must call setGatherInfo() before addGatherQuestion()");
     }
-    gatherInfo.addQuestion(key, question, type, confirm, prompt, functions);
+    gatherInfo.addQuestion(key, question, type, confirm, prompt, functions, isolated);
     return this;
   }
 
+  public Step addGatherQuestion(
+      String key,
+      String question,
+      String type,
+      boolean confirm,
+      String prompt,
+      List<String> functions) {
+    return addGatherQuestion(key, question, type, confirm, prompt, functions, null);
+  }
+
   public Step addGatherQuestion(String key, String question) {
-    return addGatherQuestion(key, question, "string", false, null, null);
+    return addGatherQuestion(key, question, "string", false, null, null, null);
   }
 
   public Step clearSections() {

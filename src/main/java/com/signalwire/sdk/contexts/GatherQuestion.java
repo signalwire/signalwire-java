@@ -17,6 +17,25 @@ public class GatherQuestion {
   private final boolean confirm;
   private final String prompt;
   private final List<String> functions;
+  // Tri-state: null means "inherit the gather_info default".
+  private final Boolean isolated;
+
+  public GatherQuestion(
+      String key,
+      String question,
+      String type,
+      boolean confirm,
+      String prompt,
+      List<String> functions,
+      Boolean isolated) {
+    this.key = key;
+    this.question = question;
+    this.type = type != null ? type : "string";
+    this.confirm = confirm;
+    this.prompt = prompt;
+    this.functions = functions;
+    this.isolated = isolated;
+  }
 
   public GatherQuestion(
       String key,
@@ -25,16 +44,11 @@ public class GatherQuestion {
       boolean confirm,
       String prompt,
       List<String> functions) {
-    this.key = key;
-    this.question = question;
-    this.type = type != null ? type : "string";
-    this.confirm = confirm;
-    this.prompt = prompt;
-    this.functions = functions;
+    this(key, question, type, confirm, prompt, functions, null);
   }
 
   public GatherQuestion(String key, String question) {
-    this(key, question, "string", false, null, null);
+    this(key, question, "string", false, null, null, null);
   }
 
   public String getKey() {
@@ -56,6 +70,10 @@ public class GatherQuestion {
     }
     if (functions != null && !functions.isEmpty()) {
       map.put("functions", functions);
+    }
+    // Emitted even when False, so it can override an isolated gather. Omit when null.
+    if (isolated != null) {
+      map.put("isolated", isolated);
     }
     return map;
   }
