@@ -137,6 +137,27 @@ class ContextsTest {
   }
 
   @Test
+  void testStepHistory() {
+    for (String mode : List.of("keep", "default", "hide")) {
+      var step = new Step("s").setText("Body").setHistory(mode);
+      var map = step.toMap();
+      assertEquals(mode, map.get("history"));
+    }
+  }
+
+  @Test
+  void testStepHistoryOmittedWhenUnset() {
+    var step = new Step("s").setText("Body");
+    assertFalse(step.toMap().containsKey("history"));
+  }
+
+  @Test
+  void testStepHistoryInvalidRejected() {
+    var step = new Step("s").setText("Body");
+    assertThrows(IllegalArgumentException.class, () -> step.setHistory("bogus"));
+  }
+
+  @Test
   void testStepReset() {
     var step = new Step("context_switch");
     step.setText("Switching context")
@@ -233,6 +254,29 @@ class ContextsTest {
     assertEquals(2, steps.size());
     assertEquals("greeting", steps.get(0).get("name"));
     assertEquals("farewell", steps.get(1).get("name"));
+  }
+
+  @Test
+  void testContextHistory() {
+    for (String mode : List.of("keep", "default", "hide")) {
+      var ctx = new Context("default");
+      ctx.addStep("greeting").setText("Hello!");
+      ctx.setHistory(mode);
+      assertEquals(mode, ctx.toMap().get("history"));
+    }
+  }
+
+  @Test
+  void testContextHistoryOmittedWhenUnset() {
+    var ctx = new Context("default");
+    ctx.addStep("greeting").setText("Hello!");
+    assertFalse(ctx.toMap().containsKey("history"));
+  }
+
+  @Test
+  void testContextHistoryInvalidRejected() {
+    var ctx = new Context("default");
+    assertThrows(IllegalArgumentException.class, () -> ctx.setHistory("bogus"));
   }
 
   @Test

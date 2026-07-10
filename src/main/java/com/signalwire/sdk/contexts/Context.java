@@ -40,6 +40,9 @@ public class Context {
   private Map<String, List<String>> enterFillers;
   private Map<String, List<String>> exitFillers;
 
+  // Default history visibility mode for every step in this context
+  private String history;
+
   public Context(String name) {
     this.name = name;
     this.steps = new LinkedHashMap<>();
@@ -244,6 +247,21 @@ public class Context {
     return this;
   }
 
+  /**
+   * Set the default {@code history} visibility mode for every step in this context.
+   *
+   * <p>A step's own {@link Step#setHistory(String)} overrides this. See {@link
+   * Step#setHistory(String)} for what each mode does.
+   *
+   * @param history one of {@code "keep"}, {@code "default"}, or {@code "hide"}.
+   * @return this context for chaining.
+   * @throws IllegalArgumentException if history is not one of the three modes.
+   */
+  public Context setHistory(String history) {
+    this.history = Step.validateHistory(history);
+    return this;
+  }
+
   // Package-private accessors for validation
   Map<String, Step> getSteps() {
     return steps;
@@ -290,6 +308,7 @@ public class Context {
 
     if (enterFillers != null) map.put("enter_fillers", enterFillers);
     if (exitFillers != null) map.put("exit_fillers", exitFillers);
+    if (history != null) map.put("history", history);
 
     return map;
   }

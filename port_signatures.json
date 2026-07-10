@@ -2172,6 +2172,20 @@
               ],
               "returns": "class:signalwire.core.contexts.Context"
             },
+            "set_history": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "history",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.contexts.Context"
+            },
             "set_initial_step": {
               "params": [
                 {
@@ -2623,6 +2637,20 @@
                 },
                 {
                   "name": "prompt",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.core.contexts.Step"
+            },
+            "set_history": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "history",
                   "type": "string",
                   "required": true
                 }

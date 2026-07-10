@@ -16,6 +16,17 @@ import java.util.*;
  */
 public class Step {
 
+  /** Valid values for a step's or context's {@code history} visibility mode. */
+  static final List<String> HISTORY_MODES = List.of("keep", "default", "hide");
+
+  static String validateHistory(String mode) {
+    if (!HISTORY_MODES.contains(mode)) {
+      throw new IllegalArgumentException(
+          "history must be one of " + HISTORY_MODES + ", got " + mode);
+    }
+    return mode;
+  }
+
   private final String name;
   private String text;
   private String stepCriteria;
@@ -29,6 +40,7 @@ public class Step {
   private boolean end;
   private boolean skipUserTurn;
   private boolean skipToNextStep;
+  private String history;
 
   // Reset object for context switching from steps
   private String resetSystemPrompt;
@@ -162,6 +174,32 @@ public class Step {
     return this;
   }
 
+  /**
+   * Control what the model still sees when this step is entered.
+   *
+   * <p>The mode applies at the moment this step is entered and governs everything that came before
+   * it — including the turn that triggered the transition. It does not affect this step's own
+   * turns, which accumulate fresh. Nothing is deleted: the call log keeps every message.
+   *
+   * <ul>
+   *   <li>{@code "keep"} — clear nothing. Every prior step's instructions and dialogue stay visible
+   *       to the model.
+   *   <li>{@code "default"} — hide the prior step <i>instructions</i>, keep the user/assistant
+   *       dialogue. This is the default when unset.
+   *   <li>{@code "hide"} — hide the prior instructions <i>and</i> pull the prior dialogue out of
+   *       the model's context. Pair it with a {@code ${step_history.*}} reference in this step's
+   *       text to choose exactly what comes back.
+   * </ul>
+   *
+   * @param history one of {@code "keep"}, {@code "default"}, or {@code "hide"}.
+   * @return this step for chaining.
+   * @throws IllegalArgumentException if history is not one of the three modes.
+   */
+  public Step setHistory(String history) {
+    this.history = validateHistory(history);
+    return this;
+  }
+
   /** Enable info gathering for this step. */
   public Step setGatherInfo(String outputKey, String completionAction, String prompt) {
     this.gatherInfo = new GatherInfo(outputKey, completionAction, prompt);
@@ -287,6 +325,7 @@ public class Step {
     if (end) map.put("end", true);
     if (skipUserTurn) map.put("skip_user_turn", true);
     if (skipToNextStep) map.put("skip_to_next_step", true);
+    if (history != null) map.put("history", history);
 
     // Reset object
     Map<String, Object> resetObj = new LinkedHashMap<>();
