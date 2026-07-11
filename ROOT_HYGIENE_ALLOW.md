@@ -9,6 +9,7 @@ they cannot move to `eng/` without breaking the shared audit pipeline.
 - ARTIFACT_DENY_ALLOW.md — artifact_deny.py allowlist contract file (orchestrator, 2026-07-06)
 - GEN_TYPE_DEGENERACY_ALLOW.md — gen_type_degeneracy.py allowlist contract file, read at repo root by the GEN-TYPE-DEGENERACY gate (user-approved 728fd38, 2026-07-07)
 - ROUTE_COLLISION_ALLOW.md — route_collision.py allowlist contract file, read at repo root by the ROUTE-COLLISION gate (user-approved 728fd38, 2026-07-07)
+- EXAMPLES_RUN_ALLOW.md — examples_run.py allowlist contract file, read at repo root by the EXAMPLES-RUN gate (orchestrator, 2026-07-09)
 - CHECKLIST.md — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
 - DOC_AUDIT_IGNORE.md — required audit-contract file read by porting-sdk audit scripts (orchestrator, 2026-07-06)
 - INTENTIONAL_THIN_TESTS.md — required audit-contract file read by porting-sdk audit_no_cheat_tests.py (orchestrator, 2026-07-06)

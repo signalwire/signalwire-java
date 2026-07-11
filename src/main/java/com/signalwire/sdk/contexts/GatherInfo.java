@@ -20,16 +20,23 @@ public class GatherInfo {
   private final String outputKey;
   private final String completionAction;
   private final String prompt;
+  // Gather-level default for every question; a question's own isolated overrides it.
+  private final boolean isolated;
 
-  public GatherInfo(String outputKey, String completionAction, String prompt) {
+  public GatherInfo(String outputKey, String completionAction, String prompt, boolean isolated) {
     this.questions = new ArrayList<>();
     this.outputKey = outputKey;
     this.completionAction = completionAction;
     this.prompt = prompt;
+    this.isolated = isolated;
+  }
+
+  public GatherInfo(String outputKey, String completionAction, String prompt) {
+    this(outputKey, completionAction, prompt, false);
   }
 
   public GatherInfo() {
-    this(null, null, null);
+    this(null, null, null, false);
   }
 
   /** Add a question to gather. */
@@ -39,13 +46,24 @@ public class GatherInfo {
       String type,
       boolean confirm,
       String prompt,
-      List<String> functions) {
-    questions.add(new GatherQuestion(key, question, type, confirm, prompt, functions));
+      List<String> functions,
+      Boolean isolated) {
+    questions.add(new GatherQuestion(key, question, type, confirm, prompt, functions, isolated));
     return this;
   }
 
+  public GatherInfo addQuestion(
+      String key,
+      String question,
+      String type,
+      boolean confirm,
+      String prompt,
+      List<String> functions) {
+    return addQuestion(key, question, type, confirm, prompt, functions, null);
+  }
+
   public GatherInfo addQuestion(String key, String question) {
-    return addQuestion(key, question, "string", false, null, null);
+    return addQuestion(key, question, "string", false, null, null, null);
   }
 
   public List<GatherQuestion> getQuestions() {
@@ -74,6 +92,10 @@ public class GatherInfo {
     }
     if (completionAction != null) {
       map.put("completion_action", completionAction);
+    }
+    // Gather-level default: emitted only when truthy (a false default is omitted).
+    if (isolated) {
+      map.put("isolated", true);
     }
     return map;
   }

@@ -16,6 +16,17 @@ import java.util.*;
  */
 public class Step {
 
+  /** Valid values for a step's or context's {@code history} visibility mode. */
+  static final List<String> HISTORY_MODES = List.of("keep", "default", "hide");
+
+  static String validateHistory(String mode) {
+    if (!HISTORY_MODES.contains(mode)) {
+      throw new IllegalArgumentException(
+          "history must be one of " + HISTORY_MODES + ", got " + mode);
+    }
+    return mode;
+  }
+
   private final String name;
   private String text;
   private String stepCriteria;
@@ -29,6 +40,7 @@ public class Step {
   private boolean end;
   private boolean skipUserTurn;
   private boolean skipToNextStep;
+  private String history;
 
   // Reset object for context switching from steps
   private String resetSystemPrompt;
@@ -162,10 +174,53 @@ public class Step {
     return this;
   }
 
-  /** Enable info gathering for this step. */
-  public Step setGatherInfo(String outputKey, String completionAction, String prompt) {
-    this.gatherInfo = new GatherInfo(outputKey, completionAction, prompt);
+  /**
+   * Control what the model still sees when this step is entered.
+   *
+   * <p>The mode applies at the moment this step is entered and governs everything that came before
+   * it — including the turn that triggered the transition. It does not affect this step's own
+   * turns, which accumulate fresh. Nothing is deleted: the call log keeps every message.
+   *
+   * <ul>
+   *   <li>{@code "keep"} — clear nothing. Every prior step's instructions and dialogue stay visible
+   *       to the model.
+   *   <li>{@code "default"} — hide the prior step <i>instructions</i>, keep the user/assistant
+   *       dialogue. This is the default when unset.
+   *   <li>{@code "hide"} — hide the prior instructions <i>and</i> pull the prior dialogue out of
+   *       the model's context. Pair it with a {@code ${step_history.*}} reference in this step's
+   *       text to choose exactly what comes back.
+   * </ul>
+   *
+   * @param history one of {@code "keep"}, {@code "default"}, or {@code "hide"}.
+   * @return this step for chaining.
+   * @throws IllegalArgumentException if history is not one of the three modes.
+   */
+  public Step setHistory(String history) {
+    this.history = validateHistory(history);
     return this;
+  }
+
+  /**
+   * Enable info gathering for this step.
+   *
+   * @param outputKey key in global_data to store answers under (null for top-level).
+   * @param completionAction where to go when all questions are answered ({@code "next_step"}, a
+   *     step name, or null to return to normal step mode).
+   * @param prompt preamble text injected once when entering the gather step.
+   * @param isolated gather-level default: when true, every question is asked with the sibling
+   *     Q&amp;A hidden from the model (not from the call log). A question's own {@code isolated}
+   *     overrides this.
+   * @return this step for chaining.
+   */
+  public Step setGatherInfo(
+      String outputKey, String completionAction, String prompt, boolean isolated) {
+    this.gatherInfo = new GatherInfo(outputKey, completionAction, prompt, isolated);
+    return this;
+  }
+
+  /** Enable info gathering for this step (with {@code isolated=false}). */
+  public Step setGatherInfo(String outputKey, String completionAction, String prompt) {
+    return setGatherInfo(outputKey, completionAction, prompt, false);
   }
 
   /**
@@ -195,16 +250,27 @@ public class Step {
       String type,
       boolean confirm,
       String prompt,
-      List<String> functions) {
+      List<String> functions,
+      Boolean isolated) {
     if (gatherInfo == null) {
       throw new IllegalStateException("Must call setGatherInfo() before addGatherQuestion()");
     }
-    gatherInfo.addQuestion(key, question, type, confirm, prompt, functions);
+    gatherInfo.addQuestion(key, question, type, confirm, prompt, functions, isolated);
     return this;
   }
 
+  public Step addGatherQuestion(
+      String key,
+      String question,
+      String type,
+      boolean confirm,
+      String prompt,
+      List<String> functions) {
+    return addGatherQuestion(key, question, type, confirm, prompt, functions, null);
+  }
+
   public Step addGatherQuestion(String key, String question) {
-    return addGatherQuestion(key, question, "string", false, null, null);
+    return addGatherQuestion(key, question, "string", false, null, null, null);
   }
 
   public Step clearSections() {
@@ -287,6 +353,7 @@ public class Step {
     if (end) map.put("end", true);
     if (skipUserTurn) map.put("skip_user_turn", true);
     if (skipToNextStep) map.put("skip_to_next_step", true);
+    if (history != null) map.put("history", history);
 
     // Reset object
     Map<String, Object> resetObj = new LinkedHashMap<>();

@@ -368,6 +368,41 @@ sched_gate SWAIG-CLI deps=SIGNATURES desc="swaig-test shared mini-contract (verb
         --has-serverless \
         --serverless-argv='DummyAgentClass|--simulate-serverless|bogus-platform-xyz|--dump-swml'
 
+# ---- §C1 doc/example/CLI execution gates ------------------------------------
+# SNIPPET-COMPILE typechecks every documented java fence WITH the SDK jar + deps on
+# the classpath (deleted/renamed SDK symbols fail); it shells out to ./gradlew to
+# build the jar → res=gradle, mutually exclusive with the other Gradle gates. It is
+# otherwise cheap → NOT deferred. DOC-CLI line-detects documented swaig-test
+# invocations (java's AOT CLI is not built/probed by the gate) → pure-python, cheap.
+sched_gate SNIPPET-COMPILE tier=nightly res=gradle desc="documented code snippets compile against the real SDK jar" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_compile.py" --port java --repo "$PORT_ROOT"
+
+sched_gate DOC-CLI desc="documented swaig-test invocations parse against the real CLI" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_cli.py" --port java --repo "$PORT_ROOT"
+
+# EXAMPLES-RUN builds + runs every shipped examples/*.java via `gradle runExample`
+# against the shared mock (modulo EXAMPLES_RUN_ALLOW.md) → res=gradle, deferred
+# behind the cheap wave (heavy: one JVM per example).
+sched_gate EXAMPLES-RUN tier=nightly res=gradle defer=1 desc="shipped examples build+run against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port java --repo "$PORT_ROOT"
+
+# SNIPPET-RUN is dynamic-ports-only; for java (compiled/heavy) it self-skips —
+# SNIPPET-COMPILE covers it — but is wired report-only so the self-skip never fails.
+sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit (java: self-skips, SNIPPET-COMPILE covers it)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port java --repo "$PORT_ROOT" --report-only
+
+# ---- §G anti-laundering ledger ----------------------------------------------
+sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suppression_ledger.py" --port java --repo "$PORT_ROOT"
+
+# ---- §D1 packaging ----------------------------------------------------------
+# PACKAGE-SMOKE runs `gradle publishToMavenLocal` into a private m2, then resolves +
+# compiles + runs a tiny consumer against the published jar (SDK jar + its runtime
+# deps, sourced from the port's `printRuntimeClasspath` task). Shells out to
+# ./gradlew → res=gradle, deferred behind the cheap wave (heavy: real publish build).
+sched_gate PACKAGE-SMOKE res=gradle defer=1 desc="the real publishable jar builds + resolves + imports from a clean env" \
+    -- python3 "$PORTING_SDK_DIR/scripts/package_smoke.py" --port java --repo "$PORT_ROOT"
+
 # Day-one deterministic gates (enforced, non-report-only).
 sched_gate DOC-LANG-PURITY res=dayone desc="no python-verbatim docs in a non-python port" \
     -- python3 "$PORTING_SDK_DIR/scripts/doc_lang_purity.py" --port java --repo .

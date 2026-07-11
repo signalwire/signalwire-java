@@ -481,6 +481,12 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # old collapsed shapes are removed — these are now drift-0 parity.)
     ("AgentBase", "add_pattern_hint"),
     ("AgentBase", "add_language"),
+    # Step.setGatherInfo exposes Python set_gather_info's optional ``isolated``
+    # positionally via a (outputKey, completionAction, prompt, isolated)
+    # overload alongside the 3-arg convenience. The full overload is the parity
+    # surface (matches the oracle's 4-param set_gather_info); the 3-arg form
+    # would hide ``isolated``.
+    ("Step", "set_gather_info"),
 }
 
 # Java skill class renames to match Python casing

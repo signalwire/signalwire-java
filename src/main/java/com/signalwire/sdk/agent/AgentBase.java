@@ -1193,12 +1193,28 @@ public class AgentBase extends Service {
   }
 
   /**
+   * Adds a skill by name with no parameters. Convenience overload of {@link #addSkill(String, Map)}
+   * for skills that need no configuration; equivalent to {@code addSkill(skillName, Map.of())}.
+   */
+  public AgentBase addSkill(String skillName) {
+    return addSkill(skillName, Map.of());
+  }
+
+  /**
    * Typed overload of {@link #addSkill(String, Map)}. Accepts a built-in {@link SkillName} so a
    * misspelled skill fails at compile time instead of silently no-op-ing on the server. Delegates
    * to the string path via {@link SkillName#getValue()}, so wire behavior is identical.
    */
   public AgentBase addSkill(SkillName skillName, Map<String, Object> params) {
     return addSkill(skillName.getValue(), params);
+  }
+
+  /**
+   * Adds a built-in skill by name with no parameters. Typed convenience overload of {@link
+   * #addSkill(SkillName, Map)}; equivalent to {@code addSkill(skillName, Map.of())}.
+   */
+  public AgentBase addSkill(SkillName skillName) {
+    return addSkill(skillName.getValue(), Map.of());
   }
 
   public AgentBase removeSkill(String skillName) {

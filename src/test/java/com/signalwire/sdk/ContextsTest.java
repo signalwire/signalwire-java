@@ -137,6 +137,27 @@ class ContextsTest {
   }
 
   @Test
+  void testStepHistory() {
+    for (String mode : List.of("keep", "default", "hide")) {
+      var step = new Step("s").setText("Body").setHistory(mode);
+      var map = step.toMap();
+      assertEquals(mode, map.get("history"));
+    }
+  }
+
+  @Test
+  void testStepHistoryOmittedWhenUnset() {
+    var step = new Step("s").setText("Body");
+    assertFalse(step.toMap().containsKey("history"));
+  }
+
+  @Test
+  void testStepHistoryInvalidRejected() {
+    var step = new Step("s").setText("Body");
+    assertThrows(IllegalArgumentException.class, () -> step.setHistory("bogus"));
+  }
+
+  @Test
   void testStepReset() {
     var step = new Step("context_switch");
     step.setText("Switching context")
@@ -218,6 +239,69 @@ class ContextsTest {
     assertThrows(IllegalStateException.class, () -> step.addGatherQuestion("key", "question"));
   }
 
+  @SuppressWarnings("unchecked")
+  private static Map<String, Object> firstGatherQuestion(Step step) {
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    return ((List<Map<String, Object>>) gatherInfo.get("questions")).get(0);
+  }
+
+  @Test
+  void testGatherLevelIsolatedTrue() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", "next_step", "Answer", true)
+        .addGatherQuestion("name", "What is your name?");
+
+    @SuppressWarnings("unchecked")
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    assertEquals(true, gatherInfo.get("isolated"));
+  }
+
+  @Test
+  void testGatherLevelIsolatedFalseOmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", "next_step", "Answer")
+        .addGatherQuestion("name", "What is your name?");
+
+    @SuppressWarnings("unchecked")
+    var gatherInfo = (Map<String, Object>) step.toMap().get("gather_info");
+    assertFalse(gatherInfo.containsKey("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedNullOmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null)
+        .addGatherQuestion("name", "What is your name?");
+
+    assertFalse(firstGatherQuestion(step).containsKey("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedTrueEmitted() {
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null)
+        .addGatherQuestion("name", "What is your name?", "string", false, null, null, true);
+
+    assertEquals(true, firstGatherQuestion(step).get("isolated"));
+  }
+
+  @Test
+  void testGatherQuestionIsolatedFalseEmitted() {
+    // Explicit False IS on the wire — it overrides an isolated gather.
+    var step = new Step("collect");
+    step.setText("Collecting")
+        .setGatherInfo("info", null, null, true)
+        .addGatherQuestion("name", "What is your name?", "string", false, null, null, false);
+
+    var q = firstGatherQuestion(step);
+    assertTrue(q.containsKey("isolated"));
+    assertEquals(false, q.get("isolated"));
+  }
+
   // ======== Context Tests ========
 
   @Test
@@ -233,6 +317,29 @@ class ContextsTest {
     assertEquals(2, steps.size());
     assertEquals("greeting", steps.get(0).get("name"));
     assertEquals("farewell", steps.get(1).get("name"));
+  }
+
+  @Test
+  void testContextHistory() {
+    for (String mode : List.of("keep", "default", "hide")) {
+      var ctx = new Context("default");
+      ctx.addStep("greeting").setText("Hello!");
+      ctx.setHistory(mode);
+      assertEquals(mode, ctx.toMap().get("history"));
+    }
+  }
+
+  @Test
+  void testContextHistoryOmittedWhenUnset() {
+    var ctx = new Context("default");
+    ctx.addStep("greeting").setText("Hello!");
+    assertFalse(ctx.toMap().containsKey("history"));
+  }
+
+  @Test
+  void testContextHistoryInvalidRejected() {
+    var ctx = new Context("default");
+    assertThrows(IllegalArgumentException.class, () -> ctx.setHistory("bogus"));
   }
 
   @Test
