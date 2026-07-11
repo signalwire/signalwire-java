@@ -137,8 +137,16 @@ public class Action {
     if (!done) {
       this.done = true;
       this.result = event;
-      this.completionFuture.complete(event);
+      // Fire onCompleted BEFORE completing the future. The Python reference is
+      // async single-threaded, so its `_done.set_result()` then `_on_completed()`
+      // ordering guarantees any `await`-er resumes only after the callback has run.
+      // This port resolves on the RELAY reader thread while waitForCompletion() blocks
+      // on another thread, so completing the future first lets the waiter race ahead of
+      // fireOnCompleted() — a caller that both waits AND sets a callback could observe
+      // completion with the callback not yet fired. Firing first preserves the
+      // reference's guarantee (callback observed no later than completion) race-free.
       fireOnCompleted();
+      this.completionFuture.complete(event);
     }
   }
 
