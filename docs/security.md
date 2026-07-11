@@ -64,6 +64,13 @@ export SWML_BASIC_AUTH_PASSWORD=mysecurepassword
 | `SWML_RATE_LIMIT` | `60` | Requests per minute limit |
 | `SWML_REQUEST_TIMEOUT` | `30` | Request timeout in seconds |
 
+### Validation and URL Safety
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SWML_SKIP_SCHEMA_VALIDATION` | `false` | Set to `1`/`true`/`yes` to skip SWML JSON-schema validation. Intended for development; leave unset in production so malformed documents are rejected. |
+| `SWML_ALLOW_PRIVATE_URLS` | `false` | Set to `1`/`true`/`yes` to allow webhook/fetch URLs that resolve to private, loopback, or link-local addresses. This **bypasses the SSRF guard** — leave unset in production. |
+
 ## Service-Specific Usage
 
 ### SWML Services (AgentBase)

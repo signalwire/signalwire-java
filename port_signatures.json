@@ -29157,6 +29157,15 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         },
@@ -40105,6 +40114,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         },
@@ -55499,6 +55517,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         }
@@ -56573,6 +56600,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         }
@@ -67548,6 +67584,15 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         },
@@ -70886,6 +70931,15 @@
                 }
               ],
               "returns": "dict<string,any>"
+            },
+            "paginate": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
           }
         }

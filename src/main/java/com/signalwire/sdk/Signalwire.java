@@ -84,19 +84,16 @@ public final class Signalwire {
             ? args.get(0)
             : kwargs.getOrDefault(
                 "project",
-                kwargs.getOrDefault(
-                    "project_id", System.getenv().getOrDefault("SIGNALWIRE_PROJECT_ID", "")));
+                kwargs.getOrDefault("project_id", orEmpty(System.getenv("SIGNALWIRE_PROJECT_ID"))));
     String token =
         args.size() > 1
             ? args.get(1)
-            : kwargs.getOrDefault(
-                "token", System.getenv().getOrDefault("SIGNALWIRE_API_TOKEN", ""));
+            : kwargs.getOrDefault("token", orEmpty(System.getenv("SIGNALWIRE_API_TOKEN")));
     String space =
         args.size() > 2
             ? args.get(2)
             : kwargs.getOrDefault(
-                "space",
-                kwargs.getOrDefault("host", System.getenv().getOrDefault("SIGNALWIRE_SPACE", "")));
+                "space", kwargs.getOrDefault("host", orEmpty(System.getenv("SIGNALWIRE_SPACE"))));
     if (project == null
         || project.isEmpty()
         || token == null
@@ -227,5 +224,10 @@ public final class Signalwire {
    */
   public static List<Map<String, Object>> listSkills() {
     return new ArrayList<>(listSkillsWithParams().values());
+  }
+
+  /** Null-safe env fallback: returns {@code ""} when the variable is unset. */
+  private static String orEmpty(String v) {
+    return v != null ? v : "";
   }
 }

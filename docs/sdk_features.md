@@ -298,7 +298,7 @@ That single call starts the built-in HTTP server (JDK `com.sun.net.httpserver.Ht
 
 For standalone mode, the SDK provides:
 - Kubernetes health (`/health`) and readiness (`/ready`) probes
-- SSL/TLS support via `SWML_SSL_ENABLED`, `SWML_SSL_CERT`, `SWML_SSL_KEY`
+- SSL/TLS support via `SWML_SSL_ENABLED`, `SWML_SSL_CERT_PATH`, `SWML_SSL_KEY_PATH`
 - Security headers on all authenticated endpoints (`X-Content-Type-Options`, `X-Frame-Options`, `Cache-Control`)
 - Proxy-aware public URL detection (`X-Forwarded-Host`, `Forwarded`, `SWML_PROXY_URL_BASE`)
 

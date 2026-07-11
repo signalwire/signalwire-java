@@ -2811,7 +2811,7 @@ bin/swaig-test MyAgent --simulate-serverless lambda --dump-swml
 bin/swaig-test MyAgent --simulate-serverless lambda --exec get_weather --param city=Miami
 ```
 
-The agent class must expose a public static factory method returning an `AgentBase` — `createAgent(EnvProvider)` / `buildAgent(EnvProvider)` / `newAgent(EnvProvider)` / `getAgent(EnvProvider)` (or their no-arg equivalents). The `EnvProvider`-aware signature is recommended so the agent's build-time env reads (`SWML_BASIC_AUTH_*`, `SWML_PROXY_URL_BASE`) see the simulated values. Supported platform: `lambda`.
+The agent class must expose a public static factory method returning an `AgentBase` — `createAgent(EnvProvider)` / `buildAgent(EnvProvider)` / `newAgent(EnvProvider)` / `getAgent(EnvProvider)` (or their no-arg equivalents). The `EnvProvider`-aware signature is recommended so the agent's build-time env reads (`SWML_BASIC_AUTH_USER`, `SWML_BASIC_AUTH_PASSWORD`, `SWML_PROXY_URL_BASE`) see the simulated values. Supported platform: `lambda`.
 
 ### Testing Best Practices
 

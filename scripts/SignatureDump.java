@@ -50,6 +50,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -133,6 +134,22 @@ public class SignatureDump {
         return result;
     }
 
+    /**
+     * True when {@code c} is a strict subclass of the REST {@code ReadResource} base (i.e. inherits
+     * its {@code paginate()} / {@code list()} / {@code get()}), but not {@code ReadResource} itself.
+     * Detected by simple-name walk up the superclass chain to avoid a hard dependency on the class
+     * being loadable by name.
+     */
+    static boolean extendsReadResource(Class<?> c) {
+        for (Class<?> s = c.getSuperclass(); s != null && s != Object.class; s = s.getSuperclass()) {
+            if ("ReadResource".equals(s.getSimpleName())
+                    && s.getName().startsWith("com.signalwire.sdk.rest.")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static String dumpType(Class<?> c) {
         StringBuilder sb = new StringBuilder();
         String pkg = c.getPackageName();
@@ -174,12 +191,34 @@ public class SignatureDump {
                 methods,
                 Comparator.comparing(Method::getName)
                         .thenComparing(SignatureDump::paramTypeSig));
+        Set<String> declaredMethodNames = new java.util.HashSet<>();
         for (Method m : methods) {
             if (!Modifier.isPublic(m.getModifiers())) continue;
             if (m.isSynthetic() || m.isBridge()) continue;
             // Skip Object overrides
             if (m.getDeclaringClass() == Object.class) continue;
+            declaredMethodNames.add(m.getName());
             methodEntries.add(dumpMethod(m));
+        }
+
+        // Inherited paginate(): the read/CRUD leaf resources (FaxLogs, VoiceLogs,
+        // MessageLogs, VideoRoomSessions, FabricAddresses, ...) extend ReadResource
+        // and inherit its paginate() but DECLARE only their constructor. Python's
+        // reference enumerator surfaces inherited paginate() on those subclasses,
+        // and the cross-port signature differ checks paginate per-method (it is not
+        // a CRUD verb the crud_base binding covers). So project the inherited
+        // ReadResource.paginate() onto every ReadResource subclass here, matching
+        // how list/get are inherited — otherwise every read-resource leaf drifts on
+        // a phantom "missing-port paginate". Only the no-arg overload is projected
+        // (the oracle records paginate(self)); a subclass that overrides paginate
+        // keeps its own declaration.
+        if (extendsReadResource(c) && !declaredMethodNames.contains("paginate")) {
+            try {
+                Method pag = c.getMethod("paginate");
+                methodEntries.add(dumpMethod(pag));
+            } catch (Throwable ignored) {
+                // best-effort: if paginate can't be resolved, skip.
+            }
         }
 
         // Public fields — Python's reference adapter projects instance

@@ -362,7 +362,7 @@ step.setFunctions("none");
 
 ### Step Navigation Rules
 
-The `set_valid_steps()` method controls movement within a context:
+The `setValidSteps()` method controls movement within a context:
 
 ```java
 // Explicit step list - can only go to these steps
@@ -377,7 +377,7 @@ step.setValidSteps(List.of());
 
 ### Context Navigation Rules
 
-The `set_valid_contexts()` method controls switching between contexts:
+The `setValidContexts()` method controls switching between contexts:
 
 ```java
 // Can switch to these contexts
