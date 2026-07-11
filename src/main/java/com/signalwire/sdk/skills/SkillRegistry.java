@@ -53,11 +53,38 @@ public final class SkillRegistry {
     register("custom_skills", CustomSkillsSkill::new);
   }
 
+  /** Env var seeding external skill-search directories. Mirrors Python's registry.py. */
+  private static final String ENV_SKILL_PATHS = "SIGNALWIRE_SKILL_PATHS";
+
   /**
    * Public no-arg constructor so callers can manage their own external-paths list. The static
    * registry is unaffected.
+   *
+   * <p>Seeds {@code externalPaths} from the {@code SIGNALWIRE_SKILL_PATHS} environment variable (a
+   * {@link File#pathSeparator}-delimited list of directories), mirroring Python's {@code
+   * SkillRegistry}, which scans {@code os.environ["SIGNALWIRE_SKILL_PATHS"]} for external skill
+   * directories. Non-existent or non-directory entries are skipped (env seeding is best-effort,
+   * unlike the explicit {@link #addSkillDirectory(String)} which validates and throws).
    */
-  public SkillRegistry() {}
+  public SkillRegistry() {
+    seedExternalPathsFromEnv();
+  }
+
+  private void seedExternalPathsFromEnv() {
+    String raw = System.getenv(ENV_SKILL_PATHS);
+    if (raw == null || raw.isEmpty()) {
+      return;
+    }
+    for (String path : raw.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+      if (path.isEmpty()) {
+        continue;
+      }
+      File dir = new File(path);
+      if (dir.isDirectory() && !externalPaths.contains(path)) {
+        externalPaths.add(path);
+      }
+    }
+  }
 
   /** Register a skill factory. */
   public static void register(String name, Supplier<SkillBase> factory) {

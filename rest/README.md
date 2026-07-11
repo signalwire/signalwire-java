@@ -33,7 +33,7 @@ client.calling().dial(
 
 ## Features
 
-- Single `RestClient` with 21 namespaced sub-objects for every API
+- Single `RestClient` with 20 namespaced sub-objects for every API
 - All calling commands: dial, play, record, collect, detect, tap, stream, AI, transcribe
 - Full Fabric API: resource types with CRUD + addresses, tokens, and generic resources
 - Datasphere: document management and semantic search

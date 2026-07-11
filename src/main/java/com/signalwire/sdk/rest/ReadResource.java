@@ -39,4 +39,34 @@ public class ReadResource extends BaseResource {
   public Map<String, Object> get(String id) {
     return restGet(getBasePath() + "/" + id, null);
   }
+
+  /**
+   * Iterate every item across all pages of this resource's list endpoint.
+   *
+   * <p>Mirrors Python's {@code ReadResource.paginate(**params)}. Where {@link #list()} returns a
+   * single raw page (the server's first response), {@code paginate()} returns a {@link
+   * PaginatedIterator} that follows the {@code links.next} cursor and yields each item across all
+   * pages, so callers no longer hand-build the path + token loop:
+   *
+   * <pre>{@code
+   * for (Map<String, Object> address : client.fabric().addresses().paginate()) {
+   *     // ...
+   * }
+   * }</pre>
+   *
+   * @return an {@link Iterable}/{@link java.util.Iterator} over every item in the list endpoint
+   */
+  public PaginatedIterator paginate() {
+    return paginate(null);
+  }
+
+  /**
+   * Iterate every item across all pages, seeding the first request with {@code queryParams}.
+   *
+   * @param queryParams initial query parameters for the first page (may be {@code null})
+   * @return an {@link Iterable}/{@link java.util.Iterator} over every item in the list endpoint
+   */
+  public PaginatedIterator paginate(Map<String, String> queryParams) {
+    return new PaginatedIterator(getHttpClient(), getBasePath(), queryParams, "data");
+  }
 }

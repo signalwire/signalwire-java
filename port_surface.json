@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 3051e6afe084df8fc53e729c63011f35a61cb78a",
+  "generated_from": "signalwire-java @ 20c4c4879a262f50a82ada4fee5cd57649988fe5",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1869,7 +1869,8 @@
         "ReadResource": [
           "__init__",
           "get",
-          "list"
+          "list",
+          "paginate"
         ],
         "SignalWireRestError": [
           "__init__",

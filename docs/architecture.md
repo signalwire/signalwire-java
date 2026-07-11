@@ -957,7 +957,7 @@ The contexts system integrates with the existing SWML generation pipeline:
 - All referenced contexts in navigation must exist
 
 **Step Content Rules:**
-- Cannot mix `set_text()` with `add_section()` in same step
+- Cannot mix `setText()` with `addSection()` in same step
 - POM sections support full feature set (bullets, numbering, etc.)
 - Direct text provides simpler prompt definition
 - Content is mandatory for each step
@@ -1146,7 +1146,8 @@ Key environment variables:
 - `SWML_SSL_CERT_PATH`: Path to SSL certificate
 - `SWML_SSL_KEY_PATH`: Path to SSL key
 - `SWML_DOMAIN`: Domain name for the service
-- `SWML_SCHEMA_PATH`: Optional path to override the schema.json location
+- `SWML_SKIP_SCHEMA_VALIDATION`: Set to `1`/`true`/`yes` to skip SWML JSON-schema validation
+- `SWML_ALLOW_PRIVATE_URLS`: Set to `1`/`true`/`yes` to allow webhook URLs that resolve to private/loopback addresses (SSRF guard bypass — leave unset in production)
 
 ## Request Flow
 

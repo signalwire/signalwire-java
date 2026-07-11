@@ -79,12 +79,12 @@ $GRADLE jar
 2. **Service** (`swml/Service.java`) -- Foundation SWML service with 38 schema-driven verb methods
 3. **Document** (`swml/Document.java`) -- SWML document builder
 4. **AgentServer** (`server/AgentServer.java`) -- Multi-agent hosting server with SIP routing
-5. **SkillBase/SkillManager** (`skills/`) -- Modular capabilities framework with 18 built-in skills
+5. **SkillBase/SkillManager** (`skills/`) -- Modular capabilities framework with 17 built-in skills
 6. **ContextBuilder** (`contexts/`) -- Structured workflow management (contexts + steps)
 7. **DataMap** (`datamap/DataMap.java`) -- Server-side API integration without webhooks
 8. **FunctionResult** (`swaig/FunctionResult.java`) -- 40+ action methods for tool responses
 9. **RelayClient** (`relay/RelayClient.java`) -- Real-time call control via WebSocket
-10. **RestClient** (`rest/RestClient.java`) -- REST API client with 21 namespaces
+10. **RestClient** (`rest/RestClient.java`) -- REST API client with 20 namespaces
 
 ### Key Patterns
 
@@ -136,7 +136,7 @@ com.signalwire.sdk/
     security/     SessionManager (HMAC-SHA256 tokens)
     logging/      Logger (level-controlled, env-var driven)
     relay/        RelayClient, Call, Action, Message, RelayEvent, Constants
-    rest/         RestClient, HttpClient, CrudResource, 21 namespaces
+    rest/         RestClient, HttpClient, CrudResource, 20 namespaces
 ```
 
 ### Testing
@@ -178,4 +178,5 @@ com.signalwire.sdk/
 | `SIGNALWIRE_LOG_MODE` | Set to "off" to suppress all output |
 | `SIGNALWIRE_PROJECT_ID` | Project ID for RELAY/REST clients |
 | `SIGNALWIRE_API_TOKEN` | API token for RELAY/REST clients |
+| `SIGNALWIRE_JWT_TOKEN` | JWT token for RELAY client auth (alternative to `SIGNALWIRE_API_TOKEN`) |
 | `SIGNALWIRE_SPACE` | Space hostname for RELAY/REST clients |

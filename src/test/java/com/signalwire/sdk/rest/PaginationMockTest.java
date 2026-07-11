@@ -136,6 +136,41 @@ class PaginationMockTest {
   }
 
   @Test
+  @DisplayName("ReadResource.paginate() walks all pages via the resource base method")
+  void resourcePaginateWalksAllPages() {
+    // Stage page 1 (with next cursor) and page 2 (terminal), served for the
+    // fabric addresses list endpoint that FabricAddresses.paginate() hits.
+    mock.scenarioSet(
+        ENDPOINT_ID,
+        200,
+        page(
+            List.of(entry("addr-1", "first"), entry("addr-2", "second")),
+            "http://example.com/api/fabric/addresses?cursor=page2"));
+    mock.scenarioSet(ENDPOINT_ID, 200, page(List.of(entry("addr-3", "third")), null));
+
+    // Drive pagination through the public paginate() on the read/CRUD base
+    // (FabricAddresses extends ReadResource), not a hand-built iterator.
+    List<String> ids = new ArrayList<>();
+    for (Map<String, Object> item : client.fabric().addresses().paginate()) {
+      ids.add((String) item.get("id"));
+    }
+    assertEquals(List.of("addr-1", "addr-2", "addr-3"), ids);
+
+    // Exactly two GETs, and the second one followed the links.next cursor.
+    List<MockTest.JournalEntry> gets = new ArrayList<>();
+    for (MockTest.JournalEntry e : mock.journal()) {
+      if (FABRIC_ADDRESSES_JOURNAL_PATH.equals(e.path)) {
+        gets.add(e);
+      }
+    }
+    assertEquals(2, gets.size(), "expected 2 paginated GETs, got " + gets.size());
+    assertEquals(
+        List.of("page2"),
+        gets.get(1).getQueryParams().get("cursor"),
+        "second fetch missing cursor=page2: " + gets.get(1).getQueryParams());
+  }
+
+  @Test
   @DisplayName("next() raises NoSuchElementException when done")
   void nextRaisesAfterExhaustion() {
     mock.scenarioSet(ENDPOINT_ID, 200, page(List.of(entry("only-one")), null));
