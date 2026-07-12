@@ -18,27 +18,22 @@ and never will be.
 
 ### java.lang
 
-Thread: java.lang.Thread (JDK) — used for background workers in examples
 exit: System.exit(int) (JDK) — CLI error exit in examples
-equals: Object#equals(Object) (JDK) — string / value comparison in examples
 equalsIgnoreCase: String#equalsIgnoreCase (JDK) — case-insensitive compare
 toLowerCase: String#toLowerCase (JDK) — String normalization in examples
 toUpperCase: String#toUpperCase (JDK) — String normalization in examples
 parseInt: Integer.parseInt (JDK) — env-var parsing in examples
 parseDouble: Double.parseDouble (JDK) — env-var parsing in examples
 doubleValue: Number#doubleValue (JDK) — numeric unboxing in examples
-getMessage: Throwable#getMessage (JDK) — exception reporting in examples
 println: PrintStream#println (JDK) — example console output
 printf: PrintStream#printf (JDK) — example console output
 interrupt: Thread#interrupt (JDK) — cooperative cancellation
 setDaemon: Thread#setDaemon (JDK) — example background threads
 currentThread: Thread#currentThread (JDK) — re-interrupt idiom
-wait: Object#wait (JDK) — generic reference in docs; also matches Python wait_for_completion noise
 java: a package/literal reference in test scaffolding (not a method call)
 
 ### java.util / java.util.function
 
-of: Map.of / List.of / Set.of static factories (JDK 9+) — pervasive in examples
 ofPattern: DateTimeFormatter.ofPattern (java.time) — example formatters
 asList: Arrays.asList (JDK) — list construction in examples
 getOrDefault: Map#getOrDefault (JDK) — safe-get pattern in examples
@@ -82,8 +77,6 @@ readAllBytes: InputStream#readAllBytes (JDK) — example server input read
 
 ### Gson (JSON binding library used by SignalWire SDK)
 
-fromJson: com.google.gson.Gson#fromJson — JSON parse helper in harnesses
-getType: TypeToken#getType — generic-erasure helper for Gson in harnesses
 
 ### java.lang.System (timing / clock)
 
@@ -91,7 +84,6 @@ currentTimeMillis: System.currentTimeMillis (JDK) — deadline math in harnesses
 
 ### java.util.concurrent
 
-call: Callable#call (JDK) — incidental match in harness lambda contexts
 
 ---
 
@@ -107,12 +99,9 @@ Java equivalent or told the API is not ported.
 
 ### Python dunders and decorator targets
 
-__init__: Python constructor convention in `` ```python `` blocks
-tool: the `@AgentBase.tool(...)` Python decorator — Java uses defineTool()
 
 ### Python stdlib and logging
 
-warning: logging.Logger.warning (Python stdlib)
 
 ### FastAPI / ASGI router (Python hosting, not ported)
 
@@ -121,11 +110,6 @@ warning: logging.Logger.warning (Python stdlib)
 
 See PORT_OMISSIONS.md for the corresponding entries and rationale.
 
-setPersonality: Python-docs artifact; Java uses promptAddSection("Personality", ...)
-setGoal: Python-docs artifact; Java uses promptAddSection("Goal", ...)
-setInstructions: Python-docs artifact; Java uses promptAddSection("Instructions", ...)
-setGoal: Python-docs artifact; Java uses promptAddSection("Goal", ...)
-get_config: user-defined example method, not SDK API
 
 ### Python REST namespace methods (documented for conceptual parity)
 
@@ -135,12 +119,6 @@ on `CrudResource` handles; Python's per-operation convenience methods
 CRUD + a generic calling-control endpoint. See PORT_OMISSIONS.md and
 `rest/docs/*.md` Java-native sections for the equivalent Java call.
 
-start_recording: Python calling-control RPC — not surfaced
-purchase: Python phone-numbers helper — Java uses phoneNumbers().create(body-with-number)
-verify: Python verified-callers helper — Java uses compliance().cnamRegistrations()
-sms: Python messaging namespace — Java uses client.messaging().messages()
-phone_number: doc-link reference, not a callable
-end: Python Call.end — Java uses Call#hangup
 
 ### Relay (Python Call)
 
@@ -200,7 +178,6 @@ methods; listed so example references resolve.
 
 extras: Calling.*Request.Builder#extras(Map) etc. — arbitrary-field escape door on every typed *Request builder
 from: Calling.DialRequest.Builder#from(String) — 'from' wire field (dial)
-to: Calling.DialRequest.Builder#to(String) — 'to' wire field (dial)
 url: Calling.DialRequest.Builder#url(String) — 'url' wire field (dial)
 initialTimeout: Calling.CollectRequest.Builder#initialTimeout(Double) — 'initial_timeout' wire field (collect)
 digits: Calling.CollectRequest.Builder#digits(Map) — 'digits' wire field (collect)
