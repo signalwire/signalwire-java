@@ -432,8 +432,8 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 # IGNORE-LEDGER-VERIFY READS port_surface.json → res=surface (mutex with the
 # SURFACE-* regenerators that truncate the file in place while enumerating; a
 # res=dayone slot could read it mid-truncation → empty-file JSONDecodeError).
-sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
-    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo .
+sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md (strict: reason/approver/date required)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo . --require-fields
 sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port java --repo .
 sched_gate ARTIFACT-DENY res=gradle desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
@@ -453,6 +453,10 @@ sched_gate GEN-IDIOM res=dayone desc="generated code is not lint-excluded (idiom
     -- python3 "$PORTING_SDK_DIR/scripts/gen_idiom.py" --port java --repo .
 sched_gate RELEASE-FRESH res=dayone desc="publish workflow runs gates BEFORE publishing" \
     -- python3 "$PORTING_SDK_DIR/scripts/release_fresh.py" --port java --repo .
+# SEMVER-DIFF — the version bump must match the API surface change vs the
+# committed port_signatures.baseline.json floor (baseline_version 3.0.2). Blocking.
+sched_gate SEMVER-DIFF res=dayone desc="version bump matches API surface change vs baseline floor" \
+    -- python3 "$PORTING_SDK_DIR/scripts/semver_diff.py" --port java --repo "$PORT_ROOT"
 
 sched_run
 rc=$?

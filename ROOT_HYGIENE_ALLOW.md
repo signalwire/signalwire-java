@@ -22,5 +22,6 @@ they cannot move to `eng/` without breaking the shared audit pipeline.
 - audit_coverage.json — required audit-contract file read/written by porting-sdk audit_coverage_map.py at port root (orchestrator, 2026-07-06)
 - audit_coverage_baseline.json — required audit-contract baseline read by porting-sdk audit_coverage_map.py at port root (orchestrator, 2026-07-06)
 - port_signatures.json — required audit-contract file read by porting-sdk diff/drift scripts at port root (orchestrator, 2026-07-06)
+- port_signatures.baseline.json — load-bearing SEMVER-DIFF release-floor file; mirrors port_signatures.json; must be at root, must not ship in package (orchestrator, 2026-07-13)
 - port_surface.json — required audit-contract file read by porting-sdk audit_docs/ignore_ledger/freshness scripts at port root (orchestrator, 2026-07-06)
 - port_surface_native.json — required audit-contract file read/written by this port's scripts/enumerate_surface.py at port root (orchestrator, 2026-07-06)
