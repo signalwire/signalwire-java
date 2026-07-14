@@ -82,9 +82,24 @@ pick_free_port() {
 
 # SIGNATURES — rebuild the jar first so adapter reflection sees the latest source,
 # then regenerate port_signatures.json.
+#
+# --no-build-cache is LOAD-BEARING here (same reason run-lint.sh forces it): this
+# build must MATERIALIZE build/classes + build/libs/*.jar on disk, because both the
+# enumerator (SignatureDump over the jar) AND the downstream SWAIG-CLI / DOC-CLI
+# gates invoke `java -cp <jar> com.signalwire.sdk.cli.SwaigTest` against that jar.
+# With the cross-run Gradle build cache on (org.gradle.caching=true globally +
+# --build-cache), gradle/actions/setup-gradle restores a build-cache from a prior
+# run; a compileJava entry saved incomplete (a cancelled/mid-pack run) is a HARD
+# failure on the next hit — "Failed to load cache entry ...: Could not load from
+# local cache: .../CallingLeaveConferenceParams.class (No such file or directory)"
+# — so compileJava fails, no jar is produced, and every SwaigTest invocation then
+# dies with ClassNotFoundException (the nightly SIGNATURES + SWAIG-CLI red).
+# --no-build-cache forces compileJava to actually execute, reliably writing the
+# jar; the daemon + Gradle up-to-date checks still apply. Command-line
+# --no-build-cache wins over both --build-cache and the gradle.properties setting.
 signatures_gate() {
     # shellcheck disable=SC2086
-    ./gradlew $GRADLE_DAEMON_FLAG --build-cache build -x test && python3 scripts/enumerate_signatures.py
+    ./gradlew $GRADLE_DAEMON_FLAG --no-build-cache build -x test && python3 scripts/enumerate_signatures.py
 }
 
 # SURFACE-FRESH — regenerate port_surface.json in place (enumerator parses src, not
