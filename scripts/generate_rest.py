@@ -201,7 +201,7 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
 # newly-discovered spec not listed here is appended in sorted-glob order.
 _PRESENTATION_ORDER = (
     "relay-rest", "fabric", "calling", "video", "datasphere",
-    "logs", "message", "voice", "fax", "project", "chat", "pubsub",
+    "logs", "message", "voice", "fax", "project", "projects", "chat", "pubsub",
     "swml-webhooks",
 )
 

@@ -27,6 +27,7 @@ public abstract class ResourceTree {
   private SipProfile sipProfile;
   private VerifiedCallers verifiedCallers;
   private Calling calling;
+  private Projects projects;
   private Chat chat;
   private PubSub pubsub;
   private RegistryNamespace registry;
@@ -120,6 +121,13 @@ public abstract class ResourceTree {
       calling = new Calling(generatedHttpClient());
     }
     return calling;
+  }
+
+  public Projects projects() {
+    if (projects == null) {
+      projects = new Projects(generatedHttpClient());
+    }
+    return projects;
   }
 
   public Chat chat() {
