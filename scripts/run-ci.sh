@@ -380,6 +380,22 @@ sched_gate SNIPPET-COMPILE tier=nightly res=gradle desc="documented code snippet
 sched_gate DOC-CLI desc="documented swaig-test invocations parse against the real CLI" \
     -- python3 "$PORTING_SDK_DIR/scripts/doc_cli.py" --port java --repo "$PORT_ROOT"
 
+# Wave-3 doc/API-truth gates — deterministic source/doc analysis (no build, no
+# mock, ~1.3s for all six). Per-PR tier: cheap enough to catch doc/API drift at
+# PR time rather than a day later in nightly.
+sched_gate ERROR-ENVELOPE desc="REST error carries the full (status,body,url,method) envelope + raised on >=400" \
+    -- python3 "$PORTING_SDK_DIR/scripts/error_envelope.py" --port java --repo "$PORT_ROOT"
+sched_gate DEAD-PUBLIC-ERROR desc="exported error types are raised/caught/user-signalled (no dead error surface)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/dead_public_error.py" --port java --repo "$PORT_ROOT"
+sched_gate PAGINATION-WIRED desc="shipped iterator-protocol paginator is wired into list()" \
+    -- python3 "$PORTING_SDK_DIR/scripts/pagination_wired.py" --port java --repo "$PORT_ROOT"
+sched_gate DOC-ENV desc="documented SIGNALWIRE_*/SWML_* env vars <=> code-read vars agree" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_env.py" --port java --repo "$PORT_ROOT"
+sched_gate COUNT-CLAIM desc="numeric doc claims (skills/namespaces) match reality" \
+    -- python3 "$PORTING_SDK_DIR/scripts/count_claim.py" --port java --repo "$PORT_ROOT"
+sched_gate ACCESSOR-TRUTH desc="documented backtick method() refs exist in source" \
+    -- python3 "$PORTING_SDK_DIR/scripts/accessor_truth.py" --port java --repo "$PORT_ROOT"
+
 # EXAMPLES-RUN builds + runs every shipped examples/*.java via `gradle runExample`
 # against the shared mock (modulo EXAMPLES_RUN_ALLOW.md) → res=gradle, deferred
 # behind the cheap wave (heavy: one JVM per example).
@@ -416,8 +432,8 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 # IGNORE-LEDGER-VERIFY READS port_surface.json → res=surface (mutex with the
 # SURFACE-* regenerators that truncate the file in place while enumerating; a
 # res=dayone slot could read it mid-truncation → empty-file JSONDecodeError).
-sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md" \
-    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo .
+sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md (strict: reason/approver/date required)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo . --require-fields
 sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port java --repo .
 sched_gate ARTIFACT-DENY res=gradle desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
@@ -437,6 +453,10 @@ sched_gate GEN-IDIOM res=dayone desc="generated code is not lint-excluded (idiom
     -- python3 "$PORTING_SDK_DIR/scripts/gen_idiom.py" --port java --repo .
 sched_gate RELEASE-FRESH res=dayone desc="publish workflow runs gates BEFORE publishing" \
     -- python3 "$PORTING_SDK_DIR/scripts/release_fresh.py" --port java --repo .
+# SEMVER-DIFF — the version bump must match the API surface change vs the
+# committed port_signatures.baseline.json floor (baseline_version 3.0.2). Blocking.
+sched_gate SEMVER-DIFF res=dayone desc="version bump matches API surface change vs baseline floor" \
+    -- python3 "$PORTING_SDK_DIR/scripts/semver_diff.py" --port java --repo "$PORT_ROOT"
 
 sched_run
 rc=$?

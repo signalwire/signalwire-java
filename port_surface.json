@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 20c4c4879a262f50a82ada4fee5cd57649988fe5",
+  "generated_from": "signalwire-java @ a60a5912d05393072d067426b1cab06c6ae9c16c",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1900,10 +1900,30 @@
     "signalwire.rest.client": {
       "classes": {
         "RestClient": [
+          "addresses",
           "builder",
+          "calling",
+          "chat",
+          "datasphere",
+          "fabric",
           "get_http_client",
           "get_project",
           "get_space",
+          "imported_numbers",
+          "logs",
+          "lookup",
+          "mfa",
+          "number_groups",
+          "phone_numbers",
+          "project",
+          "pubsub",
+          "queues",
+          "recordings",
+          "registry",
+          "short_codes",
+          "sip_profile",
+          "verified_callers",
+          "video",
           "with_base_url"
         ]
       },
@@ -1912,22 +1932,55 @@
     "signalwire.rest.namespaces._client_tree_generated": {
       "classes": {
         "DatasphereNamespace": [
-          "__init__"
+          "__init__",
+          "documents"
         ],
         "FabricNamespace": [
-          "__init__"
+          "__init__",
+          "addresses",
+          "ai_agents",
+          "call_flows",
+          "conference_rooms",
+          "cxml_applications",
+          "cxml_scripts",
+          "cxml_webhooks",
+          "freeswitch_connectors",
+          "relay_applications",
+          "resources",
+          "sip_endpoints",
+          "sip_gateways",
+          "subscribers",
+          "swml_scripts",
+          "swml_webhooks",
+          "tokens"
         ],
         "LogsNamespace": [
-          "__init__"
+          "__init__",
+          "conferences",
+          "fax",
+          "messages",
+          "voice"
         ],
         "ProjectNamespace": [
-          "__init__"
+          "__init__",
+          "tokens"
         ],
         "RegistryNamespace": [
-          "__init__"
+          "__init__",
+          "brands",
+          "campaigns",
+          "numbers",
+          "orders"
         ],
         "VideoNamespace": [
-          "__init__"
+          "__init__",
+          "conference_tokens",
+          "conferences",
+          "room_recordings",
+          "room_sessions",
+          "room_tokens",
+          "rooms",
+          "streams"
         ]
       },
       "functions": []

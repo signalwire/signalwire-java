@@ -1035,47 +1035,63 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     #     container classes are each the file's single top-level type; the only
     #     nested types are this Request/Builder scaffolding).
     #   * the client-tree WIRING — the ``ResourceTree`` plumbing base and the
-    #     namespace containers expose lazy accessor methods (``aiAgents()`` …)
-    #     that mirror Python instance attributes set in ``__init__``. The oracle
-    #     records the containers with ONLY ``__init__`` (attributes aren't
-    #     methods there) and has no ResourceTree at all. So: drop ResourceTree,
-    #     and restrict each container to ``__init__``. The RestClient's own
-    #     accessors are inherited from ResourceTree (not re-declared on
-    #     RestClient) and are likewise absent from the compared surface — the
-    #     6 hand RestClient members that remain are covered by PORT_ADDITIONS.
+    #     namespace containers expose lazy accessor methods (``aiAgents()`` …).
+    #     These are the Java statically-typed idiom for Python's ``client.fabric``
+    #     / ``client.fabric.subscribers`` INSTANCE ATTRIBUTES (Python wires them
+    #     as ``self.<name> = <Resource>(http)`` in ``__init__`` /
+    #     ``_wire_resources``; Java, having no ``__getattr__``, exposes each as a
+    #     public zero-arg accessor method). The Python surface ENUMERATOR records
+    #     only ``ClassDef``/``FunctionDef`` — never instance attributes — so the
+    #     accessor NAMES have NO method-surface counterpart in the reference
+    #     (``FabricNamespace`` etc. carry only ``__init__``; ``RestClient`` too).
+    #     They are therefore REAL public Java methods that must be VISIBLE to the
+    #     surface (so DOC-AUDIT resolves ``client.phoneNumbers()`` and the
+    #     enumeration is not blind to shipped API) and declared as PORT_ADDITIONS
+    #     (the Java lazy-accessor idiom for a Python instance attribute — the
+    #     reference expresses the same capability as an attribute the oracle does
+    #     not enumerate, so relative to the compared METHOD surface they are
+    #     port-side extras, not omissions). Emit them in BOTH modes:
+    #       - ResourceTree's accessors are inherited by ``RestClient`` (which
+    #         ``extends ResourceTree``); route them onto the reference's
+    #         ``signalwire.rest.client.RestClient`` (the Python home of the
+    #         client-tree attributes, wired by ``_GeneratedResourceTree``).
+    #       - each namespace container's accessors stay on that container class
+    #         (``FabricNamespace`` etc. in ``_client_tree_generated``).
     if java_package == "com.signalwire.sdk.rest.namespaces.generated":
         # 1. Drop every nested class (keep only the file's top-level type).
         classes = {outer_name: classes.get(outer_name, [])}
-        # 2. ResourceTree plumbing base. In python-reference mode drop it
-        #    entirely (the oracle has no ResourceTree; the RestClient's
-        #    top-level namespace accessors map to Python attributes and are
-        #    covered by PORT_ADDITIONS). In NATIVE mode keep its top-level
-        #    namespace-accessor methods (``registry()``/``fabric()``/…) so
-        #    doc snippets ``client.registry().brands()`` resolve — dropping
-        #    them leaves the container-getter half of the chain unresolvable.
-        #    Constructor spellings are stripped as elsewhere.
+        # 2. ResourceTree plumbing base. RestClient ``extends ResourceTree`` and
+        #    inherits its accessors; the TEXT enumerator sees them only in
+        #    ResourceTree.java. Route the accessor methods onto the reference's
+        #    RestClient (their Python home, wired as instance attributes by
+        #    ``_GeneratedResourceTree``) so the port surface exposes them and
+        #    DOC-AUDIT resolves ``client.fabric()`` etc. Strip constructor
+        #    spellings and any ``__init__``/``generated_http_client`` plumbing
+        #    (``generatedHttpClient`` is protected+abstract, not public API).
         if outer_name == "ResourceTree":
-            if not native:
-                return {}
-            ctor_names = {outer_name, camel_to_snake(outer_name)}
-            classes[outer_name] = [m for m in classes[outer_name] if m not in ctor_names]
-        # 3. Namespace containers. In python-reference mode keep only
-        #    ``__init__`` (match the oracle's ``_client_tree_generated``
-        #    classes, which record init only — the lazy accessors mirror
-        #    Python instance attributes set in ``__init__``, not methods).
-        #    In NATIVE mode the surface feeds doc-audit resolution, so the
-        #    container's lazy-accessor METHODS (``brands()``/``campaigns()``…)
-        #    must remain resolvable — doc snippets call ``client.registry
-        #    .brands()``. Native has no ``__init__`` (the constructor
-        #    translates to ``<ClassName>``/``<snake_class>`` — line 279-290);
-        #    drop just those constructor spellings and keep the accessors.
+            ctor_names = {outer_name, camel_to_snake(outer_name), "__init__",
+                          "generated_http_client"}
+            accessors = sorted(
+                {m for m in classes[outer_name] if m not in ctor_names}
+            )
+            return {
+                "signalwire.rest.client": {
+                    "classes": {"RestClient": accessors},
+                    "functions": [],
+                }
+            }
+        # 3. Namespace containers. Keep the container's lazy-accessor METHODS
+        #    (``brands()``/``campaigns()``/``subscribers()``…) on the container
+        #    class so the surface exposes the shipped accessors and DOC-AUDIT
+        #    resolves ``client.registry().brands()``. Strip constructor spellings
+        #    (native has no ``__init__``; the ctor translates to
+        #    ``<ClassName>``/``<snake_class>``). These accessors are PORT_ADDITIONS
+        #    (Java idiom for Python's ``self.<name>`` container attributes — the
+        #    oracle records these containers with only ``__init__``).
         if outer_name in _GENERATED_CONTAINERS:
-            meths = classes[outer_name]
-            if native:
-                ctor_names = {outer_name, camel_to_snake(outer_name)}
-                classes[outer_name] = [m for m in meths if m not in ctor_names]
-            else:
-                classes[outer_name] = ["__init__"] if "__init__" in meths else []
+            ctor_names = {outer_name, camel_to_snake(outer_name)}
+            classes[outer_name] = [m for m in classes[outer_name]
+                                   if m not in ctor_names]
         else:
             # 4. Implicit-base projection. SignatureDump/the text parser only see
             #    DECLARED methods, so a generated resource that INHERITS

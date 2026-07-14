@@ -26,6 +26,7 @@ mode agrees with the authoritative listing.
 - audit_coverage.json — porting-audit contract file; outside src/main, not in the published jar (orchestrator, 2026-07-06)
 - audit_coverage_baseline.json — porting-audit contract file; outside src/main, not in the published jar (orchestrator, 2026-07-06)
 - port_signatures.json — porting-audit contract file; outside src/main, not in the published jar (orchestrator, 2026-07-06)
+- port_signatures.baseline.json — load-bearing SEMVER-DIFF release-floor file; mirrors port_signatures.json; must be at root, must not ship in package (orchestrator, 2026-07-13)
 - port_surface.json — porting-audit contract file; outside src/main, not in the published jar (orchestrator, 2026-07-06)
 - port_surface_native.json — porting-audit contract file; outside src/main, not in the published jar (orchestrator, 2026-07-06)
 - examples/RelayAuditHarness.java — cross-port audit harness; in examples/, not in the published jar (orchestrator, 2026-07-06)
