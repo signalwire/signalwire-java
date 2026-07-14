@@ -154,12 +154,102 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
         return {idx_to_key[p]: Path(p).read_text() for p in paths}
 
 
-# The 12 real REST spec directories (registry has no own dir — its resources
-# live inside relay-rest via namespace: registry; swml-webhooks is types-only).
-SPEC_DIRS = [
+# ---------------------------------------------------------------------------
+# Spec discovery (§ REST_GENERATOR_RULES / mock_signalwire SPEC_NAMES).
+#
+# The set of REST namespaces is DISCOVERED by scanning rest-apis/*/openapi.yaml —
+# never a hardcoded list — so the generator tracks the specs the way the Python
+# reference (generate_python_rest_types.py: `rest_apis.glob("*/openapi.yaml")`)
+# and the mock's authoritative `SPEC_NAMES` do. Two derived sets, split by SPEC
+# CONTENT (not a curated list):
+#
+#   RESOURCE specs — a spec is a REST *resource* namespace iff some path carries
+#     x-sdk-resource markup. This is exactly the 12 canonical REST namespaces
+#     (calling/chat/datasphere/fabric/fax/logs/message/project/pubsub/relay-rest/
+#     video/voice) and matches the mock's SPEC_NAMES. `rest-apis/projects/` (the
+#     new /api/projects API, staged-for-reference but implemented by no SDK) has
+#     NO x-sdk-resource markup, so it is correctly NOT a resource namespace —
+#     the same reason it is intentionally absent from mock SPEC_NAMES.
+#
+#   TYPE specs — every namespace whose wire types the SDK surfaces: the RESOURCE
+#     specs PLUS the pure types-only specs that expose NO REST surface (no
+#     `servers` block → not an addressable REST API, only components/schemas).
+#     Today the only types-only spec is swml-webhooks (webhook payload types, no
+#     servers/paths). A staged REST spec like `projects` HAS a servers block but
+#     no x-sdk-resource markup, so it is neither a resource nor a types-only spec
+#     and is excluded from BOTH sets — matching the committed surface exactly.
+#
+# The per-namespace naming is fully derivable from the dir name: the Java
+# sub-package segment strips '-' (relay-rest→relayrest, swml-webhooks→
+# swmlwebhooks) and the oracle-leaf/module key folds '-'→'_' (relay-rest→
+# relay_rest). No list carries information the spec dir + markup doesn't.
+#
+# Discovery is ORDER-STABLE: dirs are visited in the sorted glob order the
+# reference uses, so the emitted output is deterministic across machines. The one
+# place cross-spec ORDER is observable in the output — the client tree's flat
+# accessors + containers (ResourceTree.java) and a container's member accessors
+# (…Namespace.java) are appended in spec-visitation order — keeps its historical
+# presentation order via _PRESENTATION_ORDER below. That tuple is NOT a discovery
+# source (membership is 100% derived from the scan); it only re-presents the
+# already-discovered set in the committed order, and any spec it does not name is
+# appended (in sorted-glob order) rather than dropped.
+# ---------------------------------------------------------------------------
+
+# Historical presentation order of the discovered REST namespaces — the order in
+# which the client tree lists its resources/containers. Purely cosmetic (surface
+# is identical regardless), pinned so the generated tree stays byte-stable; a
+# newly-discovered spec not listed here is appended in sorted-glob order.
+_PRESENTATION_ORDER = (
     "relay-rest", "fabric", "calling", "video", "datasphere",
     "logs", "message", "voice", "fax", "project", "chat", "pubsub",
-]
+    "swml-webhooks",
+)
+
+
+def _in_presentation_order(dirs: list[str]) -> list[str]:
+    rank = {name: i for i, name in enumerate(_PRESENTATION_ORDER)}
+    # Known dirs first (in the pinned order); any unlisted dir keeps its
+    # sorted-glob position, appended after the known ones.
+    return sorted(dirs, key=lambda d: (rank.get(d, len(rank)), d))
+
+
+def _spec_has_resource_markup(doc: dict) -> bool:
+    """True iff any path in the spec carries x-sdk-resource markup — the marker
+    of a REST *resource* namespace (vs a staged-but-unimplemented REST spec)."""
+    for item in (doc.get("paths") or {}).values():
+        if isinstance(item, dict) and item.get("x-sdk-resource"):
+            return True
+    return False
+
+
+def discover_specs(psdk: Path) -> tuple[list[str], list[tuple[str, str, str]]]:
+    """Scan rest-apis/*/openapi.yaml → (resource_dirs, type_ns).
+
+    resource_dirs: list of spec-dir names with x-sdk-resource markup (the REST
+      resource namespaces), in sorted-glob order.
+    type_ns: list of (spec-dir, java-sub, oracle-leaf) for every namespace whose
+      wire types the SDK surfaces — the resource specs PLUS any types-only spec
+      (no `servers` block). Also sorted-glob order.
+    """
+    rest_apis = psdk / "rest-apis"
+    resource_set: list[str] = []
+    type_set: list[str] = []
+    for of in sorted(rest_apis.glob("*/openapi.yaml")):
+        ns = of.parent.name
+        doc = yaml.safe_load(of.read_text()) or {}
+        has_resource = _spec_has_resource_markup(doc)
+        types_only = "servers" not in doc
+        if has_resource:
+            resource_set.append(ns)
+        if has_resource or types_only:
+            type_set.append(ns)
+    if not resource_set:
+        raise SystemExit("discover_specs: no REST resource specs found under rest-apis/")
+    resource_dirs = _in_presentation_order(resource_set)
+    type_ns = [(ns, ns.replace("-", ""), ns.replace("-", "_"))
+               for ns in _in_presentation_order(type_set)]
+    return resource_dirs, type_ns
+
 
 # The generated package + the on-disk sub-path under src/main/java.
 GEN_PACKAGE = "com.signalwire.sdk.rest.namespaces.generated"
@@ -1499,24 +1589,8 @@ def emit_type_enum(package: str, enum_name: str, values: list[str], source_desc:
     return type_gen_header(package, source_desc) + "\n".join(lines) + "\n"
 
 
-# The 13 REST wire-type namespaces: (spec-dir, Java subpackage segment, oracle leaf).
-# swml-webhooks is types-only (no resources / no servers block) and loaded specially.
-# relay-rest folds registry.
-TYPE_NS = [
-    ("relay-rest", "relayrest", "relay_rest"),
-    ("fabric", "fabric", "fabric"),
-    ("calling", "calling", "calling"),
-    ("video", "video", "video"),
-    ("datasphere", "datasphere", "datasphere"),
-    ("logs", "logs", "logs"),
-    ("message", "message", "message"),
-    ("voice", "voice", "voice"),
-    ("fax", "fax", "fax"),
-    ("project", "project", "project"),
-    ("chat", "chat", "chat"),
-    ("pubsub", "pubsub", "pubsub"),
-    ("swml-webhooks", "swmlwebhooks", "swml_webhooks"),
-]
+# The REST wire-type namespaces are DISCOVERED (discover_specs) — the resource
+# specs plus the types-only specs (swml-webhooks). relay-rest folds registry.
 
 # Generated wire-type classes live under this package + on-disk sub-path.
 TYPES_PACKAGE = "com.signalwire.sdk.rest.namespaces.generated.types"
@@ -1530,11 +1604,11 @@ def _load_types_schemas(psdk: Path, spec_dir: str) -> dict:
     return ((doc.get("components") or {}).get("schemas")) or {}
 
 
-def emit_types(psdk: Path, outs: dict[str, str]) -> None:
+def emit_types(psdk: Path, outs: dict[str, str], type_ns: list[tuple[str, str, str]]) -> None:
     """Emit every <ns>_types_generated Java data class / enum into
     ``types/<sub>/<TypeName>.java`` keys of ``outs`` (relative to the generated dir).
     Values are RAW java (build_outputs batch-formats)."""
-    for spec_dir, sub, ns_key in TYPE_NS:
+    for spec_dir, sub, ns_key in type_ns:
         schemas = _load_types_schemas(psdk, spec_dir)
         pkg = f"{TYPES_PACKAGE}.{sub}"
         for raw_name, node in schemas.items():
@@ -1564,7 +1638,8 @@ def emit_types(psdk: Path, outs: dict[str, str]) -> None:
 def build_outputs(psdk: Path) -> dict[str, str]:
     load_bases(psdk)  # validate x-sdk-bases (fail loud)
     _SIDECAR.clear()
-    specs = [load_spec(psdk, ns) for ns in SPEC_DIRS]
+    resource_dirs, type_ns = discover_specs(psdk)
+    specs = [load_spec(psdk, ns) for ns in resource_dirs]
     outs: dict[str, str] = {}
     for spec in specs:
         for anchor, markup in spec.resources():
@@ -1589,8 +1664,9 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     outs["ResourceTree.java"] = emit_resource_tree(placed)
 
     # Wire-type surface (item A/H): one method-less data class / enum per
-    # components/schemas OBJECT across the 13 REST namespaces, under types/<sub>/.
-    emit_types(psdk, outs)
+    # components/schemas OBJECT across the discovered REST namespaces, under
+    # types/<sub>/.
+    emit_types(psdk, outs, type_ns)
 
     import json as _json
     sidecar: dict[str, list[dict]] = {}
