@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.2.0] - 2026-07-14
+
+- REST: added the `Messages` resource (`client.messages()`) — send and redact
+  messages over `/api/messaging/messages` (`create` → POST, `update` → PATCH
+  `/{message_id}` for redaction), with generated typed request shapes (builder +
+  `extras` door) and wire tests covering each route (success and error) against
+  the shared mock. Distinct from the message logs namespace (`client.logs()`
+  `.messages()`).
+
 ## [3.1.0] - 2026-07-14
 
 - REST: added the `Projects` resource (`client.projects()`) — full CRUD over

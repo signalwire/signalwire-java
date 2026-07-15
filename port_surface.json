@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ efe43dc1ead33a3a51248af9c9df6f6b19ac17d3",
+  "generated_from": "signalwire-java @ 70755a71c61dce6d3bebf894da8c7b1c56ff4d46",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1912,6 +1912,7 @@
           "imported_numbers",
           "logs",
           "lookup",
+          "messages",
           "mfa",
           "number_groups",
           "phone_numbers",
@@ -2794,6 +2795,31 @@
         "Types_StatusCodes_StatusCode401": [],
         "Types_StatusCodes_StatusCode404": [],
         "Types_StatusCodes_StatusCode500": []
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.messages_resources_generated": {
+      "classes": {
+        "Messages": [
+          "__init__",
+          "create",
+          "update"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.messages_types_generated": {
+      "classes": {
+        "CreateMessageRequest": [],
+        "Message": [],
+        "MessagesCreateStatusCode422": [],
+        "MessagesUpdateStatusCode422": [],
+        "Types_StatusCodes_RestApiErrorItem": [],
+        "Types_StatusCodes_StatusCode400": [],
+        "Types_StatusCodes_StatusCode401": [],
+        "Types_StatusCodes_StatusCode404": [],
+        "Types_StatusCodes_StatusCode500": [],
+        "UpdateMessageRequest": []
       },
       "functions": []
     },
