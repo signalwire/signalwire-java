@@ -26,12 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout signalwire-java
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: signalwire-java
 
       - name: Checkout porting-sdk
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
           path: porting-sdk

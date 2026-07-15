@@ -25,12 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout signalwire-java
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: signalwire-java
 
       - name: Checkout porting-sdk (mock_relay + mock_signalwire test harnesses + audit scripts)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
           path: porting-sdk
@@ -42,7 +42,7 @@ jobs:
       # sibling (it is in the cross-port matrix checkout; it is NOT in this
       # per-port workflow), so the EMISSION gate has its reference.
       - name: Checkout signalwire-python (EMISSION oracle) if not already present
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: signalwire/signalwire-python
           path: signalwire-python
