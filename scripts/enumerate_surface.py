@@ -183,6 +183,7 @@ _GEN_TYPE_REST_SUB_TO_MODULE = {
     "datasphere": "signalwire.rest.namespaces.datasphere_types_generated",
     "logs": "signalwire.rest.namespaces.logs_types_generated",
     "message": "signalwire.rest.namespaces.message_types_generated",
+    "messages": "signalwire.rest.namespaces.messages_types_generated",
     "voice": "signalwire.rest.namespaces.voice_types_generated",
     "fax": "signalwire.rest.namespaces.fax_types_generated",
     "project": "signalwire.rest.namespaces.project_types_generated",
