@@ -144,7 +144,7 @@ client.unreceive(List.of("old-context"));
 
 ## Concurrency
 
-Each inbound call handler runs on the JDK virtual-thread executor, so multiple calls are handled concurrently without blocking the event loop.
+Each inbound call handler runs on a cached platform-thread worker pool, so multiple calls are handled concurrently without blocking the event loop.
 
 ## Error Handling
 

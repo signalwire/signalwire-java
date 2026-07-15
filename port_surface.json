@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 70755a71c61dce6d3bebf894da8c7b1c56ff4d46",
+  "generated_from": "signalwire-java @ 11fc0de1ce0ccdb6467c23fbc9958157e772a3d7",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1878,6 +1878,7 @@
           "get_path",
           "get_response_body",
           "get_status_code",
+          "get_url",
           "is_client_error",
           "is_not_found",
           "is_server_error",

@@ -45,7 +45,7 @@ public class RestManageResources {
         // 3. Search for a phone number. search() takes Map<String,String>.
         System.out.println("\nSearching for available phone numbers...");
         var available = client.phoneNumbers().search(Map.of(
-                "area_code", "512",
+                "areacode", "512",
                 "max_results", "3"
         ));
         System.out.println("  Available: " + available);

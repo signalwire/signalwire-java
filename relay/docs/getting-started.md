@@ -7,7 +7,7 @@ The RELAY client connects to SignalWire via WebSocket and gives you real-time, i
 The RELAY client ships in the single `com.signalwire:signalwire-sdk` artifact (requires Java 21+):
 
 ```groovy
-implementation 'com.signalwire:signalwire-sdk:2.0.2'
+implementation 'com.signalwire:signalwire-sdk:4.0.0'
 ```
 
 ## Configuration

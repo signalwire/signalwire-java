@@ -2,6 +2,8 @@
   "baseline_version": "3.0.2",
   "version": "2",
   "generated_from": "signalwire-java JAR via SignatureDump (java.lang.reflect)",
+  "generated_from_tag": "28d40f752f9efff61e71b8360e9fafbd76357db8",
+  "tag_sha": "28d40f752f9efff61e71b8360e9fafbd76357db8",
   "modules": {
     "signalwire": {
       "functions": {

@@ -112,7 +112,7 @@ Listed so example references resolve.
 
 extras: Calling.*Request.Builder#extras(Map) etc. — arbitrary-field escape door on every typed *Request builder
 from: Calling.DialRequest.Builder#from(String) — 'from' wire field (dial)
-url: Calling.DialRequest.Builder#url(String) — 'url' wire field (dial)
+url: real 'url' wire-field Builder setters — Calling.DialRequest.Builder#url / Calling.UpdateRequest.Builder#url / Calling.StreamRequest.Builder#url / VideoRooms.CreateStreamRequest.Builder#url / VideoConferences.CreateStreamRequest.Builder#url / VideoStreams.UpdateRequest.Builder#url. Bare-word KEY (audit_docs matches the token before ':' only); the qualified setters above are the complete real surface it covers, not just dial.
 initialTimeout: Calling.CollectRequest.Builder#initialTimeout(Double) — 'initial_timeout' wire field (collect)
 digits: Calling.CollectRequest.Builder#digits(Map) — 'digits' wire field (collect)
 audio: Calling.RecordRequest.Builder#audio(Map) — 'audio' wire field (record)
@@ -123,7 +123,7 @@ channels: real PubSub.channels()/ChatNamespace accessor; enumerator does not sur
 permissions: real ProjectTokens.permissions() accessor; enumerator does not surface the bare name
 action: Calling.*Request.Builder#action(Map) — 'action' wire field
 city: Addresses.CreateRequest.Builder#city(String) — 'city' wire field (address create)
-state: Addresses.CreateRequest.Builder#state(String) — 'state' wire field (address create)
+state: real 'state' wire-field Builder setter — Addresses.CreateRequest.Builder#state(String) (address create). Bare-word KEY (audit_docs matches the token before ':' only); this is the sole builder that surfaces `.state(` in docs.
 streetName: Addresses.CreateRequest.Builder#streetName(String) — 'street_name' wire field (address create)
 streetNumber: Addresses.CreateRequest.Builder#streetNumber(String) — 'street_number' wire field (address create)
 roomName: VideoRoomTokens.CreateRequest.Builder#roomName(String) — 'room_name' wire field (room token create)
@@ -134,7 +134,7 @@ dest: Calling.*Request.Builder#dest(Map) — 'destination' wire field
 device: Calling.*Request.Builder#device(Map) — 'device' wire field
 domainIdentifier: SipProfile.UpdateRequest.Builder#domainIdentifier(String) — 'domain_identifier' wire field
 event: Calling.*Request.Builder#event(Map) — 'event' wire field
-id: Calling.*Request.Builder#id(String) — resource id path/wire field
+id: real 'id' path/wire-field Builder setter — Calling.UpdateRequest.Builder#id(String) (the call id targeted by calling().update). Bare-word KEY (audit_docs matches the token before ':' only); this is the sole builder that surfaces `.id(` in docs.
 memberId: *Request.Builder#memberId(String) — 'member_id' wire field
 message: *Request.Builder#message(String) — 'message' wire field
 messageText: *Request.Builder#messageText(String) — 'message_text' wire field
@@ -144,7 +144,7 @@ role: *Request.Builder#role(String) — 'role' wire field
 speech: Calling.CollectRequest.Builder#speech(Map) — 'speech' wire field
 statusUrl: *Request.Builder#statusUrl(String) — 'status_url' wire field
 tags: *Request.Builder#tags(List) — 'tags' wire field
-timeout: Calling.*Request.Builder#timeout(Long) — 'timeout' wire field
+timeout: real 'timeout' wire-field Builder setter — Calling.AiHoldRequest.Builder#timeout(Long) (calling().aiHold). Bare-word KEY (audit_docs matches the token before ':' only); this is the sole builder that surfaces `.timeout(` in docs.
 ttl: *Request.Builder#ttl(Long) — 'ttl' wire field
 verificationCode: VerifiedCallers.SubmitVerificationRequest.Builder#verificationCode(String) — 'verification_code' wire field
 

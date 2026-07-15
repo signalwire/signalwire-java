@@ -74,7 +74,13 @@ source "$PORTING_SDK_DIR/scripts/gate_scheduler.sh"
 
 cd "$PORT_ROOT"
 
+# Gate-enforcement plan (Part D): java's red list is burned, so its widened
+# (wave-A) gate findings BLOCK rather than report-only. Default OFF here; a caller
+# may still set SW_WAVE_A_REPORT_ONLY=1 to inspect the report-only view.
+export SW_WAVE_A_REPORT_ONLY="${SW_WAVE_A_REPORT_ONLY:-0}"
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
+echo "==> wave-A gate findings are ${SW_WAVE_A_REPORT_ONLY:+BLOCKING (SW_WAVE_A_REPORT_ONLY=$SW_WAVE_A_REPORT_ONLY)}"
 
 pick_free_port() {
     python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()'
@@ -362,6 +368,19 @@ sched_gate DOC-AUDIT res=surface desc="audit_docs vs port_surface.json" \
         --surface "$PORT_ROOT/port_surface.json" \
         --ignore "$PORT_ROOT/DOC_AUDIT_IGNORE.md"
 
+# DOC-WIRE (§A1) — the documented REST fixtures are wire-clean against the spec
+# (flag-mode mock journals wire_violations; the docWireRun Gradle task replays the
+# documented REST calls). Shells out to ./gradlew for the runner → res=gradle.
+sched_gate DOC-WIRE res=gradle desc="documented REST doc fixtures put the spec wire shape on the wire (areacode/number_type)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_wire.py" --port java --repo "$PORT_ROOT" \
+        --runner "./gradlew $GRADLE_DAEMON_FLAG --console=plain -q docWireRun"
+
+# STATUS-CLAIM (§C2) — no false capability/status claims in docs (e.g. a
+# "virtual-thread" claim over a platform-thread pool). Pure-python, cheap.
+sched_gate STATUS-CLAIM desc="doc status/capability claims match the shipped surface" \
+    -- python3 "$PORTING_SDK_DIR/scripts/status_claim.py" --port java --repo "$PORT_ROOT" \
+        --surface "$PORT_ROOT/port_surface.json"
+
 sched_gate SURFACE-DIFF res=surface desc="diff_port_surface vs python reference" \
     --fn surface_diff_gate
 
@@ -413,14 +432,28 @@ sched_gate ACCESSOR-TRUTH desc="documented backtick method() refs exist in sourc
 
 # EXAMPLES-RUN builds + runs every shipped examples/*.java via `gradle runExample`
 # against the shared mock (modulo EXAMPLES_RUN_ALLOW.md) → res=gradle, deferred
-# behind the cheap wave (heavy: one JVM per example).
-sched_gate EXAMPLES-RUN tier=nightly res=gradle defer=1 desc="shipped examples build+run against the mock (modulo EXAMPLES_RUN_ALLOW.md)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port java --repo "$PORT_ROOT"
+# behind the cheap wave (heavy: one JVM per example). STRICT-MOCKS (nightly):
+# MOCK_RELAY_STRICT=1 makes the RELAY mock 400 on any off-spec frame, so an example
+# that puts a wrong wire shape on the RELAY socket fails instead of being silently
+# accepted.
+sched_gate EXAMPLES-RUN tier=nightly res=gradle defer=1 desc="shipped examples build+run against the mock (modulo EXAMPLES_RUN_ALLOW.md; STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 python3 "$PORTING_SDK_DIR/scripts/examples_run.py" --port java --repo "$PORT_ROOT"
 
 # SNIPPET-RUN is dynamic-ports-only; for java (compiled/heavy) it self-skips —
 # SNIPPET-COMPILE covers it — but is wired report-only so the self-skip never fails.
-sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit (java: self-skips, SNIPPET-COMPILE covers it)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port java --repo "$PORT_ROOT" --report-only
+# STRICT-MOCKS (nightly): MOCK_RELAY_STRICT=1 carried for parity with the other ports
+# (a no-op while java self-skips).
+sched_gate SNIPPET-RUN tier=nightly defer=1 desc="dynamic-port doc snippets run to a zero exit (java: self-skips, SNIPPET-COMPILE covers it; STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 python3 "$PORTING_SDK_DIR/scripts/snippet_run.py" --port java --repo "$PORT_ROOT" --report-only
+
+# WAIT-LIVENESS (§2.4) — drives play/record verbs against an embedded RELAY mock,
+# arms a delayed completing event, and diffs the measured liveness classification
+# against the python golden (a no-op wait that returns at t~0 → RED; a hung wait
+# that blows the deadline → RED). Spawns a JVM dump program → res=gradle, deferred,
+# nightly (heavy + timing-sensitive).
+sched_gate WAIT-LIVENESS tier=nightly res=gradle defer=1 desc="wait() blocks until the completing event then returns (liveness classification vs golden)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_wait_liveness.py" --port java \
+        --dump-cmd "./gradlew $GRADLE_DAEMON_FLAG --console=plain -q waitLivenessDump"
 
 # ---- §G anti-laundering ledger ----------------------------------------------
 sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressions" \

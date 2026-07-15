@@ -29193,6 +29193,11 @@
                   "required": true
                 },
                 {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                },
+                {
                   "name": "response_body",
                   "type": "string",
                   "required": true
@@ -29235,6 +29240,15 @@
                 }
               ],
               "returns": "int"
+            },
+            "get_url": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             },
             "is_client_error": {
               "params": [

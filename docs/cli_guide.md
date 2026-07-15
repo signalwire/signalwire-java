@@ -2152,7 +2152,7 @@ The `swaig-test` CLI ships in the repository at `bin/swaig-test` (a shell script
 
 ```bash
 ./gradlew jar
-# JAR output: build/libs/signalwire-sdk-2.0.2.jar
+# JAR output: build/libs/signalwire-sdk-4.0.0.jar
 ```
 
 ## Getting Help

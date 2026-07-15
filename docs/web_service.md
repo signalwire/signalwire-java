@@ -43,7 +43,7 @@ WebService is included in the core SignalWire AI Agents SDK. Add the dependency 
 Gradle:
 
 ```groovy
-implementation 'com.signalwire:signalwire-sdk:2.0.2'
+implementation 'com.signalwire:signalwire-sdk:4.0.0'
 ```
 
 Maven:
@@ -52,7 +52,7 @@ Maven:
 <dependency>
     <groupId>com.signalwire</groupId>
     <artifactId>signalwire-sdk</artifactId>
-    <version>2.0.2</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 

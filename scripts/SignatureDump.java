@@ -3,7 +3,7 @@
 //
 // Usage:
 //   javac scripts/SignatureDump.java -d build/scripts
-//   java -cp build/scripts:build/libs/signalwire-sdk-2.0.0.jar:<runtime-deps> SignatureDump > raw_dump.json
+//   java -cp build/scripts:build/libs/signalwire-sdk-4.0.0.jar:<runtime-deps> SignatureDump > raw_dump.json
 //
 // The Python wrapper (enumerate_signatures.py) consumes this JSON,
 // applies the existing class/method-name translation tables from

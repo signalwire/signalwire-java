@@ -32,7 +32,7 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 
 ```groovy
 // build.gradle -- requires Java 21+
-implementation 'com.signalwire:signalwire-sdk:2.0.2'
+implementation 'com.signalwire:signalwire-sdk:4.0.0'
 ```
 
 See [Installation](#installation) for the Maven coordinates.
@@ -162,7 +162,7 @@ public class QuickstartRelay {
 - All calling methods: play, record, collect, connect, detect, fax, tap, stream, AI, conferencing, and more
 - SMS/MMS messaging with delivery tracking
 - Action objects with `waitForCompletion()`, `stop()`, `pause()`, `resume()`
-- Virtual-thread based with auto-reconnect and exponential backoff
+- Cached platform-thread worker pool with auto-reconnect and exponential backoff
 
 See the **[RELAY documentation](relay/README.md)** for the full guide, API reference, and examples.
 
@@ -197,11 +197,11 @@ public class QuickstartRest {
 
         // Control a live call
         client.calling().play("call-id", Calling.PlayRequest.builder()
-                .play(List.of(Map.of("type", "tts", "text", "Hello!")))
+                .play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))
                 .build());
 
         // Search for phone numbers
-        client.phoneNumbers().search(Map.of("area_code", "512"));
+        client.phoneNumbers().search(Map.of("areacode", "512"));
 
         // Semantic search across documents
         client.datasphere().documents().search(DatasphereDocuments.SearchRequest.builder()
@@ -226,7 +226,7 @@ The SDK is published to Maven Central as `com.signalwire:signalwire-sdk` and req
 **Gradle:**
 
 ```groovy
-implementation 'com.signalwire:signalwire-sdk:2.0.2'
+implementation 'com.signalwire:signalwire-sdk:4.0.0'
 ```
 
 **Maven:**
@@ -235,7 +235,7 @@ implementation 'com.signalwire:signalwire-sdk:2.0.2'
 <dependency>
     <groupId>com.signalwire</groupId>
     <artifactId>signalwire-sdk</artifactId>
-    <version>2.0.2</version>
+    <version>4.0.0</version>
 </dependency>
 ```
 

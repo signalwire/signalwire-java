@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.0.0] - 2026-07-15
+
+- REST (BREAKING): `RestError` now carries the full request `url` (including the
+  query string) alongside the existing `path`, so a caller can see the exact
+  endpoint that failed. The `RestError` constructor gained a `url` parameter
+  (`RestError(statusCode, method, path, url, responseBody)`) and a `getUrl()`
+  accessor; the error message now prints the full url instead of the bare path.
+  Callers constructing `RestError` directly must pass the url. This mirrors the
+  reference decision that an error envelope carries the full url, not a path.
+- RELAY (fix): a `java.net.http.HttpClient.send()` `InterruptedException` in the
+  REST layer now restores the thread interrupt status before rethrowing, instead
+  of swallowing the cancellation.
+
 ## [3.2.0] - 2026-07-14
 
 - REST: added the `Messages` resource (`client.messages()`) — send and redact

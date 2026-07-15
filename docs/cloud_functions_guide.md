@@ -85,7 +85,7 @@ public class AgentFunction implements HttpFunction {
 2. **Declare the dependency** (`build.gradle`):
 ```groovy
 dependencies {
-    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    implementation 'com.signalwire:signalwire-sdk:4.0.0'
     // GCF Java runtime API (provided at deploy time):
     compileOnly 'com.google.cloud.functions:functions-framework-api:1.1.0'
 }
@@ -228,7 +228,7 @@ public class AgentFunction {
 4. **Declare the dependency** (`build.gradle`):
 ```groovy
 dependencies {
-    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    implementation 'com.signalwire:signalwire-sdk:4.0.0'
     // Azure Functions Java library (provided by the runtime):
     compileOnly 'com.microsoft.azure.functions:azure-functions-java-library:3.1.0'
 }

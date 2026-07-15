@@ -18,7 +18,7 @@ plugins {
 }
 
 group = 'com.signalwire'
-version = '3.2.0'
+version = '4.0.0'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -327,6 +327,26 @@ tasks.register('wireRelayDump', JavaExec) {
     group = 'verification'
     description = 'Dump the RELAY frame + event corpus observations as JSON (cross-port relay differ).'
     mainClass = 'com.signalwire.sdk.tools.WireRelayDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// docWireRun — DOC-WIRE fixture runner (porting-sdk/scripts/doc_wire.py). Replays the
+// documented REST fixtures against the flag-mode mock so the mock journals what the docs
+// put on the wire; the gate fails on any journaled wire_violation.
+tasks.register('docWireRun', JavaExec) {
+    group = 'verification'
+    description = 'Replay documented REST fixtures against the mock (DOC-WIRE fixture runner).'
+    mainClass = 'com.signalwire.sdk.tools.DocWireRunner'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// waitLivenessDump — WAIT-LIVENESS differ (porting-sdk/scripts/diff_port_wait_liveness.py).
+// Drives play/record verbs against an embedded RELAY mock, arms a delayed completing event,
+// measures waitForCompletion() timing, and emits the liveness classification as JSON.
+tasks.register('waitLivenessDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the wait()-liveness classification as JSON (cross-port liveness differ).'
+    mainClass = 'com.signalwire.sdk.tools.WaitLivenessDump'
     classpath = sourceSets.main.runtimeClasspath
 }
 

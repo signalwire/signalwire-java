@@ -431,7 +431,7 @@ agent.addSkill("my_skill", Map.of(
    ```groovy
    // build.gradle
    dependencies {
-       implementation 'com.signalwire:signalwire-sdk:2.0.2'
+       implementation 'com.signalwire:signalwire-sdk:4.0.0'
    }
    ```
 

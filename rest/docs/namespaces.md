@@ -19,7 +19,7 @@ numbers = client.phoneNumbers().list(Map.of("name", "Main"));
 
 // Search available numbers to purchase
 Map<String, Object> available = client.phoneNumbers().search(
-    Map.of("area_code", "512", "number_type", "local"));
+    Map.of("areacode", "512", "number_type", "local"));
 
 // Purchase a number
 Map<String, Object> number = client.phoneNumbers().create(

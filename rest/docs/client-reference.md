@@ -91,6 +91,7 @@ try {
     e.getStatusCode();    // 404
     e.getResponseBody();  // {"error": "not found"}
     e.getPath();          // "/api/fabric/resources/ai_agents/bad-id"
+    e.getUrl();           // "https://example.signalwire.com/api/fabric/resources/ai_agents/bad-id"
     e.getMethod();        // "GET"
 }
 ```
@@ -102,6 +103,7 @@ try {
 | `getStatusCode()` | `int` | HTTP status code |
 | `getResponseBody()` | `String` | Response body (raw text) |
 | `getPath()` | `String` | Request path |
+| `getUrl()` | `String` | Full request URL (including query string) |
 | `getMethod()` | `String` | HTTP method |
 
 ## Session Behavior
