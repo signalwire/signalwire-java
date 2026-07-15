@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ a60a5912d05393072d067426b1cab06c6ae9c16c",
+  "generated_from": "signalwire-java @ efe43dc1ead33a3a51248af9c9df6f6b19ac17d3",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1916,6 +1916,7 @@
           "number_groups",
           "phone_numbers",
           "project",
+          "projects",
           "pubsub",
           "queues",
           "recordings",
@@ -2817,6 +2818,30 @@
         "Types_StatusCodes_StatusCode404": [],
         "Types_StatusCodes_StatusCode500": [],
         "UpdateTokenRequest": []
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.projects_resources_generated": {
+      "classes": {
+        "Projects": [
+          "__init__",
+          "create",
+          "rotate_signing_key",
+          "update"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.namespaces.projects_types_generated": {
+      "classes": {
+        "Project": [],
+        "ProjectCreate": [],
+        "ProjectList": [],
+        "ProjectStatusCode422": [],
+        "Types_StatusCodes_RestApiErrorItem": [],
+        "Types_StatusCodes_StatusCode401": [],
+        "Types_StatusCodes_StatusCode403": [],
+        "Types_StatusCodes_StatusCode404": []
       },
       "functions": []
     },

@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.0] - 2026-07-14
+
+- REST: added the `Projects` resource (`client.projects()`) — full CRUD over
+  `/api/projects` (list/get/create/update/delete) plus `rotateSigningKey`, with
+  generated typed request/response shapes and wire tests covering each route
+  (success and error) against the shared mock. Distinct from the singular
+  `project` token namespace (`client.project()`).
+
 ## [3.0.2] - 2026-07-13
 
 - REST: the client's resource surface is now fully generated from the shared

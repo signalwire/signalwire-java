@@ -186,6 +186,7 @@ _GEN_TYPE_REST_SUB_TO_MODULE = {
     "voice": "signalwire.rest.namespaces.voice_types_generated",
     "fax": "signalwire.rest.namespaces.fax_types_generated",
     "project": "signalwire.rest.namespaces.project_types_generated",
+    "projects": "signalwire.rest.namespaces.projects_types_generated",
     "chat": "signalwire.rest.namespaces.chat_types_generated",
     "pubsub": "signalwire.rest.namespaces.pubsub_types_generated",
     "swmlwebhooks": "signalwire.rest.namespaces.swml_webhooks_types_generated",
