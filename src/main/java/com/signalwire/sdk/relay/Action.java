@@ -65,7 +65,19 @@ public class Action {
   }
 
   public void setOnCompleted(Consumer<Action> onCompleted) {
-    this.onCompleted = onCompleted;
+    // If the action has ALREADY resolved (the terminal event landed on the RELAY
+    // reader thread before this registration — a genuine race for a caller that
+    // sets the callback after dispatching the action), fire immediately so a late
+    // registration is never silently dropped. Otherwise store it for resolve() to
+    // fire. Guarded on `done` (set inside resolve()) so exactly one fire happens.
+    synchronized (this) {
+      this.onCompleted = onCompleted;
+      if (done && onCompleted != null) {
+        Consumer<Action> cb = this.onCompleted;
+        this.onCompleted = null; // prevent a double-fire if resolve() also races
+        cb.accept(this);
+      }
+    }
   }
 
   /**
@@ -134,20 +146,33 @@ public class Action {
 
   /** Resolve the action immediately (e.g., on call-gone 404/410). */
   public void resolve(RelayEvent event) {
-    if (!done) {
+    // Set `done` + fire the callback atomically vs setOnCompleted(): the terminal
+    // event arrives on the RELAY reader thread and can race a caller registering
+    // its callback on another thread. The lock guarantees exactly one of the two
+    // fires the callback (resolve() here, or setOnCompleted() when it observes
+    // done==true), never zero and never twice.
+    synchronized (this) {
+      if (done) {
+        return;
+      }
       this.done = true;
       this.result = event;
       // Fire onCompleted BEFORE completing the future. The Python reference is
       // async single-threaded, so its `_done.set_result()` then `_on_completed()`
       // ordering guarantees any `await`-er resumes only after the callback has run.
-      // This port resolves on the RELAY reader thread while waitForCompletion() blocks
-      // on another thread, so completing the future first lets the waiter race ahead of
-      // fireOnCompleted() — a caller that both waits AND sets a callback could observe
-      // completion with the callback not yet fired. Firing first preserves the
-      // reference's guarantee (callback observed no later than completion) race-free.
-      fireOnCompleted();
-      this.completionFuture.complete(event);
+      // Firing first preserves that guarantee (callback observed no later than
+      // completion) race-free.
+      Consumer<Action> cb = this.onCompleted;
+      this.onCompleted = null; // one-shot: a later setOnCompleted sees done and fires itself
+      if (cb != null) {
+        try {
+          cb.accept(this);
+        } catch (Exception e) {
+          log.error("Error in onCompleted callback for action " + controlId, e);
+        }
+      }
     }
+    this.completionFuture.complete(event);
   }
 
   /**
@@ -156,16 +181,6 @@ public class Action {
    */
   protected boolean isTerminal(String actionState) {
     return Constants.isTerminalActionState(actionState);
-  }
-
-  private void fireOnCompleted() {
-    if (onCompleted != null) {
-      try {
-        onCompleted.accept(this);
-      } catch (Exception e) {
-        log.error("Error in onCompleted callback for action " + controlId, e);
-      }
-    }
   }
 
   @Override
