@@ -156,6 +156,7 @@ public class HttpClient {
   }
 
   private Map<String, Object> executeRequest(String method, String path, HttpRequest request) {
+    String url = request.uri().toString();
     try {
       log.debug("%s %s", method, request.uri());
       HttpResponse<String> response =
@@ -171,11 +172,16 @@ public class HttpClient {
         return gson.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
       }
 
-      throw new RestError(statusCode, method, path, body);
+      throw new RestError(statusCode, method, path, url, body);
     } catch (RestError e) {
       throw e;
+    } catch (InterruptedException e) {
+      // Restore the interrupt status that HttpClient.send() cleared when it threw,
+      // so callers up the stack can still observe the cancellation. Do NOT swallow it.
+      Thread.currentThread().interrupt();
+      throw new RestError(0, method, path, url, e.getMessage(), e);
     } catch (Exception e) {
-      throw new RestError(0, method, path, e.getMessage(), e);
+      throw new RestError(0, method, path, url, e.getMessage(), e);
     }
   }
 

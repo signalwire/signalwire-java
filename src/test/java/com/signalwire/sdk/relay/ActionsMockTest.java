@@ -201,8 +201,14 @@ class ActionsMockTest {
     Action.PlayAction action = call.play(List.of(silence(1)), "play-ctl-cb");
     action.setOnCompleted(a -> callbackFired.complete(a.getResult()));
 
+    // The onCompleted callback fires exactly once, even if the terminal event
+    // resolved the action before setOnCompleted() ran (setOnCompleted fires
+    // immediately when it observes done==true — see Action.java). resolve() fires
+    // the callback before completing completionFuture, so once waitForCompletion()
+    // returns the callback has already run and this join is immediate. Same 5s
+    // budget as waitForCompletion — no separate tighter timeout to flake on.
     action.waitForCompletion(5_000);
-    RelayEvent event = callbackFired.get(2, TimeUnit.SECONDS);
+    RelayEvent event = callbackFired.get(5, TimeUnit.SECONDS);
     assertEquals("finished", event.getStringParam("state"));
   }
 

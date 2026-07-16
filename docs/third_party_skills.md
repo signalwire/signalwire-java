@@ -224,7 +224,7 @@ Consumers add the library as a Gradle/Maven dependency:
 // build.gradle
 dependencies {
     implementation 'com.example:my-signalwire-skills:1.0.0'
-    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    implementation 'com.signalwire:signalwire-sdk:4.0.0'
 }
 ```
 
@@ -547,7 +547,7 @@ group = 'com.example'
 version = '1.0.0'
 
 dependencies {
-    api 'com.signalwire:signalwire-sdk:2.0.2'
+    api 'com.signalwire:signalwire-sdk:4.0.0'
     implementation 'com.google.code.gson:gson:2.10.1'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')

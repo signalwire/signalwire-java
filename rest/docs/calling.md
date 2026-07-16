@@ -93,7 +93,7 @@ Play audio, TTS, silence, or ringtone.
 ```java
 client.calling().play(callId,
     Calling.PlayRequest.builder()
-        .play(List.of(Map.of("type", "tts", "text", "Hello!")))
+        .play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))
         .volume(5.0)
         .build());
 ```

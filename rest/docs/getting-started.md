@@ -7,7 +7,7 @@ The REST client provides synchronous access to all SignalWire APIs using standar
 The REST client ships in the single `com.signalwire:signalwire-sdk` artifact (requires Java 21+):
 
 ```groovy
-implementation 'com.signalwire:signalwire-sdk:2.0.2'
+implementation 'com.signalwire:signalwire-sdk:4.0.0'
 ```
 
 ## Configuration

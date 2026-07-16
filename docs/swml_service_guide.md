@@ -38,7 +38,7 @@ The `Service` class is part of the SignalWire AI Agents SDK for Java. Add the de
 ```groovy
 // build.gradle
 dependencies {
-    implementation 'com.signalwire:signalwire-sdk:2.0.2'
+    implementation 'com.signalwire:signalwire-sdk:4.0.0'
 }
 ```
 
@@ -47,7 +47,7 @@ dependencies {
 <dependency>
   <groupId>com.signalwire</groupId>
   <artifactId>signalwire-sdk</artifactId>
-  <version>2.0.2</version>
+  <version>4.0.0</version>
 </dependency>
 ```
 

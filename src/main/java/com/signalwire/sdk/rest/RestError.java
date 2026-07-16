@@ -16,22 +16,30 @@ public class RestError extends RuntimeException {
   private final int statusCode;
   private final String method;
   private final String path;
+  private final String url;
   private final String responseBody;
 
-  public RestError(int statusCode, String method, String path, String responseBody) {
-    super(formatMessage(statusCode, method, path, responseBody));
+  public RestError(int statusCode, String method, String path, String url, String responseBody) {
+    super(formatMessage(statusCode, method, url, responseBody));
     this.statusCode = statusCode;
     this.method = method;
     this.path = path;
+    this.url = url;
     this.responseBody = responseBody;
   }
 
   public RestError(
-      int statusCode, String method, String path, String responseBody, Throwable cause) {
-    super(formatMessage(statusCode, method, path, responseBody), cause);
+      int statusCode,
+      String method,
+      String path,
+      String url,
+      String responseBody,
+      Throwable cause) {
+    super(formatMessage(statusCode, method, url, responseBody), cause);
     this.statusCode = statusCode;
     this.method = method;
     this.path = path;
+    this.url = url;
     this.responseBody = responseBody;
   }
 
@@ -45,6 +53,11 @@ public class RestError extends RuntimeException {
 
   public String getPath() {
     return path;
+  }
+
+  /** The full request URL (including query string) that produced the error. */
+  public String getUrl() {
+    return url;
   }
 
   public String getResponseBody() {
@@ -72,10 +85,10 @@ public class RestError extends RuntimeException {
   }
 
   private static String formatMessage(
-      int statusCode, String method, String path, String responseBody) {
+      int statusCode, String method, String url, String responseBody) {
     StringBuilder sb = new StringBuilder();
     sb.append("SignalWire REST API error: ");
-    sb.append(method).append(" ").append(path);
+    sb.append(method).append(" ").append(url);
     sb.append(" returned ").append(statusCode);
     if (responseBody != null && !responseBody.isEmpty()) {
       String body =

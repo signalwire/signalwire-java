@@ -69,7 +69,7 @@ bin/swaig-test --url http://user:pass@localhost:3000 --exec tool_name --param ke
 # Build the jar
 $GRADLE jar
 
-# The jar is produced at build/libs/signalwire-sdk-2.0.0.jar
+# The jar is produced at build/libs/signalwire-sdk-4.0.0.jar
 ```
 
 ## Architecture Overview

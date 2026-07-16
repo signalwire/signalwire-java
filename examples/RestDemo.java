@@ -38,7 +38,7 @@ public class RestDemo {
         System.out.println("\nSearching for available numbers...");
         try {
             var numbers = client.phoneNumbers().search(Map.of(
-                    "area_code", "512",
+                    "areacode", "512",
                     "max_results", "3"
             ));
             System.out.println("  Available: " + numbers);

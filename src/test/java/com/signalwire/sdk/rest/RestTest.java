@@ -248,63 +248,73 @@ class RestTest {
   class ErrorTests {
 
     @Test
-    @DisplayName("Error message includes status, method, path")
+    @DisplayName("Error message includes status, method, url")
     void errorMessage() {
-      var error = new RestError(404, "GET", "/phone_numbers/123", "Not found");
+      var error =
+          new RestError(
+              404,
+              "GET",
+              "/phone_numbers/123",
+              "https://example.signalwire.com/api/phone_numbers/123",
+              "Not found");
       assertTrue(error.getMessage().contains("404"));
       assertTrue(error.getMessage().contains("GET"));
-      assertTrue(error.getMessage().contains("/phone_numbers/123"));
+      assertTrue(
+          error.getMessage().contains("https://example.signalwire.com/api/phone_numbers/123"));
       assertTrue(error.getMessage().contains("Not found"));
     }
 
     @Test
     @DisplayName("Error properties are accessible")
     void errorProperties() {
-      var error = new RestError(500, "POST", "/path", "body");
+      var error =
+          new RestError(
+              500, "POST", "/path", "https://example.signalwire.com/api/path?foo=bar", "body");
       assertEquals(500, error.getStatusCode());
       assertEquals("POST", error.getMethod());
       assertEquals("/path", error.getPath());
+      assertEquals("https://example.signalwire.com/api/path?foo=bar", error.getUrl());
       assertEquals("body", error.getResponseBody());
     }
 
     @Test
     @DisplayName("isClientError returns true for 4xx")
     void clientError() {
-      assertTrue(new RestError(400, "GET", "/", "").isClientError());
-      assertTrue(new RestError(404, "GET", "/", "").isClientError());
-      assertTrue(new RestError(422, "GET", "/", "").isClientError());
-      assertFalse(new RestError(500, "GET", "/", "").isClientError());
-      assertFalse(new RestError(200, "GET", "/", "").isClientError());
+      assertTrue(new RestError(400, "GET", "/", "u", "").isClientError());
+      assertTrue(new RestError(404, "GET", "/", "u", "").isClientError());
+      assertTrue(new RestError(422, "GET", "/", "u", "").isClientError());
+      assertFalse(new RestError(500, "GET", "/", "u", "").isClientError());
+      assertFalse(new RestError(200, "GET", "/", "u", "").isClientError());
     }
 
     @Test
     @DisplayName("isServerError returns true for 5xx")
     void serverError() {
-      assertTrue(new RestError(500, "GET", "/", "").isServerError());
-      assertTrue(new RestError(503, "GET", "/", "").isServerError());
-      assertFalse(new RestError(404, "GET", "/", "").isServerError());
+      assertTrue(new RestError(500, "GET", "/", "u", "").isServerError());
+      assertTrue(new RestError(503, "GET", "/", "u", "").isServerError());
+      assertFalse(new RestError(404, "GET", "/", "u", "").isServerError());
     }
 
     @Test
     @DisplayName("isNotFound returns true for 404")
     void notFound() {
-      assertTrue(new RestError(404, "GET", "/", "").isNotFound());
-      assertFalse(new RestError(400, "GET", "/", "").isNotFound());
+      assertTrue(new RestError(404, "GET", "/", "u", "").isNotFound());
+      assertFalse(new RestError(400, "GET", "/", "u", "").isNotFound());
     }
 
     @Test
     @DisplayName("isUnauthorized returns true for 401 and 403")
     void unauthorized() {
-      assertTrue(new RestError(401, "GET", "/", "").isUnauthorized());
-      assertTrue(new RestError(403, "GET", "/", "").isUnauthorized());
-      assertFalse(new RestError(404, "GET", "/", "").isUnauthorized());
+      assertTrue(new RestError(401, "GET", "/", "u", "").isUnauthorized());
+      assertTrue(new RestError(403, "GET", "/", "u", "").isUnauthorized());
+      assertFalse(new RestError(404, "GET", "/", "u", "").isUnauthorized());
     }
 
     @Test
     @DisplayName("Error with cause preserves exception chain")
     void errorWithCause() {
       var cause = new RuntimeException("original");
-      var error = new RestError(0, "GET", "/path", "msg", cause);
+      var error = new RestError(0, "GET", "/path", "https://x/api/path", "msg", cause);
       assertSame(cause, error.getCause());
     }
 
@@ -312,7 +322,7 @@ class RestTest {
     @DisplayName("Error truncates long response body in message")
     void errorTruncatesBody() {
       String longBody = "x".repeat(300);
-      var error = new RestError(500, "GET", "/", longBody);
+      var error = new RestError(500, "GET", "/", "u", longBody);
       assertTrue(error.getMessage().contains("..."));
       assertTrue(error.getMessage().length() < longBody.length() + 100);
     }
@@ -320,7 +330,7 @@ class RestTest {
     @Test
     @DisplayName("Error with null response body")
     void errorNullBody() {
-      var error = new RestError(500, "GET", "/", null);
+      var error = new RestError(500, "GET", "/", "u", null);
       assertNotNull(error.getMessage());
       assertFalse(error.getMessage().contains("null"));
     }
@@ -328,7 +338,7 @@ class RestTest {
     @Test
     @DisplayName("Error with empty response body")
     void errorEmptyBody() {
-      var error = new RestError(500, "GET", "/", "");
+      var error = new RestError(500, "GET", "/", "u", "");
       assertNotNull(error.getMessage());
     }
   }

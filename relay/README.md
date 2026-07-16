@@ -29,7 +29,7 @@ client.run();
 
 ## Features
 
-- Virtual-thread based with auto-reconnect and exponential backoff
+- Cached platform-thread worker pool with auto-reconnect and exponential backoff
 - All calling methods: play, record, collect, connect, detect, fax, tap, stream, AI, conferencing, queues
 - SMS/MMS messaging: send outbound messages, receive inbound messages, track delivery state
 - Action objects with `waitForCompletion()`, `stop()`, `pause()`, `resume()`
