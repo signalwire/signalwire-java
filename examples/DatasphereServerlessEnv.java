@@ -4,7 +4,7 @@
  * Loads the DataSphere serverless skill with configuration from environment
  * variables for production deployment.
  *
- * Required: SIGNALWIRE_SPACE, SIGNALWIRE_PROJECT_ID, SIGNALWIRE_TOKEN,
+ * Required: SIGNALWIRE_SPACE, SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN,
  *           DATASPHERE_DOCUMENT_ID
  * Optional: DATASPHERE_COUNT, DATASPHERE_DISTANCE, DATASPHERE_TAGS
  */
