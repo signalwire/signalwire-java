@@ -350,6 +350,20 @@ tasks.register('waitLivenessDump', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// envelopeDump — REST error-ENVELOPE differ (porting-sdk/scripts/diff_port_envelope.py, plan
+// 1.3b transport-error typing). Runs com.signalwire.sdk.rest.EnvelopeDump, which drives the
+// shared envelope corpus against the live mock_signalwire harness (MockTest -- probe-or-spawn on
+// MOCK_SIGNALWIRE_PORT) and prints the per-case artifact JSON to stdout. Lives alongside MockTest
+// in the test source set (it depends on MockTest's scenario/journal helpers), so this task uses
+// the TEST runtime classpath, not main's.
+tasks.register('envelopeDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the REST error-envelope corpus observations as JSON (cross-port envelope differ).'
+    mainClass = 'com.signalwire.sdk.rest.EnvelopeDump'
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn 'testClasses'
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

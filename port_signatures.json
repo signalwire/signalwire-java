@@ -29287,6 +29287,39 @@
               "returns": "bool"
             }
           }
+        },
+        "SignalWireRestTransportError": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "method",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "url",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "cause",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            }
+          }
         }
       }
     },

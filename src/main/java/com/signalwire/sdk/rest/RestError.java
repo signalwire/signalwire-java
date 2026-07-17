@@ -89,7 +89,14 @@ public class RestError extends RuntimeException {
     StringBuilder sb = new StringBuilder();
     sb.append("SignalWire REST API error: ");
     sb.append(method).append(" ").append(url);
-    sb.append(" returned ").append(statusCode);
+    if (statusCode == SignalWireRestTransportError.NO_STATUS) {
+      // Transport failure: the request never reached a response (connection
+      // refused / DNS / reset / TLS). Mirrors the Python reference's
+      // "{method} {url} failed to reach the server: {body}" message shape.
+      sb.append(" failed to reach the server");
+    } else {
+      sb.append(" returned ").append(statusCode);
+    }
     if (responseBody != null && !responseBody.isEmpty()) {
       String body =
           responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody;

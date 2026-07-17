@@ -179,9 +179,17 @@ public class HttpClient {
       // Restore the interrupt status that HttpClient.send() cleared when it threw,
       // so callers up the stack can still observe the cancellation. Do NOT swallow it.
       Thread.currentThread().interrupt();
-      throw new RestError(0, method, path, url, e.getMessage(), e);
+      throw new SignalWireRestTransportError(method, path, url, e);
     } catch (Exception e) {
-      throw new RestError(0, method, path, url, e.getMessage(), e);
+      // Transport-level failure: the request never reached a response (connection
+      // refused, DNS failure, connection reset, TLS error). Wrap it in the typed
+      // SignalWireRestError family (SignalWireRestTransportError, statusCode ==
+      // SignalWireRestTransportError.NO_STATUS) so a caller catching RestError
+      // handles it too, instead of a bare transport exception leaking out. The
+      // underlying exception is preserved via the standard cause chain (the Java
+      // equivalent of Python's `raise ... from exc`). Mirrors the Python
+      // reference's HttpClient._request (plan 1.3b).
+      throw new SignalWireRestTransportError(method, path, url, e);
     }
   }
 
