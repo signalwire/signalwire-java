@@ -464,7 +464,7 @@ sched_gate SUPPRESSION-LEDGER res=dayone desc="no un-ledgered analyzer suppressi
 # compiles + runs a tiny consumer against the published jar (SDK jar + its runtime
 # deps, sourced from the port's `printRuntimeClasspath` task). Shells out to
 # ./gradlew → res=gradle, deferred behind the cheap wave (heavy: real publish build).
-sched_gate PACKAGE-SMOKE res=gradle defer=1 desc="the real publishable jar builds + resolves + imports from a clean env" \
+sched_gate PACKAGE-SMOKE tier=nightly res=gradle defer=1 desc="the real publishable jar builds + resolves + imports from a clean env" \
     -- python3 "$PORTING_SDK_DIR/scripts/package_smoke.py" --port java --repo "$PORT_ROOT"
 
 # Day-one deterministic gates (enforced, non-report-only).
@@ -482,7 +482,7 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 # res=dayone slot could read it mid-truncation → empty-file JSONDecodeError).
 sched_gate IGNORE-LEDGER-VERIFY res=surface desc="no laundered false-absence entries in DOC_AUDIT_IGNORE.md (strict: reason/approver/date required)" \
     -- python3 "$PORTING_SDK_DIR/scripts/ignore_ledger_verify.py" --port java --repo . --require-fields
-sched_gate META-CONSISTENT res=dayone desc="package metadata consistency" \
+sched_gate META-CONSISTENT tier=nightly res=dayone desc="package metadata consistency" \
     -- python3 "$PORTING_SDK_DIR/scripts/meta_consistent.py" --port java --repo .
 sched_gate ARTIFACT-DENY res=gradle desc="no porting artifacts in the PUBLISHED package (authoritative listing)" \
     --fn dayone_artifact_deny
