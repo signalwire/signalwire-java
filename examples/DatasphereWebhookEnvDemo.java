@@ -4,7 +4,7 @@
  * Traditional webhook-based DataSphere skill configured from environment
  * variables. Compare with DatasphereServerlessEnv for the serverless approach.
  *
- * Required: SIGNALWIRE_SPACE, SIGNALWIRE_PROJECT_ID, SIGNALWIRE_TOKEN,
+ * Required: SIGNALWIRE_SPACE, SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN,
  *           DATASPHERE_DOCUMENT_ID
  */
 

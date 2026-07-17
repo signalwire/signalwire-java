@@ -211,7 +211,8 @@ public class DatasphereSkill implements SkillBase {
         null);
     SkillParams.addString(
         schema, "project_id", "SignalWire project ID", true, false, "SIGNALWIRE_PROJECT_ID");
-    SkillParams.addString(schema, "token", "SignalWire API token", true, true, "SIGNALWIRE_TOKEN");
+    SkillParams.addString(
+        schema, "token", "SignalWire API token", true, true, "SIGNALWIRE_API_TOKEN");
     SkillParams.addString(
         schema, "document_id", "DataSphere document ID to search within", true, false, null);
 
