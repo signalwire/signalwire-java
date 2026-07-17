@@ -197,11 +197,11 @@ public class QuickstartRest {
 
         // Control a live call
         client.calling().play("call-id", Calling.PlayRequest.builder()
-                .play(List.of(Map.of("type", "tts", "text", "Hello!")))
+                .play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))
                 .build());
 
         // Search for phone numbers
-        client.phoneNumbers().search(Map.of("area_code", "512"));
+        client.phoneNumbers().search(Map.of("areacode", "512"));
 
         // Semantic search across documents
         client.datasphere().documents().search(DatasphereDocuments.SearchRequest.builder()

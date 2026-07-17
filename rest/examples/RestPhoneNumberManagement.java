@@ -28,7 +28,7 @@ public class RestPhoneNumberManagement {
         System.out.println("Searching for available phone numbers in area code 512...");
         try {
             var results = client.phoneNumbers().search(Map.of(
-                    "area_code", "512",
+                    "areacode", "512",
                     "max_results", "5"
             ));
             System.out.println("  Available: " + results);

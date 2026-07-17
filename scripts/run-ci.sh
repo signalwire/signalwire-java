@@ -126,7 +126,9 @@ surface_fresh_gate() {
 }
 
 # REST-COVERAGE — spins its own mock, runs the rest test classes serially into one
-# journal, then checks it.
+# journal, then checks it for BOTH coverage AND wire-truth (STRICT-MOCKS §2.2a: any
+# journaled wire_violation reds the gate — respelling-proof, since it reads the mock's
+# own spec-vs-wire judgement rather than re-deriving it).
 rest_coverage_gate() {
     local port
     port="$(pick_free_port)" || { echo "could not allocate a free port" >&2; return 1; }
@@ -162,7 +164,14 @@ rest_coverage_gate() {
         --spec-root "$PORTING_SDK_DIR/rest-apis" \
         --allowlist "$PORTING_SDK_DIR/REST_COVERAGE_BASELINE.md" \
         --allowlist "$PORT_ROOT/REST_COVERAGE_GAPS.md" \
-        --gap-baseline "$PORTING_SDK_DIR/REST_COVERAGE_GAP_BASELINE.md"
+        --gap-baseline "$PORTING_SDK_DIR/REST_COVERAGE_GAP_BASELINE.md" || return 1
+    # STRICT-MOCKS §2.2a — fail the gate on ANY journaled wire_violation. The shared
+    # helper reads the same live mock journal and exits non-zero on any offender (see
+    # porting-sdk/scripts/assert_no_wire_violations.py). WIRE_VIOLATIONS_ALLOW.md holds
+    # ONLY owner-signed spec-gap parks (currently empty for java).
+    python3 "$PORTING_SDK_DIR/scripts/assert_no_wire_violations.py" \
+        --rest-mock-url "http://127.0.0.1:$port" \
+        --allowlist "$PORT_ROOT/WIRE_VIOLATIONS_ALLOW.md"
 }
 
 # SPEC-PARITY — routeRegistry Gradle task builds Set B; diff vs canonical spec.
@@ -265,8 +274,15 @@ sched_init "$@"
 
 # Gradle-invoking gates share res=gradle (mutually exclusive — see header). TEST is
 # also deferred so the pure-Python cheap wave gets a head start.
-sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test)" \
-    -- bash scripts/run-tests.sh
+#
+# STRICT-MOCKS §2.2b — run under MOCK_RELAY_STRICT=1 so an unknown RELAY frame
+# field / duplicate command-id is rejected (error frame) rather than silently
+# accepted. mock_relay is spawned per-test via ProcessBuilder, which inherits the
+# parent (Gradle test JVM) environment — and build.gradle's `test { environment
+# System.getenv() }` forwards the shell env into that JVM, so this env var reaches
+# the mock subprocess without any Gradle-config change.
+sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test) (STRICT-MOCKS: MOCK_RELAY_STRICT=1)" \
+    -- env MOCK_RELAY_STRICT=1 bash scripts/run-tests.sh
 
 # SIGNATURES builds the JAR (gradle) → res=gradle; DRIFT deps on it. Not deferred
 # (a cheap gate depends on it).
