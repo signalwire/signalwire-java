@@ -227,12 +227,9 @@ class SmallNamespacesMockTest {
               .create(
                   com.signalwire.sdk.rest.namespaces.generated.ImportedNumbers.CreateRequest
                       .builder()
-                      .extras(
-                          kw(
-                              "number", "+15551234567",
-                              "sip_username", "alice",
-                              "sip_password", "secret",
-                              "sip_proxy", "sip.example.com"))
+                      .number("+15551234567")
+                      .numberType("longcode")
+                      .capabilities(Arrays.asList("sms", "voice"))
                       .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
@@ -242,8 +239,8 @@ class SmallNamespacesMockTest {
       Map<String, Object> sent = j.bodyMap();
       assertNotNull(sent);
       assertEquals("+15551234567", sent.get("number"));
-      assertEquals("alice", sent.get("sip_username"));
-      assertEquals("sip.example.com", sent.get("sip_proxy"));
+      assertEquals("longcode", sent.get("number_type"));
+      assertEquals(Arrays.asList("sms", "voice"), sent.get("capabilities"));
     }
   }
 
@@ -260,11 +257,9 @@ class SmallNamespacesMockTest {
               .mfa()
               .call(
                   com.signalwire.sdk.rest.namespaces.generated.Mfa.CallRequest.builder()
-                      .extras(
-                          kw(
-                              "to", "+15551234567",
-                              "from_", "+15559876543",
-                              "message", "Your code is {code}"))
+                      .to("+15551234567")
+                      .from("+15559876543")
+                      .message("Your code is {code}")
                       .build());
       assertNotNull(body);
       assertTrue(body.containsKey("id"));
@@ -274,7 +269,7 @@ class SmallNamespacesMockTest {
       Map<String, Object> sent = j.bodyMap();
       assertNotNull(sent);
       assertEquals("+15551234567", sent.get("to"));
-      assertEquals("+15559876543", sent.get("from_"));
+      assertEquals("+15559876543", sent.get("from"));
       assertEquals("Your code is {code}", sent.get("message"));
     }
   }
@@ -292,23 +287,19 @@ class SmallNamespacesMockTest {
               .sipProfile()
               .update(
                   com.signalwire.sdk.rest.namespaces.generated.SipProfile.UpdateRequest.builder()
-                      .extras(
-                          kw(
-                              "domain",
-                              "myco.sip.signalwire.com",
-                              "default_codecs",
-                              Arrays.asList("PCMU", "PCMA")))
+                      .domainIdentifier("myco")
+                      .defaultCodecs(Arrays.asList("PCMU", "PCMA"))
                       .build());
       assertNotNull(body);
       assertTrue(
-          body.containsKey("domain") || body.containsKey("default_codecs"),
-          "expected domain/default_codecs, got " + body.keySet());
+          body.containsKey("domain_identifier") || body.containsKey("default_codecs"),
+          "expected domain_identifier/default_codecs, got " + body.keySet());
       MockTest.JournalEntry j = mock.last();
       assertEquals("PUT", j.method);
       assertEquals("/api/relay/rest/sip_profile", j.path);
       Map<String, Object> sent = j.bodyMap();
       assertNotNull(sent);
-      assertEquals("myco.sip.signalwire.com", sent.get("domain"));
+      assertEquals("myco", sent.get("domain_identifier"));
       assertEquals(Arrays.asList("PCMU", "PCMA"), sent.get("default_codecs"));
     }
   }

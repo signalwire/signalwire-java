@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>{@link PaginatedIterator} is exercised end-to-end against the live mock server. Scenarios are
  * staged via the mock control plane to override a stable endpoint id ({@code
- * fabric.list_fabric_addresses}); the iterator must follow the {@code links.next} cursor through
- * pages until it is empty.
+ * fabric.list_fabric_addresses}); the iterator must follow the {@code links.next} page token
+ * through pages until it is empty.
  */
 class PaginationMockTest {
 
@@ -101,13 +101,17 @@ class PaginationMockTest {
   @Test
   @DisplayName("Walks two pages and stops on the page without links.next")
   void pagesThroughAllItems() {
-    // Stage page 1 (with next cursor) and page 2 (terminal).
+    // Stage page 1 (with next page) and page 2 (terminal). The server's
+    // links.next carries the real wire param the fabric list endpoint
+    // round-trips: page_token (a cursor token that starts with PA/PB), NOT a
+    // cursor param (which no SignalWire REST endpoint accepts — see
+    // rest-apis/fabric/openapi.yaml ListFabricAddressesQuery).
     mock.scenarioSet(
         ENDPOINT_ID,
         200,
         page(
             List.of(entry("addr-1", "first"), entry("addr-2", "second")),
-            "http://example.com/api/fabric/addresses?cursor=page2"));
+            "http://example.com/api/fabric/addresses?page_token=PA_page2"));
     mock.scenarioSet(ENDPOINT_ID, 200, page(List.of(entry("addr-3", "third")), null));
 
     PaginatedIterator it =
@@ -127,25 +131,27 @@ class PaginationMockTest {
       }
     }
     assertEquals(2, gets.size(), "expected 2 paginated GETs, got " + gets.size());
-    // The second fetch carries cursor=page2 from the first response's
-    // links.next URL.
+    // The second fetch carries the page_token param parsed from the first
+    // response's links.next — the real wire token the server round-trips.
     assertEquals(
-        List.of("page2"),
-        gets.get(1).getQueryParams().get("cursor"),
-        "second fetch missing cursor=page2: " + gets.get(1).getQueryParams());
+        List.of("PA_page2"),
+        gets.get(1).getQueryParams().get("page_token"),
+        "second fetch missing page_token=PA_page2: " + gets.get(1).getQueryParams());
   }
 
   @Test
   @DisplayName("ReadResource.paginate() walks all pages via the resource base method")
   void resourcePaginateWalksAllPages() {
-    // Stage page 1 (with next cursor) and page 2 (terminal), served for the
+    // Stage page 1 (with next page) and page 2 (terminal), served for the
     // fabric addresses list endpoint that FabricAddresses.paginate() hits.
+    // The server's links.next carries the real page_token wire param, not a
+    // fictional cursor.
     mock.scenarioSet(
         ENDPOINT_ID,
         200,
         page(
             List.of(entry("addr-1", "first"), entry("addr-2", "second")),
-            "http://example.com/api/fabric/addresses?cursor=page2"));
+            "http://example.com/api/fabric/addresses?page_token=PA_page2"));
     mock.scenarioSet(ENDPOINT_ID, 200, page(List.of(entry("addr-3", "third")), null));
 
     // Drive pagination through the public paginate() on the read/CRUD base
@@ -156,7 +162,7 @@ class PaginationMockTest {
     }
     assertEquals(List.of("addr-1", "addr-2", "addr-3"), ids);
 
-    // Exactly two GETs, and the second one followed the links.next cursor.
+    // Exactly two GETs, and the second one followed the links.next page_token.
     List<MockTest.JournalEntry> gets = new ArrayList<>();
     for (MockTest.JournalEntry e : mock.journal()) {
       if (FABRIC_ADDRESSES_JOURNAL_PATH.equals(e.path)) {
@@ -165,9 +171,9 @@ class PaginationMockTest {
     }
     assertEquals(2, gets.size(), "expected 2 paginated GETs, got " + gets.size());
     assertEquals(
-        List.of("page2"),
-        gets.get(1).getQueryParams().get("cursor"),
-        "second fetch missing cursor=page2: " + gets.get(1).getQueryParams());
+        List.of("PA_page2"),
+        gets.get(1).getQueryParams().get("page_token"),
+        "second fetch missing page_token=PA_page2: " + gets.get(1).getQueryParams());
   }
 
   @Test
