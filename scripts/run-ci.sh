@@ -138,9 +138,15 @@ sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test)" \
 sched_gate SURFACE res=gradle desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM/ROUTE-COLLISION)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port java --repo "$PORT_ROOT"
 
-# GEN (regen-from-specs family): the 5 GEN-FRESH rules. Pure-python (--check against
-# the on-disk generated tree), no Gradle → no res, runs in the cheap wave.
-sched_gate GEN defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-RELAY/-SWAIG/-SWML)" \
+# GEN (regen-from-specs family): the 5 GEN-FRESH rules. Most are pure-python
+# (--check against the on-disk generated tree), but GEN-FRESH-TESTS's
+# generate_rest_tests.py shells to `./gradlew --no-daemon routeRegistry` /
+# `routeTestPlan` to capture the route oracle — a real Gradle invocation against
+# the shared build/ dir. res=gradle: without this, GEN races the other
+# Gradle-touching gates (TEST/SURFACE/BEHAVIORAL/etc.) and can classload a
+# truncated .class file mid-recompile (proven: reproduces in the full run,
+# passes standalone). Still deferred behind the cheap wave for fail-fast.
+sched_gate GEN res=gradle defer=1 desc="generated-code freshness suite (GEN-FRESH/-TESTS/-RELAY/-SWAIG/-SWML)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/gen.py" --port java --repo "$PORT_ROOT"
 
 # BEHAVIORAL (one Layer-D pass per rule): the per-PR rules. WAIT-LIVENESS (nightly)
