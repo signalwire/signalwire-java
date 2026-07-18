@@ -210,9 +210,18 @@ public final class MockTest {
      * across tests. An unscoped harness arms a shared override (legacy serial behavior).
      */
     public void scenarioSet(String operationId, int status, Map<String, Object> body) {
+      scenarioSetRaw(operationId, status, body);
+    }
+
+    /**
+     * Same as {@link #scenarioSet} but accepts any JSON-encodable response value, not just a {@code
+     * Map} -- used to arm a deliberately non-JSON-object body (e.g. a raw string, for a
+     * malformed-response test case).
+     */
+    public void scenarioSetRaw(String operationId, int status, Object response) {
       Map<String, Object> payload = new HashMap<>();
       payload.put("status", status);
-      payload.put("response", body);
+      payload.put("response", response);
       String json = GSON.toJson(payload);
       String q =
           (authHeader != null && !authHeader.isEmpty())

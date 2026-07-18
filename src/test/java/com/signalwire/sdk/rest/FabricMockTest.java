@@ -8,7 +8,6 @@ package com.signalwire.sdk.rest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -210,7 +209,7 @@ class FabricMockTest {
               .createInviteToken(
                   com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateInviteTokenRequest
                       .builder()
-                      .extras(kw("email", "invitee@example.com"))
+                      .addressId("3fa85f64-5717-4562-b3fc-2c963f66afa6")
                       .build());
       assertNotNull(body);
 
@@ -220,7 +219,7 @@ class FabricMockTest {
       assertEquals("/api/fabric/subscriber/invites", j.path);
       Map<String, Object> jb = j.bodyMap();
       assertNotNull(jb);
-      assertEquals("invitee@example.com", jb.get("email"));
+      assertEquals("3fa85f64-5717-4562-b3fc-2c963f66afa6", jb.get("address_id"));
     }
 
     @Test
@@ -232,7 +231,7 @@ class FabricMockTest {
               .createEmbedToken(
                   com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateEmbedTokenRequest
                       .builder()
-                      .extras(kw("allowed_addresses", Arrays.asList("addr-1", "addr-2")))
+                      .token("c2c_7acc0e5e968706a032983cd80cdca219")
                       .build());
       assertNotNull(body);
 
@@ -241,7 +240,7 @@ class FabricMockTest {
       assertEquals("/api/fabric/embeds/tokens", j.path);
       Map<String, Object> jb = j.bodyMap();
       assertNotNull(jb);
-      assertEquals(Arrays.asList("addr-1", "addr-2"), jb.get("allowed_addresses"));
+      assertEquals("c2c_7acc0e5e968706a032983cd80cdca219", jb.get("token"));
     }
 
     @Test

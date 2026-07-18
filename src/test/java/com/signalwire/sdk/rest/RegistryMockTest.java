@@ -86,7 +86,7 @@ class RegistryMockTest {
           client
               .registry()
               .brands()
-              .createCampaign("brand-2", kw("usecase", "LOW_VOLUME", "description", "MFA"));
+              .createCampaign("brand-2", kw("sms_use_case", "LOW_VOLUME", "description", "MFA"));
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -94,7 +94,7 @@ class RegistryMockTest {
       assertEquals(BASE + "/brands/brand-2/campaigns", j.path);
       Map<String, Object> jb = j.bodyMap();
       assertNotNull(jb);
-      assertEquals("LOW_VOLUME", jb.get("usecase"));
+      assertEquals("LOW_VOLUME", jb.get("sms_use_case"));
       assertEquals("MFA", jb.get("description"));
     }
   }
@@ -123,7 +123,7 @@ class RegistryMockTest {
                   "camp-2",
                   com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.UpdateRequest
                       .builder()
-                      .extras(kw("description", "Updated"))
+                      .name("Updated Campaign")
                       .build());
       assertNotNull(body);
 
@@ -132,7 +132,7 @@ class RegistryMockTest {
       assertEquals(BASE + "/campaigns/camp-2", j.path);
       Map<String, Object> jb = j.bodyMap();
       assertNotNull(jb);
-      assertEquals("Updated", jb.get("description"));
+      assertEquals("Updated Campaign", jb.get("name"));
     }
 
     @Test
@@ -157,7 +157,7 @@ class RegistryMockTest {
                   "camp-4",
                   com.signalwire.sdk.rest.namespaces.generated.RegistryCampaigns.CreateOrderRequest
                       .builder()
-                      .extras(kw("numbers", Arrays.asList("pn-1", "pn-2")))
+                      .phoneNumbers(Arrays.asList("pn-1", "pn-2"))
                       .build());
       assertNotNull(body);
 
@@ -166,7 +166,7 @@ class RegistryMockTest {
       assertEquals(BASE + "/campaigns/camp-4/orders", j.path);
       Map<String, Object> jb = j.bodyMap();
       assertNotNull(jb);
-      assertEquals(Arrays.asList("pn-1", "pn-2"), jb.get("numbers"));
+      assertEquals(Arrays.asList("pn-1", "pn-2"), jb.get("phone_numbers"));
     }
   }
 

@@ -342,4 +342,56 @@ class RestTest {
       assertNotNull(error.getMessage());
     }
   }
+
+  // ── SignalWireRestTransportError ────────────────────────────────
+
+  @Nested
+  @DisplayName("SignalWireRestTransportError")
+  class TransportErrorTests {
+
+    @Test
+    @DisplayName("is a member of the RestError family with the NO_STATUS sentinel")
+    void constructorShape() {
+      var cause = new java.io.IOException("Connection refused");
+      var error =
+          new SignalWireRestTransportError(
+              "GET", "/api/fabric/addresses", "http://127.0.0.1:1/api/fabric/addresses", cause);
+
+      assertInstanceOf(RestError.class, error);
+      assertEquals(SignalWireRestTransportError.NO_STATUS, error.getStatusCode());
+      assertEquals(0, error.getStatusCode());
+      assertEquals("GET", error.getMethod());
+      assertEquals("/api/fabric/addresses", error.getPath());
+      assertEquals("http://127.0.0.1:1/api/fabric/addresses", error.getUrl());
+      assertTrue(error.getMessage().contains("failed to reach the server"));
+    }
+
+    @Test
+    @DisplayName("preserves the underlying transport exception as the cause")
+    void causePreserved() {
+      var cause = new java.io.IOException("Connection refused");
+      var error = new SignalWireRestTransportError("GET", "/path", "https://x/api/path", cause);
+      assertSame(cause, error.getCause());
+    }
+
+    @Test
+    @DisplayName(
+        "a connection-refused request throws the typed transport error, not a bare IOException")
+    void connectionRefusedRaisesTypedError() throws Exception {
+      int deadPort;
+      try (var socket = new java.net.ServerSocket(0)) {
+        deadPort = socket.getLocalPort();
+      }
+      // The socket above is now closed -- nothing is listening on deadPort, so a
+      // request to it triggers connection refused.
+      var client = RestClient.withBaseUrl("http://127.0.0.1:" + deadPort, "proj", "tok");
+
+      var thrown =
+          assertThrows(RestError.class, () -> client.getHttpClient().get("/api/fabric/addresses"));
+
+      assertInstanceOf(SignalWireRestTransportError.class, thrown);
+      assertEquals(SignalWireRestTransportError.NO_STATUS, thrown.getStatusCode());
+      assertNotNull(thrown.getCause());
+    }
+  }
 }

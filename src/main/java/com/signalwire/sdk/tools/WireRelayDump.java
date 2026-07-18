@@ -356,6 +356,21 @@ final class WireRelayDump {
     settle();
     out.put("relay_send_fax", frame("calling.send_fax", mock.lastFrame("calling.send_fax")));
 
+    // relay_live_transcribe: caller's `action` MUST be wrapped as params.action.
+    c.liveTranscribe(map("start", map("lang", "en")));
+    settle();
+    out.put(
+        "relay_live_transcribe",
+        frame("calling.live_transcribe", mock.lastFrame("calling.live_transcribe")));
+
+    // relay_live_translate: params.action REQUIRED + status_url optional sibling param.
+    c.liveTranslate(
+        map("start", map("from_lang", "en", "to_lang", "es")), map("status_url", "https://x/cb"));
+    settle();
+    out.put(
+        "relay_live_translate",
+        frame("calling.live_translate", mock.lastFrame("calling.live_translate")));
+
     // ---- control-ops (Action methods) ----
     // relay_play_stop
     Action.PlayAction pa =

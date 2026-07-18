@@ -20,7 +20,7 @@ var agent = client.fabric().aiAgents().create(Map.of(
 ));
 
 // Search for a phone number
-var results = client.phoneNumbers().search(Map.of("area_code", "512"));
+var results = client.phoneNumbers().search(Map.of("areacode", "512"));
 
 // Place a call via REST
 client.calling().dial(

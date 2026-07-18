@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 11fc0de1ce0ccdb6467c23fbc9958157e772a3d7",
+  "generated_from": "signalwire-java @ 46cedc8c7d8d71e2952611c3958b0c4e83ea844e",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1883,6 +1883,9 @@
           "is_not_found",
           "is_server_error",
           "is_unauthorized"
+        ],
+        "SignalWireRestTransportError": [
+          "__init__"
         ]
       },
       "functions": []
