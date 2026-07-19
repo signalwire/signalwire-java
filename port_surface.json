@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 46cedc8c7d8d71e2952611c3958b0c4e83ea844e",
+  "generated_from": "signalwire-java @ 409a3098dc8161eae650cf7db9f8f73c859efec1",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1901,6 +1901,23 @@
       },
       "functions": []
     },
+    "signalwire.rest._request_options": {
+      "classes": {
+        "RequestOptions": [
+          "abort_signal",
+          "builder",
+          "merge",
+          "retries",
+          "retry_backoff",
+          "retry_on_status",
+          "timeout"
+        ]
+      },
+      "functions": [
+        "resolve",
+        "status_is_retryable"
+      ]
+    },
     "signalwire.rest.client": {
       "classes": {
         "RestClient": [
@@ -3243,6 +3260,7 @@
         "RestClientBuilder": [
           "build",
           "project",
+          "request_options",
           "space",
           "token"
         ]

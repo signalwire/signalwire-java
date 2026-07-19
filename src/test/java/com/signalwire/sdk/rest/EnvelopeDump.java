@@ -19,43 +19,34 @@ import java.util.Map;
  *
  * <p>A wire-shape check (REST-COVERAGE) proves a route's SUCCESS body and that AN error status
  * surfaces; it cannot express HOW the REST client handles an error envelope, a 429/503, a malformed
- * body, or a connection refused. This program drives the SAME corpus the differ's Python oracle
- * runs (porting-sdk/scripts/envelope_corpus.py — the single source of truth, mirrored natively
- * below) against the live {@code mock_signalwire} harness ({@link MockTest}), and for each case
- * observes the RAISED typed error reduced to the shared cross-port artifact:
+ * body, a connection refused, or the RequestOptions retry/timeout/abort envelope (plan 4.2). This
+ * program drives the SAME corpus the differ's Python oracle runs
+ * (porting-sdk/scripts/envelope_corpus.py — the single source of truth, mirrored natively below)
+ * against the live {@code mock_signalwire} harness ({@link MockTest}), and for each case observes
+ * the RAISED typed error (or the success) reduced to the shared cross-port artifact:
  *
  * <pre>
  *   {
  *     "raised": bool,            // a typed error was raised (vs a success)
  *     "error_kind": "typed"|"bare:&lt;Class&gt;"|null,
- *                                // "typed" == a member of the RestError family;
- *                                //   "bare:&lt;Class&gt;" == a leaked exception
- *     "status_code": int|null,   // the HTTP status the client decoded (null for a
- *                                //   transport failure -- no response reached)
+ *     "status_code": int|null,   // the HTTP status the client decoded (null for transport)
  *     "body_error_code": string|null,  // errors[0].code decoded from the body
- *     "request_count": int       // journal hits for the path (1 == no retry,
- *                                //   0 == transport: nothing reached the server)
+ *     "request_count": int       // journal hits for the path (1 == no retry, retries+1 for
+ *                                //   a retry-armed case, 0 == transport)
  *   }
  * </pre>
  *
  * <p>Prints ONE JSON object mapping corpus-id -&gt; artifact to stdout; the differ byte-compares
  * each entry against Python's golden oracle.
  *
- * <p>A {@code transport} case exercises the connection-refused path: the client is pointed at a
- * DEAD port (a free port bound then released, nothing listening), so no mock scenario is armed and
- * {@code request_count} is 0. A correct client raises its TYPED transport error ({@link
- * SignalWireRestTransportError}, a member of the {@link RestError} family, statusCode {@link
- * SignalWireRestTransportError#NO_STATUS} -&gt; reported as {@code null}); a client leaking a bare
- * transport exception would report {@code "bare:<name>"} and fail the byte-compare.
+ * <p>Per-request {@link RequestOptions} (the {@code request_options} corpus field) are threaded
+ * through the low-level {@link HttpClient} verb overloads directly — exactly as the Python oracle
+ * calls {@code client._request(..., request_options=...)} — so the retry/idempotency contract is
+ * exercised at the transport level (the CRUD resource surface intentionally carries no {@code
+ * request_options} param, matching the reference). A {@code scenarioRepeat} count arms the SAME
+ * override N times (FIFO) so a retry-armed case sees the failure on every attempt.
  *
- * <p>Each case uses a FRESH {@link MockTest#newClient()} (a unique random project -&gt; unique auth
- * header), so the journal view is scoped to that one case with zero entries to start -- no explicit
- * journal reset is needed. The mock server itself is probed-or-spawned by {@link MockTest} exactly
- * as the mock-backed unit tests do (honors {@code MOCK_SIGNALWIRE_PORT} when set, otherwise picks a
- * free port and spawns {@code python -m mock_signalwire}).
- *
- * <p>Run via the {@code envelopeDump} Gradle task (test classpath, since this lives alongside
- * {@link MockTest}):
+ * <p>Run via the {@code envelopeDump} Gradle task:
  *
  * <pre>
  *   ./gradlew --no-daemon -q envelopeDump
@@ -67,26 +58,63 @@ final class EnvelopeDump {
 
   private static final Gson GSON = new GsonBuilder().serializeNulls().create();
 
-  /** The endpoint every mock-armed case targets: a list route in every port's REST client. */
+  /** The GET list endpoint most cases target: a list route in every port's REST client. */
   private static final String ENDPOINT = "fabric.list_fabric_addresses";
 
-  private static final String CALL_PATH = "/api/fabric/addresses";
+  private static final String GET_PATH = "/fabric/addresses";
+  private static final String GET_JOURNAL_PATH = "/api/fabric/addresses";
+
+  /** A POST route present in every port — for the idempotency-asymmetry cases. */
+  private static final String CREATE_ENDPOINT = "relay-rest.create_address";
+
+  private static final String POST_PATH = "/relay/rest/addresses";
+  private static final String POST_JOURNAL_PATH = "/api/relay/rest/addresses";
 
   /**
    * One corpus case. {@code status == null} => no scenario override (the 200 baseline); {@code
    * transport} => the connection-refused path (dead port, no scenario armed).
+   *
+   * @param method HTTP verb ("GET" or "POST")
+   * @param scenarioRepeat how many times to arm the same override (FIFO)
+   * @param requestOptions per-request RequestOptions, or null for the port default
    */
-  private record Case(String id, Integer status, Object response, boolean transport) {
-    static Case success(String id) {
-      return new Case(id, null, null, false);
+  private record Case(
+      String id,
+      String method,
+      String endpoint,
+      String path,
+      String journalPath,
+      Integer status,
+      Object response,
+      Map<String, String> headers,
+      Integer delayMs,
+      int scenarioRepeat,
+      RequestOptions requestOptions,
+      boolean transport) {
+
+    static Case get(String id, Integer status, Object response) {
+      return new Case(
+          id,
+          "GET",
+          ENDPOINT,
+          GET_PATH,
+          GET_JOURNAL_PATH,
+          status,
+          response,
+          null,
+          null,
+          1,
+          null,
+          false);
     }
 
-    static Case armed(String id, int status, Object response) {
-      return new Case(id, status, response, false);
+    static Case getSuccess(String id) {
+      return get(id, null, null);
     }
 
     static Case transportCase(String id) {
-      return new Case(id, null, null, true);
+      return new Case(
+          id, "GET", ENDPOINT, GET_PATH, GET_JOURNAL_PATH, null, null, null, null, 1, null, true);
     }
   }
 
@@ -99,23 +127,114 @@ final class EnvelopeDump {
     return body;
   }
 
+  private static RequestOptions retryOpts(int retries) {
+    return RequestOptions.builder().retries(retries).retryBackoff(0.0).build();
+  }
+
   /**
-   * Mirrors porting-sdk/scripts/envelope_corpus.py CORPUS exactly (case ids + scenarios). Keep in
-   * lock-step with the Python source -- the differ compares each artifact against Python's oracle
-   * for the same id.
+   * Mirrors porting-sdk/scripts/envelope_corpus.py CORPUS exactly (case ids + scenarios +
+   * request_options + scenario_repeat + POST cases). Keep in lock-step with the Python source — the
+   * differ compares each artifact against Python's oracle for the same id.
    */
-  private static final List<Case> CORPUS =
-      List.of(
-          Case.success("envelope_200_success"),
-          Case.armed("envelope_404_typed", 404, errorsBody("NOT_FOUND", "no such address")),
-          Case.armed("envelope_429_retry_after", 429, errorsBody("RATE_LIMITED", "slow down")),
-          Case.armed("envelope_503_unavailable", 503, errorsBody("UNAVAILABLE", "maintenance")),
-          // A deliberately non-JSON-object body: still a typed error, body_error_code null.
-          Case.armed("envelope_500_malformed_body", 500, "not-json-at-all <garbage"),
-          Case.armed(
-              "envelope_200_with_error_body", 200, errorsBody("SOFT_FAIL", "ignored on 2xx")),
-          Case.armed("envelope_503_delayed", 503, errorsBody("UNAVAILABLE", "slow-fail")),
-          Case.transportCase("envelope_transport_refused"));
+  private static final List<Case> corpus() {
+    // 429 case also carries a Retry-After header (still no retry by DEFAULT).
+    Case c429h =
+        new Case(
+            "envelope_429_retry_after",
+            "GET",
+            ENDPOINT,
+            GET_PATH,
+            GET_JOURNAL_PATH,
+            429,
+            errorsBody("RATE_LIMITED", "slow down"),
+            Map.of("Retry-After", "2"),
+            null,
+            1,
+            null,
+            false);
+    Case cDelayed =
+        new Case(
+            "envelope_503_delayed",
+            "GET",
+            ENDPOINT,
+            GET_PATH,
+            GET_JOURNAL_PATH,
+            503,
+            errorsBody("UNAVAILABLE", "slow-fail"),
+            null,
+            200,
+            1,
+            null,
+            false);
+
+    return List.of(
+        Case.getSuccess("envelope_200_success"),
+        Case.get("envelope_404_typed", 404, errorsBody("NOT_FOUND", "no such address")),
+        c429h,
+        Case.get("envelope_503_unavailable", 503, errorsBody("UNAVAILABLE", "maintenance")),
+        // A deliberately non-JSON-object body: still a typed error, body_error_code null.
+        Case.get("envelope_500_malformed_body", 500, "not-json-at-all <garbage"),
+        Case.get("envelope_200_with_error_body", 200, errorsBody("SOFT_FAIL", "ignored on 2xx")),
+        cDelayed,
+        Case.transportCase("envelope_transport_refused"),
+        // ---- RequestOptions envelope — opt-in retry (plan 4.2) --------------------
+        // GET 503 with retries=1: retried once into the mock's default 200.
+        new Case(
+            "envelope_get_retry_once_succeeds",
+            "GET",
+            ENDPOINT,
+            GET_PATH,
+            GET_JOURNAL_PATH,
+            503,
+            errorsBody("UNAVAILABLE", "transient"),
+            null,
+            null,
+            1,
+            retryOpts(1),
+            false),
+        // GET 503 armed on BOTH attempts with retries=1: retries exhausted, typed 503 raised.
+        new Case(
+            "envelope_get_retry_exhausted",
+            "GET",
+            ENDPOINT,
+            GET_PATH,
+            GET_JOURNAL_PATH,
+            503,
+            errorsBody("UNAVAILABLE", "down"),
+            null,
+            null,
+            2,
+            retryOpts(1),
+            false),
+        // POST 500 with retries=2: NOT retried (idempotency safety).
+        new Case(
+            "envelope_post_500_not_retried",
+            "POST",
+            CREATE_ENDPOINT,
+            POST_PATH,
+            POST_JOURNAL_PATH,
+            500,
+            errorsBody("SERVER_ERROR", "boom"),
+            null,
+            null,
+            1,
+            retryOpts(2),
+            false),
+        // POST 503 with retries=1: retried (throttle is safe for a non-idempotent method).
+        new Case(
+            "envelope_post_503_retried",
+            "POST",
+            CREATE_ENDPOINT,
+            POST_PATH,
+            POST_JOURNAL_PATH,
+            503,
+            errorsBody("UNAVAILABLE", "throttled"),
+            null,
+            null,
+            1,
+            retryOpts(1),
+            false));
+  }
 
   /** Bind then immediately release a loopback TCP port -- a DEAD port once released. */
   private static int deadPort() {
@@ -165,14 +284,21 @@ final class EnvelopeDump {
 
   private static Map<String, Object> runCase(Case c) {
     MockTest.Bound bound = MockTest.newClient();
-    RestClient client = bound.client;
+    HttpClient http = bound.client.getHttpClient();
 
     if (c.transport()) {
       // Point THIS case's client at a dead port -- connection-refused, nothing
       // reaches the mock, request_count stays 0.
-      client = RestClient.withBaseUrl("http://127.0.0.1:" + deadPort(), bound.project, "test_tok");
+      http =
+          HttpClient.withBaseUrl(
+              "http://127.0.0.1:" + deadPort() + "/api", bound.project, "test_tok");
     } else if (c.status() != null) {
-      bound.harness.scenarioSetRaw(ENDPOINT, c.status(), c.response());
+      // Arm the override scenarioRepeat times (FIFO) so a retry-armed case sees the
+      // failure on every attempt.
+      for (int i = 0; i < c.scenarioRepeat(); i++) {
+        bound.harness.scenarioSetFull(
+            c.endpoint(), c.status(), c.response(), c.headers(), c.delayMs());
+      }
     }
 
     boolean raised = false;
@@ -181,7 +307,11 @@ final class EnvelopeDump {
     String bodyErrorCode = null;
 
     try {
-      client.fabric().addresses().list();
+      if ("POST".equals(c.method())) {
+        http.post(c.path(), Map.of("label", "x"), c.requestOptions());
+      } else {
+        http.get(c.path(), null, c.requestOptions());
+      }
     } catch (RestError e) {
       raised = true;
       errorKind = "typed";
@@ -197,7 +327,7 @@ final class EnvelopeDump {
     int requestCount = 0;
     if (!c.transport()) {
       for (MockTest.JournalEntry j : bound.harness.journal()) {
-        if (CALL_PATH.equals(j.path)) {
+        if (c.journalPath().equals(j.path)) {
           requestCount++;
         }
       }
@@ -208,7 +338,7 @@ final class EnvelopeDump {
 
   public static void main(String[] args) {
     Map<String, Object> out = new LinkedHashMap<>();
-    for (Case c : CORPUS) {
+    for (Case c : corpus()) {
       out.put(c.id(), runCase(c));
     }
     System.out.println(GSON.toJson(out));

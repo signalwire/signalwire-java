@@ -40,7 +40,7 @@ public class RestClient extends ResourceTree {
     this.httpClient =
         builder.httpClient != null
             ? builder.httpClient
-            : new HttpClient(builder.space, builder.project, builder.token);
+            : new HttpClient(builder.space, builder.project, builder.token, builder.requestOptions);
   }
 
   /** Supplies the HttpClient to the generated {@link ResourceTree} accessors. */
@@ -87,9 +87,20 @@ public class RestClient extends ResourceTree {
     private String token;
     private String space;
     private HttpClient httpClient;
+    private RequestOptions requestOptions;
 
     public Builder project(String project) {
       this.project = project;
+      return this;
+    }
+
+    /**
+     * Client-default {@link RequestOptions} (timeout / retries / retry policy / abort signal)
+     * applied to every request this client makes, overridable per call. Mirrors the Python
+     * reference's {@code RestClient(request_options=...)}.
+     */
+    public Builder requestOptions(RequestOptions requestOptions) {
+      this.requestOptions = requestOptions;
       return this;
     }
 
