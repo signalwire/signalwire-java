@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * <p>Every field is optional; a {@code null} field means "inherit" and resolves at apply-time to
  * the client default and then the built-in floor (see {@link RequestOptionsSupport#resolve}). The
- * timeout + retry semantics are the oracle-pinned, wire-observable contract (the mock sees N
+ * timeout + retry semantics are the reference-pinned, wire-observable contract (the mock sees N
  * attempts and honors the backoff ordering + the POST/PATCH idempotency asymmetry). {@code
  * abortSignal} fidelity is per-port idiom (see {@link AbortSignal}).
  *
