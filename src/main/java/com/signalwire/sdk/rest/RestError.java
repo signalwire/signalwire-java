@@ -23,14 +23,6 @@ import java.util.Optional;
  */
 public class RestError extends RuntimeException {
 
-  /**
-   * Response header names SignalWire (and common proxies) use for the platform request id, in
-   * preference order. Matched case-insensitively. Mirrors the reference's {@code
-   * _REQUEST_ID_HEADERS} (_base.py).
-   */
-  private static final List<String> REQUEST_ID_HEADERS =
-      List.of("x-request-id", "x-signalwire-request-id", "request-id", "x-amzn-requestid");
-
   private final int statusCode;
   private final String method;
   private final String path;
@@ -92,6 +84,16 @@ public class RestError extends RuntimeException {
     return statusCode;
   }
 
+  /**
+   * The response body of the failing request — the {@code body} envelope field. Alias of {@link
+   * #getResponseBody()} under the reference's field name ({@code SignalWireRestError.body},
+   * _base.py) so the error envelope (status / body / url / method) is reachable under the reference
+   * spelling.
+   */
+  public String getBody() {
+    return responseBody;
+  }
+
   public String getMethod() {
     return method;
   }
@@ -126,6 +128,14 @@ public class RestError extends RuntimeException {
   public Optional<String> getRequestId() {
     return Optional.ofNullable(requestId);
   }
+
+  /**
+   * Response header names SignalWire (and common proxies) use for the platform request id, in
+   * preference order. Matched case-insensitively. Mirrors the reference's {@code
+   * _REQUEST_ID_HEADERS} (_base.py).
+   */
+  private static final List<String> REQUEST_ID_HEADERS =
+      List.of("x-request-id", "x-signalwire-request-id", "request-id", "x-amzn-requestid");
 
   private static String extractRequestId(Map<String, String> headers) {
     if (headers == null || headers.isEmpty()) {

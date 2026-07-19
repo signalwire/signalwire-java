@@ -552,6 +552,7 @@ signalwire.rest._base.FabricResourcePUT.__init__: idiomatic Java surface extensi
 signalwire.rest._base.HttpClient.get_base_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._base.HttpClient.with_base_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._base.ReadResource.__init__: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.rest._base.SignalWireRestError.get_body: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._base.SignalWireRestError.get_headers: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._base.SignalWireRestError.get_method: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._base.SignalWireRestError.get_path: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart

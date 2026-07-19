@@ -29254,6 +29254,15 @@
               ],
               "returns": "void"
             },
+            "get_body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
             "get_headers": {
               "params": [
                 {

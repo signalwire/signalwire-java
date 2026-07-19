@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ f03579ffe3fa07777bd131a6d603e79f9b1e2bd9",
+  "generated_from": "signalwire-java @ 3a6886e044403e41b9d252231bb05701e3552317",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1875,6 +1875,7 @@
         ],
         "SignalWireRestError": [
           "__init__",
+          "get_body",
           "get_headers",
           "get_method",
           "get_path",
