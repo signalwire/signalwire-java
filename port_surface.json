@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 409a3098dc8161eae650cf7db9f8f73c859efec1",
+  "generated_from": "signalwire-java @ 7c53792368e43f19e8eb5cc847cbc29eacc488b6",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1818,6 +1818,7 @@
           "contexts",
           "host",
           "jwt_token",
+          "max_active_calls",
           "project",
           "space",
           "token"

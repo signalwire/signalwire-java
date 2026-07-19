@@ -529,6 +529,7 @@ signalwire.relay.relay_client_builder.RelayClientBuilder.build: idiomatic Java s
 signalwire.relay.relay_client_builder.RelayClientBuilder.contexts: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.host: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.jwt_token: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.relay.relay_client_builder.RelayClientBuilder.max_active_calls: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.project: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.space: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.token: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
