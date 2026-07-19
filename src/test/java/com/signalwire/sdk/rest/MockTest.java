@@ -219,9 +219,31 @@ public final class MockTest {
      * malformed-response test case).
      */
     public void scenarioSetRaw(String operationId, int status, Object response) {
+      scenarioSetFull(operationId, status, response, null, null);
+    }
+
+    /**
+     * Arm a one-shot override with the full scenario shape: {@code status} + {@code response} plus
+     * optional response {@code headers} (e.g. {@code Retry-After}) and a {@code delayMs}
+     * server-side delay before the response. Used by the ENVELOPE corpus for the Retry-After and
+     * delayed-503 cases. Passing {@code null} for headers/delay is identical to {@link
+     * #scenarioSetRaw}.
+     */
+    public void scenarioSetFull(
+        String operationId,
+        int status,
+        Object response,
+        Map<String, String> headers,
+        Integer delayMs) {
       Map<String, Object> payload = new HashMap<>();
       payload.put("status", status);
       payload.put("response", response);
+      if (headers != null && !headers.isEmpty()) {
+        payload.put("headers", headers);
+      }
+      if (delayMs != null) {
+        payload.put("delay_ms", delayMs);
+      }
       String json = GSON.toJson(payload);
       String q =
           (authHeader != null && !authHeader.isEmpty())
@@ -337,6 +359,17 @@ public final class MockTest {
    * Harness#project()} (or {@link Bound#project}) rather than hard-coding {@code test_proj}.
    */
   public static Bound newClient() {
+    return newClient(null);
+  }
+
+  /**
+   * Same as {@link #newClient()} but builds the client with a client-default {@link RequestOptions}
+   * applied to every request (overridable per call). Used by the request-options envelope tests to
+   * prove the per-request-over-client-default resolution.
+   *
+   * @param clientDefault the client-default request options (may be {@code null})
+   */
+  public static Bound newClient(RequestOptions clientDefault) {
     Harness shared = ensureServer();
 
     // Unique per-test project => unique Basic-Auth header => journal
@@ -350,7 +383,17 @@ public final class MockTest {
             + java.util.Base64.getEncoder()
                 .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
-    RestClient client = RestClient.withBaseUrl(shared.url(), project, REST_TOKEN);
+    RestClient client =
+        clientDefault == null
+            ? RestClient.withBaseUrl(shared.url(), project, REST_TOKEN)
+            : RestClient.builder()
+                .project(project)
+                .token(REST_TOKEN)
+                .space(shared.url())
+                .httpClient(
+                    HttpClient.withBaseUrl(
+                        normalizeApi(shared.url()), project, REST_TOKEN, clientDefault))
+                .build();
 
     // Per-call harness view scoped to this client's auth header. No reset is
     // needed: this client starts with zero entries in the (auth-filtered)
@@ -360,6 +403,12 @@ public final class MockTest {
     mock.project = project;
 
     return new Bound(client, mock, project);
+  }
+
+  private static String normalizeApi(String baseUrl) {
+    return (baseUrl.endsWith("/api") || baseUrl.endsWith("/api/"))
+        ? baseUrl.replaceAll("/$", "")
+        : baseUrl.replaceAll("/$", "") + "/api";
   }
 
   /** Tuple of the RestClient and harness handed back to a test. */

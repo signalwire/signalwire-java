@@ -28994,6 +28994,11 @@
                   "name": "token",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
+                  "required": true
                 }
               ],
               "returns": "void"
@@ -29008,6 +29013,11 @@
                   "name": "path",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
+                  "required": true
                 }
               ],
               "returns": "dict<string,any>"
@@ -29021,6 +29031,16 @@
                 {
                   "name": "path",
                   "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "query_params",
+                  "type": "dict<string,string>",
+                  "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
                   "required": true
                 }
               ],
@@ -29050,6 +29070,11 @@
                   "name": "body",
                   "type": "dict<string,any>",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
+                  "required": true
                 }
               ],
               "returns": "dict<string,any>"
@@ -29069,6 +29094,11 @@
                   "name": "body",
                   "type": "dict<string,any>",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
+                  "required": true
                 }
               ],
               "returns": "dict<string,any>"
@@ -29087,6 +29117,11 @@
                 {
                   "name": "body",
                   "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
                   "required": true
                 }
               ],
@@ -29374,6 +29409,149 @@
               "returns": "dict<string,any>"
             }
           }
+        }
+      }
+    },
+    "signalwire.rest._request_options": {
+      "classes": {
+        "RequestOptions": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "optional<float>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "retries",
+                  "type": "optional<int>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "retry_on_status",
+                  "type": "optional<list<int>>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "retry_backoff",
+                  "type": "optional<float>",
+                  "required": false,
+                  "default": null
+                },
+                {
+                  "name": "abort_signal",
+                  "type": "optional<class:signalwire.rest._request_options._AbortSignal>",
+                  "required": false,
+                  "default": null
+                }
+              ],
+              "returns": "void"
+            },
+            "abort_signal": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<class:signalwire.rest._request_options._AbortSignal>"
+            },
+            "merge": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "override",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
+            },
+            "retries": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
+            },
+            "retry_backoff": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "float"
+            },
+            "retry_on_status": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<int>"
+            },
+            "timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "float"
+            }
+          }
+        }
+      },
+      "functions": {
+        "resolve": {
+          "params": [
+            {
+              "name": "client_default",
+              "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+              "required": true
+            },
+            {
+              "name": "per_request",
+              "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+              "required": true
+            }
+          ],
+          "returns": "class:signalwire.rest._request_options._EffectiveOptions"
+        },
+        "status_is_retryable": {
+          "params": [
+            {
+              "name": "method",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "status",
+              "type": "int",
+              "required": true
+            },
+            {
+              "name": "opts",
+              "type": "class:signalwire.rest._request_options._EffectiveOptions",
+              "required": true
+            }
+          ],
+          "returns": "bool"
         }
       }
     },
@@ -72583,6 +72761,20 @@
                 {
                   "name": "project",
                   "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest.client.RestClient"
+            },
+            "request_options": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "class:signalwire.rest._request_options.RequestOptions",
                   "required": true
                 }
               ],

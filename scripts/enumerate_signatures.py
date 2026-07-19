@@ -487,6 +487,18 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # surface (matches the oracle's 4-param set_gather_info); the 3-arg form
     # would hide ``isolated``.
     ("Step", "set_gather_info"),
+    # HttpClient verbs + constructor expose the optional request_options envelope
+    # (plan 4.2) via a trailing-param overload alongside the convenience overloads.
+    # The full overload is the parity surface (matches the oracle's request_options
+    # param on __init__/get/post/put/patch/delete); the fewer-arg forms are
+    # ergonomic shortcuts the Java overload-collapse would otherwise pick, hiding
+    # the request_options capability.
+    ("HttpClient", "__init__"),
+    ("HttpClient", "get"),
+    ("HttpClient", "post"),
+    ("HttpClient", "put"),
+    ("HttpClient", "patch"),
+    ("HttpClient", "delete"),
 }
 
 # Java skill class renames to match Python casing
@@ -635,6 +647,18 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.agent.tools.type_inference", "infer_schema"),
     ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"):
         ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
+    # RequestOptionsSupport static methods → Python module-level free functions in
+    # signalwire.rest._request_options. The reference exports resolve /
+    # status_is_retryable as bare module functions; Java has no module-level free
+    # functions, so they're hosted as static methods on a static-only facade and
+    # lifted back to the canonical free-function home here. Native shapes are
+    # recorded canonically via FREE_FUNCTION_SIGNATURE_OVERRIDES below (Java's
+    # EffectiveOptions record stands in for the reference's private
+    # _EffectiveOptions, and the AbortSignal interface for _AbortSignal).
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "resolve"):
+        ("signalwire.rest._request_options", "resolve"),
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "statusIsRetryable"):
+        ("signalwire.rest._request_options", "status_is_retryable"),
 }
 
 
@@ -682,6 +706,33 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         ],
         "returns": "callable<list<any>,any>",
     },
+    # resolve(client_default, per_request) -> _EffectiveOptions. Java's
+    # RequestOptionsSupport.resolve takes two RequestOptions and returns an
+    # EffectiveOptions record; the oracle records the private _EffectiveOptions
+    # return and both params as required (positional) optional<RequestOptions>.
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "resolve"): {
+        "params": [
+            {"name": "client_default",
+             "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+             "required": True},
+            {"name": "per_request",
+             "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+             "required": True},
+        ],
+        "returns": "class:signalwire.rest._request_options._EffectiveOptions",
+    },
+    # status_is_retryable(method, status, opts) -> bool. Java takes (String, int,
+    # EffectiveOptions); the oracle records opts as the private _EffectiveOptions.
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "statusIsRetryable"): {
+        "params": [
+            {"name": "method", "type": "string", "required": True},
+            {"name": "status", "type": "int", "required": True},
+            {"name": "opts",
+             "type": "class:signalwire.rest._request_options._EffectiveOptions",
+             "required": True},
+        ],
+        "returns": "bool",
+    },
 }
 
 
@@ -723,6 +774,48 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
              "default": None},
         ],
         "returns": "tuple<int,dict<string,string>,string>",
+    },
+    # RequestOptions.abort_signal accessor: Java returns the port-only AbortSignal
+    # interface (dropped as an idiom-scaffolding class); the oracle records the
+    # accessor as returning the PRIVATE optional<_AbortSignal>. Record the canonical
+    # optional<_AbortSignal> return so the type-ref compares exact.
+    ("RequestOptions", "abort_signal"): {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "optional<class:signalwire.rest._request_options._AbortSignal>",
+    },
+}
+
+# Methods dropped from a canonical class: the Java builder-idiom factory has no
+# reference counterpart (the reference constructs RequestOptions via its dataclass
+# __init__, synthesized separately). Keyed by (canonical_class, method_canonical).
+_METHOD_DROP: set[tuple[str, str]] = {
+    ("RequestOptions", "builder"),
+}
+
+# Synthetic __init__ signatures injected onto a canonical class whose Java
+# constructor is PRIVATE (builder-pattern value objects), so the port publishes
+# the same constructor surface the reference's dataclass __init__ records. Keyed by
+# (canonical_module, canonical_class). RequestOptions is the request-options
+# envelope value type (plan 4.2): the builder is the Java NAMED-param idiom for the
+# reference's keyword-only dataclass constructor; record the oracle-exact 5-field
+# __init__ (all optional, None-inherit) so the builder-vs-kwargs idiom compares equal.
+_SYNTHETIC_INIT: dict[tuple[str, str], dict] = {
+    ("signalwire.rest._request_options", "RequestOptions"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "timeout", "type": "optional<float>", "required": False,
+             "default": None},
+            {"name": "retries", "type": "optional<int>", "required": False,
+             "default": None},
+            {"name": "retry_on_status", "type": "optional<list<int>>", "required": False,
+             "default": None},
+            {"name": "retry_backoff", "type": "optional<float>", "required": False,
+             "default": None},
+            {"name": "abort_signal",
+             "type": "optional<class:signalwire.rest._request_options._AbortSignal>",
+             "required": False, "default": None},
+        ],
+        "returns": "void",
     },
 }
 
@@ -853,6 +946,15 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     "WebhookRejection",         # WebhookValidator.validate reject-triple record
     "HttpResult",               # Service.handleRequest (status, headers, body) triple record
     "InferredSchema",           # TypeInference.inferSchema 5-tuple stand-in record
+    # RequestOptions envelope (plan 4.2) helper types with no PUBLIC reference
+    # counterpart: EffectiveOptions is the port's stand-in for the reference's
+    # PRIVATE _EffectiveOptions (underscore classes are not enumerated by the
+    # oracle — it appears only as a type-ref string on resolve's return), and
+    # AbortSignal is the port's stand-in for the private _AbortSignal protocol
+    # (referenced only as a type on RequestOptions.abort_signal). Drop both on
+    # BOTH sides rather than launder them as PORT_ADDITIONS.
+    "EffectiveOptions",
+    "AbortSignal",
 }
 
 
@@ -992,6 +1094,10 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 method_canonical = _METHOD_RENAMES.get(snake, snake)
                 if method_canonical in _PY_KEYWORDS:
                     continue
+            # Idiom-scaffolding method with no reference counterpart (e.g. a
+            # builder-factory on a builder-pattern value object). Drop it.
+            if (canonical_name, method_canonical) in _METHOD_DROP:
+                continue
             # Free-function projection: a static method that should
             # surface as a module-level Python function, not a class
             # method.
@@ -1114,6 +1220,17 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             if existing is not None and len(sig.get("params", [])) >= len(existing.get("params", [])):
                 continue
             out_modules[target_mod]["functions"][target_fn] = sig
+
+        # Synthetic __init__ for builder-pattern value objects whose Java
+        # constructor is private (so reflection dumps no <init>): record the
+        # oracle-exact keyword constructor so the builder-vs-kwargs idiom compares
+        # equal to the reference's dataclass __init__.
+        syn = _SYNTHETIC_INIT.get((mod, canonical_name))
+        if syn is not None:
+            methods_out["__init__"] = {
+                "params": [dict(p) for p in syn["params"]],
+                "returns": syn["returns"],
+            }
 
         if not methods_out:
             continue

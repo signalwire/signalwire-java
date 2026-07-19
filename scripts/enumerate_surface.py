@@ -431,6 +431,15 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
         ("signalwire.core.agent.tools.type_inference", "infer_schema"),
     ("TypeInference", "createTypedHandlerWrapper"):
         ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
+    # RequestOptionsSupport static helpers → signalwire.rest._request_options free
+    # functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py). The
+    # reference exports resolve / status_is_retryable as bare module functions; Java
+    # has no module-level free functions, so they live on a static-only facade and
+    # are lifted back to the canonical free-function home.
+    ("RequestOptionsSupport", "resolve"):
+        ("signalwire.rest._request_options", "resolve"),
+    ("RequestOptionsSupport", "statusIsRetryable"):
+        ("signalwire.rest._request_options", "status_is_retryable"),
 }
 
 
@@ -566,6 +575,25 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     # otherwise leak into that module alongside the projected functions. Python has
     # only the free functions (classes: {}); drop the host class.
     "TypeInference",
+    # RequestOptions envelope (plan 4.2) idiom-scaffolding types with no reference
+    # class counterpart:
+    #  - RequestOptionsBuilder: the Java NAMED-param builder for the reference's
+    #    keyword-only RequestOptions dataclass constructor (like SWAIGFunctionBuilder).
+    #  - AbortSignal: the @FunctionalInterface cooperative-cancellation primitive, the
+    #    port's stand-in for the reference's PRIVATE _AbortSignal protocol (like
+    #    SWAIGFunctionHandler).
+    #  - RequestOptionsSupport: the static-only free-function host — its resolve /
+    #    statusIsRetryable methods are projected to the module-level free functions
+    #    signalwire.rest._request_options.{resolve,status_is_retryable} via
+    #    _FREE_FUNCTION_SURFACE_PROJECTIONS. Its package IS the canonical module, so
+    #    (like TypeInference) the host class would otherwise leak alongside the
+    #    projected functions; Python has only the free functions, so drop the host.
+    #  - RequestOptionsSupportEffectiveOptions: the nested value record standing in for
+    #    the reference's PRIVATE _EffectiveOptions (like SWMLServiceHttpResult).
+    "RequestOptionsBuilder",
+    "AbortSignal",
+    "RequestOptionsSupport",
+    "RequestOptionsSupportEffectiveOptions",
 }
 
 

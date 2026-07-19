@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.logging.Logger;
+import com.signalwire.sdk.rest.RequestOptionsSupport.EffectiveOptions;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -17,23 +18,32 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * HTTP client for the SignalWire REST API.
  *
  * <p>Uses {@code java.net.http.HttpClient} (JDK 11+ built-in) with Basic Auth and JSON content
- * types. Provides low-level GET, POST, PUT, DELETE methods used by {@link CrudResource} and
+ * types. Provides low-level GET, POST, PUT, DELETE, PATCH methods used by {@link CrudResource} and
  * namespace classes.
+ *
+ * <p>Transport behavior — per-attempt timeout, opt-in idempotency-aware retries with exponential
+ * backoff (honoring {@code Retry-After}), and cooperative cancellation — is governed by the {@link
+ * RequestOptions} envelope (plan 4.2), supplied at two levels: a client default (stored on this
+ * client) and an optional per-request override on each verb. An unset field on either resolves to
+ * the next level down and finally the built-in floor. Mirrors the Python reference's {@code
+ * HttpClient}.
  */
 public class HttpClient {
 
   private static final Logger log = Logger.getLogger(HttpClient.class);
   private static final Gson gson = new Gson();
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
+  private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
 
   private final String baseUrl;
   private final String authHeader;
   private final java.net.http.HttpClient httpClient;
+  private final RequestOptions requestOptions;
 
   /**
    * Create an HTTP client.
@@ -43,15 +53,22 @@ public class HttpClient {
    * @param token API token used as Basic Auth password
    */
   public HttpClient(String space, String project, String token) {
+    this(space, project, token, null);
+  }
+
+  /**
+   * Create an HTTP client with a client-default {@link RequestOptions} applied to every request.
+   *
+   * @param space SignalWire space (e.g., "example.signalwire.com")
+   * @param project project ID used as Basic Auth username
+   * @param token API token used as Basic Auth password
+   * @param requestOptions client-default transport options (may be {@code null})
+   */
+  public HttpClient(String space, String project, String token, RequestOptions requestOptions) {
     this.baseUrl = "https://" + space + "/api";
-    String credentials = project + ":" + token;
-    this.authHeader =
-        "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-    this.httpClient =
-        java.net.http.HttpClient.newBuilder()
-            .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .connectTimeout(DEFAULT_TIMEOUT)
-            .build();
+    this.authHeader = basicAuth(project, token);
+    this.requestOptions = requestOptions;
+    this.httpClient = newHttpClient();
   }
 
   /**
@@ -65,57 +82,87 @@ public class HttpClient {
    * @return a configured HTTP client
    */
   public static HttpClient withBaseUrl(String baseUrl, String project, String token) {
-    return new HttpClient(baseUrl, project, token, null);
+    return withBaseUrl(baseUrl, project, token, null);
   }
 
-  private HttpClient(String baseUrl, String project, String token, Void unused) {
+  /**
+   * Create an HTTP client with an explicit base URL and a client-default {@link RequestOptions}.
+   *
+   * @param baseUrl fully qualified base URL ending in {@code /api}
+   * @param project project ID used as Basic Auth username
+   * @param token API token used as Basic Auth password
+   * @param requestOptions client-default transport options (may be {@code null})
+   * @return a configured HTTP client
+   */
+  public static HttpClient withBaseUrl(
+      String baseUrl, String project, String token, RequestOptions requestOptions) {
+    return new HttpClient(baseUrl, project, token, requestOptions, null);
+  }
+
+  private HttpClient(
+      String baseUrl, String project, String token, RequestOptions requestOptions, Void unused) {
     this.baseUrl = baseUrl;
+    this.authHeader = basicAuth(project, token);
+    this.requestOptions = requestOptions;
+    this.httpClient = newHttpClient();
+  }
+
+  private static String basicAuth(String project, String token) {
     String credentials = project + ":" + token;
-    this.authHeader =
-        "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
-    this.httpClient =
-        java.net.http.HttpClient.newBuilder()
-            .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .connectTimeout(DEFAULT_TIMEOUT)
-            .build();
+    return "Basic "
+        + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static java.net.http.HttpClient newHttpClient() {
+    return java.net.http.HttpClient.newBuilder()
+        .version(java.net.http.HttpClient.Version.HTTP_1_1)
+        .connectTimeout(CONNECT_TIMEOUT)
+        .build();
   }
 
   // ── Public methods ───────────────────────────────────────────────
 
   /** GET request, returns parsed JSON as a Map. */
   public Map<String, Object> get(String path) {
-    return get(path, null);
+    return get(path, null, null);
   }
 
   /** GET request with query parameters. */
   public Map<String, Object> get(String path, Map<String, String> queryParams) {
+    return get(path, queryParams, null);
+  }
+
+  /** GET request with query parameters and a per-request {@link RequestOptions} override. */
+  public Map<String, Object> get(
+      String path, Map<String, String> queryParams, RequestOptions requestOptions) {
     String url = buildUrl(path, queryParams);
-    HttpRequest request = requestBuilder(url).GET().build();
-    return executeRequest("GET", path, request);
+    return execute("GET", path, url, null, requestOptions);
   }
 
   /** POST request with JSON body. */
   public Map<String, Object> post(String path, Map<String, Object> body) {
+    return post(path, body, null);
+  }
+
+  /** POST request with JSON body and a per-request {@link RequestOptions} override. */
+  public Map<String, Object> post(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
     String url = buildUrl(path, null);
     String json = body != null ? gson.toJson(body) : "{}";
-    HttpRequest request =
-        requestBuilder(url)
-            .POST(HttpRequest.BodyPublishers.ofString(json))
-            .header("Content-Type", "application/json")
-            .build();
-    return executeRequest("POST", path, request);
+    return execute("POST", path, url, json, requestOptions);
   }
 
   /** PUT request with JSON body. */
   public Map<String, Object> put(String path, Map<String, Object> body) {
+    return put(path, body, null);
+  }
+
+  /** PUT request with JSON body and a per-request {@link RequestOptions} override. */
+  public Map<String, Object> put(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
     String url = buildUrl(path, null);
     String json = body != null ? gson.toJson(body) : "{}";
-    HttpRequest request =
-        requestBuilder(url)
-            .PUT(HttpRequest.BodyPublishers.ofString(json))
-            .header("Content-Type", "application/json")
-            .build();
-    return executeRequest("PUT", path, request);
+    return execute("PUT", path, url, json, requestOptions);
   }
 
   /**
@@ -123,21 +170,26 @@ public class HttpClient {
    * PATCH, so use {@code method("PATCH", ...)}.
    */
   public Map<String, Object> patch(String path, Map<String, Object> body) {
+    return patch(path, body, null);
+  }
+
+  /** PATCH request with JSON body and a per-request {@link RequestOptions} override. */
+  public Map<String, Object> patch(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
     String url = buildUrl(path, null);
     String json = body != null ? gson.toJson(body) : "{}";
-    HttpRequest request =
-        requestBuilder(url)
-            .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
-            .header("Content-Type", "application/json")
-            .build();
-    return executeRequest("PATCH", path, request);
+    return execute("PATCH", path, url, json, requestOptions);
   }
 
   /** DELETE request. */
   public Map<String, Object> delete(String path) {
+    return delete(path, null);
+  }
+
+  /** DELETE request with a per-request {@link RequestOptions} override. */
+  public Map<String, Object> delete(String path, RequestOptions requestOptions) {
     String url = buildUrl(path, null);
-    HttpRequest request = requestBuilder(url).DELETE().build();
-    return executeRequest("DELETE", path, request);
+    return execute("DELETE", path, url, null, requestOptions);
   }
 
   /** Get the base URL. */
@@ -147,49 +199,137 @@ public class HttpClient {
 
   // ── Internal ─────────────────────────────────────────────────────
 
-  private HttpRequest.Builder requestBuilder(String url) {
-    return HttpRequest.newBuilder()
-        .uri(URI.create(url))
-        .header("Authorization", authHeader)
-        .header("Accept", "application/json")
-        .timeout(DEFAULT_TIMEOUT);
+  private HttpRequest buildRequest(String method, String url, String jsonBody, Duration timeout) {
+    HttpRequest.Builder b =
+        HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("Authorization", authHeader)
+            .header("Accept", "application/json")
+            .timeout(timeout);
+    switch (method) {
+      case "GET":
+        b.GET();
+        break;
+      case "DELETE":
+        b.DELETE();
+        break;
+      case "POST":
+        b.POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .header("Content-Type", "application/json");
+        break;
+      case "PUT":
+        b.PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .header("Content-Type", "application/json");
+        break;
+      default:
+        b.method(method, HttpRequest.BodyPublishers.ofString(jsonBody))
+            .header("Content-Type", "application/json");
+    }
+    return b.build();
   }
 
-  private Map<String, Object> executeRequest(String method, String path, HttpRequest request) {
-    String url = request.uri().toString();
-    try {
-      log.debug("%s %s", method, request.uri());
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+  /**
+   * Drive the request with the resolved {@link RequestOptions} envelope: cooperative-cancellation
+   * check before each attempt, per-attempt timeout, and opt-in idempotency-aware retry with
+   * exponential backoff (honoring {@code Retry-After}). Total attempts = {@code retries + 1}.
+   * Mirrors the Python reference's {@code HttpClient._request}.
+   */
+  private Map<String, Object> execute(
+      String method, String path, String url, String jsonBody, RequestOptions perRequest) {
+    EffectiveOptions opts = RequestOptionsSupport.resolve(this.requestOptions, perRequest);
+    Duration timeout = Duration.ofMillis(Math.max(1L, Math.round(opts.timeout() * 1000.0)));
 
-      int statusCode = response.statusCode();
-      String body = response.body();
+    int attempt = 0;
+    while (true) {
+      attempt++;
 
-      if (statusCode >= 200 && statusCode < 300) {
-        if (body == null || body.isEmpty()) {
-          return Collections.emptyMap();
-        }
-        return gson.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
+      // Cancelled before this attempt — surface as the transport-error family
+      // (no response was produced), not a bare exception.
+      if (opts.abortSignal() != null && opts.abortSignal().isSet()) {
+        throw new SignalWireRestTransportError(
+            method,
+            path,
+            url,
+            new java.util.concurrent.CancellationException("request cancelled by abortSignal"));
       }
 
-      throw new RestError(statusCode, method, path, url, body);
-    } catch (RestError e) {
-      throw e;
+      HttpRequest request = buildRequest(method, url, jsonBody, timeout);
+      try {
+        log.debug("%s %s", method, url);
+        HttpResponse<String> response =
+            httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        int statusCode = response.statusCode();
+
+        if (statusCode >= 200 && statusCode < 300) {
+          String body = response.body();
+          if (body == null || body.isEmpty()) {
+            return Collections.emptyMap();
+          }
+          return gson.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
+        }
+
+        // A non-2xx response. Retry if attempts remain AND the status is retryable
+        // for this method (idempotency-aware), honoring Retry-After then backoff.
+        if (attempt <= opts.retries()
+            && RequestOptionsSupport.statusIsRetryable(method, statusCode, opts)) {
+          double delay = retryAfterSeconds(response);
+          if (delay < 0) {
+            delay = opts.retryBackoff() * Math.pow(2, attempt - 1);
+          }
+          sleep(delay);
+          continue;
+        }
+        throw new RestError(statusCode, method, path, url, response.body());
+      } catch (RestError e) {
+        throw e;
+      } catch (InterruptedException e) {
+        // Restore the interrupt status that HttpClient.send() cleared when it threw,
+        // so callers up the stack can still observe the cancellation. Do NOT swallow it.
+        Thread.currentThread().interrupt();
+        throw new SignalWireRestTransportError(method, path, url, e);
+      } catch (Exception e) {
+        // Transport-level failure: the request never reached a response (connection
+        // refused, DNS failure, connection reset, TLS error, per-attempt timeout).
+        // Retry if attempts remain, else wrap in the typed SignalWireRestError family
+        // (SignalWireRestTransportError, statusCode == NO_STATUS) so a caller catching
+        // RestError handles it too, instead of a bare transport exception leaking out.
+        // The underlying exception is preserved via the standard cause chain (Java's
+        // equivalent of Python's `raise ... from exc`). Mirrors the Python reference.
+        if (attempt <= opts.retries()) {
+          sleep(opts.retryBackoff() * Math.pow(2, attempt - 1));
+          continue;
+        }
+        throw new SignalWireRestTransportError(method, path, url, e);
+      }
+    }
+  }
+
+  /** Parse a {@code Retry-After} header (delta-seconds form) if present, else {@code -1}. */
+  private double retryAfterSeconds(HttpResponse<String> response) {
+    Optional<String> value = response.headers().firstValue("Retry-After");
+    if (value.isEmpty()) {
+      return -1;
+    }
+    try {
+      return Double.parseDouble(value.get().trim());
+    } catch (NumberFormatException e) {
+      // HTTP-date form: fall back to computed backoff.
+      return -1;
+    }
+  }
+
+  /**
+   * Backoff sleep between retries. A seam kept simple: the mock proves attempt ORDERING, not real
+   * time (the differ pins {@code retryBackoff = 0}).
+   */
+  private void sleep(double seconds) {
+    if (seconds <= 0) {
+      return;
+    }
+    try {
+      Thread.sleep(Math.round(seconds * 1000.0));
     } catch (InterruptedException e) {
-      // Restore the interrupt status that HttpClient.send() cleared when it threw,
-      // so callers up the stack can still observe the cancellation. Do NOT swallow it.
       Thread.currentThread().interrupt();
-      throw new SignalWireRestTransportError(method, path, url, e);
-    } catch (Exception e) {
-      // Transport-level failure: the request never reached a response (connection
-      // refused, DNS failure, connection reset, TLS error). Wrap it in the typed
-      // SignalWireRestError family (SignalWireRestTransportError, statusCode ==
-      // SignalWireRestTransportError.NO_STATUS) so a caller catching RestError
-      // handles it too, instead of a bare transport exception leaking out. The
-      // underlying exception is preserved via the standard cause chain (the Java
-      // equivalent of Python's `raise ... from exc`). Mirrors the Python
-      // reference's HttpClient._request (plan 1.3b).
-      throw new SignalWireRestTransportError(method, path, url, e);
     }
   }
 
