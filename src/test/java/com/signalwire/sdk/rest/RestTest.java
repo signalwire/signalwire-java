@@ -341,6 +341,42 @@ class RestTest {
       var error = new RestError(500, "GET", "/", "u", "");
       assertNotNull(error.getMessage());
     }
+
+    @Test
+    @DisplayName("§6.6: request_id extracted from x-request-id response header (case-insensitive)")
+    void requestIdFromHeader() {
+      var headers = new java.util.LinkedHashMap<String, String>();
+      headers.put("Content-Type", "application/json");
+      headers.put("X-Request-Id", "req-abc-123");
+      var error = new RestError(500, "GET", "/", "u", "boom", headers);
+
+      assertEquals(java.util.Optional.of("req-abc-123"), error.getRequestId());
+      assertEquals("req-abc-123", error.getHeaders().get("X-Request-Id"));
+      assertTrue(
+          error.getMessage().contains("(request-id: req-abc-123)"),
+          "message should append the request id");
+    }
+
+    @Test
+    @DisplayName("§6.6: request_id falls back through the header preference order")
+    void requestIdFallbackOrder() {
+      var headers =
+          java.util.Map.of("x-amzn-requestid", "amzn-9", "x-signalwire-request-id", "sw-5");
+      // x-signalwire-request-id has higher preference than x-amzn-requestid.
+      var error = new RestError(502, "GET", "/", "u", "", headers);
+      assertEquals(java.util.Optional.of("sw-5"), error.getRequestId());
+    }
+
+    @Test
+    @DisplayName("§6.6: no request-id header → empty Optional, empty headers when none supplied")
+    void requestIdAbsent() {
+      var noReqId = new RestError(500, "GET", "/", "u", "", java.util.Map.of("Content-Type", "x"));
+      assertTrue(noReqId.getRequestId().isEmpty());
+
+      var noHeaders = new RestError(500, "GET", "/", "u", "");
+      assertTrue(noHeaders.getRequestId().isEmpty());
+      assertTrue(noHeaders.getHeaders().isEmpty());
+    }
   }
 
   // ── SignalWireRestTransportError ────────────────────────────────

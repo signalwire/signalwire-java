@@ -9,6 +9,12 @@
   accessor; the error message now prints the full url instead of the bare path.
   Callers constructing `RestError` directly must pass the url. This mirrors the
   reference decision that an error envelope carries the full url, not a path.
+- REST: `RestError` now captures the failing response's headers and exposes
+  `getHeaders()` + `getRequestId()` (the platform request id from `x-request-id` /
+  `x-signalwire-request-id` / `request-id` / `x-amzn-requestid`, case-insensitive),
+  appended to the error message — client-side observability with no wire change, so
+  a caller can correlate a failure against SignalWire's own request id. Transport
+  errors carry empty headers / no request id.
 - REST: transport-level failures (connection refused, DNS failure, reset, TLS
   error) that never reach an HTTP response are now wrapped in the typed
   `SignalWireRestTransportError` (a `RestError` subclass) instead of leaking a

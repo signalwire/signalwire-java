@@ -29254,6 +29254,15 @@
               ],
               "returns": "void"
             },
+            "get_headers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,string>"
+            },
             "get_method": {
               "params": [
                 {
@@ -29271,6 +29280,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_request_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<string>"
             },
             "get_response_body": {
               "params": [
