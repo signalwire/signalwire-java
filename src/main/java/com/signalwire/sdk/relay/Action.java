@@ -88,6 +88,12 @@ public class Action {
   public RelayEvent waitForCompletion() {
     try {
       return completionFuture.get();
+    } catch (InterruptedException e) {
+      // Never swallow an interrupt: a blocked wait that is interrupted must
+      // re-assert the thread's interrupt status so callers up the stack can
+      // observe cancellation (JDK/Guava idiom — "Don't swallow InterruptedException").
+      Thread.currentThread().interrupt();
+      return result;
     } catch (Exception e) {
       return result;
     }
@@ -102,6 +108,10 @@ public class Action {
   public RelayEvent waitForCompletion(long timeoutMs) {
     try {
       return completionFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      // Re-assert the interrupt status rather than swallowing it (see waitForCompletion()).
+      Thread.currentThread().interrupt();
+      return result;
     } catch (Exception e) {
       return result;
     }

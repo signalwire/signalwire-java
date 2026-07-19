@@ -155,4 +155,50 @@ class ActionTest {
     Action action = new Action("ctrl-1", dummyCall());
     assertNull(action.await(50));
   }
+
+  /**
+   * waitForCompletion() must NOT swallow an interrupt: when the waiting thread is interrupted while
+   * blocked, the method re-asserts the thread's interrupt status so cancellation propagates. Prior
+   * bug (Action.java:88-108): a broad {@code catch (Exception)} cleared the interrupt flag,
+   * silently dropping cancellation. This test goes RED under that bug (flag observed false) and
+   * GREEN once the interrupt is re-set.
+   */
+  @Test
+  void testWaitForCompletionPreservesInterrupt() throws InterruptedException {
+    Action action = new Action("ctrl-1", dummyCall()); // never resolves → the get() blocks
+    final boolean[] interruptSeen = {false};
+    Thread waiter =
+        new Thread(
+            () -> {
+              action.waitForCompletion();
+              // After returning, the interrupt status must still be set.
+              interruptSeen[0] = Thread.currentThread().isInterrupted();
+            });
+    waiter.start();
+    Thread.sleep(50); // let it enter the blocking get()
+    waiter.interrupt();
+    waiter.join(2000);
+    assertFalse(waiter.isAlive(), "waiter should have unblocked on interrupt");
+    assertTrue(interruptSeen[0], "interrupt status must be preserved after waitForCompletion()");
+  }
+
+  /** Same interrupt-preservation contract for the timeout overload. */
+  @Test
+  void testWaitForCompletionWithTimeoutPreservesInterrupt() throws InterruptedException {
+    Action action = new Action("ctrl-1", dummyCall());
+    final boolean[] interruptSeen = {false};
+    Thread waiter =
+        new Thread(
+            () -> {
+              action.waitForCompletion(10_000);
+              interruptSeen[0] = Thread.currentThread().isInterrupted();
+            });
+    waiter.start();
+    Thread.sleep(50);
+    waiter.interrupt();
+    waiter.join(2000);
+    assertFalse(waiter.isAlive(), "waiter should have unblocked on interrupt");
+    assertTrue(
+        interruptSeen[0], "interrupt status must be preserved after waitForCompletion(timeout)");
+  }
 }

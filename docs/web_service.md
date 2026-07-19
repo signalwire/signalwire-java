@@ -364,7 +364,7 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Copy the built jar (produced by `./gradlew jar`) and static files
-COPY ./build/libs/signalwire-sdk-2.0.2.jar /app/signalwire-sdk.jar
+COPY ./build/libs/signalwire-sdk-4.0.0.jar /app/signalwire-sdk.jar
 COPY ./WebServer.class /app/
 COPY ./static /app/static
 

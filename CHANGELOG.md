@@ -9,9 +9,22 @@
   accessor; the error message now prints the full url instead of the bare path.
   Callers constructing `RestError` directly must pass the url. This mirrors the
   reference decision that an error envelope carries the full url, not a path.
+- REST: transport-level failures (connection refused, DNS failure, reset, TLS
+  error) that never reach an HTTP response are now wrapped in the typed
+  `SignalWireRestTransportError` (a `RestError` subclass) instead of leaking a
+  bare `IOException`. A single `catch (RestError)` now handles both an HTTP-error
+  response and a transport failure; `getStatusCode()` returns `0` (the port's
+  sentinel for "no HTTP status") and the underlying transport exception is
+  preserved as the cause. Mirrors the reference `SignalWireRestTransportError`.
 - RELAY (fix): a `java.net.http.HttpClient.send()` `InterruptedException` in the
   REST layer now restores the thread interrupt status before rethrowing, instead
   of swallowing the cancellation.
+- RELAY (fix): `Action.waitForCompletion()` (and its timeout overload) no longer
+  swallow an `InterruptedException` — the thread's interrupt status is re-asserted
+  so a cancelled wait propagates up the stack.
+- RELAY: `RelayClient` now honors the `RELAY_MAX_ACTIVE_CALLS` env var and a
+  `maxActiveCalls(int)` builder option — inbound calls past the cap are logged and
+  dropped, matching the reference `Client(max_active_calls=...)`.
 
 ## [3.2.0] - 2026-07-14
 

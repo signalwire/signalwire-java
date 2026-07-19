@@ -2775,7 +2775,14 @@ The SignalWire AI Agent SDK provides testing capabilities through the `bin/swaig
 
 ### Local Agent Testing
 
-Start your agent (e.g. `java SimpleAgent`), then point the CLI at its URL. The URL includes the basic-auth credentials the agent prints on startup:
+Start your agent, then point the CLI at its URL. The URL includes the basic-auth credentials the agent prints on startup. The SDK jar is a *thin* jar (it does not bundle Gson / Java-WebSocket), so a bare `java -cp signalwire-sdk.jar SimpleAgent` fails at load with `NoClassDefFoundError` — the runtime dependencies must be on the classpath. Use the `runExample` Gradle task, which runs a built example against the SDK's full runtime classpath:
+
+```bash
+# Compile every example and run the one named by -PexampleClass, deps resolved
+./gradlew --no-daemon -q runExample -PexampleClass=SimpleAgent
+```
+
+(For your own deployable agent, package a fat/shadow jar or put the SDK's dependencies on the classpath yourself.) Then:
 
 ```bash
 # List available functions
