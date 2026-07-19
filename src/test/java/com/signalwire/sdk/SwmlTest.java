@@ -277,6 +277,39 @@ class SwmlTest {
     assertEquals(3, service.getDocument().getVerbs().size());
   }
 
+  /**
+   * D9-java typed-verb slice: the typed {@code connect(ConnectConfig)} overload must render the
+   * SAME SWML (same keys/values — JSON object key order is not wire-significant) as the equivalent
+   * {@code connect(Map)} call. Proves the generated ConnectConfig DTO is a wire-faithful typed view
+   * of the connect params (unset fields omitted, set fields carry the exact snake wire key), so
+   * consuming the DTO changes no wire.
+   */
+  @Test
+  void testTypedConnectRendersIdenticalWireToMap() {
+    var typed = new Service("svc");
+    var cfg = new com.signalwire.sdk.swml.generated.ConnectConfig();
+    cfg.from = "+15551112222";
+    cfg.to = "+15553334444";
+    cfg.codecs = "PCMU,OPUS";
+    typed.connect(cfg);
+
+    var mapped = new Service("svc");
+    var m = new java.util.LinkedHashMap<String, Object>();
+    m.put("from", "+15551112222");
+    m.put("to", "+15553334444");
+    m.put("codecs", "PCMU,OPUS");
+    mapped.connect(m);
+
+    // Parse both renders and compare as JSON trees — key order is not wire-significant.
+    var gson = new com.google.gson.Gson();
+    var typedTree = gson.fromJson(typed.getDocument().render(), java.util.Map.class);
+    var mappedTree = gson.fromJson(mapped.getDocument().render(), java.util.Map.class);
+    assertEquals(
+        mappedTree,
+        typedTree,
+        "typed connect(ConnectConfig) must render the same SWML (keys/values) as connect(Map)");
+  }
+
   @Test
   void testServiceAll38Verbs() {
     var service = new Service("test-service");

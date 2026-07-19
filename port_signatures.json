@@ -8869,8 +8869,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "params",
-                  "type": "dict<string,any>",
+                  "name": "config",
+                  "type": "class:signalwire.core.swml_verbs_generated.ConnectConfig",
                   "required": true
                 }
               ],
