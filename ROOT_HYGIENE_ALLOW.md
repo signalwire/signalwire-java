@@ -27,4 +27,3 @@ they cannot move to `eng/` without breaking the shared audit pipeline.
 - port_surface_native.json — required audit-contract file read/written by this port's scripts/enumerate_surface.py at port root (orchestrator, 2026-07-06)
 - WIRE_VIOLATIONS_ALLOW.md — STRICT-MOCKS signed-exception ledger read by porting-sdk assert_no_wire_violations.py / examples_run.py / snippet_run.py at repo root (mike@signalwire.com, 2026-07-18)
 - WIRED_MODES.md — required manifest of load-bearing run-ci modes read by porting-sdk check_wired_modes.py at repo root (WIRED-MODES gate, plan 1.6/D7) (lane-java, 2026-07-19)
-- DOC_SURFACE_FLOOR.md — javadoc-coverage floor baseline for the DOC-SURFACE rule (plan 6.3-doccov); a port-root audit-contract file (lane-java, 2026-07-19)
