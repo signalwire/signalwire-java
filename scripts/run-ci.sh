@@ -116,6 +116,21 @@ cd "$PORT_ROOT"
 # may still set SW_WAVE_A_REPORT_ONLY=1 to inspect the report-only view.
 export SW_WAVE_A_REPORT_ONLY="${SW_WAVE_A_REPORT_ONLY:-0}"
 
+# STRICT-MOCKS default (D3 / plan 1.2): make the REST mock 400 any wire violation
+# (unknown body key / malformed value) by default, so a wrong wire key surfaces at
+# PR time in the TEST gate's own mock and any test/gate that spawns one — not only in
+# the REST-COVERAGE journal post-pass. EXPORTED so every scheduler worker subshell (and
+# every mock they spawn) inherits it. This is a WIRED MODE — see WIRED_MODES.md;
+# check_wired_modes.py fails the WIRED-MODES gate if this line is ever silently dropped.
+export MOCK_SIGNALWIRE_STRICT="${MOCK_SIGNALWIRE_STRICT:-1}"
+
+# BARE-KEY BAN armed (plan 2.12): make DOC-AUDIT's bare-word ignore-key ban BLOCKING —
+# any DOC_AUDIT_IGNORE.md key that is a bare, unqualified token (suppressing its
+# identifier EVERYWHERE instead of a specific Class#member) reds DOC-AUDIT. java's keys
+# are all qualified; this keeps a future over-broad ignore from silently re-appearing.
+# WIRED MODE — see WIRED_MODES.md.
+export SW_BAN_BARE_IGNORE_KEYS="${SW_BAN_BARE_IGNORE_KEYS:-1}"
+
 echo "==> running CI gates for $PORT_NAME (porting-sdk at $PORTING_SDK_DIR)"
 echo "==> wave-A gate findings are ${SW_WAVE_A_REPORT_ONLY:+BLOCKING (SW_WAVE_A_REPORT_ONLY=$SW_WAVE_A_REPORT_ONLY)}"
 
@@ -238,6 +253,24 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 
 sched_gate PUBLIC-JARGON res=dayone desc="no internal porting jargon in public doc comments" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port java --repo .
+
+# WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
+# every load-bearing env/mode line declared in WIRED_MODES.md (the strict-mocks
+# exports MOCK_SIGNALWIRE_STRICT / MOCK_RELAY_STRICT). The strict-mocks × Part-5 merge
+# race silently DROPPED exactly such lines from several ports (java lost all three);
+# nothing caught it because they aren't gates themselves. This fails LOUD if a future
+# merge drops one here.
+sched_gate WIRED-MODES res=dayone desc="run-ci exports every load-bearing strict-mode line declared in WIRED_MODES.md" \
+    -- python3 "$PORTING_SDK_DIR/scripts/check_wired_modes.py" --port java --repo "$PORT_ROOT"
+
+# GATE-INVENTORY NOTE (§2.16): §1.11b (GATE-INVENTORY freshness) is intentionally
+# NOT wired here. gen_gate_inventory.py resolves its reference port as a SIBLING
+# checkout (DEFAULT_REFERENCE=signalwire-typescript), which does not exist in a
+# port's CI layout (porting-sdk is a subdir of the port workspace, so
+# ../signalwire-typescript is absent → exit 2). The check is inherently
+# porting-sdk-side and already runs in porting-sdk's own CI
+# (.github/workflows/test.yml). Wiring it per-port would require each port to also
+# check out the TS reference — not worth it.
 
 # ---- summary ----------------------------------------------------------------
 sched_run
