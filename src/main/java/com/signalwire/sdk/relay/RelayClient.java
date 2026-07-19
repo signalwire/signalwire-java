@@ -59,6 +59,33 @@ import org.java_websocket.handshake.ServerHandshake;
  *
  * client.run();
  * }</pre>
+ *
+ * <h2>Thread safety</h2>
+ *
+ * <p><b>A {@code RelayClient} is thread-safe.</b> After {@link #run()} (or {@link #connect()}), the
+ * client owns an internal reader thread that receives RELAY frames and dispatches events; your
+ * application interacts with the client from other threads. That is the intended model:
+ *
+ * <ul>
+ *   <li>Register handlers ({@link #onCall}, {@link #onMessage}, {@link #onEvent}) <em>before</em>
+ *       {@code run()}. The handler fields are read on the reader thread; set them during setup, not
+ *       concurrently mid-run.
+ *   <li>The four correlation maps (pending requests, calls, pending dials, messages) are {@link
+ *       java.util.concurrent.ConcurrentHashMap}s, and connection state ({@code connected}, {@code
+ *       running}, {@code webSocket}, {@code sessionId}, …) is held in {@code volatile} fields, so a
+ *       dial launched from your thread correlates safely against a response landing on the reader
+ *       thread.
+ *   <li>Outbound RPCs (a {@link Call}'s verbs, {@link #dial}) may be issued from any thread; each
+ *       is an independent request/response correlated by id.
+ *   <li>{@link #close()} / {@link AutoCloseable} is safe to call from a different thread than the
+ *       one that called {@code run()}; it tears the connection down and unblocks {@code run()}.
+ * </ul>
+ *
+ * <p><b>Your {@code onCall}/{@code onMessage}/{@code onEvent} handler runs on the RELAY reader
+ * thread.</b> Handler code (and the per-call listeners it registers) should be short and
+ * non-blocking — the {@code onCall} handler is dispatched on a worker so a blocking answer/verb
+ * sequence is tolerated, but blocking directly in an {@code onEvent}/{@code onMessage} handler
+ * stalls event delivery for the whole client. Offload heavy work to your own executor.
  */
 public class RelayClient implements AutoCloseable {
 

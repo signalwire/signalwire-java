@@ -27,6 +27,32 @@ import java.util.function.Consumer;
  *
  * Event routing: the {@link RelayClient} routes events to calls by {@code call_id}. Each call
  * maintains an {@code actions} map keyed by {@code control_id} for action events.
+ *
+ * <h2>Thread safety</h2>
+ *
+ * <p><b>A {@code Call} is thread-safe and designed for concurrent use.</b> The owning {@link
+ * RelayClient} dispatches incoming events on its internal RELAY reader thread, while your
+ * application code typically drives the call (issuing {@code play}/{@code record}/{@code hangup},
+ * registering listeners, {@code waitFor}-ing) from one or more other threads. That cross-thread
+ * interaction is the normal case, and the class supports it:
+ *
+ * <ul>
+ *   <li>Mutable call state ({@code state}, {@code nodeId}, {@code endReason}, {@code direction},
+ *       {@code device}, the back-reference to the client) is held in {@code volatile} fields, so a
+ *       value written on the reader thread is visible to your threads without extra
+ *       synchronization.
+ *   <li>The {@code control_id → Action} map is a {@link java.util.concurrent.ConcurrentHashMap} and
+ *       the event-listener list is a {@link java.util.concurrent.CopyOnWriteArrayList}, so
+ *       registering a listener (or a one-shot {@code waitFor}) from your thread never races the
+ *       reader thread's dispatch iteration.
+ *   <li>Verb methods may be called from any thread; each serializes into a single RELAY request.
+ * </ul>
+ *
+ * <p><b>Listener/callback code runs on the RELAY reader thread.</b> An {@code on(...)} listener or
+ * an {@link Action} {@code onCompleted} callback is invoked on the client's event thread, so keep
+ * it short and non-blocking — offload heavy work to your own executor. A callback that blocks
+ * stalls event delivery for every call on that client. Exceptions thrown from a listener are caught
+ * and logged; they do not tear down the reader thread.
  */
 public class Call {
 
