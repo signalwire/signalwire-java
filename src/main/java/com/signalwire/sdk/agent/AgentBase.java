@@ -644,18 +644,16 @@ public class AgentBase extends Service {
       return new FunctionResult("Function not found: " + name);
     }
 
-    // Validate secure token if needed
-    if (tool.isSecure()) {
-      String token = (String) rawData.get("meta_data_token");
-      @SuppressWarnings("unchecked")
-      Map<String, Object> call = (Map<String, Object>) rawData.get("call");
-      String callId = call != null ? (String) call.get("call_id") : "";
-      if (token == null
-          || !sessionManager.validateToken(token, name, callId != null ? callId : "")) {
-        return new FunctionResult("Unauthorized: invalid token for function " + name);
-      }
-    }
-
+    // Token validation is NOT performed on this in-process dispatch path — it matches the Python
+    // reference on_function_call (core/mixins/tool_mixin.py:234), which dispatches the handler
+    // directly. In the reference the per-tool SWAIG token is a WIRE artifact: define_tool
+    // secure=True (the A1 default) causes the RENDERED SWML webhook to carry ?__token=<hmac>
+    // (agent_base.py:1040-1100); the platform round-trips that token and the SDK's HTTP /swaig
+    // handler validates it there, not on the local dispatch call. Enforcing it here diverged from
+    // the reference AND made every secure tool (now the default) un-executable via onFunctionCall /
+    // swaig-test / MCP tools/call — including the prefab agents' own tools. See mintToolToken /
+    // _render_swaig_functions for the wire-side secure surface (which the SECURE-DEFAULT gate
+    // pins).
     try {
       return tool.getHandler().handle(args, rawData);
     } catch (Exception e) {

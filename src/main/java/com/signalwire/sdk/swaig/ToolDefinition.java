@@ -8,7 +8,10 @@ public class ToolDefinition {
   private final String description;
   private final Map<String, Object> parameters;
   private final ToolHandler handler;
-  private boolean secure = false;
+  // A1 (secure-default): a tool defined WITHOUT an explicit secure= requires SWAIG token
+  // validation, matching the Python reference default (ToolMixin.define_tool secure=True). Call
+  // setSecure(false) to opt out. Flipped from false in the A+ campaign.
+  private boolean secure = true;
   private Map<String, Object> extraFields;
 
   public ToolDefinition(

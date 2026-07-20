@@ -15,6 +15,8 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 /**
  * Tests for {@code SwaigTest --simulate-serverless}.
@@ -32,6 +34,10 @@ import org.junit.jupiter.api.Test;
  *       route-preservation bug).
  * </ul>
  */
+// Swaps the process-global System.out/err in @BeforeEach; lock the shared stream
+// resources so concurrent classes never race this capture (see SwaigTestCliTest).
+@ResourceLock(Resources.SYSTEM_OUT)
+@ResourceLock(Resources.SYSTEM_ERR)
 class SwaigTestSimulateServerlessTest {
 
   private ByteArrayOutputStream stdout;

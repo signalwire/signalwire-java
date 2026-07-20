@@ -125,6 +125,14 @@ public class RelayClient implements AutoCloseable {
   private final ConcurrentHashMap<String, CompletableFuture<Map<String, Object>>> pendingRequests =
       new ConcurrentHashMap<>();
 
+  /**
+   * JSON-RPC id -> request method, so the response dispatcher can skip result-code checking for the
+   * {@code signalwire.connect} handshake (whose result carries no {@code code}) while raising
+   * {@link RelayError} on a non-2xx code for every calling/messaging verb. Mirrors the Python
+   * reference's {@code _pending_methods} (relay/client.py:749).
+   */
+  private final ConcurrentHashMap<String, String> pendingMethods = new ConcurrentHashMap<>();
+
   /** call_id -> Call for event routing */
   private final ConcurrentHashMap<String, Call> calls = new ConcurrentHashMap<>();
 
@@ -134,6 +142,42 @@ public class RelayClient implements AutoCloseable {
 
   /** message_id -> Message for messaging state routing */
   private final ConcurrentHashMap<String, Message> messages = new ConcurrentHashMap<>();
+
+  /**
+   * Requests issued while disconnected, queued for delivery after reconnect (parity with the
+   * reference {@code _execute_queue}, client.py:261). Flushed by {@link #flushExecuteQueue()} once
+   * the connection is (re)established.
+   */
+  private final java.util.concurrent.ConcurrentLinkedQueue<QueuedRequest> executeQueue =
+      new java.util.concurrent.ConcurrentLinkedQueue<>();
+
+  /** A request buffered while disconnected: its raw JSON frame + the awaiting future. */
+  private record QueuedRequest(String json, CompletableFuture<Map<String, Object>> future) {}
+
+  /**
+   * Per-request response deadline (ms). Mirrors the reference {@code _EXECUTE_TIMEOUT}. Not final
+   * so the relay-liveness dump can tighten it to keep the bounded-window fixtures fast (mirroring
+   * the python driver monkeypatching {@code _EXECUTE_TIMEOUT}); production callers never change it.
+   */
+  private volatile long executeTimeoutMs = 30_000;
+
+  /** Max requests buffered while disconnected before {@link #execute} raises (reference cap). */
+  private static final int EXECUTE_QUEUE_MAX = 100;
+
+  // ── Client-side ping / half-open detection ───────────────────────
+  /**
+   * Client ping interval (ms) + max consecutive ping failures before the connection is declared
+   * half-open and force-closed for reconnect. Mirrors the reference {@code _CLIENT_PING_INTERVAL} /
+   * {@code _MAX_PING_FAILURES} (client.py:86-88). A half-open peer (socket still open, peer stopped
+   * answering) is otherwise undetectable — the client would hang forever. Package-settable so the
+   * relay-liveness dump can drive detection inside the bounded test window.
+   */
+  private volatile long clientPingIntervalMs = 30_000;
+
+  private volatile int maxPingFailures = 3;
+
+  /** The ping watchdog thread (one per connection); interrupted on disconnect/force-close. */
+  private volatile Thread pingThread;
 
   // ── Event handlers ───────────────────────────────────────────────
   private Consumer<Call> onCallHandler;
@@ -254,15 +298,21 @@ public class RelayClient implements AutoCloseable {
         String envSpace = envOrNull("SIGNALWIRE_SPACE");
         space = (envSpace != null) ? envSpace : DEFAULT_RELAY_HOST;
       }
-      // JWT-only path: project/token not required (project_id is inside the
-      // token). Otherwise both project and token are required. Mirrors Python's
-      // ValueError; space always defaults, so it is never itself an error.
+      // A6 credential contract: missing OR EMPTY creds fail PRE-CONNECT with a per-variable,
+      // actionable message naming the specific credential + its env var. JWT-only path: project/
+      // token not required (project_id is inside the token). space always defaults, so it is never
+      // itself an error. (Empty — not just null — counts as missing, matching the reference which
+      // rejects an empty credential rather than attempting to connect with it.)
       if (jwtToken == null || jwtToken.isEmpty()) {
-        if (project == null || token == null) {
+        if (project == null || project.isEmpty()) {
           throw new IllegalArgumentException(
-              "project and token are required (or provide a JWT token). Pass them via the "
-                  + "builder or set SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / "
-                  + "SIGNALWIRE_JWT_TOKEN environment variables.");
+              "project is required: pass it to the builder or set SIGNALWIRE_PROJECT_ID "
+                  + "(or provide a JWT token via jwtToken() / SIGNALWIRE_JWT_TOKEN).");
+        }
+        if (token == null || token.isEmpty()) {
+          throw new IllegalArgumentException(
+              "token is required: pass it to the builder or set SIGNALWIRE_API_TOKEN "
+                  + "(or provide a JWT token via jwtToken() / SIGNALWIRE_JWT_TOKEN).");
         }
       }
       // Max concurrent calls: constructor override > env var > default, matching
@@ -380,7 +430,8 @@ public class RelayClient implements AutoCloseable {
    * production code typically uses {@link #run()} instead.
    *
    * @param timeoutMs how long to wait for the handshake to complete
-   * @throws RuntimeException if connect fails or times out
+   * @throws RelayError if connect fails or times out (parity with {@link #dial}, which also throws
+   *     {@code RelayError} on a connection failure — one connection-failure surface, one type)
    */
   public void connect(long timeoutMs) {
     running = true;
@@ -388,8 +439,19 @@ public class RelayClient implements AutoCloseable {
     connectInternal();
     try {
       connectFuture.get(timeoutMs, TimeUnit.MILLISECONDS);
-    } catch (Exception e) {
-      throw new RuntimeException("RelayClient.connect failed: " + e.getMessage(), e);
+    } catch (java.util.concurrent.ExecutionException e) {
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+      if (cause instanceof RelayError re) {
+        throw re;
+      }
+      throw new RelayError(
+          RelayError.UNKNOWN_CODE, "RelayClient.connect failed: " + cause.getMessage(), cause);
+    } catch (java.util.concurrent.TimeoutException e) {
+      throw new RelayError(
+          RelayError.UNKNOWN_CODE, "RelayClient.connect timed out after " + timeoutMs + "ms", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RelayError(RelayError.UNKNOWN_CODE, "RelayClient.connect interrupted", e);
     }
   }
 
@@ -401,6 +463,7 @@ public class RelayClient implements AutoCloseable {
   /** Disconnect the client. */
   public void disconnect() {
     running = false;
+    stopPingWatchdog();
     if (webSocket != null) {
       webSocket.close();
     }
@@ -539,11 +602,16 @@ public class RelayClient implements AutoCloseable {
       params.put("tags", tags);
     }
 
+    // execute() now RAISES RelayError on any send failure (timeout / error frame /
+    // non-2xx / dead connection) instead of returning an empty map — so we no longer
+    // fabricate a random message_id and hand back a Message in state "queued" for a
+    // send that never happened (NB-1(b)). We reach here only on a real 2xx result.
     Map<String, Object> result = execute(Constants.METHOD_MESSAGING_SEND, params);
 
     String messageId = result != null ? Objects.toString(result.get("message_id"), null) : null;
     if (messageId == null) {
-      messageId = UUID.randomUUID().toString();
+      throw new RelayError(
+          RelayError.UNKNOWN_CODE, "messaging.send succeeded but returned no message_id");
     }
 
     Message message = new Message(messageId);
@@ -565,7 +633,19 @@ public class RelayClient implements AutoCloseable {
 
   // ── RPC execution ────────────────────────────────────────────────
 
-  /** Execute an RPC method and wait for the response. */
+  /**
+   * Execute an RPC method and wait for the response.
+   *
+   * <p>Mirrors the Python reference {@code RelayClient._send_request} (relay/client.py:730): a
+   * request timeout, an error frame, a non-2xx result code, or a dead/half-open connection RAISES
+   * {@link RelayError} — the failure is NEVER swallowed into an empty map (the old behavior that
+   * made a dead-connection {@code play()}/{@code hangup()} "succeed" silently). On timeout the
+   * connection is force-closed for reconnect (a timeout signals a half-open peer). A request issued
+   * while disconnected is QUEUED for delivery after reconnect rather than dropped.
+   *
+   * @throws RelayError on request timeout, server error frame, non-2xx result code, dead
+   *     connection, or a full disconnected-queue
+   */
   public Map<String, Object> execute(String method, Map<String, Object> params) {
     String requestId = UUID.randomUUID().toString();
 
@@ -586,33 +666,69 @@ public class RelayClient implements AutoCloseable {
 
     CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
     pendingRequests.put(requestId, future);
+    pendingMethods.put(requestId, method);
 
+    boolean sent;
     try {
       String json = gson.toJson(request);
-      log.debug("Sending: %s", json);
-      if (webSocket != null && webSocket.isOpen()) {
+      log.debug(">> %s id=%s", method, requestId);
+      if (webSocket != null && webSocket.isOpen() && connected) {
         webSocket.send(json);
+        sent = true;
       } else {
-        future.completeExceptionally(new RuntimeException("WebSocket not connected"));
+        // Not connected: queue for delivery after reconnect (parity with the
+        // reference _execute_queue, client.py:752-759) rather than dropping the
+        // request. A full queue raises rather than growing unbounded.
+        sent = false;
+        if (executeQueue.size() >= EXECUTE_QUEUE_MAX) {
+          throw new RelayError(
+              RelayError.UNKNOWN_CODE, "Execute queue full — too many requests while disconnected");
+        }
+        executeQueue.offer(new QueuedRequest(json, future));
+        log.debug("Request queued (not connected): %s", method);
       }
 
-      return future.get(30, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      log.error("RPC execution failed for " + method, e);
-      return Collections.emptyMap();
+      try {
+        return future.get(executeTimeoutMs, TimeUnit.MILLISECONDS);
+      } catch (java.util.concurrent.TimeoutException te) {
+        log.error("Request timeout: %s %s", method, requestId);
+        // A timeout on a supposedly-open socket signals a half-open connection —
+        // force reconnect (never for the connect handshake itself).
+        if (sent && !Constants.METHOD_CONNECT.equals(method)) {
+          forceClose();
+        }
+        throw new RelayError(RelayError.UNKNOWN_CODE, "Request timeout for " + method, te);
+      }
+    } catch (java.util.concurrent.ExecutionException e) {
+      Throwable cause = e.getCause() != null ? e.getCause() : e;
+      if (cause instanceof RelayError re) {
+        throw re;
+      }
+      throw new RelayError(RelayError.UNKNOWN_CODE, cause.getMessage(), cause);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RelayError(RelayError.UNKNOWN_CODE, "Interrupted during " + method, e);
     } finally {
       pendingRequests.remove(requestId);
+      pendingMethods.remove(requestId);
     }
   }
 
-  /** Execute an RPC method on a call, handling 404/410 gracefully. */
+  /**
+   * Execute an RPC method on a call, swallowing ONLY the call-gone codes 404/410. Mirrors the
+   * Python reference contract (A2): a 404/410 result means the call is already gone, so the verb is
+   * a no-op; any OTHER non-2xx (e.g. 500) propagates as a {@link RelayError} from {@link #execute}.
+   */
   Map<String, Object> executeOnCall(String method, Map<String, Object> params) {
-    Map<String, Object> result = execute(method, params);
-    Object code = result.get("code");
-    if (code != null && Constants.isCallGoneCode(code.toString())) {
-      log.info("Call gone during %s (code %s)", method, code);
+    try {
+      return execute(method, params);
+    } catch (RelayError e) {
+      if (Constants.isCallGoneCode(Integer.toString(e.getCode()))) {
+        log.info("Call gone during %s (code %s)", method, e.getCode());
+        return Collections.emptyMap();
+      }
+      throw e;
     }
-    return result;
   }
 
   // ── Connection management ────────────────────────────────────────
@@ -629,6 +745,17 @@ public class RelayClient implements AutoCloseable {
               ? new URI(space)
               : new URI("wss://" + space);
       webSocket = new InternalWebSocket(uri);
+      // A5 fleet CA-var contract (hard-cut, no aliases): a custom CA bundle for the RELAY WebSocket
+      // transport is supplied via SIGNALWIRE_RELAY_CA_FILE. When set (and the connection is
+      // wss://),
+      // trust ONLY that bundle so a private/self-signed CA is honored (parity with the Python
+      // reference relay/client.py:131 `_build_relay_ssl_context`). Unset → the JDK default trust.
+      String relayCaFile = System.getenv("SIGNALWIRE_RELAY_CA_FILE");
+      if (relayCaFile != null
+          && !relayCaFile.isEmpty()
+          && "wss".equalsIgnoreCase(uri.getScheme())) {
+        webSocket.setSocketFactory(com.signalwire.sdk.rest.TlsContext.socketFactory(relayCaFile));
+      }
       webSocket.connect();
     } catch (Exception e) {
       log.error("Connection failed", e);
@@ -690,7 +817,9 @@ public class RelayClient implements AutoCloseable {
     pendingRequests.put(requestId, future);
 
     String json = gson.toJson(request);
-    log.debug("Authenticating with project: %s", project);
+    // SECRET-SCRUB: never log the raw project id (a credential) — log only that we are
+    // authenticating.
+    log.debug("Authenticating (project id redacted)");
     webSocket.send(json);
 
     // Handle auth response asynchronously
@@ -708,6 +837,10 @@ public class RelayClient implements AutoCloseable {
               connected = true;
               reconnectDelay = Constants.RECONNECT_INITIAL_DELAY_MS;
               log.info("Connected to %s (protocol: %s)", space, protocol);
+              // Deliver any requests buffered while disconnected.
+              flushExecuteQueue();
+              // Start the client-side ping watchdog to detect a half-open peer.
+              startPingWatchdog();
               if (connectFuture != null && !connectFuture.isDone()) {
                 connectFuture.complete(null);
               }
@@ -750,6 +883,7 @@ public class RelayClient implements AutoCloseable {
 
   private void handleDisconnect() {
     connected = false;
+    stopPingWatchdog();
 
     // Reject all pending request futures
     for (Map.Entry<String, CompletableFuture<Map<String, Object>>> entry :
@@ -760,20 +894,168 @@ public class RelayClient implements AutoCloseable {
 
     // Reject all pending dial futures
     for (Map.Entry<String, CompletableFuture<Call>> entry : pendingDials.entrySet()) {
-      entry.getValue().completeExceptionally(new RuntimeException("Disconnected"));
+      entry
+          .getValue()
+          .completeExceptionally(
+              new RelayError(RelayError.UNKNOWN_CODE, "Connection closed during dial"));
     }
     pendingDials.clear();
+
+    // Fault any requests still buffered while disconnected — they cannot be
+    // delivered on a torn-down connection; a caller must see the failure, not hang.
+    QueuedRequest queued;
+    while ((queued = executeQueue.poll()) != null) {
+      queued
+          .future()
+          .completeExceptionally(new RelayError(RelayError.UNKNOWN_CODE, "Connection closed"));
+    }
 
     if (running) {
       scheduleReconnect();
     }
   }
 
+  /**
+   * Force-close the WebSocket to trigger reconnect. Called when a request times out (a half-open
+   * peer): the socket looks open but the peer is dead. Mirrors the reference {@code _force_close}
+   * (client.py:1284).
+   */
+  private void forceClose() {
+    connected = false;
+    stopPingWatchdog();
+    InternalWebSocket ws = webSocket;
+    if (ws != null) {
+      try {
+        ws.close();
+      } catch (RuntimeException ignored) {
+        // best-effort; the reconnect path handles the torn-down socket
+      }
+    }
+  }
+
+  /**
+   * Send any requests buffered while disconnected, once the connection is (re)established. Mirrors
+   * the reference {@code _flush_execute_queue} (client.py:776).
+   */
+  private void flushExecuteQueue() {
+    InternalWebSocket ws = webSocket;
+    if (ws == null || !ws.isOpen()) {
+      return;
+    }
+    QueuedRequest queued;
+    while ((queued = executeQueue.poll()) != null) {
+      try {
+        ws.send(queued.json());
+      } catch (RuntimeException e) {
+        queued
+            .future()
+            .completeExceptionally(
+                new RelayError(
+                    RelayError.UNKNOWN_CODE,
+                    "Failed to send queued request: " + e.getMessage(),
+                    e));
+      }
+    }
+  }
+
+  /**
+   * Start the client-side ping watchdog: every {@link #clientPingIntervalMs} send a {@code
+   * signalwire.ping} and require a timely response; after {@link #maxPingFailures} consecutive
+   * failures the peer is half-open and the connection is force-closed for reconnect. Mirrors the
+   * reference {@code _ping_loop} (client.py:1217). Idempotent per connection.
+   */
+  private void startPingWatchdog() {
+    stopPingWatchdog();
+    Thread t =
+        new Thread(
+            () -> {
+              int failures = 0;
+              while (running && connected && !Thread.currentThread().isInterrupted()) {
+                try {
+                  Thread.sleep(clientPingIntervalMs);
+                } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+                  return;
+                }
+                if (!running || !connected) {
+                  return;
+                }
+                Map<String, Object> res;
+                try {
+                  long deadline = Math.max(1_000, clientPingIntervalMs);
+                  res = pingOnce(deadline);
+                } catch (RuntimeException e) {
+                  res = null;
+                }
+                if (res != null) {
+                  failures = 0;
+                } else if (++failures >= maxPingFailures) {
+                  log.warn(
+                      "Ping failed %d times; connection is half-open, forcing reconnect", failures);
+                  forceClose();
+                  return;
+                }
+              }
+            },
+            "relay-ping-watchdog");
+    t.setDaemon(true);
+    pingThread = t;
+    t.start();
+  }
+
+  private void stopPingWatchdog() {
+    Thread t = pingThread;
+    if (t != null) {
+      t.interrupt();
+      pingThread = null;
+    }
+  }
+
+  /** Send one client-initiated ping, returning the result or {@code null} on timeout/failure. */
+  private Map<String, Object> pingOnce(long deadlineMs) {
+    String requestId = UUID.randomUUID().toString();
+    Map<String, Object> request = new LinkedHashMap<>();
+    request.put("jsonrpc", Constants.JSONRPC_VERSION);
+    request.put("id", requestId);
+    request.put("method", Constants.METHOD_PING);
+    request.put("params", new LinkedHashMap<>());
+    CompletableFuture<Map<String, Object>> future = new CompletableFuture<>();
+    pendingRequests.put(requestId, future);
+    pendingMethods.put(requestId, Constants.METHOD_PING);
+    try {
+      InternalWebSocket ws = webSocket;
+      if (ws == null || !ws.isOpen()) {
+        return null;
+      }
+      ws.send(gson.toJson(request));
+      return future.get(deadlineMs, TimeUnit.MILLISECONDS);
+    } catch (Exception e) {
+      return null;
+    } finally {
+      pendingRequests.remove(requestId);
+      pendingMethods.remove(requestId);
+    }
+  }
+
+  /**
+   * Timing knobs for the relay-liveness dump (mirror the reference monkeypatch of {@code
+   * _EXECUTE_TIMEOUT}/{@code _CLIENT_PING_INTERVAL}/{@code _MAX_PING_FAILURES}). Package- private
+   * so it stays off the public surface; the relay-liveness dump lives in this package.
+   */
+  void setLivenessTimingsForTesting(long execTimeoutMs, long pingIntervalMs, int maxPings) {
+    this.executeTimeoutMs = execTimeoutMs;
+    this.clientPingIntervalMs = pingIntervalMs;
+    this.maxPingFailures = maxPings;
+  }
+
   // ── Message handling ─────────────────────────────────────────────
 
   @SuppressWarnings("unchecked")
   private void handleMessage(String rawMessage) {
-    log.debug("Received: %s", rawMessage);
+    // SECRET-SCRUB: scrub credential/authorization_state VALUES out of the raw inbound frame before
+    // logging (an inbound authorization.state event carries the re-auth blob). Mirrors the Python
+    // reference `<< {_scrub_frame(raw)}` (client.py).
+    log.debug("<< %s", FrameScrub.scrub(rawMessage));
 
     Map<String, Object> message;
     try {
@@ -821,19 +1103,64 @@ public class RelayClient implements AutoCloseable {
     if (id == null) return;
 
     CompletableFuture<Map<String, Object>> future = pendingRequests.remove(id);
+    String requestMethod = pendingMethods.remove(id);
     if (future == null) {
       log.debug("No pending request for id: %s", id);
       return;
     }
 
+    // JSON-RPC-level error frame → RAISE RelayError carrying the server code
+    // (parity with client.py:855-870). Never a swallowed empty map.
     if (message.containsKey("error")) {
-      Map<String, Object> error = (Map<String, Object>) message.get("error");
-      future.completeExceptionally(
-          new RuntimeException("RPC error: " + error.getOrDefault("message", "Unknown")));
-    } else {
-      Map<String, Object> result =
-          (Map<String, Object>) message.getOrDefault("result", Collections.emptyMap());
-      future.complete(result != null ? result : Collections.emptyMap());
+      Object errObj = message.get("error");
+      int code = RelayError.UNKNOWN_CODE;
+      String msg = "Unknown error";
+      if (errObj instanceof Map) {
+        Map<String, Object> error = (Map<String, Object>) errObj;
+        code = toIntCode(error.get("code"));
+        msg = Objects.toString(error.getOrDefault("message", "Unknown error"), "Unknown error");
+      } else if (errObj != null) {
+        msg = errObj.toString();
+      }
+      future.completeExceptionally(new RelayError(code, msg));
+      return;
+    }
+
+    Object resultObj = message.getOrDefault("result", Collections.emptyMap());
+    Map<String, Object> result =
+        resultObj instanceof Map ? (Map<String, Object>) resultObj : Collections.emptyMap();
+
+    // The signalwire.connect handshake result carries no `code`; return it raw.
+    // For every calling/messaging verb the result carries a code — any non-2xx
+    // (500, etc.) RAISES; 404/410 also raise here and are unwrapped to a no-op by
+    // executeOnCall (the A2 call-gone contract). Mirrors client.py:881-901.
+    if (!Constants.METHOD_CONNECT.equals(requestMethod)) {
+      Object codeObj = result.get("code");
+      String code = codeObj != null ? codeObj.toString() : null;
+      if (!Constants.isSuccessCode(code)) {
+        String msg =
+            Objects.toString(result.getOrDefault("message", "Unknown error"), "Unknown error");
+        future.completeExceptionally(new RelayError(toIntCode(code), msg));
+        return;
+      }
+    }
+    future.complete(result);
+  }
+
+  /**
+   * Parse a RELAY code (string or number) to an int, defaulting to {@link RelayError#UNKNOWN_CODE}.
+   */
+  private static int toIntCode(Object code) {
+    if (code == null) {
+      return RelayError.UNKNOWN_CODE;
+    }
+    try {
+      if (code instanceof Number n) {
+        return n.intValue();
+      }
+      return Integer.parseInt(code.toString().trim());
+    } catch (NumberFormatException e) {
+      return RelayError.UNKNOWN_CODE;
     }
   }
 

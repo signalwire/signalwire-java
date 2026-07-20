@@ -75,7 +75,7 @@ public class CrudResource extends BaseResource {
 
   /** Get a single resource by ID. */
   public Map<String, Object> get(String id) {
-    return restGet(getBasePath() + "/" + id, null);
+    return restGet(getBasePath() + "/" + pathSegment(id), null);
   }
 
   /** Create a new resource. */
@@ -86,13 +86,32 @@ public class CrudResource extends BaseResource {
   /** Update an existing resource by ID, using this resource's configured verb (PUT or PATCH). */
   public Map<String, Object> update(String id, Map<String, Object> body) {
     if (updateMethod == UpdateMethod.PATCH) {
-      return restPatch(getBasePath() + "/" + id, body);
+      return restPatch(getBasePath() + "/" + pathSegment(id), body);
     }
-    return restPut(getBasePath() + "/" + id, body);
+    return restPut(getBasePath() + "/" + pathSegment(id), body);
   }
 
   /** Delete a resource by ID. */
   public Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return restDelete(getBasePath() + "/" + pathSegment(id));
+  }
+
+  /**
+   * Percent-encode a resource id for safe use as a single URL PATH segment (NB-5). A raw id
+   * containing a space / {@code #} / non-ASCII would make {@code URI.create} throw, and one
+   * containing {@code /} or {@code ?} would silently reroute the request; encoding the segment
+   * matches how the Python reference (requests) treats path input. {@code /} and other reserved
+   * characters are encoded so the id can never escape its segment; {@code null} is left as the
+   * literal path (a missing-id error surfaces from the server, not a client-side NPE).
+   */
+  static String pathSegment(String id) {
+    if (id == null) {
+      return "";
+    }
+    // URLEncoder targets application/x-www-form-urlencoded (space -> "+", and it does not encode
+    // "*"), which is wrong for a path segment. Post-process to RFC-3986 path-segment semantics:
+    // "+" -> "%20", and encode "*" -> "%2A". "~" is unreserved; URLEncoder leaves it as-is.
+    String enc = java.net.URLEncoder.encode(id, java.nio.charset.StandardCharsets.UTF_8);
+    return enc.replace("+", "%20").replace("*", "%2A");
   }
 }

@@ -333,7 +333,9 @@ public class SWAIGFunction {
     private Handler handler;
     private String description;
     private Map<String, Object> parameters;
-    private boolean secure = false;
+    // A1 (secure-default): default secure=true, matching the Python reference define_tool
+    // (secure=True). Call secure(false) to opt out.
+    private boolean secure = true;
     private Map<String, Object> fillers;
     private String waitFile;
     private Integer waitFileLoops;

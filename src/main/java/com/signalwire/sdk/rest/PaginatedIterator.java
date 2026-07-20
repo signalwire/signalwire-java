@@ -11,11 +11,13 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Iterator that walks paged REST responses by following the {@code links.next} cursor.
@@ -26,8 +28,10 @@ import java.util.NoSuchElementException;
  * exhausted the iterator follows {@code links.next}, parses the URL query into the next request's
  * params, and fetches the next page.
  *
- * <p>Iteration terminates when the buffer is empty and a fetched response either lacks a {@code
- * links.next} cursor or returns an empty data list.
+ * <p>Iteration terminates when the buffer is empty and a fetched response lacks a {@code
+ * links.next} cursor (an empty {@code data} list on a page that still carries {@code links.next}
+ * does NOT terminate — later pages may still hold items). A repeating {@code links.next} cursor is
+ * detected via the {@link #seenNext} guard and terminates iteration rather than looping forever.
  */
 public final class PaginatedIterator
     implements Iterator<Map<String, Object>>, Iterable<Map<String, Object>> {
@@ -40,6 +44,13 @@ public final class PaginatedIterator
   private final List<Map<String, Object>> items = new ArrayList<>();
   private int index = 0;
   private boolean done = false;
+
+  /**
+   * Cycle guard: {@code links.next} cursors already followed. Because termination now keys ONLY on
+   * an ABSENT next link (matching the corrected Python reference), a server that keeps returning
+   * the SAME {@code links.next} would otherwise loop forever. Seeing a repeat terminates iteration.
+   */
+  private final Set<String> seenNext = new HashSet<>();
 
   public PaginatedIterator(HttpClient http, String path) {
     this(http, path, null, "data");
@@ -133,7 +144,18 @@ public final class PaginatedIterator
     Map<String, Object> links = linksObj instanceof Map ? (Map<String, Object>) linksObj : null;
     Object nextObj = links != null ? links.get("next") : null;
     String nextUrl = nextObj instanceof String ? (String) nextObj : null;
-    if (nextUrl != null && !nextUrl.isEmpty() && !data.isEmpty()) {
+    // Termination is driven ONLY by the absence of a next link, NOT by an empty ``data`` array on
+    // this page. A page can legitimately carry a ``links.next`` (more pages exist) while returning
+    // zero items on THIS page — e.g. a filtered page that happens to match nothing here. The old
+    // ``next_url && !data.isEmpty()`` condition stopped on such a page and silently dropped every
+    // subsequent page; iterate while a next link exists, empty page or not.
+    if (nextUrl != null && !nextUrl.isEmpty()) {
+      // Cycle guard: a ``links.next`` we have already followed means the server is looping (a
+      // repeating cursor) — terminate instead of re-fetching the same page forever.
+      if (!seenNext.add(nextUrl)) {
+        done = true;
+        return;
+      }
       params = parseQuery(nextUrl);
     } else {
       done = true;

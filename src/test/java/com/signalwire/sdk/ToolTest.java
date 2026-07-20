@@ -159,6 +159,9 @@ class ToolTest {
   void testToolDefinitionSecure() {
     ToolDefinition td =
         new ToolDefinition("name", "desc", Map.of(), (a, r) -> new FunctionResult("ok"));
+    // A1: a tool defined without an explicit secure= defaults to secure=true (Python parity).
+    assertTrue(td.isSecure());
+    td.setSecure(false);
     assertFalse(td.isSecure());
     td.setSecure(true);
     assertTrue(td.isSecure());
