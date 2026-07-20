@@ -23,9 +23,7 @@ public class RelayError extends RuntimeException {
 
   private final int code;
 
-  /**
-   * RELAY error with an explicit server code (parity with Python {@code RelayError(code, msg)}).
-   */
+  /** RELAY error with an explicit server code. */
   public RelayError(int code, String message) {
     super("RELAY error " + code + ": " + message);
     this.code = code;

@@ -153,8 +153,27 @@ final class RouteRegistry {
       return Collections.emptyMap();
     }
 
+    // The RequestOptions-carrying verb overloads (plan 4.2 / PY-9): the generated
+    // resource verbs thread a trailing per-request RequestOptions through to these, so
+    // the recorder must intercept them too — otherwise the full overload falls through
+    // to the real transport and every route errors "failed to reach the server". The
+    // options are irrelevant to the captured (method, path).
+    @Override
+    public Map<String, Object> get(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return Collections.emptyMap();
+    }
+
     @Override
     public Map<String, Object> post(String path, Map<String, Object> body) {
+      CALLS.add(new Call("POST", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, Object> post(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
       CALLS.add(new Call("POST", wire(path)));
       return Collections.emptyMap();
     }
@@ -166,13 +185,33 @@ final class RouteRegistry {
     }
 
     @Override
+    public Map<String, Object> put(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
+      CALLS.add(new Call("PUT", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
     public Map<String, Object> patch(String path, Map<String, Object> body) {
       CALLS.add(new Call("PATCH", wire(path)));
       return Collections.emptyMap();
     }
 
     @Override
+    public Map<String, Object> patch(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
+      CALLS.add(new Call("PATCH", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
     public Map<String, Object> delete(String path) {
+      CALLS.add(new Call("DELETE", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, Object> delete(String path, RequestOptions requestOptions) {
       CALLS.add(new Call("DELETE", wire(path)));
       return Collections.emptyMap();
     }
@@ -228,7 +267,15 @@ final class RouteRegistry {
 
   /** Is this a route method (returns a Map — the SDK's wire-response shape)? */
   private static boolean isRoute(Method m) {
-    return Map.class.isAssignableFrom(m.getReturnType());
+    if (!Map.class.isAssignableFrom(m.getReturnType())) {
+      return false;
+    }
+    // Every generated verb ships a convenience overload + a RequestOptions-carrying full
+    // overload that dispatch the IDENTICAL wire route (plan 4.2 / PY-9). Registering both
+    // double-invokes the route and duplicates its `via` accessor. Skip the full overload
+    // (last param RequestOptions) — its no-RO convenience sibling captures the same route.
+    int n = m.getParameterCount();
+    return n == 0 || m.getParameterTypes()[n - 1] != RequestOptions.class;
   }
 
   /** Public, non-static, instance methods not declared by Object, sorted by name then arity. */

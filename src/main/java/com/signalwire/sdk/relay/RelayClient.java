@@ -144,9 +144,8 @@ public class RelayClient implements AutoCloseable {
   private final ConcurrentHashMap<String, Message> messages = new ConcurrentHashMap<>();
 
   /**
-   * Requests issued while disconnected, queued for delivery after reconnect (parity with the
-   * reference {@code _execute_queue}, client.py:261). Flushed by {@link #flushExecuteQueue()} once
-   * the connection is (re)established.
+   * Requests issued while disconnected, queued for delivery after reconnect. Flushed by {@link
+   * #flushExecuteQueue()} once the connection is (re)established.
    */
   private final java.util.concurrent.ConcurrentLinkedQueue<QueuedRequest> executeQueue =
       new java.util.concurrent.ConcurrentLinkedQueue<>();
@@ -430,8 +429,8 @@ public class RelayClient implements AutoCloseable {
    * production code typically uses {@link #run()} instead.
    *
    * @param timeoutMs how long to wait for the handshake to complete
-   * @throws RelayError if connect fails or times out (parity with {@link #dial}, which also throws
-   *     {@code RelayError} on a connection failure — one connection-failure surface, one type)
+   * @throws RelayError if connect fails or times out (like {@link #dial}, which also throws {@code
+   *     RelayError} on a connection failure — one connection-failure surface, one type)
    */
   public void connect(long timeoutMs) {
     running = true;

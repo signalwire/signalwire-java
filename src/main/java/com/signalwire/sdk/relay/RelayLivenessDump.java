@@ -25,14 +25,14 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * RelayLivenessDump — the Java port's RELAY-LIVENESS dump program for the cross-port relay
- * connection+error liveness differ (porting-sdk/scripts/diff_port_relay_liveness.py, PSDK-2).
+ * RelayLivenessDump — a RELAY-LIVENESS dump program for the cross-language relay connection+error
+ * liveness differ.
  *
- * <p>Drives the RelayClient through the shared relay-liveness corpus
- * (porting-sdk/scripts/relay_liveness_corpus.py) — credential-failure (A6), relay-contract (A2),
- * dead-peer (F2.1), black-hole (F2.2), reconnect (F3), max-active-calls — against small embedded
- * RELAY mocks programmed per fixture, and emits the deterministic per-fixture classification map
- * the differ compares against the Python golden. Prints ONE JSON object to stdout.
+ * <p>Drives the RelayClient through the shared relay-liveness corpus — credential-failure (A6),
+ * relay-contract (A2), dead-peer (F2.1), black-hole (F2.2), reconnect (F3), max-active-calls —
+ * against small embedded RELAY mocks programmed per fixture, and emits the deterministic
+ * per-fixture classification map the differ compares against the Python golden. Prints ONE JSON
+ * object to stdout.
  */
 final class RelayLivenessDump {
 
