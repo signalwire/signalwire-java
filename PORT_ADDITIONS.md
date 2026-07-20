@@ -344,6 +344,11 @@ signalwire.relay.client.RelayClient.on_event: idiomatic Java surface extension (
 signalwire.relay.client.RelayClient.send_raw: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.client.RelayClient.set_relay_protocol: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.constants.Constants.is_call_gone_code: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.relay.constants.Constants.is_success_code: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.relay.client.RelayError.get_code: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.rest.tls_context.TlsContext: idiomatic Java surface extension (port-only TLS trust-store helper for the custom-CA env vars) with no Python-reference counterpart
+signalwire.rest.tls_context.TlsContext.from_ca_file: idiomatic Java surface extension (port-only TLS trust-store helper for the custom-CA env vars) with no Python-reference counterpart
+signalwire.rest.tls_context.TlsContext.socket_factory: idiomatic Java surface extension (port-only TLS trust-store helper for the custom-CA env vars) with no Python-reference counterpart
 signalwire.relay.constants.Constants.is_terminal_action_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.constants.Constants.is_terminal_call_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.constants.Constants.is_terminal_message_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
