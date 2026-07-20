@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 409a3098dc8161eae650cf7db9f8f73c859efec1",
+  "generated_from": "signalwire-java @ 3a6886e044403e41b9d252231bb05701e3552317",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1818,6 +1818,7 @@
           "contexts",
           "host",
           "jwt_token",
+          "max_active_calls",
           "project",
           "space",
           "token"
@@ -1874,8 +1875,11 @@
         ],
         "SignalWireRestError": [
           "__init__",
+          "get_body",
+          "get_headers",
           "get_method",
           "get_path",
+          "get_request_id",
           "get_response_body",
           "get_status_code",
           "get_url",

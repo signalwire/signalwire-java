@@ -59,6 +59,33 @@ import org.java_websocket.handshake.ServerHandshake;
  *
  * client.run();
  * }</pre>
+ *
+ * <h2>Thread safety</h2>
+ *
+ * <p><b>A {@code RelayClient} is thread-safe.</b> After {@link #run()} (or {@link #connect()}), the
+ * client owns an internal reader thread that receives RELAY frames and dispatches events; your
+ * application interacts with the client from other threads. That is the intended model:
+ *
+ * <ul>
+ *   <li>Register handlers ({@link #onCall}, {@link #onMessage}, {@link #onEvent}) <em>before</em>
+ *       {@code run()}. The handler fields are read on the reader thread; set them during setup, not
+ *       concurrently mid-run.
+ *   <li>The four correlation maps (pending requests, calls, pending dials, messages) are {@link
+ *       java.util.concurrent.ConcurrentHashMap}s, and connection state ({@code connected}, {@code
+ *       running}, {@code webSocket}, {@code sessionId}, …) is held in {@code volatile} fields, so a
+ *       dial launched from your thread correlates safely against a response landing on the reader
+ *       thread.
+ *   <li>Outbound RPCs (a {@link Call}'s verbs, {@link #dial}) may be issued from any thread; each
+ *       is an independent request/response correlated by id.
+ *   <li>{@link #close()} / {@link AutoCloseable} is safe to call from a different thread than the
+ *       one that called {@code run()}; it tears the connection down and unblocks {@code run()}.
+ * </ul>
+ *
+ * <p><b>Your {@code onCall}/{@code onMessage}/{@code onEvent} handler runs on the RELAY reader
+ * thread.</b> Handler code (and the per-call listeners it registers) should be short and
+ * non-blocking — the {@code onCall} handler is dispatched on a worker so a blocking answer/verb
+ * sequence is tolerated, but blocking directly in an {@code onEvent}/{@code onMessage} handler
+ * stalls event delivery for the whole client. Offload heavy work to your own executor.
  */
 public class RelayClient implements AutoCloseable {
 
@@ -116,6 +143,17 @@ public class RelayClient implements AutoCloseable {
   // ── Reconnection state ───────────────────────────────────────────
   private long reconnectDelay = Constants.RECONNECT_INITIAL_DELAY_MS;
 
+  /**
+   * Max concurrent inbound calls this client will accept before dropping. Mirrors the reference
+   * {@code Client(max_active_calls=...)} / {@code RELAY_MAX_ACTIVE_CALLS} env var (relay/client.py:
+   * 90,150-160,914) — when the tracked call count reaches this cap, an inbound call is logged and
+   * dropped rather than dispatched.
+   */
+  private final int maxActiveCalls;
+
+  /** Default cap, matching Python's {@code _DEFAULT_MAX_ACTIVE_CALLS} (relay/client.py:90). */
+  private static final int DEFAULT_MAX_ACTIVE_CALLS = 1000;
+
   // ── Thread pool ──────────────────────────────────────────────────
   private final ExecutorService executor =
       Executors.newCachedThreadPool(
@@ -134,6 +172,7 @@ public class RelayClient implements AutoCloseable {
     this.space = builder.space;
     this.contexts =
         builder.contexts != null ? new ArrayList<>(builder.contexts) : new ArrayList<>();
+    this.maxActiveCalls = builder.maxActiveCalls;
   }
 
   // ── Builder ──────────────────────────────────────────────────────
@@ -148,6 +187,8 @@ public class RelayClient implements AutoCloseable {
     private String jwtToken;
     private String space;
     private List<String> contexts;
+    private Integer maxActiveCallsOverride;
+    private int maxActiveCalls; // resolved in build(): override > env > default
 
     public Builder project(String project) {
       this.project = project;
@@ -176,6 +217,19 @@ public class RelayClient implements AutoCloseable {
 
     public Builder contexts(List<String> contexts) {
       this.contexts = contexts;
+      return this;
+    }
+
+    /**
+     * Cap on concurrent inbound calls before new inbound calls are dropped. Mirrors the reference
+     * {@code Client(max_active_calls=...)} (relay/client.py:125). When unset here, the {@code
+     * RELAY_MAX_ACTIVE_CALLS} env var is consulted, then the default of {@value
+     * #DEFAULT_MAX_ACTIVE_CALLS}.
+     *
+     * @param maxActiveCalls the cap; clamped to at least 1
+     */
+    public Builder maxActiveCalls(int maxActiveCalls) {
+      this.maxActiveCallsOverride = maxActiveCalls;
       return this;
     }
 
@@ -210,6 +264,23 @@ public class RelayClient implements AutoCloseable {
                   + "builder or set SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN / "
                   + "SIGNALWIRE_JWT_TOKEN environment variables.");
         }
+      }
+      // Max concurrent calls: constructor override > env var > default, matching
+      // relay/client.py:150-160 (each clamped to >= 1; a non-numeric env value
+      // falls back to the default, like Python's ValueError branch).
+      if (maxActiveCallsOverride != null) {
+        maxActiveCalls = Math.max(1, maxActiveCallsOverride);
+      } else {
+        String envVal = envOrNull("RELAY_MAX_ACTIVE_CALLS");
+        int resolved = DEFAULT_MAX_ACTIVE_CALLS;
+        if (envVal != null) {
+          try {
+            resolved = Math.max(1, Integer.parseInt(envVal.trim()));
+          } catch (NumberFormatException e) {
+            resolved = DEFAULT_MAX_ACTIVE_CALLS;
+          }
+        }
+        maxActiveCalls = resolved;
       }
       return new RelayClient(this);
     }
@@ -846,6 +917,11 @@ public class RelayClient implements AutoCloseable {
   }
 
   private void handleInboundCall(RelayEvent.CallReceiveEvent event) {
+    // Drop the inbound call once the active-call cap is reached (relay/client.py:914).
+    if (calls.size() >= maxActiveCalls) {
+      log.error("Max active calls (" + maxActiveCalls + ") reached, dropping inbound call");
+      return;
+    }
     Call call = new Call(event.getCallId(), event.getNodeId());
     call.setState(event.getCallState());
     call.setDirection("inbound");
@@ -1002,6 +1078,14 @@ public class RelayClient implements AutoCloseable {
 
   ConcurrentHashMap<String, Call> getCalls() {
     return calls;
+  }
+
+  /**
+   * The resolved max-active-calls cap (constructor override > RELAY_MAX_ACTIVE_CALLS env >
+   * default).
+   */
+  int getMaxActiveCalls() {
+    return maxActiveCalls;
   }
 
   ConcurrentHashMap<String, CompletableFuture<Call>> getPendingDials() {

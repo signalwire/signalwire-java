@@ -1182,5 +1182,20 @@ class RelayTest {
       assertTrue(client.getPendingRequests().isEmpty());
       assertTrue(client.getMessages().isEmpty());
     }
+
+    @Test
+    @DisplayName("maxActiveCalls defaults to 1000, builder override clamps to >= 1")
+    void maxActiveCalls() {
+      var deflt = RelayClient.builder().project("p").token("t").space("s").build();
+      assertEquals(1000, deflt.getMaxActiveCalls());
+
+      var custom =
+          RelayClient.builder().project("p").token("t").space("s").maxActiveCalls(5).build();
+      assertEquals(5, custom.getMaxActiveCalls());
+
+      var clamped =
+          RelayClient.builder().project("p").token("t").space("s").maxActiveCalls(0).build();
+      assertEquals(1, clamped.getMaxActiveCalls());
+    }
   }
 }

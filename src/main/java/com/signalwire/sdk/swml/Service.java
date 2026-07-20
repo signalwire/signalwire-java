@@ -938,6 +938,22 @@ public class Service implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Typed overload of {@link #connect(Map)}: dial a SIP URI or phone number described by the
+   * generated {@link com.signalwire.sdk.swml.generated.ConnectConfig} wire type. Mirrors the
+   * reference's {@code connect(config: ConnectConfig | None)} (swml_verbs_generated.py) — the
+   * config's set fields carry the exact snake wire keys, and unset (null) fields are omitted from
+   * the rendered SWML, so this produces byte-identical wire to passing the equivalent {@link Map}.
+   * The {@code Map} overload remains for the genuinely-dynamic/forward-compat path.
+   *
+   * @param config the typed connect config; when {@code null}, renders an empty {@code connect}.
+   */
+  public Service connect(com.signalwire.sdk.swml.generated.ConnectConfig config) {
+    document.addVerb(
+        "connect", config != null ? config : new com.signalwire.sdk.swml.generated.ConnectConfig());
+    return this;
+  }
+
   public Service denoise(Map<String, Object> params) {
     document.addVerb("denoise", params != null ? params : new LinkedHashMap<>());
     return this;

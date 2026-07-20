@@ -1,0 +1,141 @@
+name: Multi-OS (nightly)
+
+# Plan §6.4: ubuntu-only CI cannot certify an A-grade cross-platform SDK. This
+# NIGHTLY lane runs the two OS-sensitive suites — TEST and PACKAGE-SMOKE — on
+# macos-latest AND windows-latest so a Darwin/Windows-only regression (path
+# separators, temp-dir semantics, JDK/Gradle toolchain quirks) is caught. Kept on
+# the nightly tier (not per-PR) for runner cost, with a skip-if-unchanged guard so a
+# no-op nightly costs only a cache probe.
+
+on:
+  schedule:
+    - cron: '41 6 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even if nothing changed since the last successful run'
+        type: boolean
+        default: false
+
+concurrency:
+  group: multi-os-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      cache_key: ${{ steps.fp.outputs.cache_key }}
+    steps:
+      - name: Fingerprint input HEAD SHAs (port + porting-sdk)
+        id: fp
+        env:
+          PSDK_TOKEN: ${{ secrets.PORTING_SDK_TOKEN }}
+        run: |
+          set -euo pipefail
+          port_sha='${{ github.sha }}'
+          psdk_sha=$(GH_TOKEN="$PSDK_TOKEN" gh api repos/signalwire/porting-sdk/commits/main --jq .sha)
+          echo "cache_key=multi-os-green-v1-${port_sha}-${psdk_sha}" >> "$GITHUB_OUTPUT"
+      - name: Probe last-green marker
+        id: probe
+        uses: actions/cache/restore@v6
+        with:
+          path: .multi-os-green-marker
+          key: ${{ steps.fp.outputs.cache_key }}
+          lookup-only: true
+      - name: Decide
+        id: check
+        env:
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ "$FORCE" = "true" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "${{ steps.probe.outputs.cache-hit }}" = "true" ]; then
+            echo "input pair already passed multi-os -> skipping"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "input pair not yet green -> running"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  os-suites:
+    needs: guard
+    if: needs.guard.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout signalwire-java
+        uses: actions/checkout@v7
+        with:
+          path: signalwire-java
+
+      - name: Checkout porting-sdk (mock harnesses + audit scripts)
+        uses: actions/checkout@v7
+        with:
+          repository: signalwire/porting-sdk
+          # PINNED to the gate-enforcement plan branch: the WIRED-MODES / DOC-SURFACE
+          # gates wired on this branch call porting-sdk scripts (check_wired_modes.py,
+          # doc_surface.py) that live on porting-sdk plan/a-bar-2026-07-18, not yet on
+          # main. REVERT this ref to main when that porting-sdk branch merges.
+          ref: plan/a-bar-2026-07-18
+          path: porting-sdk
+          token: ${{ secrets.PORTING_SDK_TOKEN }}
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up Python (mock servers + PACKAGE-SMOKE)
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Python test harnesses (mock_relay + mock_signalwire)
+        run: |
+          pip install -e porting-sdk/test_harness/mock_relay
+          pip install -e porting-sdk/test_harness/mock_signalwire
+
+      # The two OS-sensitive suites only. TEST is the port's native test runner;
+      # PACKAGE-SMOKE builds the jar and checks its packaging. Both are nightly-tier
+      # aware — SW_CI_TIER=nightly runs the full suite; we invoke the two suites
+      # directly so the OS lane stays lean (no doc-execution gates).
+      - name: Run TEST suite (${{ matrix.os }})
+        working-directory: signalwire-java
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
+          MOCK_SIGNALWIRE_STRICT: "1"
+        run: bash scripts/run-tests.sh
+
+      - name: Run PACKAGE-SMOKE (${{ matrix.os }})
+        working-directory: signalwire-java
+        env:
+          PORTING_SDK: ${{ github.workspace }}/porting-sdk
+        run: python3 "${{ github.workspace }}/porting-sdk/scripts/package_smoke.py" --port java --repo .
+
+  mark-green:
+    needs: [guard, os-suites]
+    if: needs.guard.outputs.changed == 'true' && needs.os-suites.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write last-green marker
+        run: date -u > .multi-os-green-marker
+      - name: Save last-green marker
+        uses: actions/cache/save@v6
+        with:
+          path: .multi-os-green-marker
+          key: ${{ needs.guard.outputs.cache_key }}

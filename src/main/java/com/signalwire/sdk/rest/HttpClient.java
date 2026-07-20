@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -279,7 +280,8 @@ public class HttpClient {
           sleep(delay);
           continue;
         }
-        throw new RestError(statusCode, method, path, url, response.body());
+        throw new RestError(
+            statusCode, method, path, url, response.body(), firstValueHeaders(response));
       } catch (RestError e) {
         throw e;
       } catch (InterruptedException e) {
@@ -302,6 +304,25 @@ public class HttpClient {
         throw new SignalWireRestTransportError(method, path, url, e);
       }
     }
+  }
+
+  /**
+   * Flatten the response headers into a first-value {@code Map<String,String>} for {@link
+   * RestError} (§6.6 error-observability). Multi-valued headers keep their first value — sufficient
+   * for the request-id headers we surface.
+   */
+  private static Map<String, String> firstValueHeaders(HttpResponse<String> response) {
+    Map<String, String> out = new LinkedHashMap<>();
+    response
+        .headers()
+        .map()
+        .forEach(
+            (k, v) -> {
+              if (v != null && !v.isEmpty()) {
+                out.put(k, v.get(0));
+              }
+            });
+    return out;
   }
 
   /** Parse a {@code Retry-After} header (delta-seconds form) if present, else {@code -1}. */

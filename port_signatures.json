@@ -8869,8 +8869,8 @@
                   "kind": "self"
                 },
                 {
-                  "name": "params",
-                  "type": "dict<string,any>",
+                  "name": "config",
+                  "type": "class:signalwire.core.swml_verbs_generated.ConnectConfig",
                   "required": true
                 }
               ],
@@ -28636,6 +28636,20 @@
               ],
               "returns": "class:signalwire.relay.client.RelayClient"
             },
+            "max_active_calls": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "max_active_calls",
+                  "type": "int",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.relay.client.RelayClient"
+            },
             "project": {
               "params": [
                 {
@@ -29240,6 +29254,24 @@
               ],
               "returns": "void"
             },
+            "get_body": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_headers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,string>"
+            },
             "get_method": {
               "params": [
                 {
@@ -29257,6 +29289,15 @@
                 }
               ],
               "returns": "string"
+            },
+            "get_request_id": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "optional<string>"
             },
             "get_response_body": {
               "params": [
