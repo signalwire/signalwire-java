@@ -53,4 +53,12 @@ public class FabricResource extends CrudResource {
   public Map<String, Object> listAddresses(String resourceId, Map<String, String> queryParams) {
     return restGet(getBasePath() + "/" + resourceId + "/addresses", queryParams);
   }
+
+  /**
+   * List the addresses bound to this resource with a per-request {@link RequestOptions} override.
+   */
+  public Map<String, Object> listAddresses(
+      String resourceId, Map<String, String> queryParams, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + resourceId + "/addresses", queryParams, requestOptions);
+  }
 }

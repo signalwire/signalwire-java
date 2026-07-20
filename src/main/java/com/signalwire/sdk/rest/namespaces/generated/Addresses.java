@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Addresses — REST resource client for the 'relay-rest' API namespace. */
 public class Addresses extends BaseResource {
@@ -18,22 +19,45 @@ public class Addresses extends BaseResource {
 
   /** list (generated from operation 'list_addresses'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** create (generated from operation 'create_address'). */
   public java.util.Map<String, Object> create(CreateRequest request) {
-    return restPost(getBasePath(), request.toBody());
+    return create(request, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> create(
+      CreateRequest request, RequestOptions requestOptions) {
+    return restPost(getBasePath(), request.toBody(), requestOptions);
   }
 
   /** get (generated from operation 'get_address'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** delete (generated from operation 'delete_address'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

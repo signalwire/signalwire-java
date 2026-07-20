@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** CxmlApplications — REST resource client for the 'fabric' API namespace. */
 public class CxmlApplications extends BaseResource {
@@ -18,28 +19,57 @@ public class CxmlApplications extends BaseResource {
 
   /** list (generated from operation 'list_cxml_applications'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** get (generated from operation 'get_cxml_application'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** update (generated from operation 'update_cxml_application'). */
   public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return restPut(getBasePath() + "/" + id, request.toBody(), requestOptions);
   }
 
   /** delete (generated from operation 'delete_cxml_application'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** listAddresses (generated from operation 'list_cxml_application_addresses'). */
   public java.util.Map<String, Object> listAddresses(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "addresses", params);
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listAddresses(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

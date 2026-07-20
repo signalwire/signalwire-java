@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** ShortCodes — REST resource client for the 'relay-rest' API namespace. */
 public class ShortCodes extends BaseResource {
@@ -18,17 +19,35 @@ public class ShortCodes extends BaseResource {
 
   /** list (generated from operation 'list_short_codes'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** get (generated from operation 'retrieve_short_code'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** update (generated from operation 'update_short_code'). */
   public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return restPut(getBasePath() + "/" + id, request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

@@ -499,6 +499,10 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("HttpClient", "put"),
     ("HttpClient", "patch"),
     ("HttpClient", "delete"),
+    # ReadResource.paginate (+ inherited on read-resource subclasses) carries the optional
+    # request_options envelope; its oracle-exact keyword+optional shape is pinned via
+    # METHOD_SIGNATURE_OVERRIDES (which short-circuits the overload collapse), so no
+    # PREFER_FULL entry is needed here.
 }
 
 # Java skill class renames to match Python casing
@@ -782,6 +786,28 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
     ("RequestOptions", "abort_signal"): {
         "params": [{"name": "self", "kind": "self"}],
         "returns": "optional<class:signalwire.rest._request_options._AbortSignal>",
+    },
+    # ReadResource.paginate exposes the optional per-request options envelope (plan 4.2 /
+    # PY-9). The PREFER_FULL_OVERLOAD selects the ``paginate(RequestOptions)`` overload,
+    # but reflection records that param as a bare positional-required RequestOptions.
+    # The oracle records ``paginate(self, *, request_options=None)`` — keyword + optional.
+    # Pin the oracle-exact shape (also drops the port-only query-bag overload the
+    # reference never carries). Applied on the base + every ReadResource subclass whose
+    # inherited ``paginate`` reflection surfaces.
+    **{
+        (_cls, "paginate"): {
+            "params": [
+                {"name": "self", "kind": "self"},
+                {"name": "request_options", "kind": "keyword",
+                 "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                 "required": False, "default": None},
+            ],
+            "returns": "class:signalwire.rest._pagination.PaginatedIterator",
+        }
+        for _cls in (
+            "ReadResource", "FabricAddresses", "FaxLogs", "MessageLogs",
+            "VideoRoomSessions", "VoiceLogs",
+        )
     },
 }
 

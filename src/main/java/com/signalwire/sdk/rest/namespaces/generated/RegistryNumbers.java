@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** RegistryNumbers — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryNumbers extends BaseResource {
@@ -18,6 +19,11 @@ public class RegistryNumbers extends BaseResource {
 
   /** delete (generated from operation 'delete_number_assignment'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 }

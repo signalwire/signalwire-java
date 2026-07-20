@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** ProjectTokens — REST resource client for the 'project' API namespace. */
 public class ProjectTokens extends BaseResource {
@@ -18,17 +19,34 @@ public class ProjectTokens extends BaseResource {
 
   /** create (generated from operation 'create_token'). */
   public java.util.Map<String, Object> create(CreateRequest request) {
-    return restPost(getBasePath(), request.toBody());
+    return create(request, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> create(
+      CreateRequest request, RequestOptions requestOptions) {
+    return restPost(getBasePath(), request.toBody(), requestOptions);
   }
 
   /** update (generated from operation 'update_token'). */
   public java.util.Map<String, Object> update(String tokenId, UpdateRequest request) {
-    return restPatch(getBasePath() + "/" + tokenId, request.toBody());
+    return update(tokenId, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String tokenId, UpdateRequest request, RequestOptions requestOptions) {
+    return restPatch(getBasePath() + "/" + tokenId, request.toBody(), requestOptions);
   }
 
   /** delete (generated from operation 'delete_token'). */
   public java.util.Map<String, Object> delete(String tokenId) {
-    return restDelete(getBasePath() + "/" + tokenId);
+    return delete(tokenId, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String tokenId, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + tokenId, requestOptions);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

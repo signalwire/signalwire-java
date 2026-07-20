@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** CallFlows — REST resource client for the 'fabric' API namespace. */
 public class CallFlows extends FabricResourcePUT {
@@ -20,18 +21,37 @@ public class CallFlows extends FabricResourcePUT {
   @Override
   public java.util.Map<String, Object> listAddresses(
       String id, java.util.Map<String, String> params) {
-    return restGet("/fabric/resources/call_flow/" + id + "/addresses", params);
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  @Override
+  public java.util.Map<String, Object> listAddresses(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet("/fabric/resources/call_flow/" + id + "/addresses", params, requestOptions);
   }
 
   /** listVersions (generated from operation 'list_call_flow_versions'). */
   public java.util.Map<String, Object> listVersions(
       String id, java.util.Map<String, String> params) {
-    return restGet("/fabric/resources/call_flow/" + id + "/versions", params);
+    return listVersions(id, params, (RequestOptions) null);
+  }
+
+  /** listVersions with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listVersions(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet("/fabric/resources/call_flow/" + id + "/versions", params, requestOptions);
   }
 
   /** deployVersion (generated from operation 'deploy_call_flow_version'). */
   public java.util.Map<String, Object> deployVersion(
       String id, java.util.Map<String, Object> body) {
-    return restPost("/fabric/resources/call_flow/" + id + "/versions", body);
+    return deployVersion(id, body, (RequestOptions) null);
+  }
+
+  /** deployVersion with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> deployVersion(
+      String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
+    return restPost("/fabric/resources/call_flow/" + id + "/versions", body, requestOptions);
   }
 }

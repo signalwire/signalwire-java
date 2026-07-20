@@ -47,9 +47,21 @@ public class BaseResource {
     return httpClient.get(path, params);
   }
 
+  /** GET {@code path} with query parameters and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restGet(
+      String path, Map<String, String> params, RequestOptions requestOptions) {
+    return httpClient.get(path, params, requestOptions);
+  }
+
   /** POST {@code path} with a JSON body. */
   protected Map<String, Object> restPost(String path, Map<String, Object> body) {
     return httpClient.post(path, body);
+  }
+
+  /** POST {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPost(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.post(path, body, requestOptions);
   }
 
   /** PUT {@code path} with a JSON body. */
@@ -57,14 +69,31 @@ public class BaseResource {
     return httpClient.put(path, body);
   }
 
+  /** PUT {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPut(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.put(path, body, requestOptions);
+  }
+
   /** PATCH {@code path} with a JSON body. */
   protected Map<String, Object> restPatch(String path, Map<String, Object> body) {
     return httpClient.patch(path, body);
   }
 
+  /** PATCH {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPatch(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.patch(path, body, requestOptions);
+  }
+
   /** DELETE {@code path}. */
   protected Map<String, Object> restDelete(String path) {
     return httpClient.delete(path);
+  }
+
+  /** DELETE {@code path} with a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restDelete(String path, RequestOptions requestOptions) {
+    return httpClient.delete(path, requestOptions);
   }
 
   /** The base path for this resource. */

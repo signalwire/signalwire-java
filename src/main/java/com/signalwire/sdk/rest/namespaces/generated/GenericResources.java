@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** GenericResources — REST resource client for the 'fabric' API namespace. */
 public class GenericResources extends BaseResource {
@@ -18,35 +19,72 @@ public class GenericResources extends BaseResource {
 
   /** list (generated from operation 'list_resources'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** get (generated from operation 'get_resource'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** delete (generated from operation 'delete_resource'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** listAddresses (generated from operation 'list_resource_addresses'). */
   public java.util.Map<String, Object> listAddresses(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "addresses", params);
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listAddresses(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions);
   }
 
   /** assignPhoneRoute (generated from operation 'assign_resource_phone_route'). */
   public java.util.Map<String, Object> assignPhoneRoute(
       String id, AssignPhoneRouteRequest request) {
-    return restPost(getBasePath() + "/" + id + "/" + "phone_routes", request.toBody());
+    return assignPhoneRoute(id, request, (RequestOptions) null);
+  }
+
+  /** assignPhoneRoute with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> assignPhoneRoute(
+      String id, AssignPhoneRouteRequest request, RequestOptions requestOptions) {
+    return restPost(
+        getBasePath() + "/" + id + "/" + "phone_routes", request.toBody(), requestOptions);
   }
 
   /** assignDomainApplication (generated from operation 'assign_resource_domain_application'). */
   public java.util.Map<String, Object> assignDomainApplication(
       String id, AssignDomainApplicationRequest request) {
-    return restPost(getBasePath() + "/" + id + "/" + "domain_applications", request.toBody());
+    return assignDomainApplication(id, request, (RequestOptions) null);
+  }
+
+  /** assignDomainApplication with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> assignDomainApplication(
+      String id, AssignDomainApplicationRequest request, RequestOptions requestOptions) {
+    return restPost(
+        getBasePath() + "/" + id + "/" + "domain_applications", request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #assignPhoneRoute} (builder + extras door). */

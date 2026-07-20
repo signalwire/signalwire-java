@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** SipProfile — REST resource client for the 'relay-rest' API namespace. */
 public class SipProfile extends BaseResource {
@@ -18,12 +19,24 @@ public class SipProfile extends BaseResource {
 
   /** get (generated from operation 'retrieve_sip_profile'). */
   public java.util.Map<String, Object> get(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return get(params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** update (generated from operation 'update_sip_profile'). */
   public java.util.Map<String, Object> update(UpdateRequest request) {
-    return restPut(getBasePath(), request.toBody());
+    return update(request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      UpdateRequest request, RequestOptions requestOptions) {
+    return restPut(getBasePath(), request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

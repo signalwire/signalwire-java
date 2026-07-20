@@ -690,8 +690,32 @@ def ordered_fields(fields):
 _SIDECAR: dict[tuple[str, str], list[dict]] = {}
 
 
+# The per-call request_options envelope (plan 4.2 / PY-9): the reference threads a
+# keyword-only ``request_options: RequestOptions | None = None`` onto EVERY generated
+# resource verb (list/get/create/update/delete, command-dispatch, set_methods). Java's
+# named idiom is a trailing optional ``RequestOptions requestOptions`` param; the
+# sidecar records it as the oracle's keyword param so the drift gate compares equal.
+_REQUEST_OPTIONS_JAVA_PARAM = "RequestOptions requestOptions"
+_REQUEST_OPTIONS_SIDECAR = {
+    "name": "request_options",
+    "kind": "keyword",
+    "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+    "required": False,
+    "default": None,
+}
+
+
 def _register_sidecar(cls: str, java_method: str, records: list[dict]) -> None:
-    _SIDECAR[(cls, java_method)] = records
+    # request_options is recorded on every generated verb. In the oracle it sits AFTER
+    # the id/keyword-fields/extras but BEFORE a trailing ``**params`` var_keyword query
+    # bag (which the Python enumerator drops for GET/list). Insert it just before any
+    # trailing var_keyword record so the overlapping-prefix drift compare aligns.
+    recs = list(records)
+    insert_at = len(recs)
+    while insert_at > 0 and recs[insert_at - 1].get("kind") == "var_keyword":
+        insert_at -= 1
+    recs.insert(insert_at, dict(_REQUEST_OPTIONS_SIDECAR))
+    _SIDECAR[(cls, java_method)] = recs
 
 
 # ---------------------------------------------------------------------------
@@ -857,6 +881,15 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
     # The hand bases (BaseResource/…) expose exactly these protected receivers.
     verb_fn = {"post": "restPost", "put": "restPut", "patch": "restPatch"}.get(verb, "")
 
+    # Every generated verb carries a trailing optional ``RequestOptions requestOptions``
+    # (plan 4.2 / PY-9) threaded to the base rest* receiver's request_options overload.
+    # We emit TWO overloads: a convenience form WITHOUT requestOptions (delegating with a
+    # null options → the client default) so existing callers keep compiling, and the FULL
+    # form carrying requestOptions (the parity surface — the enumerator's sidecar unfold
+    # records request_options for the collapsed method, so the surface reflects it). The
+    # ``convenience_args`` are the delegate call arguments (all params except the trailing
+    # requestOptions, which the convenience overload passes as ``null``).
+    ro_param = _REQUEST_OPTIONS_JAVA_PARAM
     if write_verb and has_body:
         body_schema = spec.op_body.get(op_id) or {}
         if is_object_body(spec, body_schema):
@@ -865,33 +898,46 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             req_cls = snake_to_pascal(method_snake) + "Request"
             builder_src = emit_request_builder(cls, method_snake, ftuples)
             _register_sidecar(cls, name, sidecar_records_for_fields(spec, fields, id_records))
-            params = id_params + [f"{req_cls} request"]
-            call = f"    return {verb_fn}({path_expr}, request.toBody());"
+            base_params = id_params + [f"{req_cls} request"]
+            call_args = id_args + ["request"]
+            call = f"    return {verb_fn}({path_expr}, request.toBody(), requestOptions);"
         else:
             # §5.2 union body → a single Map body param.
-            params = id_params + ["java.util.Map<String, Object> body"]
+            base_params = id_params + ["java.util.Map<String, Object> body"]
+            call_args = id_args + ["body"]
             _register_sidecar(cls, name, id_records + [
                 {"name": "body", "kind": "positional", "type": "dict<string,any>", "required": True}])
-            call = f"    return {verb_fn}({path_expr}, body);"
+            call = f"    return {verb_fn}({path_expr}, body, requestOptions);"
     elif write_verb:
-        params = id_params
+        base_params = list(id_params)
+        call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
-        call = f"    return {verb_fn}({path_expr}, new java.util.LinkedHashMap<>());"
+        call = f"    return {verb_fn}({path_expr}, new java.util.LinkedHashMap<>(), requestOptions);"
     elif verb == "get":
         # §5.3 GET query door → a trailing query-params map (var_keyword).
-        params = id_params + ["java.util.Map<String, String> params"]
+        base_params = id_params + ["java.util.Map<String, String> params"]
+        call_args = id_args + ["params"]
         _register_sidecar(cls, name, id_records + [
             {"name": "params", "kind": "var_keyword", "type": "any", "required": False, "default": {}}])
-        call = f"    return restGet({path_expr}, params);"
+        call = f"    return restGet({path_expr}, params, requestOptions);"
     else:  # delete
-        params = id_params
+        base_params = list(id_params)
+        call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
-        call = f"    return restDelete({path_expr});"
+        call = f"    return restDelete({path_expr}, requestOptions);"
 
-    sig = ", ".join(params)
     override = "  @Override\n" if is_override else ""
-    method = (f"  /** {name} (generated from operation {op_id!r}). */\n"
-              f"{override}  public java.util.Map<String, Object> {name}({sig}) {{\n{call}\n  }}")
+    full_sig = ", ".join(base_params + [ro_param])
+    conv_sig = ", ".join(base_params)
+    conv_call_args = ", ".join(call_args + ["(RequestOptions) null"])
+    method = (
+        f"  /** {name} (generated from operation {op_id!r}). */\n"
+        f"{override}  public java.util.Map<String, Object> {name}({conv_sig}) {{\n"
+        f"    return {name}({conv_call_args});\n"
+        f"  }}\n"
+        f"  /** {name} with a per-request {{@link RequestOptions}} override. */\n"
+        f"{override}  public java.util.Map<String, Object> {name}({full_sig}) {{\n{call}\n  }}"
+    )
     return method, builder_src
 
 
@@ -904,6 +950,7 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
     name = snake_to_lower_camel(sm_name)
     args = sm.get("args") or {}
     params = ["String resourceId"]
+    call_idents = ["resourceId"]
     records: list[dict] = [{"name": "resource_id", "kind": "positional", "type": "string", "required": True}]
     build = ["    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();",
              f"    body.put(\"call_handler\", {java_str(handler)});"]
@@ -918,6 +965,7 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
         required = bool(arg.get("required"))
         jtype = java_field_type(spec, field_schemas.get(field, {}))
         params.append(f"{jtype} {ident}")
+        call_idents.append(ident)
         rec: dict = {"name": arg_name, "kind": "positional",
                      "type": canonical_type(spec, field_schemas.get(field, {}), required),
                      "required": required}
@@ -928,14 +976,22 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
             build.append(f"    body.put({java_str(field)}, {ident});")
         records.append(rec)
     params.append("java.util.Map<String, Object> extra")
+    call_idents.append("extra")
     records.append({"name": "extra", "kind": "var_keyword", "type": "any", "required": False, "default": {}})
     _register_sidecar(cls, name, records)
     build.append("    if (extra != null) { body.putAll(extra); }")
-    build.append("    return update(resourceId, body);")
-    sig = ", ".join(params)
-    method = (f"  /** {name} — sets call_handler={handler!r} + bound update fields (§7). */\n"
-              f"  public java.util.Map<String, Object> {name}({sig}) {{\n"
-              + "\n".join(build) + "\n  }")
+    build.append("    return update(resourceId, body, requestOptions);")
+    conv_sig = ", ".join(params)
+    full_sig = ", ".join(params + [_REQUEST_OPTIONS_JAVA_PARAM])
+    conv_delegate = ", ".join(call_idents + ["(RequestOptions) null"])
+    method = (
+        f"  /** {name} — sets call_handler={handler!r} + bound update fields (§7). */\n"
+        f"  public java.util.Map<String, Object> {name}({conv_sig}) {{\n"
+        f"    return {name}({conv_delegate});\n"
+        f"  }}\n"
+        f"  /** {name} with a per-request {{@link RequestOptions}} override. */\n"
+        f"  public java.util.Map<String, Object> {name}({full_sig}) {{\n"
+        + "\n".join(build) + "\n  }")
     return method, ""
 
 
@@ -1003,7 +1059,8 @@ def gen_header(desc: str) -> str:
         f"// {desc}\n"
         "\n"
         f"package {GEN_PACKAGE};\n\n"
-        f"import {REST_PACKAGE}.HttpClient;\n\n"
+        f"import {REST_PACKAGE}.HttpClient;\n"
+        f"import {REST_PACKAGE}.RequestOptions;\n\n"
     )
 
 
@@ -1035,12 +1092,13 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
     lines.append("  public String getBasePath() { return BASE_PATH; }")
     lines.append("")
     lines.append("  private java.util.Map<String, Object> execute("
-                 "String command, String callId, java.util.Map<String, Object> params) {")
+                 "String command, String callId, java.util.Map<String, Object> params, "
+                 "RequestOptions requestOptions) {")
     lines.append("    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();")
     lines.append("    body.put(\"command\", command);")
     lines.append("    body.put(\"params\", params);")
     lines.append("    if (callId != null) { body.put(\"id\", callId); }")
-    lines.append("    return httpClient.post(BASE_PATH, body);")
+    lines.append("    return httpClient.post(BASE_PATH, body, requestOptions);")
     lines.append("  }")
 
     mapping = (spec.schemas.get(request).get("discriminator") or {}).get("mapping") or {}
@@ -1061,12 +1119,20 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         _register_sidecar(name, mname, records)
 
         id_param = ["String callId"] if with_id else []
-        params = id_param + [f"{req_cls} request"]
+        base_params = id_param + [f"{req_cls} request"]
+        full_params = base_params + [_REQUEST_OPTIONS_JAVA_PARAM]
+        conv_delegate = (["callId"] if with_id else []) + ["request", "(RequestOptions) null"]
         call_arg = "callId" if with_id else "null"
         lines.append("")
+        # Convenience overload (no requestOptions) delegating to the full form so existing
+        # callers keep compiling; the full form is the parity surface (request_options).
         lines.append(f"  /** {mname} — command {cmd!r}. */")
-        lines.append(f"  public java.util.Map<String, Object> {mname}({', '.join(params)}) {{")
-        lines.append(f"    return execute({java_str(cmd)}, {call_arg}, request.toBody());")
+        lines.append(f"  public java.util.Map<String, Object> {mname}({', '.join(base_params)}) {{")
+        lines.append(f"    return {mname}({', '.join(conv_delegate)});")
+        lines.append("  }")
+        lines.append(f"  /** {mname} — command {cmd!r} with a per-request {{@link RequestOptions}} override. */")
+        lines.append(f"  public java.util.Map<String, Object> {mname}({', '.join(full_params)}) {{")
+        lines.append(f"    return execute({java_str(cmd)}, {call_arg}, request.toBody(), requestOptions);")
         lines.append("  }")
 
     for b in builders:

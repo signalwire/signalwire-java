@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Messages — REST resource client for the 'messages' API namespace. */
 public class Messages extends BaseResource {
@@ -18,12 +19,24 @@ public class Messages extends BaseResource {
 
   /** create (generated from operation 'create_message'). */
   public java.util.Map<String, Object> create(CreateRequest request) {
-    return restPost(getBasePath(), request.toBody());
+    return create(request, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> create(
+      CreateRequest request, RequestOptions requestOptions) {
+    return restPost(getBasePath(), request.toBody(), requestOptions);
   }
 
   /** update (generated from operation 'update_message'). */
   public java.util.Map<String, Object> update(String messageId, UpdateRequest request) {
-    return restPatch(getBasePath() + "/" + messageId, request.toBody());
+    return update(messageId, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String messageId, UpdateRequest request, RequestOptions requestOptions) {
+    return restPatch(getBasePath() + "/" + messageId, request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VideoStreams — REST resource client for the 'video' API namespace. */
 public class VideoStreams extends BaseResource {
@@ -18,17 +19,34 @@ public class VideoStreams extends BaseResource {
 
   /** get (generated from operation 'get_stream'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** update (generated from operation 'update_stream'). */
   public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return restPut(getBasePath() + "/" + id, request.toBody(), requestOptions);
   }
 
   /** delete (generated from operation 'delete_stream'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

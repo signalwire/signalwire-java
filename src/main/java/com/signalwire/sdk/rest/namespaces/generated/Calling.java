@@ -8,6 +8,7 @@
 package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /**
  * Calling — command-dispatch resource (calling spec). Each method POSTs {command, params, id?} to
@@ -26,203 +27,477 @@ public final class Calling {
   }
 
   private java.util.Map<String, Object> execute(
-      String command, String callId, java.util.Map<String, Object> params) {
+      String command,
+      String callId,
+      java.util.Map<String, Object> params,
+      RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("command", command);
     body.put("params", params);
     if (callId != null) {
       body.put("id", callId);
     }
-    return httpClient.post(BASE_PATH, body);
+    return httpClient.post(BASE_PATH, body, requestOptions);
   }
 
   /** dial — command 'dial'. */
   public java.util.Map<String, Object> dial(DialRequest request) {
-    return execute("dial", null, request.toBody());
+    return dial(request, (RequestOptions) null);
+  }
+
+  /** dial — command 'dial' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> dial(DialRequest request, RequestOptions requestOptions) {
+    return execute("dial", null, request.toBody(), requestOptions);
   }
 
   /** update — command 'update'. */
   public java.util.Map<String, Object> update(UpdateRequest request) {
-    return execute("update", null, request.toBody());
+    return update(request, (RequestOptions) null);
+  }
+
+  /** update — command 'update' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      UpdateRequest request, RequestOptions requestOptions) {
+    return execute("update", null, request.toBody(), requestOptions);
   }
 
   /** end — command 'calling.end'. */
   public java.util.Map<String, Object> end(String callId, EndRequest request) {
-    return execute("calling.end", callId, request.toBody());
+    return end(callId, request, (RequestOptions) null);
+  }
+
+  /** end — command 'calling.end' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> end(
+      String callId, EndRequest request, RequestOptions requestOptions) {
+    return execute("calling.end", callId, request.toBody(), requestOptions);
   }
 
   /** aiHold — command 'calling.ai_hold'. */
   public java.util.Map<String, Object> aiHold(String callId, AiHoldRequest request) {
-    return execute("calling.ai_hold", callId, request.toBody());
+    return aiHold(callId, request, (RequestOptions) null);
+  }
+
+  /** aiHold — command 'calling.ai_hold' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> aiHold(
+      String callId, AiHoldRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_hold", callId, request.toBody(), requestOptions);
   }
 
   /** aiUnhold — command 'calling.ai_unhold'. */
   public java.util.Map<String, Object> aiUnhold(String callId, AiUnholdRequest request) {
-    return execute("calling.ai_unhold", callId, request.toBody());
+    return aiUnhold(callId, request, (RequestOptions) null);
+  }
+
+  /** aiUnhold — command 'calling.ai_unhold' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> aiUnhold(
+      String callId, AiUnholdRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_unhold", callId, request.toBody(), requestOptions);
   }
 
   /** aiMessage — command 'calling.ai_message'. */
   public java.util.Map<String, Object> aiMessage(String callId, AiMessageRequest request) {
-    return execute("calling.ai_message", callId, request.toBody());
+    return aiMessage(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiMessage — command 'calling.ai_message' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> aiMessage(
+      String callId, AiMessageRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_message", callId, request.toBody(), requestOptions);
   }
 
   /** liveTranscribe — command 'calling.live_transcribe'. */
   public java.util.Map<String, Object> liveTranscribe(
       String callId, LiveTranscribeRequest request) {
-    return execute("calling.live_transcribe", callId, request.toBody());
+    return liveTranscribe(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * liveTranscribe — command 'calling.live_transcribe' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> liveTranscribe(
+      String callId, LiveTranscribeRequest request, RequestOptions requestOptions) {
+    return execute("calling.live_transcribe", callId, request.toBody(), requestOptions);
   }
 
   /** liveTranslate — command 'calling.live_translate'. */
   public java.util.Map<String, Object> liveTranslate(String callId, LiveTranslateRequest request) {
-    return execute("calling.live_translate", callId, request.toBody());
+    return liveTranslate(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * liveTranslate — command 'calling.live_translate' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> liveTranslate(
+      String callId, LiveTranslateRequest request, RequestOptions requestOptions) {
+    return execute("calling.live_translate", callId, request.toBody(), requestOptions);
   }
 
   /** transfer — command 'calling.transfer'. */
   public java.util.Map<String, Object> transfer(String callId, TransferRequest request) {
-    return execute("calling.transfer", callId, request.toBody());
+    return transfer(callId, request, (RequestOptions) null);
+  }
+
+  /** transfer — command 'calling.transfer' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> transfer(
+      String callId, TransferRequest request, RequestOptions requestOptions) {
+    return execute("calling.transfer", callId, request.toBody(), requestOptions);
   }
 
   /** userEvent — command 'calling.user_event'. */
   public java.util.Map<String, Object> userEvent(String callId, UserEventRequest request) {
-    return execute("calling.user_event", callId, request.toBody());
+    return userEvent(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * userEvent — command 'calling.user_event' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> userEvent(
+      String callId, UserEventRequest request, RequestOptions requestOptions) {
+    return execute("calling.user_event", callId, request.toBody(), requestOptions);
   }
 
   /** disconnect — command 'calling.disconnect'. */
   public java.util.Map<String, Object> disconnect(String callId, DisconnectRequest request) {
-    return execute("calling.disconnect", callId, request.toBody());
+    return disconnect(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * disconnect — command 'calling.disconnect' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> disconnect(
+      String callId, DisconnectRequest request, RequestOptions requestOptions) {
+    return execute("calling.disconnect", callId, request.toBody(), requestOptions);
   }
 
   /** play — command 'calling.play'. */
   public java.util.Map<String, Object> play(String callId, PlayRequest request) {
-    return execute("calling.play", callId, request.toBody());
+    return play(callId, request, (RequestOptions) null);
+  }
+
+  /** play — command 'calling.play' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> play(
+      String callId, PlayRequest request, RequestOptions requestOptions) {
+    return execute("calling.play", callId, request.toBody(), requestOptions);
   }
 
   /** playPause — command 'calling.play.pause'. */
   public java.util.Map<String, Object> playPause(String callId, PlayPauseRequest request) {
-    return execute("calling.play.pause", callId, request.toBody());
+    return playPause(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * playPause — command 'calling.play.pause' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> playPause(
+      String callId, PlayPauseRequest request, RequestOptions requestOptions) {
+    return execute("calling.play.pause", callId, request.toBody(), requestOptions);
   }
 
   /** playResume — command 'calling.play.resume'. */
   public java.util.Map<String, Object> playResume(String callId, PlayResumeRequest request) {
-    return execute("calling.play.resume", callId, request.toBody());
+    return playResume(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * playResume — command 'calling.play.resume' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> playResume(
+      String callId, PlayResumeRequest request, RequestOptions requestOptions) {
+    return execute("calling.play.resume", callId, request.toBody(), requestOptions);
   }
 
   /** playStop — command 'calling.play.stop'. */
   public java.util.Map<String, Object> playStop(String callId, PlayStopRequest request) {
-    return execute("calling.play.stop", callId, request.toBody());
+    return playStop(callId, request, (RequestOptions) null);
+  }
+
+  /** playStop — command 'calling.play.stop' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> playStop(
+      String callId, PlayStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.play.stop", callId, request.toBody(), requestOptions);
   }
 
   /** playVolume — command 'calling.play.volume'. */
   public java.util.Map<String, Object> playVolume(String callId, PlayVolumeRequest request) {
-    return execute("calling.play.volume", callId, request.toBody());
+    return playVolume(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * playVolume — command 'calling.play.volume' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> playVolume(
+      String callId, PlayVolumeRequest request, RequestOptions requestOptions) {
+    return execute("calling.play.volume", callId, request.toBody(), requestOptions);
   }
 
   /** record — command 'calling.record'. */
   public java.util.Map<String, Object> record(String callId, RecordRequest request) {
-    return execute("calling.record", callId, request.toBody());
+    return record(callId, request, (RequestOptions) null);
+  }
+
+  /** record — command 'calling.record' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> record(
+      String callId, RecordRequest request, RequestOptions requestOptions) {
+    return execute("calling.record", callId, request.toBody(), requestOptions);
   }
 
   /** recordPause — command 'calling.record.pause'. */
   public java.util.Map<String, Object> recordPause(String callId, RecordPauseRequest request) {
-    return execute("calling.record.pause", callId, request.toBody());
+    return recordPause(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * recordPause — command 'calling.record.pause' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> recordPause(
+      String callId, RecordPauseRequest request, RequestOptions requestOptions) {
+    return execute("calling.record.pause", callId, request.toBody(), requestOptions);
   }
 
   /** recordResume — command 'calling.record.resume'. */
   public java.util.Map<String, Object> recordResume(String callId, RecordResumeRequest request) {
-    return execute("calling.record.resume", callId, request.toBody());
+    return recordResume(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * recordResume — command 'calling.record.resume' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> recordResume(
+      String callId, RecordResumeRequest request, RequestOptions requestOptions) {
+    return execute("calling.record.resume", callId, request.toBody(), requestOptions);
   }
 
   /** recordStop — command 'calling.record.stop'. */
   public java.util.Map<String, Object> recordStop(String callId, RecordStopRequest request) {
-    return execute("calling.record.stop", callId, request.toBody());
+    return recordStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * recordStop — command 'calling.record.stop' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> recordStop(
+      String callId, RecordStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.record.stop", callId, request.toBody(), requestOptions);
   }
 
   /** collect — command 'calling.collect'. */
   public java.util.Map<String, Object> collect(String callId, CollectRequest request) {
-    return execute("calling.collect", callId, request.toBody());
+    return collect(callId, request, (RequestOptions) null);
+  }
+
+  /** collect — command 'calling.collect' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> collect(
+      String callId, CollectRequest request, RequestOptions requestOptions) {
+    return execute("calling.collect", callId, request.toBody(), requestOptions);
   }
 
   /** collectStop — command 'calling.collect.stop'. */
   public java.util.Map<String, Object> collectStop(String callId, CollectStopRequest request) {
-    return execute("calling.collect.stop", callId, request.toBody());
+    return collectStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * collectStop — command 'calling.collect.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> collectStop(
+      String callId, CollectStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.collect.stop", callId, request.toBody(), requestOptions);
   }
 
   /** collectStartInputTimers — command 'calling.collect.start_input_timers'. */
   public java.util.Map<String, Object> collectStartInputTimers(
       String callId, CollectStartInputTimersRequest request) {
-    return execute("calling.collect.start_input_timers", callId, request.toBody());
+    return collectStartInputTimers(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * collectStartInputTimers — command 'calling.collect.start_input_timers' with a per-request
+   * {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> collectStartInputTimers(
+      String callId, CollectStartInputTimersRequest request, RequestOptions requestOptions) {
+    return execute("calling.collect.start_input_timers", callId, request.toBody(), requestOptions);
   }
 
   /** detect — command 'calling.detect'. */
   public java.util.Map<String, Object> detect(String callId, DetectRequest request) {
-    return execute("calling.detect", callId, request.toBody());
+    return detect(callId, request, (RequestOptions) null);
+  }
+
+  /** detect — command 'calling.detect' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> detect(
+      String callId, DetectRequest request, RequestOptions requestOptions) {
+    return execute("calling.detect", callId, request.toBody(), requestOptions);
   }
 
   /** detectStop — command 'calling.detect.stop'. */
   public java.util.Map<String, Object> detectStop(String callId, DetectStopRequest request) {
-    return execute("calling.detect.stop", callId, request.toBody());
+    return detectStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * detectStop — command 'calling.detect.stop' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> detectStop(
+      String callId, DetectStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.detect.stop", callId, request.toBody(), requestOptions);
   }
 
   /** tap — command 'calling.tap'. */
   public java.util.Map<String, Object> tap(String callId, TapRequest request) {
-    return execute("calling.tap", callId, request.toBody());
+    return tap(callId, request, (RequestOptions) null);
+  }
+
+  /** tap — command 'calling.tap' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> tap(
+      String callId, TapRequest request, RequestOptions requestOptions) {
+    return execute("calling.tap", callId, request.toBody(), requestOptions);
   }
 
   /** tapStop — command 'calling.tap.stop'. */
   public java.util.Map<String, Object> tapStop(String callId, TapStopRequest request) {
-    return execute("calling.tap.stop", callId, request.toBody());
+    return tapStop(callId, request, (RequestOptions) null);
+  }
+
+  /** tapStop — command 'calling.tap.stop' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> tapStop(
+      String callId, TapStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.tap.stop", callId, request.toBody(), requestOptions);
   }
 
   /** stream — command 'calling.stream'. */
   public java.util.Map<String, Object> stream(String callId, StreamRequest request) {
-    return execute("calling.stream", callId, request.toBody());
+    return stream(callId, request, (RequestOptions) null);
+  }
+
+  /** stream — command 'calling.stream' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> stream(
+      String callId, StreamRequest request, RequestOptions requestOptions) {
+    return execute("calling.stream", callId, request.toBody(), requestOptions);
   }
 
   /** streamStop — command 'calling.stream.stop'. */
   public java.util.Map<String, Object> streamStop(String callId, StreamStopRequest request) {
-    return execute("calling.stream.stop", callId, request.toBody());
+    return streamStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * streamStop — command 'calling.stream.stop' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> streamStop(
+      String callId, StreamStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.stream.stop", callId, request.toBody(), requestOptions);
   }
 
   /** denoise — command 'calling.denoise'. */
   public java.util.Map<String, Object> denoise(String callId, DenoiseRequest request) {
-    return execute("calling.denoise", callId, request.toBody());
+    return denoise(callId, request, (RequestOptions) null);
+  }
+
+  /** denoise — command 'calling.denoise' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> denoise(
+      String callId, DenoiseRequest request, RequestOptions requestOptions) {
+    return execute("calling.denoise", callId, request.toBody(), requestOptions);
   }
 
   /** denoiseStop — command 'calling.denoise.stop'. */
   public java.util.Map<String, Object> denoiseStop(String callId, DenoiseStopRequest request) {
-    return execute("calling.denoise.stop", callId, request.toBody());
+    return denoiseStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * denoiseStop — command 'calling.denoise.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> denoiseStop(
+      String callId, DenoiseStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.denoise.stop", callId, request.toBody(), requestOptions);
   }
 
   /** transcribe — command 'calling.transcribe'. */
   public java.util.Map<String, Object> transcribe(String callId, TranscribeRequest request) {
-    return execute("calling.transcribe", callId, request.toBody());
+    return transcribe(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * transcribe — command 'calling.transcribe' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> transcribe(
+      String callId, TranscribeRequest request, RequestOptions requestOptions) {
+    return execute("calling.transcribe", callId, request.toBody(), requestOptions);
   }
 
   /** transcribeStop — command 'calling.transcribe.stop'. */
   public java.util.Map<String, Object> transcribeStop(
       String callId, TranscribeStopRequest request) {
-    return execute("calling.transcribe.stop", callId, request.toBody());
+    return transcribeStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * transcribeStop — command 'calling.transcribe.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> transcribeStop(
+      String callId, TranscribeStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.transcribe.stop", callId, request.toBody(), requestOptions);
   }
 
   /** aiStop — command 'calling.ai.stop'. */
   public java.util.Map<String, Object> aiStop(String callId, AiStopRequest request) {
-    return execute("calling.ai.stop", callId, request.toBody());
+    return aiStop(callId, request, (RequestOptions) null);
+  }
+
+  /** aiStop — command 'calling.ai.stop' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> aiStop(
+      String callId, AiStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai.stop", callId, request.toBody(), requestOptions);
   }
 
   /** sendFaxStop — command 'calling.send_fax.stop'. */
   public java.util.Map<String, Object> sendFaxStop(String callId, SendFaxStopRequest request) {
-    return execute("calling.send_fax.stop", callId, request.toBody());
+    return sendFaxStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * sendFaxStop — command 'calling.send_fax.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> sendFaxStop(
+      String callId, SendFaxStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.send_fax.stop", callId, request.toBody(), requestOptions);
   }
 
   /** receiveFaxStop — command 'calling.receive_fax.stop'. */
   public java.util.Map<String, Object> receiveFaxStop(
       String callId, ReceiveFaxStopRequest request) {
-    return execute("calling.receive_fax.stop", callId, request.toBody());
+    return receiveFaxStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * receiveFaxStop — command 'calling.receive_fax.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> receiveFaxStop(
+      String callId, ReceiveFaxStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.receive_fax.stop", callId, request.toBody(), requestOptions);
   }
 
   /** refer — command 'calling.refer'. */
   public java.util.Map<String, Object> refer(String callId, ReferRequest request) {
-    return execute("calling.refer", callId, request.toBody());
+    return refer(callId, request, (RequestOptions) null);
+  }
+
+  /** refer — command 'calling.refer' with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> refer(
+      String callId, ReferRequest request, RequestOptions requestOptions) {
+    return execute("calling.refer", callId, request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #dial} (builder + extras door). */

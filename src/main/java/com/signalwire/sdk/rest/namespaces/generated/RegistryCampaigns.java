@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** RegistryCampaigns — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryCampaigns extends BaseResource {
@@ -18,28 +19,58 @@ public class RegistryCampaigns extends BaseResource {
 
   /** get (generated from operation 'retrieve_campaign'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** update (generated from operation 'update_campaign'). */
   public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return restPut(getBasePath() + "/" + id, request.toBody(), requestOptions);
   }
 
   /** listNumbers (generated from operation 'list_number_assignments'). */
   public java.util.Map<String, Object> listNumbers(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "numbers", params);
+    return listNumbers(id, params, (RequestOptions) null);
+  }
+
+  /** listNumbers with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listNumbers(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "numbers", params, requestOptions);
   }
 
   /** listOrders (generated from operation 'list_orders'). */
   public java.util.Map<String, Object> listOrders(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "orders", params);
+    return listOrders(id, params, (RequestOptions) null);
+  }
+
+  /** listOrders with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listOrders(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "orders", params, requestOptions);
   }
 
   /** createOrder (generated from operation 'create_order'). */
   public java.util.Map<String, Object> createOrder(String id, CreateOrderRequest request) {
-    return restPost(getBasePath() + "/" + id + "/" + "orders", request.toBody());
+    return createOrder(id, request, (RequestOptions) null);
+  }
+
+  /** createOrder with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> createOrder(
+      String id, CreateOrderRequest request, RequestOptions requestOptions) {
+    return restPost(getBasePath() + "/" + id + "/" + "orders", request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

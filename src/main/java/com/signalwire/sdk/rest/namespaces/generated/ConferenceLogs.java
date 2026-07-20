@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** ConferenceLogs — REST resource client for the 'logs' API namespace. */
 public class ConferenceLogs extends BaseResource {
@@ -18,6 +19,12 @@ public class ConferenceLogs extends BaseResource {
 
   /** list (generated from operation 'list_conferences'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 }

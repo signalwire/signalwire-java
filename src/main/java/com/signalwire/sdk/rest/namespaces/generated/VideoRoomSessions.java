@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VideoRoomSessions — REST resource client for the 'video' API namespace. */
 public class VideoRoomSessions extends ReadResource {
@@ -18,18 +19,36 @@ public class VideoRoomSessions extends ReadResource {
 
   /** listEvents (generated from operation 'list_room_session_events'). */
   public java.util.Map<String, Object> listEvents(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "events", params);
+    return listEvents(id, params, (RequestOptions) null);
+  }
+
+  /** listEvents with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listEvents(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "events", params, requestOptions);
   }
 
   /** listMembers (generated from operation 'list_room_session_members'). */
   public java.util.Map<String, Object> listMembers(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "members", params);
+    return listMembers(id, params, (RequestOptions) null);
+  }
+
+  /** listMembers with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listMembers(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "members", params, requestOptions);
   }
 
   /** listRecordings (generated from operation 'list_room_session_recordings'). */
   public java.util.Map<String, Object> listRecordings(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "recordings", params);
+    return listRecordings(id, params, (RequestOptions) null);
+  }
+
+  /** listRecordings with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listRecordings(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "recordings", params, requestOptions);
   }
 }

@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Lookup — REST resource client for the 'relay-rest' API namespace. */
 public class Lookup extends BaseResource {
@@ -19,6 +20,12 @@ public class Lookup extends BaseResource {
   /** phoneNumber (generated from operation 'lookup_phone_number'). */
   public java.util.Map<String, Object> phoneNumber(
       String e164, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + "phone_number" + "/" + e164, params);
+    return phoneNumber(e164, params, (RequestOptions) null);
+  }
+
+  /** phoneNumber with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> phoneNumber(
+      String e164, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + "phone_number" + "/" + e164, params, requestOptions);
   }
 }

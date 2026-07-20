@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VerifiedCallers — REST resource client for the 'relay-rest' API namespace. */
 public class VerifiedCallers extends CrudResource {
@@ -18,14 +19,29 @@ public class VerifiedCallers extends CrudResource {
 
   /** redialVerification (generated from operation 'redial_verification_call'). */
   public java.util.Map<String, Object> redialVerification(String id) {
+    return redialVerification(id, (RequestOptions) null);
+  }
+
+  /** redialVerification with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> redialVerification(
+      String id, RequestOptions requestOptions) {
     return restPost(
-        getBasePath() + "/" + id + "/" + "verification", new java.util.LinkedHashMap<>());
+        getBasePath() + "/" + id + "/" + "verification",
+        new java.util.LinkedHashMap<>(),
+        requestOptions);
   }
 
   /** submitVerification (generated from operation 'validate_verification_code'). */
   public java.util.Map<String, Object> submitVerification(
       String id, SubmitVerificationRequest request) {
-    return restPut(getBasePath() + "/" + id + "/" + "verification", request.toBody());
+    return submitVerification(id, request, (RequestOptions) null);
+  }
+
+  /** submitVerification with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> submitVerification(
+      String id, SubmitVerificationRequest request, RequestOptions requestOptions) {
+    return restPut(
+        getBasePath() + "/" + id + "/" + "verification", request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #submitVerification} (builder + extras door). */

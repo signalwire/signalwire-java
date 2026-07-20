@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** PubSub — REST resource client for the 'pubsub' API namespace. */
 public class PubSub extends BaseResource {
@@ -18,7 +19,13 @@ public class PubSub extends BaseResource {
 
   /** createToken (generated from operation 'create_token'). */
   public java.util.Map<String, Object> createToken(CreateTokenRequest request) {
-    return restPost(getBasePath(), request.toBody());
+    return createToken(request, (RequestOptions) null);
+  }
+
+  /** createToken with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> createToken(
+      CreateTokenRequest request, RequestOptions requestOptions) {
+    return restPost(getBasePath(), request.toBody(), requestOptions);
   }
 
   /** Closed typed request for {@link #createToken} (builder + extras door). */

@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** RegistryBrands — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryBrands extends BaseResource {
@@ -18,28 +19,58 @@ public class RegistryBrands extends BaseResource {
 
   /** list (generated from operation 'list_brands'). */
   public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath(), params, requestOptions);
   }
 
   /** create (generated from operation 'create_brand'). */
   public java.util.Map<String, Object> create(java.util.Map<String, Object> body) {
-    return restPost(getBasePath(), body);
+    return create(body, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> create(
+      java.util.Map<String, Object> body, RequestOptions requestOptions) {
+    return restPost(getBasePath(), body, requestOptions);
   }
 
   /** get (generated from operation 'retrieve_brand'). */
   public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id, params, requestOptions);
   }
 
   /** listCampaigns (generated from operation 'list_campaigns'). */
   public java.util.Map<String, Object> listCampaigns(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "campaigns", params);
+    return listCampaigns(id, params, (RequestOptions) null);
+  }
+
+  /** listCampaigns with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> listCampaigns(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + id + "/" + "campaigns", params, requestOptions);
   }
 
   /** createCampaign (generated from operation 'create_campaign'). */
   public java.util.Map<String, Object> createCampaign(
       String id, java.util.Map<String, Object> body) {
-    return restPost(getBasePath() + "/" + id + "/" + "campaigns", body);
+    return createCampaign(id, body, (RequestOptions) null);
+  }
+
+  /** createCampaign with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> createCampaign(
+      String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
+    return restPost(getBasePath() + "/" + id + "/" + "campaigns", body, requestOptions);
   }
 }

@@ -40,6 +40,7 @@ public final class PaginatedIterator
   private final String path;
   private Map<String, String> params;
   private final String dataKey;
+  private final RequestOptions requestOptions;
 
   private final List<Map<String, Object>> items = new ArrayList<>();
   private int index = 0;
@@ -62,10 +63,24 @@ public final class PaginatedIterator
 
   public PaginatedIterator(
       HttpClient http, String path, Map<String, String> params, String dataKey) {
+    this(http, path, params, dataKey, null);
+  }
+
+  /**
+   * Full constructor carrying a per-request {@link RequestOptions} override applied to every page
+   * fetch (plan 4.2 / PY-9 — {@code paginate(request_options=...)}).
+   */
+  public PaginatedIterator(
+      HttpClient http,
+      String path,
+      Map<String, String> params,
+      String dataKey,
+      RequestOptions requestOptions) {
     this.http = http;
     this.path = path;
     this.params = params != null ? new LinkedHashMap<>(params) : new LinkedHashMap<>();
     this.dataKey = dataKey != null ? dataKey : "data";
+    this.requestOptions = requestOptions;
   }
 
   @Override
@@ -124,7 +139,7 @@ public final class PaginatedIterator
 
   @SuppressWarnings("unchecked")
   private void fetchNext() {
-    Map<String, Object> resp = params.isEmpty() ? http.get(path) : http.get(path, params);
+    Map<String, Object> resp = http.get(path, params.isEmpty() ? null : params, requestOptions);
 
     Object dataObj = resp != null ? resp.get(dataKey) : null;
     List<Map<String, Object>> data;

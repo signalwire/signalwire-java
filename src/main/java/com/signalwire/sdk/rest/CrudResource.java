@@ -73,9 +73,19 @@ public class CrudResource extends BaseResource {
     return restGet(getBasePath(), queryParams);
   }
 
+  /** List resources with query parameters and a per-request {@link RequestOptions} override. */
+  public Map<String, Object> list(Map<String, String> queryParams, RequestOptions requestOptions) {
+    return restGet(getBasePath(), queryParams, requestOptions);
+  }
+
   /** Get a single resource by ID. */
   public Map<String, Object> get(String id) {
     return restGet(getBasePath() + "/" + pathSegment(id), null);
+  }
+
+  /** Get a single resource by ID with a per-request {@link RequestOptions} override. */
+  public Map<String, Object> get(String id, RequestOptions requestOptions) {
+    return restGet(getBasePath() + "/" + pathSegment(id), null, requestOptions);
   }
 
   /** Create a new resource. */
@@ -83,17 +93,36 @@ public class CrudResource extends BaseResource {
     return restPost(getBasePath(), body);
   }
 
+  /** Create a new resource with a per-request {@link RequestOptions} override. */
+  public Map<String, Object> create(Map<String, Object> body, RequestOptions requestOptions) {
+    return restPost(getBasePath(), body, requestOptions);
+  }
+
   /** Update an existing resource by ID, using this resource's configured verb (PUT or PATCH). */
   public Map<String, Object> update(String id, Map<String, Object> body) {
+    return update(id, body, null);
+  }
+
+  /**
+   * Update an existing resource by ID, using this resource's configured verb (PUT or PATCH), with a
+   * per-request {@link RequestOptions} override.
+   */
+  public Map<String, Object> update(
+      String id, Map<String, Object> body, RequestOptions requestOptions) {
     if (updateMethod == UpdateMethod.PATCH) {
-      return restPatch(getBasePath() + "/" + pathSegment(id), body);
+      return restPatch(getBasePath() + "/" + pathSegment(id), body, requestOptions);
     }
-    return restPut(getBasePath() + "/" + pathSegment(id), body);
+    return restPut(getBasePath() + "/" + pathSegment(id), body, requestOptions);
   }
 
   /** Delete a resource by ID. */
   public Map<String, Object> delete(String id) {
     return restDelete(getBasePath() + "/" + pathSegment(id));
+  }
+
+  /** Delete a resource by ID with a per-request {@link RequestOptions} override. */
+  public Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + pathSegment(id), requestOptions);
   }
 
   /**
