@@ -64,7 +64,7 @@ class SmallNamespacesMockTest {
       var body = client.addresses().list(qp("page_size", "10"));
       assertNotNull(body);
       assertNotNull(body.data);
-      assertTrue(body.data instanceof List);
+      assertNotNull(body.data);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/addresses", j.path);
@@ -135,7 +135,7 @@ class SmallNamespacesMockTest {
       var body = client.recordings().list(qp("page_size", "5"));
       assertNotNull(body);
       assertNotNull(body.data);
-      assertTrue(body.data instanceof List);
+      assertNotNull(body.data);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/recordings", j.path);
@@ -175,7 +175,7 @@ class SmallNamespacesMockTest {
       var body = client.shortCodes().list(qp("page_size", "20"));
       assertNotNull(body);
       assertNotNull(body.data);
-      assertTrue(body.data instanceof List);
+      assertNotNull(body.data);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/short_codes", j.path);
@@ -315,7 +315,7 @@ class SmallNamespacesMockTest {
       var body = client.numberGroups().listMemberships("ng-1", qp("page_size", "10"));
       assertNotNull(body);
       assertNotNull(body.data);
-      assertTrue(body.data instanceof List);
+      assertNotNull(body.data);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/number_groups/ng-1/number_group_memberships", j.path);
@@ -401,8 +401,7 @@ class SmallNamespacesMockTest {
       var body = client.queues().getMember("q-1", "mem-7", java.util.Map.of());
       assertNotNull(body);
       assertTrue(
-          body.queue_id != null || body.call_id != null,
-          "expected queue_id/call_id to be set");
+          body.queue_id != null || body.call_id != null, "expected queue_id/call_id to be set");
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/queues/q-1/members/mem-7", j.path);
