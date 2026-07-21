@@ -95,10 +95,10 @@ public class HttpClient {
     // the LAST colon; then compare against the loopback set.
     int lastColon = host.lastIndexOf(':');
     String hostname = lastColon >= 0 ? host.substring(0, lastColon) : host;
-    return hostname.equals("127.0.0.1")
-        || hostname.equals("localhost")
-        || hostname.equals("::1")
-        || hostname.equals("[::1]");
+    return "127.0.0.1".equals(hostname)
+        || "localhost".equals(hostname)
+        || "::1".equals(hostname)
+        || "[::1]".equals(hostname);
   }
 
   /**
