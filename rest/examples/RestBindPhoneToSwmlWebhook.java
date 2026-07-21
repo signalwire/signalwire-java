@@ -26,8 +26,12 @@ public class RestBindPhoneToSwmlWebhook {
         String project     = System.getenv("SIGNALWIRE_PROJECT_ID");
         String token       = System.getenv("SIGNALWIRE_API_TOKEN");
         String space       = System.getenv("SIGNALWIRE_SPACE");
-        String pnSid       = System.getenv("PHONE_NUMBER_SID");
-        String webhookUrl  = System.getenv("SWML_WEBHOOK_URL");
+        // PHONE_NUMBER_SID / SWML_WEBHOOK_URL identify YOUR phone number + backend.
+        // They are resource identifiers, not secrets — default them to placeholders so
+        // the example runs verbatim against the mock (which serves /phone_numbers/{id}
+        // for any id); a real run overrides them via the environment.
+        String pnSid       = getenvOr("PHONE_NUMBER_SID", "b901c2e5-0000-4000-8000-000000000001");
+        String webhookUrl  = getenvOr("SWML_WEBHOOK_URL", "https://example.com/swml");
 
         var client = RestClient.builder()
                 .project(project)
@@ -59,5 +63,11 @@ public class RestBindPhoneToSwmlWebhook {
         //   client.phoneNumbers().setCallFlow(sid, flowId)         // Call Flow
         //   client.phoneNumbers().setRelayApplication(sid, name)   // Named RELAY app
         //   client.phoneNumbers().setRelayTopic(sid, topic)        // RELAY topic
+    }
+
+    /** Return the env var {@code name} if set and non-empty, else {@code fallback}. */
+    private static String getenvOr(String name, String fallback) {
+        String v = System.getenv(name);
+        return (v != null && !v.isEmpty()) ? v : fallback;
     }
 }

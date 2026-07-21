@@ -25,16 +25,15 @@ public class RestFabricSwmlAndCallflows {
         // 1. Create a SWML script via the Fabric swml_scripts resource.
         System.out.println("Creating SWML script...");
         try {
+            // `contents` is the SWML document as a string (the spec declares it a
+            // string, not a nested object).
             var swmlScript = client.fabric().swmlScripts().create(Map.of(
                     "name", "greeting-script",
-                    "content", Map.of(
-                            "version", "1.0.0",
-                            "sections", Map.of("main", List.of(
-                                    Map.of("answer", Map.of()),
-                                    Map.of("play", Map.of("url", "say:Welcome to our service")),
-                                    Map.of("hangup", Map.of())
-                            ))
-                    )
+                    "contents",
+                    "{\"version\":\"1.0.0\",\"sections\":{\"main\":["
+                            + "{\"answer\":{}},"
+                            + "{\"play\":{\"url\":\"say:Welcome to our service\"}},"
+                            + "{\"hangup\":{}}]}}"
             ));
             System.out.println("  SWML script: " + swmlScript);
         } catch (RestError e) {
@@ -55,8 +54,7 @@ public class RestFabricSwmlAndCallflows {
         System.out.println("\nCreating call flow...");
         try {
             var callFlow = client.fabric().callFlows().create(Map.of(
-                    "name", "main-routing",
-                    "description", "Main IVR with AI fallback"
+                    "title", "main-routing"
             ));
             System.out.println("  Call flow: " + callFlow);
         } catch (RestError e) {

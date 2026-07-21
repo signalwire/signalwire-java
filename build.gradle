@@ -170,7 +170,17 @@ tasks.register('printRuntimeClasspath') {
 sourceSets {
     examples {
         java {
+            // All three example trees compile into the examples source set. The
+            // EXAMPLES-RUN gate (porting-sdk/scripts/examples_run.py §2.2) globs
+            // examples/ AND rest/examples/ AND relay/examples/, then runs each by
+            // simple class name via `runExample -PexampleClass=<ClassName>`. All
+            // three dirs use the default package (no package decl) with unique
+            // class names, so they share one flat namespace here; omitting the
+            // rest/ + relay/ dirs left their classes uncompiled and every
+            // `runExample` for them died with ClassNotFoundException.
             srcDir 'examples'
+            srcDir 'rest/examples'
+            srcDir 'relay/examples'
             // Default package (no package decl), on the SDK runtime classpath.
             compileClasspath += sourceSets.main.runtimeClasspath
             runtimeClasspath += sourceSets.main.runtimeClasspath

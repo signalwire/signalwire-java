@@ -49,9 +49,11 @@ public class RestDemo {
         // 3. Upload a document to Datasphere
         System.out.println("\nCreating Datasphere document...");
         try {
+            // Datasphere ingests documents by URL (the server fetches + chunks it);
+            // the request carries `url` (+ optional `tags`), not inline text.
             var doc = client.datasphere().documents().create(Map.of(
-                    "name", "FAQ",
-                    "content", "SignalWire provides voice, video, and messaging APIs."
+                    "url", "https://example.com/faq.pdf",
+                    "tags", java.util.List.of("faq")
             ));
             System.out.println("  Document created: " + doc.get("id"));
         } catch (RestError e) {

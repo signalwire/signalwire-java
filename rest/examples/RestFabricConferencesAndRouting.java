@@ -29,7 +29,7 @@ public class RestFabricConferencesAndRouting {
             var conference = client.fabric().conferenceRooms().create(Map.of(
                     "name", "team-standup",
                     "max_members", 25,
-                    "record", true
+                    "record_on_start", true
             ));
             System.out.println("  Conference: " + conference);
         } catch (RestError e) {
@@ -50,8 +50,7 @@ public class RestFabricConferencesAndRouting {
         System.out.println("\nCreating call flow...");
         try {
             var callFlow = client.fabric().callFlows().create(Map.of(
-                    "name", "main-ivr",
-                    "description", "Main IVR routing"
+                    "title", "main-ivr"
             ));
             System.out.println("  Call flow: " + callFlow);
         } catch (RestError e) {

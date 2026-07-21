@@ -18,7 +18,7 @@ Map<String, Object> numbers = client.phoneNumbers().list();
 numbers = client.phoneNumbers().list(Map.of("name", "Main"));
 
 // Search available numbers to purchase
-Map<String, Object> available = client.phoneNumbers().search(
+var available = client.phoneNumbers().search(
     Map.of("areacode", "512", "number_type", "local"));
 
 // Purchase a number
@@ -34,8 +34,8 @@ client.phoneNumbers().delete("pn-uuid");
 ## Addresses
 
 ```java
-Map<String, Object> addresses = client.addresses().list(Map.of());
-Map<String, Object> address = client.addresses().create(
+var addresses = client.addresses().list(Map.of());
+var address = client.addresses().create(
     Addresses.CreateRequest.builder()
         .label("Office")
         .streetNumber("123")
@@ -57,15 +57,15 @@ client.queues().update("q-uuid", Map.of("name", "VIP Support"));
 client.queues().delete("q-uuid");
 
 // Members (the trailing map holds query parameters)
-Map<String, Object> members = client.queues().listMembers("q-uuid", Map.of());
-Map<String, Object> nextMember = client.queues().getNextMember("q-uuid", Map.of());
-Map<String, Object> member = client.queues().getMember("q-uuid", "member-uuid", Map.of());
+var members = client.queues().listMembers("q-uuid", Map.of());
+var nextMember = client.queues().getNextMember("q-uuid", Map.of());
+var member = client.queues().getMember("q-uuid", "member-uuid", Map.of());
 ```
 
 ## Recordings
 
 ```java
-Map<String, Object> recordings = client.recordings().list(Map.of());
+var recordings = client.recordings().list(Map.of());
 Map<String, Object> recording = client.recordings().get("rec-uuid", Map.of());
 client.recordings().delete("rec-uuid");
 ```
@@ -80,10 +80,10 @@ client.numberGroups().update("ng-uuid", Map.of("name", "Sales"));
 client.numberGroups().delete("ng-uuid");
 
 // Memberships (addMembership takes a typed request builder)
-Map<String, Object> memberships = client.numberGroups().listMemberships("ng-uuid", Map.of());
+var memberships = client.numberGroups().listMemberships("ng-uuid", Map.of());
 client.numberGroups().addMembership("ng-uuid",
     NumberGroups.AddMembershipRequest.builder().phoneNumberId("pn-uuid").build());
-Map<String, Object> membership = client.numberGroups().getMembership("mem-uuid", Map.of());
+var membership = client.numberGroups().getMembership("mem-uuid", Map.of());
 client.numberGroups().deleteMembership("mem-uuid");
 ```
 
@@ -108,7 +108,7 @@ client.verifiedCallers().submitVerification("vc-uuid",
 Singleton resource -- no ID needed. `update` takes a typed request builder:
 
 ```java
-Map<String, Object> profile = client.sipProfile().get(Map.of());
+var profile = client.sipProfile().get(Map.of());
 client.sipProfile().update(
     SipProfile.UpdateRequest.builder().domainIdentifier("myproject").build());
 ```
@@ -116,7 +116,7 @@ client.sipProfile().update(
 ## Phone Number Lookup
 
 ```java
-Map<String, Object> info = client.lookup().phoneNumber("+15551234567", Map.of());
+var info = client.lookup().phoneNumber("+15551234567", Map.of());
 info = client.lookup().phoneNumber("+15551234567", Map.of("include", "carrier,cnam"));
 ```
 
@@ -125,8 +125,8 @@ Note: carrier and CNAM lookups are billable.
 ## Short Codes
 
 ```java
-Map<String, Object> codes = client.shortCodes().list(Map.of());
-Map<String, Object> code = client.shortCodes().get("sc-uuid", Map.of());
+var codes = client.shortCodes().list(Map.of());
+var code = client.shortCodes().get("sc-uuid", Map.of());
 client.shortCodes().update("sc-uuid",
     ShortCodes.UpdateRequest.builder().name("Alerts").build());
 ```
@@ -146,13 +146,13 @@ Each method takes a typed request builder:
 
 ```java
 // Request a verification code via SMS
-Map<String, Object> result = client.mfa().sms(
+var result = client.mfa().sms(
     Mfa.SmsRequest.builder()
         .to("+15551234567")
         .from("+15559876543")
         .message("Your code is {code}")
         .build());
-String requestId = (String) result.get("id");
+String requestId = result.id;
 
 // Or via phone call
 result = client.mfa().call(
@@ -162,7 +162,7 @@ result = client.mfa().call(
         .build());
 
 // Verify the code
-result = client.mfa().verify(requestId,
+var verification = client.mfa().verify(requestId,
     Mfa.VerifyRequest.builder().token("123456").build());
 ```
 
@@ -170,14 +170,14 @@ result = client.mfa().verify(requestId,
 
 ```java
 // Brands
-Map<String, Object> brands = client.registry().brands().list(Map.of());
-Map<String, Object> brand = client.registry().brands().create(
+var brands = client.registry().brands().list(Map.of());
+var brand = client.registry().brands().create(
     Map.of("name", "My Brand", "ein", "12-3456789"));
 brand = client.registry().brands().get("brand-uuid", Map.of());
 
 // Campaigns under a brand
-Map<String, Object> campaigns = client.registry().brands().listCampaigns("brand-uuid", Map.of());
-Map<String, Object> campaign = client.registry().brands().createCampaign(
+var campaigns = client.registry().brands().listCampaigns("brand-uuid", Map.of());
+var campaign = client.registry().brands().createCampaign(
     "brand-uuid", Map.of("description", "Alerts"));
 
 // Campaign management (update takes a typed request builder)
@@ -186,9 +186,9 @@ client.registry().campaigns().update("camp-uuid",
     RegistryCampaigns.UpdateRequest.builder().name("Updated alerts").build());
 
 // Number assignments
-Map<String, Object> numbers = client.registry().campaigns().listNumbers("camp-uuid", Map.of());
-Map<String, Object> orders = client.registry().campaigns().listOrders("camp-uuid", Map.of());
-Map<String, Object> order = client.registry().campaigns().createOrder("camp-uuid",
+var numbers = client.registry().campaigns().listNumbers("camp-uuid", Map.of());
+var orders = client.registry().campaigns().listOrders("camp-uuid", Map.of());
+var order = client.registry().campaigns().createOrder("camp-uuid",
     RegistryCampaigns.CreateOrderRequest.builder()
         .phoneNumbers(List.of("pn-1"))
         .build());
@@ -209,7 +209,7 @@ client.datasphere().documents().update("doc-uuid",
 client.datasphere().documents().delete("doc-uuid");
 
 // Semantic search (typed request builder)
-Map<String, Object> results = client.datasphere().documents().search(
+var results = client.datasphere().documents().search(
     DatasphereDocuments.SearchRequest.builder()
         .queryString("How do I reset my password?")
         .tags(List.of("support"))
@@ -217,8 +217,8 @@ Map<String, Object> results = client.datasphere().documents().search(
         .build());
 
 // Chunks
-Map<String, Object> chunks = client.datasphere().documents().listChunks("doc-uuid", Map.of());
-Map<String, Object> chunk = client.datasphere().documents().getChunk("doc-uuid", "chunk-uuid", Map.of());
+var chunks = client.datasphere().documents().listChunks("doc-uuid", Map.of());
+var chunk = client.datasphere().documents().getChunk("doc-uuid", "chunk-uuid", Map.of());
 client.datasphere().documents().deleteChunk("doc-uuid", "chunk-uuid");
 ```
 
@@ -237,7 +237,7 @@ client.video().rooms().createStream("room-uuid",
     VideoRooms.CreateStreamRequest.builder().url("rtmp://example.com/live").build());
 
 // Room tokens
-Map<String, Object> token = client.video().roomTokens().create(
+var token = client.video().roomTokens().create(
     VideoRoomTokens.CreateRequest.builder()
         .roomName("standup")
         .userName("alice")
@@ -246,13 +246,13 @@ Map<String, Object> token = client.video().roomTokens().create(
 // Room sessions
 Map<String, Object> sessions = client.video().roomSessions().list(Map.of("room_name", "standup"));
 Map<String, Object> session = client.video().roomSessions().get("session-uuid");
-Map<String, Object> events = client.video().roomSessions().listEvents("session-uuid", Map.of());
-Map<String, Object> members = client.video().roomSessions().listMembers("session-uuid", Map.of());
-Map<String, Object> recordings = client.video().roomSessions().listRecordings("session-uuid", Map.of());
+var events = client.video().roomSessions().listEvents("session-uuid", Map.of());
+var members = client.video().roomSessions().listMembers("session-uuid", Map.of());
+var recordings = client.video().roomSessions().listRecordings("session-uuid", Map.of());
 
 // Room recordings
-Map<String, Object> recs = client.video().roomRecordings().list(Map.of());
-Map<String, Object> rec = client.video().roomRecordings().get("rec-uuid", Map.of());
+var recs = client.video().roomRecordings().list(Map.of());
+var rec = client.video().roomRecordings().get("rec-uuid", Map.of());
 client.video().roomRecordings().delete("rec-uuid");
 
 // Conferences
@@ -262,17 +262,17 @@ Map<String, Object> conf = client.video().conferences().create(
 conf = client.video().conferences().get("conf-uuid");
 client.video().conferences().update("conf-uuid", Map.of("quality", "1080p"));
 client.video().conferences().delete("conf-uuid");
-Map<String, Object> tokens = client.video().conferences().listConferenceTokens("conf-uuid", Map.of());
+var tokens = client.video().conferences().listConferenceTokens("conf-uuid", Map.of());
 client.video().conferences().listStreams("conf-uuid", Map.of());
 client.video().conferences().createStream("conf-uuid",
     VideoConferences.CreateStreamRequest.builder().url("rtmp://example.com/live").build());
 
 // Conference tokens
-Map<String, Object> conferenceToken = client.video().conferenceTokens().get("token-uuid", Map.of());
+var conferenceToken = client.video().conferenceTokens().get("token-uuid", Map.of());
 client.video().conferenceTokens().reset("token-uuid");
 
 // Streams (update takes a typed request builder)
-Map<String, Object> stream = client.video().streams().get("stream-uuid", Map.of());
+var stream = client.video().streams().get("stream-uuid", Map.of());
 client.video().streams().update("stream-uuid",
     VideoStreams.UpdateRequest.builder().url("rtmp://example.com/new").build());
 client.video().streams().delete("stream-uuid");
@@ -290,14 +290,14 @@ Map<String, Object> log = client.logs().messages().get("log-uuid");
 // Voice logs (with events)
 logs = client.logs().voice().list();
 log = client.logs().voice().get("log-uuid");
-Map<String, Object> events = client.logs().voice().listEvents("log-uuid", Map.of());
+var events = client.logs().voice().listEvents("log-uuid", Map.of());
 
 // Fax logs
 logs = client.logs().fax().list();
 log = client.logs().fax().get("log-uuid");
 
 // Conference logs
-logs = client.logs().conferences().list(Map.of());
+var conferenceLogs = client.logs().conferences().list(Map.of());
 ```
 
 ## Project Tokens
@@ -305,7 +305,7 @@ logs = client.logs().conferences().list(Map.of());
 Each mutating method takes a typed request builder:
 
 ```java
-Map<String, Object> token = client.project().tokens().create(
+var token = client.project().tokens().create(
     ProjectTokens.CreateRequest.builder()
         .name("ci-token")
         .permissions(List.of("calling", "messaging", "numbers"))
@@ -320,7 +320,7 @@ client.project().tokens().delete("token-uuid");
 `createToken` takes a typed request builder:
 
 ```java
-Map<String, Object> token = client.pubsub().createToken(
+var token = client.pubsub().createToken(
     PubSub.CreateTokenRequest.builder()
         .ttl(60L)
         .channels(Map.of("updates", Map.of("read", true, "write", false)))
@@ -333,7 +333,7 @@ Map<String, Object> token = client.pubsub().createToken(
 `createToken` takes a typed request builder:
 
 ```java
-Map<String, Object> token = client.chat().createToken(
+var token = client.chat().createToken(
     Chat.CreateTokenRequest.builder()
         .ttl(60L)
         .channels(Map.of("support", Map.of("read", true, "write", true)))

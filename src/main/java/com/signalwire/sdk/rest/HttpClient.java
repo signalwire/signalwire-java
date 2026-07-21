@@ -66,10 +66,39 @@ public class HttpClient {
    * @param requestOptions client-default transport options (may be {@code null})
    */
   public HttpClient(String space, String project, String token, RequestOptions requestOptions) {
-    this.baseUrl = "https://" + space + "/api";
+    // A loopback host (127.0.0.1[:port] / localhost[:port] / [::1][:port]) is a local
+    // mock/dev server that speaks plain HTTP — use http:// for it; every other host is
+    // the real platform over https://. This lets a shipped example run verbatim against
+    // the local mock (SIGNALWIRE_SPACE=127.0.0.1:<port>) without a code change or a
+    // separate URL knob; production is unaffected (a real <name>.signalwire.com space is
+    // never loopback). Parity with the Python reference rest/_base.py `_is_loopback_host`.
+    String scheme = isLoopbackHost(space) ? "http" : "https";
+    this.baseUrl = scheme + "://" + space + "/api";
     this.authHeader = basicAuth(project, token);
     this.requestOptions = requestOptions;
     this.httpClient = newHttpClient();
+  }
+
+  /**
+   * True if {@code host} (a bare host or {@code host:port}) is a local loopback address — a local
+   * mock/dev server that speaks plain HTTP. Used to pick http:// vs https:// so a shipped example
+   * runs verbatim against the local mock. A real SignalWire space ({@code <name>.signalwire.com})
+   * is never loopback, so production is unaffected. Mirrors the Python reference {@code
+   * rest/_base.py::_is_loopback_host}.
+   */
+  static boolean isLoopbackHost(String host) {
+    if (host == null) {
+      return false;
+    }
+    // Match the Python reference exactly: hostname = host.rsplit(":", 1)[0] if ":" in host
+    // else host. So any colon (bare host:port or an IPv6 literal) → take everything before
+    // the LAST colon; then compare against the loopback set.
+    int lastColon = host.lastIndexOf(':');
+    String hostname = lastColon >= 0 ? host.substring(0, lastColon) : host;
+    return "127.0.0.1".equals(hostname)
+        || "localhost".equals(hostname)
+        || "::1".equals(hostname)
+        || "[::1]".equals(hostname);
   }
 
   /**

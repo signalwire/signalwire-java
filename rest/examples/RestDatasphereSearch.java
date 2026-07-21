@@ -17,13 +17,13 @@ public class RestDatasphereSearch {
     public static void main(String[] args) {
         var client = RestClient.builder().build();
 
-        // 1. Create a document
+        // 1. Create a document. Datasphere ingests documents by URL (the server
+        //    fetches + chunks the content); the request carries `url` (+ optional
+        //    `tags`), not inline text.
         System.out.println("Creating document...");
         var doc = client.datasphere().documents().create(Map.of(
-                "name", "FAQ Document",
-                "content", "SignalWire is a cloud communications platform. " +
-                        "It provides APIs for voice, video, and messaging. " +
-                        "The platform supports SWML for call control."
+                "url", "https://example.com/faq.pdf",
+                "tags", java.util.List.of("faq", "support")
         ));
         String docId = (String) doc.get("id");
         System.out.println("  Created document: " + docId);
