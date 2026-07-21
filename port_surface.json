@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 9074c5d1b3f35a3e17fcda88e0d1df0e6099575f",
+  "generated_from": "signalwire-java @ a21b0a7dc71aa6463693d06e961f9c75eb4b6227",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -3556,6 +3556,23 @@
           "register_tools",
           "setup",
           "supports_multiple_instances"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.skills.mcp_gateway.skill": {
+      "classes": {
+        "MCPGatewaySkill": [
+          "get_description",
+          "get_global_data",
+          "get_hints",
+          "get_name",
+          "get_parameter_schema",
+          "get_prompt_sections",
+          "get_required_packages",
+          "get_version",
+          "register_tools",
+          "setup"
         ]
       },
       "functions": []

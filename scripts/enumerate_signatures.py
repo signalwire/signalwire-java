@@ -530,6 +530,10 @@ JAVA_SKILL_RENAMES = {
     "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
     "DatetimeSkill": "DateTimeSkill",
     "SwmlTransferSkill": "SWMLTransferSkill",
+    # Java's idiomatic PascalCase McpGatewaySkill → the reference's MCPGatewaySkill
+    # (Python keeps the MCP acronym upper-cased). Wire/surface identical; the
+    # adapter reconciles the casing, per RULES.md §2 (rename, not omission).
+    "McpGatewaySkill": "MCPGatewaySkill",
 }
 
 # Java module path overrides for canonical Python paths

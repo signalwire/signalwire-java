@@ -694,6 +694,10 @@ signalwire.skills.joke.skill.JokeSkill.get_swaig_functions: idiomatic Java surfa
 signalwire.skills.math.skill.MathSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.math.skill.MathSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.math.skill.MathSkill.supports_multiple_instances: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.skills.mcp_gateway.skill.MCPGatewaySkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.skills.mcp_gateway.skill.MCPGatewaySkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.skills.mcp_gateway.skill.MCPGatewaySkill.get_required_packages: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
+signalwire.skills.mcp_gateway.skill.MCPGatewaySkill.get_version: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.native_vector_search.skill.NativeVectorSearchSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.native_vector_search.skill.NativeVectorSearchSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.native_vector_search.skill.NativeVectorSearchSkill.supports_multiple_instances: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
