@@ -14,5 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class Return {
   /** wire key: return */
+  @com.google.gson.annotations.SerializedName("return")
   public java.util.Map<String, Object> return_;
 }

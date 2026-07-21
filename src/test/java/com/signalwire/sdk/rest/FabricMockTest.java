@@ -108,11 +108,10 @@ class FabricMockTest {
 
     @Test
     void listAddressesUsesSingularPath() {
-      Map<String, Object> body =
-          client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of());
+      var body = client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -129,10 +128,9 @@ class FabricMockTest {
 
     @Test
     void listAddressesUsesSingularPath() {
-      Map<String, Object> body =
-          client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of());
+      var body = client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -149,8 +147,7 @@ class FabricMockTest {
 
     @Test
     void getSipEndpoint() {
-      Map<String, Object> body =
-          client.fabric().subscribers().getSipEndpoint("sub-1", "ep-1", java.util.Map.of());
+      var body = client.fabric().subscribers().getSipEndpoint("sub-1", "ep-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -161,7 +158,7 @@ class FabricMockTest {
 
     @Test
     void updateSipEndpointUsesPatch() {
-      Map<String, Object> body =
+      var body =
           client
               .fabric()
               .subscribers()
@@ -202,7 +199,7 @@ class FabricMockTest {
 
     @Test
     void createInviteToken() {
-      Map<String, Object> body =
+      var body =
           client
               .fabric()
               .tokens()
@@ -224,7 +221,7 @@ class FabricMockTest {
 
     @Test
     void createEmbedToken() {
-      Map<String, Object> body =
+      var body =
           client
               .fabric()
               .tokens()
@@ -245,7 +242,7 @@ class FabricMockTest {
 
     @Test
     void refreshSubscriberToken() {
-      Map<String, Object> body =
+      var body =
           client
               .fabric()
               .tokens()
@@ -273,10 +270,10 @@ class FabricMockTest {
 
     @Test
     void listReturnsDataCollection() {
-      Map<String, Object> body = client.fabric().resources().list(java.util.Map.of());
+      var body = client.fabric().resources().list(java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -307,11 +304,10 @@ class FabricMockTest {
 
     @Test
     void listAddresses() {
-      Map<String, Object> body =
-          client.fabric().resources().listAddresses("res-3", java.util.Map.of());
+      var body = client.fabric().resources().listAddresses("res-3", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -320,7 +316,7 @@ class FabricMockTest {
 
     @Test
     void assignDomainApplication() {
-      Map<String, Object> body =
+      var body =
           client
               .fabric()
               .resources()

@@ -18,37 +18,48 @@ public class VideoRoomSessions extends ReadResource {
   }
 
   /** listEvents (generated from operation 'list_room_session_events'). */
-  public java.util.Map<String, Object> listEvents(String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionEventsResponse
+      listEvents(String id, java.util.Map<String, String> params) {
     return listEvents(id, params, (RequestOptions) null);
   }
 
   /** listEvents with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listEvents(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "events", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionEventsResponse
+      listEvents(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "events", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionEventsResponse
+            .class);
   }
 
   /** listMembers (generated from operation 'list_room_session_members'). */
-  public java.util.Map<String, Object> listMembers(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionMembersResponse
+      listMembers(String id, java.util.Map<String, String> params) {
     return listMembers(id, params, (RequestOptions) null);
   }
 
   /** listMembers with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listMembers(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "members", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionMembersResponse
+      listMembers(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "members", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionMembersResponse
+            .class);
   }
 
   /** listRecordings (generated from operation 'list_room_session_recordings'). */
-  public java.util.Map<String, Object> listRecordings(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionRecordingsResponse
+      listRecordings(String id, java.util.Map<String, String> params) {
     return listRecordings(id, params, (RequestOptions) null);
   }
 
   /** listRecordings with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listRecordings(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "recordings", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionRecordingsResponse
+      listRecordings(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "recordings", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomSessionRecordingsResponse
+            .class);
   }
 }

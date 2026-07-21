@@ -18,14 +18,17 @@ public class PubSub extends BaseResource {
   }
 
   /** createToken (generated from operation 'create_token'). */
-  public java.util.Map<String, Object> createToken(CreateTokenRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.pubsub.PubSubToken createToken(
+      CreateTokenRequest request) {
     return createToken(request, (RequestOptions) null);
   }
 
   /** createToken with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> createToken(
+  public com.signalwire.sdk.rest.namespaces.generated.types.pubsub.PubSubToken createToken(
       CreateTokenRequest request, RequestOptions requestOptions) {
-    return restPost(getBasePath(), request.toBody(), requestOptions);
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.pubsub.PubSubToken.class);
   }
 
   /** Closed typed request for {@link #createToken} (builder + extras door). */

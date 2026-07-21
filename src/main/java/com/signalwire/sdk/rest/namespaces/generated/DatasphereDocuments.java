@@ -18,42 +18,51 @@ public class DatasphereDocuments extends CrudResource {
   }
 
   /** search (generated from operation 'search_documents'). */
-  public java.util.Map<String, Object> search(SearchRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse search(
+      SearchRequest request) {
     return search(request, (RequestOptions) null);
   }
 
   /** search with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> search(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse search(
       SearchRequest request, RequestOptions requestOptions) {
-    return restPost(getBasePath() + "/" + "search", request.toBody(), requestOptions);
+    return asType(
+        restPost(getBasePath() + "/" + "search", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse.class);
   }
 
   /** listChunks (generated from operation 'list_document_chunks'). */
-  public java.util.Map<String, Object> listChunks(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse listChunks(
       String documentId, java.util.Map<String, String> params) {
     return listChunks(documentId, params, (RequestOptions) null);
   }
 
   /** listChunks with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listChunks(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse listChunks(
       String documentId, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + documentId + "/" + "chunks", params, requestOptions);
+    return asType(
+        restGet(getBasePath() + "/" + documentId + "/" + "chunks", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse.class);
   }
 
   /** getChunk (generated from operation 'get_document_chunk'). */
-  public java.util.Map<String, Object> getChunk(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse getChunk(
       String documentId, String chunkId, java.util.Map<String, String> params) {
     return getChunk(documentId, chunkId, params, (RequestOptions) null);
   }
 
   /** getChunk with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> getChunk(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse getChunk(
       String documentId,
       String chunkId,
       java.util.Map<String, String> params,
       RequestOptions requestOptions) {
-    return restGet(
-        getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId, params, requestOptions);
+    return asType(
+        restGet(
+            getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId,
+            params,
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse.class);
   }
 
   /** deleteChunk (generated from operation 'delete_document_chunk'). */

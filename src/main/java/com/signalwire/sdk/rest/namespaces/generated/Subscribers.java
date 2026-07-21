@@ -18,67 +18,81 @@ public class Subscribers extends FabricResourcePUT {
   }
 
   /** listSipEndpoints (generated from operation 'list_subscriber_sip_endpoints'). */
-  public java.util.Map<String, Object> listSipEndpoints(
-      String subscriberId, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSipEndpointListResponse
+      listSipEndpoints(String subscriberId, java.util.Map<String, String> params) {
     return listSipEndpoints(subscriberId, params, (RequestOptions) null);
   }
 
   /** listSipEndpoints with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listSipEndpoints(
-      String subscriberId, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(
-        getBasePath() + "/" + subscriberId + "/" + "sip_endpoints", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSipEndpointListResponse
+      listSipEndpoints(
+          String subscriberId,
+          java.util.Map<String, String> params,
+          RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + subscriberId + "/" + "sip_endpoints", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSipEndpointListResponse
+            .class);
   }
 
   /** createSipEndpoint (generated from operation 'create_subscriber_sip_endpoint'). */
-  public java.util.Map<String, Object> createSipEndpoint(
-      String subscriberId, CreateSipEndpointRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      createSipEndpoint(String subscriberId, CreateSipEndpointRequest request) {
     return createSipEndpoint(subscriberId, request, (RequestOptions) null);
   }
 
   /** createSipEndpoint with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> createSipEndpoint(
-      String subscriberId, CreateSipEndpointRequest request, RequestOptions requestOptions) {
-    return restPost(
-        getBasePath() + "/" + subscriberId + "/" + "sip_endpoints",
-        request.toBody(),
-        requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      createSipEndpoint(
+          String subscriberId, CreateSipEndpointRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + subscriberId + "/" + "sip_endpoints",
+            request.toBody(),
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint.class);
   }
 
   /** getSipEndpoint (generated from operation 'get_subscriber_sip_endpoint'). */
-  public java.util.Map<String, Object> getSipEndpoint(
-      String subscriberId, String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      getSipEndpoint(String subscriberId, String id, java.util.Map<String, String> params) {
     return getSipEndpoint(subscriberId, id, params, (RequestOptions) null);
   }
 
   /** getSipEndpoint with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> getSipEndpoint(
-      String subscriberId,
-      String id,
-      java.util.Map<String, String> params,
-      RequestOptions requestOptions) {
-    return restGet(
-        getBasePath() + "/" + subscriberId + "/" + "sip_endpoints" + "/" + id,
-        params,
-        requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      getSipEndpoint(
+          String subscriberId,
+          String id,
+          java.util.Map<String, String> params,
+          RequestOptions requestOptions) {
+    return asType(
+        restGet(
+            getBasePath() + "/" + subscriberId + "/" + "sip_endpoints" + "/" + id,
+            params,
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint.class);
   }
 
   /** updateSipEndpoint (generated from operation 'update_subscriber_sip_endpoint'). */
-  public java.util.Map<String, Object> updateSipEndpoint(
-      String subscriberId, String id, UpdateSipEndpointRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      updateSipEndpoint(String subscriberId, String id, UpdateSipEndpointRequest request) {
     return updateSipEndpoint(subscriberId, id, request, (RequestOptions) null);
   }
 
   /** updateSipEndpoint with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> updateSipEndpoint(
-      String subscriberId,
-      String id,
-      UpdateSipEndpointRequest request,
-      RequestOptions requestOptions) {
-    return restPatch(
-        getBasePath() + "/" + subscriberId + "/" + "sip_endpoints" + "/" + id,
-        request.toBody(),
-        requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint
+      updateSipEndpoint(
+          String subscriberId,
+          String id,
+          UpdateSipEndpointRequest request,
+          RequestOptions requestOptions) {
+    return asType(
+        restPatch(
+            getBasePath() + "/" + subscriberId + "/" + "sip_endpoints" + "/" + id,
+            request.toBody(),
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberSIPEndpoint.class);
   }
 
   /** deleteSipEndpoint (generated from operation 'delete_subscriber_sip_endpoint'). */

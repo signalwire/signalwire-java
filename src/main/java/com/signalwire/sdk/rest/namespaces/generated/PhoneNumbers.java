@@ -18,56 +18,65 @@ public class PhoneNumbers extends CrudResource {
   }
 
   /** search (generated from operation 'search_available_phone_numbers'). */
-  public java.util.Map<String, Object> search(java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AvailablePhoneNumbersResponse
+      search(java.util.Map<String, String> params) {
     return search(params, (RequestOptions) null);
   }
 
   /** search with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> search(
-      java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + "search", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AvailablePhoneNumbersResponse
+      search(java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + "search", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AvailablePhoneNumbersResponse
+            .class);
   }
 
   /** setSwmlWebhook — sets call_handler='relay_script' + bound update fields (§7). */
-  public java.util.Map<String, Object> setSwmlWebhook(
-      String resourceId, String url, java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setSwmlWebhook(String resourceId, String url, java.util.Map<String, Object> extra) {
     return setSwmlWebhook(resourceId, url, extra, (RequestOptions) null);
   }
 
   /** setSwmlWebhook with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setSwmlWebhook(
-      String resourceId,
-      String url,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setSwmlWebhook(
+          String resourceId,
+          String url,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "relay_script");
     body.put("call_relay_script_url", url);
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setCxmlWebhook — sets call_handler='laml_webhooks' + bound update fields (§7). */
-  public java.util.Map<String, Object> setCxmlWebhook(
-      String resourceId,
-      String url,
-      String fallbackUrl,
-      String statusCallbackUrl,
-      java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCxmlWebhook(
+          String resourceId,
+          String url,
+          String fallbackUrl,
+          String statusCallbackUrl,
+          java.util.Map<String, Object> extra) {
     return setCxmlWebhook(
         resourceId, url, fallbackUrl, statusCallbackUrl, extra, (RequestOptions) null);
   }
 
   /** setCxmlWebhook with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setCxmlWebhook(
-      String resourceId,
-      String url,
-      String fallbackUrl,
-      String statusCallbackUrl,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCxmlWebhook(
+          String resourceId,
+          String url,
+          String fallbackUrl,
+          String statusCallbackUrl,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "laml_webhooks");
     body.put("call_request_url", url);
@@ -80,64 +89,75 @@ public class PhoneNumbers extends CrudResource {
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setCxmlApplication — sets call_handler='laml_application' + bound update fields (§7). */
-  public java.util.Map<String, Object> setCxmlApplication(
-      String resourceId, String applicationId, java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCxmlApplication(
+          String resourceId, String applicationId, java.util.Map<String, Object> extra) {
     return setCxmlApplication(resourceId, applicationId, extra, (RequestOptions) null);
   }
 
   /** setCxmlApplication with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setCxmlApplication(
-      String resourceId,
-      String applicationId,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCxmlApplication(
+          String resourceId,
+          String applicationId,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "laml_application");
     body.put("call_laml_application_id", applicationId);
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setAiAgent — sets call_handler='ai_agent' + bound update fields (§7). */
-  public java.util.Map<String, Object> setAiAgent(
-      String resourceId, String agentId, java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setAiAgent(String resourceId, String agentId, java.util.Map<String, Object> extra) {
     return setAiAgent(resourceId, agentId, extra, (RequestOptions) null);
   }
 
   /** setAiAgent with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setAiAgent(
-      String resourceId,
-      String agentId,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setAiAgent(
+          String resourceId,
+          String agentId,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "ai_agent");
     body.put("call_ai_agent_id", agentId);
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setCallFlow — sets call_handler='call_flow' + bound update fields (§7). */
-  public java.util.Map<String, Object> setCallFlow(
-      String resourceId, String flowId, String version, java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCallFlow(
+          String resourceId, String flowId, String version, java.util.Map<String, Object> extra) {
     return setCallFlow(resourceId, flowId, version, extra, (RequestOptions) null);
   }
 
   /** setCallFlow with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setCallFlow(
-      String resourceId,
-      String flowId,
-      String version,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setCallFlow(
+          String resourceId,
+          String flowId,
+          String version,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "call_flow");
     body.put("call_flow_id", flowId);
@@ -147,46 +167,53 @@ public class PhoneNumbers extends CrudResource {
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setRelayApplication — sets call_handler='relay_application' + bound update fields (§7). */
-  public java.util.Map<String, Object> setRelayApplication(
-      String resourceId, String name, java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setRelayApplication(String resourceId, String name, java.util.Map<String, Object> extra) {
     return setRelayApplication(resourceId, name, extra, (RequestOptions) null);
   }
 
   /** setRelayApplication with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setRelayApplication(
-      String resourceId,
-      String name,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setRelayApplication(
+          String resourceId,
+          String name,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "relay_application");
     body.put("call_relay_application", name);
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** setRelayTopic — sets call_handler='relay_topic' + bound update fields (§7). */
-  public java.util.Map<String, Object> setRelayTopic(
-      String resourceId,
-      String topic,
-      String statusCallbackUrl,
-      java.util.Map<String, Object> extra) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setRelayTopic(
+          String resourceId,
+          String topic,
+          String statusCallbackUrl,
+          java.util.Map<String, Object> extra) {
     return setRelayTopic(resourceId, topic, statusCallbackUrl, extra, (RequestOptions) null);
   }
 
   /** setRelayTopic with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> setRelayTopic(
-      String resourceId,
-      String topic,
-      String statusCallbackUrl,
-      java.util.Map<String, Object> extra,
-      RequestOptions requestOptions) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      setRelayTopic(
+          String resourceId,
+          String topic,
+          String statusCallbackUrl,
+          java.util.Map<String, Object> extra,
+          RequestOptions requestOptions) {
     java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("call_handler", "relay_topic");
     body.put("call_relay_topic", topic);
@@ -196,6 +223,8 @@ public class PhoneNumbers extends CrudResource {
     if (extra != null) {
       body.putAll(extra);
     }
-    return update(resourceId, body, requestOptions);
+    return asType(
+        update(resourceId, body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 }

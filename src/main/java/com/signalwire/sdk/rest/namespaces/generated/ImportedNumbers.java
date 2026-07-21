@@ -18,14 +18,17 @@ public class ImportedNumbers extends BaseResource {
   }
 
   /** create (generated from operation 'create_imported_phone_number'). */
-  public java.util.Map<String, Object> create(CreateRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse create(
+      CreateRequest request) {
     return create(request, (RequestOptions) null);
   }
 
   /** create with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> create(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse create(
       CreateRequest request, RequestOptions requestOptions) {
-    return restPost(getBasePath(), request.toBody(), requestOptions);
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

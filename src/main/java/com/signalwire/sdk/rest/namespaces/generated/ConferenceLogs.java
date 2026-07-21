@@ -18,13 +18,16 @@ public class ConferenceLogs extends BaseResource {
   }
 
   /** list (generated from operation 'list_conferences'). */
-  public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.logs.ConferencesResponse list(
+      java.util.Map<String, String> params) {
     return list(params, (RequestOptions) null);
   }
 
   /** list with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> list(
+  public com.signalwire.sdk.rest.namespaces.generated.types.logs.ConferencesResponse list(
       java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath(), params, requestOptions);
+    return asType(
+        restGet(getBasePath(), params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.logs.ConferencesResponse.class);
   }
 }

@@ -19,39 +19,49 @@ public class CallFlows extends FabricResourcePUT {
 
   /** listAddresses (generated from operation 'list_call_flow_addresses'). */
   @Override
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+      listAddresses(String id, java.util.Map<String, String> params) {
     return listAddresses(id, params, (RequestOptions) null);
   }
 
   /** listAddresses with a per-request {@link RequestOptions} override. */
   @Override
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet("/fabric/resources/call_flow/" + id + "/addresses", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+      listAddresses(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet("/fabric/resources/call_flow/" + id + "/addresses", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+            .class);
   }
 
   /** listVersions (generated from operation 'list_call_flow_versions'). */
-  public java.util.Map<String, Object> listVersions(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
+      listVersions(String id, java.util.Map<String, String> params) {
     return listVersions(id, params, (RequestOptions) null);
   }
 
   /** listVersions with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listVersions(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet("/fabric/resources/call_flow/" + id + "/versions", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
+      listVersions(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet("/fabric/resources/call_flow/" + id + "/versions", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
+            .class);
   }
 
   /** deployVersion (generated from operation 'deploy_call_flow_version'). */
-  public java.util.Map<String, Object> deployVersion(
-      String id, java.util.Map<String, Object> body) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
+      deployVersion(String id, java.util.Map<String, Object> body) {
     return deployVersion(id, body, (RequestOptions) null);
   }
 
   /** deployVersion with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> deployVersion(
-      String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
-    return restPost("/fabric/resources/call_flow/" + id + "/versions", body, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
+      deployVersion(String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/resources/call_flow/" + id + "/versions", body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
+            .class);
   }
 }

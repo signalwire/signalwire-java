@@ -18,25 +18,31 @@ public class Messages extends BaseResource {
   }
 
   /** create (generated from operation 'create_message'). */
-  public java.util.Map<String, Object> create(CreateRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message create(
+      CreateRequest request) {
     return create(request, (RequestOptions) null);
   }
 
   /** create with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> create(
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message create(
       CreateRequest request, RequestOptions requestOptions) {
-    return restPost(getBasePath(), request.toBody(), requestOptions);
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.messages.Message.class);
   }
 
   /** update (generated from operation 'update_message'). */
-  public java.util.Map<String, Object> update(String messageId, UpdateRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message update(
+      String messageId, UpdateRequest request) {
     return update(messageId, request, (RequestOptions) null);
   }
 
   /** update with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> update(
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message update(
       String messageId, UpdateRequest request, RequestOptions requestOptions) {
-    return restPatch(getBasePath() + "/" + messageId, request.toBody(), requestOptions);
+    return asType(
+        restPatch(getBasePath() + "/" + messageId, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.messages.Message.class);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

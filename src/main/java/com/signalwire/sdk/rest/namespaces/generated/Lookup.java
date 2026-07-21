@@ -18,14 +18,18 @@ public class Lookup extends BaseResource {
   }
 
   /** phoneNumber (generated from operation 'lookup_phone_number'). */
-  public java.util.Map<String, Object> phoneNumber(
-      String e164, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberLookupResponse
+      phoneNumber(String e164, java.util.Map<String, String> params) {
     return phoneNumber(e164, params, (RequestOptions) null);
   }
 
   /** phoneNumber with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> phoneNumber(
-      String e164, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + "phone_number" + "/" + e164, params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberLookupResponse
+      phoneNumber(
+          String e164, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + "phone_number" + "/" + e164, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberLookupResponse
+            .class);
   }
 }

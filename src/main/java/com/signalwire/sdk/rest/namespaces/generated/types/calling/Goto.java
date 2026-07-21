@@ -14,5 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class Goto {
   /** wire key: goto */
+  @com.google.gson.annotations.SerializedName("goto")
   public java.util.Map<String, Object> goto_;
 }

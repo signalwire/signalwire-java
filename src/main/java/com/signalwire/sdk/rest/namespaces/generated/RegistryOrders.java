@@ -18,13 +18,16 @@ public class RegistryOrders extends BaseResource {
   }
 
   /** get (generated from operation 'retrieve_order'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse get(
+      String id, java.util.Map<String, String> params) {
     return get(id, params, (RequestOptions) null);
   }
 
   /** get with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> get(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse get(
       String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id, params, requestOptions);
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse.class);
   }
 }

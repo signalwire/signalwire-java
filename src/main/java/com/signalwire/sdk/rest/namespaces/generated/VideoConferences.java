@@ -18,38 +18,47 @@ public class VideoConferences extends CrudResource {
   }
 
   /** listConferenceTokens (generated from operation 'list_conference_tokens'). */
-  public java.util.Map<String, Object> listConferenceTokens(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListConferenceTokensResponse
+      listConferenceTokens(String id, java.util.Map<String, String> params) {
     return listConferenceTokens(id, params, (RequestOptions) null);
   }
 
   /** listConferenceTokens with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listConferenceTokens(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "conference_tokens", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListConferenceTokensResponse
+      listConferenceTokens(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "conference_tokens", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListConferenceTokensResponse
+            .class);
   }
 
   /** listStreams (generated from operation 'list_conference_streams'). */
-  public java.util.Map<String, Object> listStreams(
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse listStreams(
       String id, java.util.Map<String, String> params) {
     return listStreams(id, params, (RequestOptions) null);
   }
 
   /** listStreams with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listStreams(
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse listStreams(
       String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "streams", params, requestOptions);
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "streams", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse.class);
   }
 
   /** createStream (generated from operation 'create_conference_stream'). */
-  public java.util.Map<String, Object> createStream(String id, CreateStreamRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.Stream createStream(
+      String id, CreateStreamRequest request) {
     return createStream(id, request, (RequestOptions) null);
   }
 
   /** createStream with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> createStream(
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.Stream createStream(
       String id, CreateStreamRequest request, RequestOptions requestOptions) {
-    return restPost(getBasePath() + "/" + id + "/" + "streams", request.toBody(), requestOptions);
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "streams", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.Stream.class);
   }
 
   /** Closed typed request for {@link #createStream} (builder + extras door). */

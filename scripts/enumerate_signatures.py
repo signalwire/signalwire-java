@@ -120,6 +120,24 @@ def load_rest_sidecar() -> dict[str, list[dict]]:
     return data.get("methods", {})
 
 
+def load_rest_crud_bases() -> dict[str, dict]:
+    """Load the generator's structural CRUD binds for the generated REST resources
+    (JAVA-1/2). Keyed by ``<ResourceClass>`` → ``{"base":..., "bind":[<class:Leaf>...]}``.
+    The Java CRUD resources inherit list/get/create/update/delete from a (non-generic)
+    base, so the typed contract lives in this bind — the same structural representation
+    the Python reference publishes via its generic ``CrudResource[TList, TItem, ...]``.
+    The enumerator attaches it to the class entry as ``crud_base`` so the drift gate
+    compares bindings for equivalence (diff_port_signatures ``crud_bases_equivalent``)."""
+    path = (
+        PORT_ROOT / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
+        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+    )
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data.get("crud_bases", {})
+
+
 # ---------------------------------------------------------------------------
 # Java type translation
 # ---------------------------------------------------------------------------
@@ -984,10 +1002,12 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
 }
 
 
-def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = None) -> tuple[dict, list]:
+def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = None,
+            crud_bases: dict[str, dict] | None = None) -> tuple[dict, list]:
     out_modules: dict = {}
     failures: list = []
     sidecar = sidecar or {}
+    crud_bases = crud_bases or {}
 
     for type_entry in raw.get("types", []):
         pkg = type_entry.get("package", "")
@@ -1262,9 +1282,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             continue
 
         out_modules.setdefault(mod, {"classes": {}})
-        out_modules[mod]["classes"][canonical_name] = {
-            "methods": dict(sorted(methods_out.items())),
-        }
+        cls_entry: dict = {"methods": dict(sorted(methods_out.items()))}
+        # Structural CRUD contract (JAVA-1/2): a generated resource extending a
+        # method-contract base publishes its typed bind via ``crud_base`` (keyed by the
+        # Java resource class name in the generator's sidecar), the same representation
+        # the Python reference records for its generic CrudResource[...] subclasses.
+        cb = crud_bases.get(java_name)
+        if cb and pkg == _GENERATED_PKG:
+            cls_entry["crud_base"] = cb
+        out_modules[mod]["classes"][canonical_name] = cls_entry
 
     # Mixin projection — methods may live on AgentBase OR on SWMLService
     # (its parent class). Tool/auth/state helpers are typically declared
@@ -1429,13 +1455,14 @@ def main() -> int:
 
     aliases = load_aliases()
     sidecar = load_rest_sidecar()
+    crud_bases = load_rest_crud_bases()
 
     if args.raw and args.raw.is_file():
         raw = json.loads(args.raw.read_text(encoding="utf-8"))
     else:
         raw = run_dump()
 
-    canonical, failures = collect(raw, aliases, sidecar)
+    canonical, failures = collect(raw, aliases, sidecar, crud_bases)
     if failures:
         print(f"enumerate_signatures: {len(failures)} translation failure(s)", file=sys.stderr)
         for f in failures[:30]:

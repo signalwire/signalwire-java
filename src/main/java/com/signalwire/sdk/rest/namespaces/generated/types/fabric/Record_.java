@@ -14,5 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  */
 public final class Record_ {
   /** wire key: record */
+  @com.google.gson.annotations.SerializedName("record")
   public java.util.Map<String, Object> record_;
 }

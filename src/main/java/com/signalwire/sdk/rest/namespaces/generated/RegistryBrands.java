@@ -18,59 +18,73 @@ public class RegistryBrands extends BaseResource {
   }
 
   /** list (generated from operation 'list_brands'). */
-  public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandListResponse list(
+      java.util.Map<String, String> params) {
     return list(params, (RequestOptions) null);
   }
 
   /** list with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> list(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandListResponse list(
       java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath(), params, requestOptions);
+    return asType(
+        restGet(getBasePath(), params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandListResponse.class);
   }
 
   /** create (generated from operation 'create_brand'). */
-  public java.util.Map<String, Object> create(java.util.Map<String, Object> body) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse create(
+      java.util.Map<String, Object> body) {
     return create(body, (RequestOptions) null);
   }
 
   /** create with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> create(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse create(
       java.util.Map<String, Object> body, RequestOptions requestOptions) {
-    return restPost(getBasePath(), body, requestOptions);
+    return asType(
+        restPost(getBasePath(), body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse.class);
   }
 
   /** get (generated from operation 'retrieve_brand'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse get(
+      String id, java.util.Map<String, String> params) {
     return get(id, params, (RequestOptions) null);
   }
 
   /** get with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> get(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse get(
       String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id, params, requestOptions);
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse.class);
   }
 
   /** listCampaigns (generated from operation 'list_campaigns'). */
-  public java.util.Map<String, Object> listCampaigns(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignListResponse
+      listCampaigns(String id, java.util.Map<String, String> params) {
     return listCampaigns(id, params, (RequestOptions) null);
   }
 
   /** listCampaigns with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listCampaigns(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "campaigns", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignListResponse
+      listCampaigns(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "campaigns", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignListResponse.class);
   }
 
   /** createCampaign (generated from operation 'create_campaign'). */
-  public java.util.Map<String, Object> createCampaign(
-      String id, java.util.Map<String, Object> body) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse
+      createCampaign(String id, java.util.Map<String, Object> body) {
     return createCampaign(id, body, (RequestOptions) null);
   }
 
   /** createCampaign with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> createCampaign(
-      String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
-    return restPost(getBasePath() + "/" + id + "/" + "campaigns", body, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse
+      createCampaign(String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "campaigns", body, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse.class);
   }
 }

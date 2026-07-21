@@ -18,14 +18,17 @@ public class GenericResources extends BaseResource {
   }
 
   /** list (generated from operation 'list_resources'). */
-  public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceListResponse list(
+      java.util.Map<String, String> params) {
     return list(params, (RequestOptions) null);
   }
 
   /** list with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> list(
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceListResponse list(
       java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath(), params, requestOptions);
+    return asType(
+        restGet(getBasePath(), params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceListResponse.class);
   }
 
   /** get (generated from operation 'get_resource'). */
@@ -50,41 +53,51 @@ public class GenericResources extends BaseResource {
   }
 
   /** listAddresses (generated from operation 'list_resource_addresses'). */
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceAddressListResponse
+      listAddresses(String id, java.util.Map<String, String> params) {
     return listAddresses(id, params, (RequestOptions) null);
   }
 
   /** listAddresses with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceAddressListResponse
+      listAddresses(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceAddressListResponse
+            .class);
   }
 
   /** assignPhoneRoute (generated from operation 'assign_resource_phone_route'). */
-  public java.util.Map<String, Object> assignPhoneRoute(
-      String id, AssignPhoneRouteRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.PhoneRouteResponse
+      assignPhoneRoute(String id, AssignPhoneRouteRequest request) {
     return assignPhoneRoute(id, request, (RequestOptions) null);
   }
 
   /** assignPhoneRoute with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> assignPhoneRoute(
-      String id, AssignPhoneRouteRequest request, RequestOptions requestOptions) {
-    return restPost(
-        getBasePath() + "/" + id + "/" + "phone_routes", request.toBody(), requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.PhoneRouteResponse
+      assignPhoneRoute(String id, AssignPhoneRouteRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "phone_routes", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.PhoneRouteResponse.class);
   }
 
   /** assignDomainApplication (generated from operation 'assign_resource_domain_application'). */
-  public java.util.Map<String, Object> assignDomainApplication(
-      String id, AssignDomainApplicationRequest request) {
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.DomainApplicationResponse
+      assignDomainApplication(String id, AssignDomainApplicationRequest request) {
     return assignDomainApplication(id, request, (RequestOptions) null);
   }
 
   /** assignDomainApplication with a per-request {@link RequestOptions} override. */
-  public java.util.Map<String, Object> assignDomainApplication(
-      String id, AssignDomainApplicationRequest request, RequestOptions requestOptions) {
-    return restPost(
-        getBasePath() + "/" + id + "/" + "domain_applications", request.toBody(), requestOptions);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.DomainApplicationResponse
+      assignDomainApplication(
+          String id, AssignDomainApplicationRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + id + "/" + "domain_applications",
+            request.toBody(),
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.DomainApplicationResponse.class);
   }
 
   /** Closed typed request for {@link #assignPhoneRoute} (builder + extras door). */

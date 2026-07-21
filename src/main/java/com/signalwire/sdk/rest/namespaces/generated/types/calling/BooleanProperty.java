@@ -18,5 +18,6 @@ public final class BooleanProperty {
   public String type;
 
   /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
   public java.util.Map<String, Object> default_;
 }

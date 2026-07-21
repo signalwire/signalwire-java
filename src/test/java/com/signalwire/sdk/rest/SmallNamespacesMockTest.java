@@ -61,10 +61,10 @@ class SmallNamespacesMockTest {
 
     @Test
     void listSendsPageSizeQueryParam() {
-      Map<String, Object> body = client.addresses().list(qp("page_size", "10"));
+      var body = client.addresses().list(qp("page_size", "10"));
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/addresses", j.path);
@@ -74,7 +74,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void create() {
-      Map<String, Object> body =
+      var body =
           client
               .addresses()
               .create(
@@ -87,7 +87,7 @@ class SmallNamespacesMockTest {
                               "country", "US"))
                       .build());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("POST", j.method);
@@ -101,9 +101,9 @@ class SmallNamespacesMockTest {
 
     @Test
     void getById() {
-      Map<String, Object> body = client.addresses().get("addr-123", java.util.Map.of());
+      var body = client.addresses().get("addr-123", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -132,10 +132,10 @@ class SmallNamespacesMockTest {
 
     @Test
     void list() {
-      Map<String, Object> body = client.recordings().list(qp("page_size", "5"));
+      var body = client.recordings().list(qp("page_size", "5"));
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/recordings", j.path);
@@ -172,10 +172,10 @@ class SmallNamespacesMockTest {
 
     @Test
     void list() {
-      Map<String, Object> body = client.shortCodes().list(qp("page_size", "20"));
+      var body = client.shortCodes().list(qp("page_size", "20"));
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/short_codes", j.path);
@@ -183,9 +183,9 @@ class SmallNamespacesMockTest {
 
     @Test
     void getById() {
-      Map<String, Object> body = client.shortCodes().get("sc-1", java.util.Map.of());
+      var body = client.shortCodes().get("sc-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/short_codes/sc-1", j.path);
@@ -193,7 +193,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void update() {
-      Map<String, Object> body =
+      var body =
           client
               .shortCodes()
               .update(
@@ -202,7 +202,7 @@ class SmallNamespacesMockTest {
                       .extras(kw("name", "Marketing SMS"))
                       .build());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       // short_codes uses PUT for update.
       assertEquals("PUT", j.method);
@@ -221,7 +221,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void create() {
-      Map<String, Object> body =
+      var body =
           client
               .importedNumbers()
               .create(
@@ -232,7 +232,7 @@ class SmallNamespacesMockTest {
                       .capabilities(Arrays.asList("sms", "voice"))
                       .build());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       assertEquals("POST", j.method);
       assertEquals("/api/relay/rest/imported_phone_numbers", j.path);
@@ -252,7 +252,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void call() {
-      Map<String, Object> body =
+      var body =
           client
               .mfa()
               .call(
@@ -262,7 +262,7 @@ class SmallNamespacesMockTest {
                       .message("Your code is {code}")
                       .build());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       assertEquals("POST", j.method);
       assertEquals("/api/relay/rest/mfa/call", j.path);
@@ -282,7 +282,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void update() {
-      Map<String, Object> body =
+      var body =
           client
               .sipProfile()
               .update(
@@ -292,8 +292,8 @@ class SmallNamespacesMockTest {
                       .build());
       assertNotNull(body);
       assertTrue(
-          body.containsKey("domain_identifier") || body.containsKey("default_codecs"),
-          "expected domain_identifier/default_codecs, got " + body.keySet());
+          body.domain_identifier != null || body.default_codecs != null,
+          "expected domain_identifier/default_codecs to be set");
       MockTest.JournalEntry j = mock.last();
       assertEquals("PUT", j.method);
       assertEquals("/api/relay/rest/sip_profile", j.path);
@@ -312,11 +312,10 @@ class SmallNamespacesMockTest {
 
     @Test
     void listMemberships() {
-      Map<String, Object> body =
-          client.numberGroups().listMemberships("ng-1", qp("page_size", "10"));
+      var body = client.numberGroups().listMemberships("ng-1", qp("page_size", "10"));
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertTrue(body.data instanceof List);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/number_groups/ng-1/number_group_memberships", j.path);
@@ -343,7 +342,7 @@ class SmallNamespacesMockTest {
 
     @Test
     void update() {
-      Map<String, Object> body =
+      var body =
           client
               .project()
               .tokens()
@@ -353,7 +352,7 @@ class SmallNamespacesMockTest {
                       .extras(kw("name", "renamed-token"))
                       .build());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       assertEquals("PATCH", j.method);
       assertEquals("/api/project/tokens/tok-1", j.path);
@@ -382,10 +381,9 @@ class SmallNamespacesMockTest {
 
     @Test
     void getChunk() {
-      Map<String, Object> body =
-          client.datasphere().documents().getChunk("doc-1", "chunk-99", java.util.Map.of());
+      var body = client.datasphere().documents().getChunk("doc-1", "chunk-99", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("id"));
+      assertNotNull(body.id);
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/datasphere/documents/doc-1/chunks/chunk-99", j.path);
@@ -400,11 +398,11 @@ class SmallNamespacesMockTest {
 
     @Test
     void getMember() {
-      Map<String, Object> body = client.queues().getMember("q-1", "mem-7", java.util.Map.of());
+      var body = client.queues().getMember("q-1", "mem-7", java.util.Map.of());
       assertNotNull(body);
       assertTrue(
-          body.containsKey("queue_id") || body.containsKey("call_id"),
-          "expected queue_id/call_id, got " + body.keySet());
+          body.queue_id != null || body.call_id != null,
+          "expected queue_id/call_id to be set");
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
       assertEquals("/api/relay/rest/queues/q-1/members/mem-7", j.path);
