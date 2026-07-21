@@ -19,6 +19,7 @@ public final class PostPromptSwaigLogEntry {
   public Long epoch_time;
 
   /** wire key: native */
+  @com.google.gson.annotations.SerializedName("native")
   public Boolean native_;
 
   public java.util.Map<String, Object> active_count;

@@ -18,8 +18,10 @@ public final class NumberProperty {
   public String type;
 
   /** wire key: enum */
+  @com.google.gson.annotations.SerializedName("enum")
   public java.util.Map<String, Object> enum_;
 
   /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
   public java.util.Map<String, Object> default_;
 }

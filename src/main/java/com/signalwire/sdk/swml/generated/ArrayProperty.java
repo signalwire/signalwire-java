@@ -18,6 +18,7 @@ public final class ArrayProperty {
   public String type;
 
   /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
   public java.util.List<Object> default_;
 
   public java.util.Map<String, Object> items;

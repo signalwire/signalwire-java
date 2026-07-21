@@ -265,9 +265,31 @@ final class RouteRegistry {
     return p != null && p.getName().startsWith(REST_PKG);
   }
 
-  /** Is this a route method (returns a Map — the SDK's wire-response shape)? */
+  /** The package holding the generated typed response DTOs the route methods return. */
+  private static final String GEN_TYPES_PKG = "com.signalwire.sdk.rest.namespaces.generated.types";
+
+  /**
+   * A route method's wire-response return type. Historically every route returned a {@code Map}
+   * (the decoded wire body); the JAVA-1 typed-returns flip made the generated resource methods
+   * return their closed spec-typed {@code *Response} DTO instead (and a fabric {@code
+   * listAddresses} base override returns {@code Object} so subclasses can covariantly return their
+   * typed DTO). All three shapes are the wire response — recognise them so a flipped route is not
+   * silently dropped from Set B (which would masquerade as "the SDK is missing this route").
+   */
+  private static boolean isWireResponseType(Class<?> rt) {
+    if (Map.class.isAssignableFrom(rt)) {
+      return true;
+    }
+    if (rt == Object.class) {
+      return true; // FabricResource.listAddresses base (covariantly overridden to a DTO)
+    }
+    Package p = rt.getPackage();
+    return p != null && p.getName().startsWith(GEN_TYPES_PKG);
+  }
+
+  /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!Map.class.isAssignableFrom(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType())) {
       return false;
     }
     // Every generated verb ships a convenience overload + a RequestOptions-carrying full

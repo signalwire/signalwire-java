@@ -16,6 +16,7 @@ public final class CallingCollectParams {
   public String call_id;
 
   /** wire key: continue */
+  @com.google.gson.annotations.SerializedName("continue")
   public Boolean continue_;
 
   public Boolean continuous;

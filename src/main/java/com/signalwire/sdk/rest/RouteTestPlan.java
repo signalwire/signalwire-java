@@ -212,9 +212,26 @@ final class RouteTestPlan {
     return p != null && p.getName().startsWith(REST_PKG);
   }
 
-  /** Is this a route method (returns a Map — the SDK's wire-response shape)? */
+  /** The package holding the generated typed response DTOs the route methods return. */
+  private static final String GEN_TYPES_PKG = "com.signalwire.sdk.rest.namespaces.generated.types";
+
+  /**
+   * A route method's wire-response return type: a {@code Map} (decoded wire body), a generated
+   * typed {@code *Response} DTO (JAVA-1 typed-returns flip), or {@code Object} (the fabric {@code
+   * listAddresses} base, covariantly overridden to a DTO). Recognising all three keeps a flipped
+   * route in the test plan instead of silently dropping it.
+   */
+  private static boolean isWireResponseType(Class<?> rt) {
+    if (Map.class.isAssignableFrom(rt) || rt == Object.class) {
+      return true;
+    }
+    Package p = rt.getPackage();
+    return p != null && p.getName().startsWith(GEN_TYPES_PKG);
+  }
+
+  /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!Map.class.isAssignableFrom(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType())) {
       return false;
     }
     // Skip the RequestOptions-carrying full overload (plan 4.2 / PY-9); its no-RO

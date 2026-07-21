@@ -18,5 +18,6 @@ public final class CallingRecordParams {
   public String node_id;
 
   /** wire key: record */
+  @com.google.gson.annotations.SerializedName("record")
   public java.util.Map<String, Object> record_;
 }

@@ -16,6 +16,7 @@ public final class PayPrompts {
   public java.util.List<Object> actions;
 
   /** wire key: for */
+  @com.google.gson.annotations.SerializedName("for")
   public String for_;
 
   public String attempts;
