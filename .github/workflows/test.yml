@@ -38,7 +38,7 @@ jobs:
           # SECRET-SCRUB) + the RELAY-LIVENESS / pagination / secure-default / secret-scrub
           # differ scripts that live on porting-sdk wave/1-aplus, not yet on main. REVERT
           # this ref to main when porting-sdk wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 

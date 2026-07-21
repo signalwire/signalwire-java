@@ -44,7 +44,7 @@ jobs:
           # PINNED to the Wave-1 A+ campaign branch: the doc-truth gates on this branch
           # (DOC-ENV etc.) and its shared scripts align with porting-sdk wave/1-aplus.
           # REVERT this ref to main when porting-sdk wave/1-aplus merges.
-          ref: wave/1-aplus
+          ref: main
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
