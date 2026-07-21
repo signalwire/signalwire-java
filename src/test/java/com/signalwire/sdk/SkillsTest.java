@@ -44,8 +44,9 @@ class SkillsTest {
     assertTrue(skills.contains("info_gatherer"));
     assertTrue(skills.contains("claude_skills"));
     assertTrue(skills.contains("custom_skills"));
-    assertFalse(skills.contains("mcp_gateway"), "mcp_gateway is Python-only, not ported");
-    assertEquals(17, skills.size());
+    // mcp_gateway CLIENT half is now ported (the gateway SERVER stays Python-only).
+    assertTrue(skills.contains("mcp_gateway"));
+    assertEquals(18, skills.size());
   }
 
   @Test

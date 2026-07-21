@@ -28,10 +28,10 @@ import javax.net.ssl.X509TrustManager;
  * the tool call back through the gateway. Mirrors the Python reference {@code MCPGatewaySkill}
  * ({@code signalwire/skills/mcp_gateway/skill.py}).
  *
- * <p><b>Server-half is Python-only.</b> The gateway SERVER (the process that hosts the MCP servers
- * and exposes the {@code /services} / {@code /call} HTTP surface) is NOT ported to Java — see
- * {@code porting-sdk/PORT_PHILOSOPHY_JAVA.md} ("mcp_gateway: client-half only"). Java ships the
- * client that talks to a Python-hosted (or any spec-compatible) gateway; it does not host one.
+ * <p><b>Client half only.</b> This skill is the gateway CLIENT. The gateway SERVER (the standalone
+ * service that hosts the MCP servers and exposes the {@code /services} / {@code /call} HTTP
+ * surface) is not part of the Java SDK — Java agents talk to an externally-run gateway; they do not
+ * host one.
  *
  * <p><b>TLS verification ({@code verify_ssl}).</b> Config param, default {@code true} (verification
  * ON — the secure default, matching the Python reference {@code verify=self.verify_ssl}). Setting
@@ -388,7 +388,7 @@ public class McpGatewaySkill implements SkillBase {
     return new FunctionResult("Session cleanup complete");
   }
 
-  /** mcp_call_id in global_data wins over the top-level call_id (Python parity). */
+  /** mcp_call_id in global_data wins over the top-level call_id. */
   @SuppressWarnings("unchecked")
   private String resolveSessionId(Map<String, Object> rawData) {
     if (rawData != null && rawData.get("global_data") instanceof Map) {

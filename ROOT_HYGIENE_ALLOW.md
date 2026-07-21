@@ -25,6 +25,7 @@ they cannot move to `eng/` without breaking the shared audit pipeline.
 - port_signatures.baseline.json — load-bearing SEMVER-DIFF release-floor file; mirrors port_signatures.json; must be at root, must not ship in package (orchestrator, 2026-07-13)
 - port_surface.json — required audit-contract file read by porting-sdk audit_docs/ignore_ledger/freshness scripts at port root (orchestrator, 2026-07-06)
 - port_surface_native.json — required audit-contract file read/written by this port's scripts/enumerate_surface.py at port root (orchestrator, 2026-07-06)
+- TLS_VERIFY_ALLOW.md — TLS-VERIFY signed-exception ledger read by porting-sdk tls_verify.py at repo root; excuses the mcp_gateway skill's secure-default-gated verify_ssl opt-out (the gate's only-legitimate allowlist reason) (burn-java-mcp, 2026-07-20)
 - WIRE_VIOLATIONS_ALLOW.md — STRICT-MOCKS signed-exception ledger read by porting-sdk assert_no_wire_violations.py / examples_run.py / snippet_run.py at repo root (mike@signalwire.com, 2026-07-18)
 - WIRED_MODES.md — required manifest of load-bearing run-ci modes read by porting-sdk check_wired_modes.py at repo root (WIRED-MODES gate, plan 1.6/D7) (lane-java, 2026-07-19)
 - .doc_surface_floor — DOC-SURFACE javadoc-coverage floor pin, read + ratcheted at repo root by porting-sdk doc_surface.py (plan 6.3, lane-java, 2026-07-19)
