@@ -53,7 +53,9 @@ public class RestFabricSubscribersAndSip {
                     Subscribers.CreateSipEndpointRequest.builder()
                             .username("jane.doe")
                             .password("secure-password-here")
-                            .extras(Map.of("name", "office-phone"))
+                            // `caller_id` is a spec-declared optional field; extras carries
+                            // any additional spec key not surfaced on the builder.
+                            .extras(Map.of("caller_id", "Jane Doe"))
                             .build());
             System.out.println("  SIP endpoint: " + sipEndpoint);
         } catch (RestError e) {

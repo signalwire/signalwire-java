@@ -27,16 +27,16 @@ public class Rest10dlcRegistration {
         System.out.println("Creating 10DLC brand...");
         try {
             var brand = client.registry().brands().create(Map.of(
-                    "entity_type", "PRIVATE_PROFIT",
-                    "company_name", "Acme Corp",
+                    "name", "Acme Corp",
+                    "company_name", "Acme Corporation",
+                    "contact_email", "brand@acme.example.com",
+                    "contact_phone", "+15551234567",
+                    "ein_issuing_country", "United States",
+                    "legal_entity_type", "PRIVATE_PROFIT",
                     "ein", "12-3456789",
-                    "phone", "+15551234567",
-                    "street", "123 Main St",
-                    "city", "Austin",
-                    "state", "TX",
-                    "postal_code", "78701",
-                    "country", "US",
-                    "vertical", "TECHNOLOGY"
+                    "company_address", "123 Main St, Austin TX, 78701",
+                    "company_vertical", "COMMUNICATION",
+                    "company_website", "https://acme.example.com"
             ));
             System.out.println("  Brand: " + brand);
         } catch (RestError e) {
