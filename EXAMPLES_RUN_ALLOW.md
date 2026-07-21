@@ -17,6 +17,7 @@ external requirement. Mirrors the python + ruby EXAMPLES_RUN_ALLOW precedent.
 - examples/WebSearchMultiInstanceDemo.java — same: requires real GOOGLE_SEARCH_API_KEY + GOOGLE_SEARCH_ENGINE_ID (approver: mike, 2026-07-09)
 - examples/DatasphereServerlessEnv.java — requires real DATASPHERE_DOCUMENT_ID + datasphere creds, not mockable (approver: mike, 2026-07-09)
 - examples/DatasphereWebhookEnvDemo.java — requires real DATASPHERE_DOCUMENT_ID + datasphere creds, not mockable (approver: mike, 2026-07-09)
+- relay/examples/RelayDialAndPlay.java — connect() opens a live RELAY WebSocket + requires a real RELAY_FROM_NUMBER/RELAY_TO_NUMBER on your project (client.dial() is a RELAY WS operation); the shared harness runs only mock_signalwire (REST), no mock_relay, so this needs a real relay endpoint (same class + reason as the owner-approved php relay/examples/relay_dial_and_play.php, approver: user, 2026-07-09)
 - examples/RelayAuditHarness.java — RELAY audit driver probe; needs porting-sdk audit_relay_handshake to inject SIGNALWIRE_RELAY_HOST + a loopback WS fixture, not a standalone run (approver: mike, 2026-07-09)
 - examples/RestAuditHarness.java — REST audit driver probe; needs porting-sdk audit_rest_transport to inject REST_OPERATION + REST_FIXTURE_URL (orFail), not a standalone run (approver: mike, 2026-07-09)
 - examples/SkillsAuditHarness.java — skills audit driver probe; needs porting-sdk audit_skills_dispatch to inject SKILL_NAME + fixture (orFail), not a standalone run (approver: mike, 2026-07-09)

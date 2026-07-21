@@ -48,6 +48,25 @@ class RestTest {
       assertNotNull(client.getHttpClient());
     }
 
+    // Parity with the Python reference rest/_base.py `_is_loopback_host`: a loopback space
+    // (127.0.0.1[:port] / localhost / [::1]) is a local mock/dev server that speaks plain
+    // HTTP, so the client must build an http:// base URL for it — this is what lets a
+    // shipped example run verbatim against the local mock via SIGNALWIRE_SPACE=127.0.0.1:<port>
+    // (the EXAMPLES-RUN harness sets exactly that). A real space stays https://.
+    @Test
+    @DisplayName("Loopback space → http://, real space → https://")
+    void loopbackSpaceUsesHttp() {
+      var mock = RestClient.builder().project("p").token("t").space("127.0.0.1:52052").build();
+      assertEquals("http://127.0.0.1:52052/api", mock.getHttpClient().getBaseUrl());
+
+      var localhost = RestClient.builder().project("p").token("t").space("localhost:8080").build();
+      assertEquals("http://localhost:8080/api", localhost.getHttpClient().getBaseUrl());
+
+      var prod =
+          RestClient.builder().project("p").token("t").space("example.signalwire.com").build();
+      assertEquals("https://example.signalwire.com/api", prod.getHttpClient().getBaseUrl());
+    }
+
     // These assert that a missing credential with NO env-var fallback set is an
     // error. build() reads SIGNALWIRE_PROJECT_ID/_API_TOKEN/SPACE as a fallback
     // (Python parity), so it now throws IllegalArgumentException (mirroring
