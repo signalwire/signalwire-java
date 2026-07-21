@@ -44,7 +44,7 @@ jobs:
           # PINNED to wave/1-aplus (matches the porting-sdk checkout ref below) so the
           # last-green cache marker keys on the same oracle CI actually checks out.
           # REVERT to /commits/main when porting-sdk wave/1-aplus merges.
-          psdk_sha=$(GH_TOKEN="$PSDK_TOKEN" gh api repos/signalwire/porting-sdk/commits/wave/1-aplus --jq .sha)
+          psdk_sha=$(GH_TOKEN="$PSDK_TOKEN" gh api repos/signalwire/porting-sdk/commits/main --jq .sha)
           echo "cache_key=multi-os-green-v1-${port_sha}-${psdk_sha}" >> "$GITHUB_OUTPUT"
       - name: Probe last-green marker
         id: probe
