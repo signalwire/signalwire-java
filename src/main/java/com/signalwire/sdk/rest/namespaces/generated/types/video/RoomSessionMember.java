@@ -15,9 +15,9 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
 public final class RoomSessionMember {
   public String id;
   public String room_session_id;
-  public java.util.Map<String, Object> name;
-  public java.util.Map<String, Object> join_time;
-  public java.util.Map<String, Object> leave_time;
-  public java.util.Map<String, Object> duration;
+  public String name;
+  public String join_time;
+  public String leave_time;
+  public Long duration;
   public Double cost_in_dollars;
 }

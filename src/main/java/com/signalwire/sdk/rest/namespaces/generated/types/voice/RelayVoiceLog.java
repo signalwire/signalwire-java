@@ -21,11 +21,11 @@ public final class RelayVoiceLog {
   public java.util.List<Object> charge_details;
   public String created_at;
   public String type;
-  public java.util.Map<String, Object> url;
+  public String url;
   public String direction;
   public String status;
-  public java.util.Map<String, Object> duration;
-  public java.util.Map<String, Object> duration_ms;
-  public java.util.Map<String, Object> billing_ms;
-  public java.util.Map<String, Object> parent_id;
+  public Long duration;
+  public Long duration_ms;
+  public Long billing_ms;
+  public String parent_id;
 }

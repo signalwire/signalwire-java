@@ -14,19 +14,19 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fax;
  */
 public final class LogResponse {
   public String id;
-  public java.util.Map<String, Object> from;
-  public java.util.Map<String, Object> to;
+  public String from;
+  public String to;
   public String status;
-  public java.util.Map<String, Object> direction;
+  public String direction;
   public String source;
   public String type;
   public String url;
-  public java.util.Map<String, Object> remote_station;
+  public String remote_station;
   public Double charge;
-  public java.util.Map<String, Object> number_of_pages;
-  public java.util.Map<String, Object> quality;
+  public Long number_of_pages;
+  public String quality;
   public java.util.List<Object> charge_details;
   public String created_at;
-  public java.util.Map<String, Object> error_code;
-  public java.util.Map<String, Object> error_message;
+  public String error_code;
+  public String error_message;
 }

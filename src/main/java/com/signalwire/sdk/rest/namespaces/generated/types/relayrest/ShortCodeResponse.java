@@ -15,7 +15,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  */
 public final class ShortCodeResponse {
   public String id;
-  public java.util.Map<String, Object> name;
+  public String name;
   public String number;
   public java.util.List<Object> capabilities;
   public String number_type;
@@ -23,13 +23,13 @@ public final class ShortCodeResponse {
   public String country_code;
   public String created_at;
   public String updated_at;
-  public java.util.Map<String, Object> next_billed_at;
-  public java.util.Map<String, Object> lease_duration;
-  public java.util.Map<String, Object> message_handler;
-  public java.util.Map<String, Object> message_request_url;
-  public java.util.Map<String, Object> message_request_method;
-  public java.util.Map<String, Object> message_fallback_url;
-  public java.util.Map<String, Object> message_fallback_method;
-  public java.util.Map<String, Object> message_laml_application_id;
-  public java.util.Map<String, Object> message_relay_context;
+  public String next_billed_at;
+  public String lease_duration;
+  public String message_handler;
+  public String message_request_url;
+  public String message_request_method;
+  public String message_fallback_url;
+  public String message_fallback_method;
+  public String message_laml_application_id;
+  public String message_relay_context;
 }

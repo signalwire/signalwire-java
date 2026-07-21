@@ -17,7 +17,7 @@ public final class ResourceSipEndpointResponse {
   public String id;
   public String name;
   public String type;
-  public java.util.Map<String, Object> cover_url;
-  public java.util.Map<String, Object> preview_url;
+  public String cover_url;
+  public String preview_url;
   public java.util.Map<String, Object> channels;
 }

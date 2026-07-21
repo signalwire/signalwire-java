@@ -24,6 +24,6 @@ public final class VideoRoomVoiceLog {
   public Object url;
   public String direction;
   public String status;
-  public java.util.Map<String, Object> duration;
-  public java.util.Map<String, Object> duration_ms;
+  public Long duration;
+  public Long duration_ms;
 }

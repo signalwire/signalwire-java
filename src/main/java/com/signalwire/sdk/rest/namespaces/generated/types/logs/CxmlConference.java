@@ -17,9 +17,9 @@ public final class CxmlConference {
   public String created_at;
   public String project_id;
   public String region;
-  public java.util.Map<String, Object> name;
-  public java.util.Map<String, Object> status;
-  public java.util.Map<String, Object> max_size;
+  public String name;
+  public String status;
+  public Long max_size;
   public Long current_participants;
   public String updated_at;
   public String type;

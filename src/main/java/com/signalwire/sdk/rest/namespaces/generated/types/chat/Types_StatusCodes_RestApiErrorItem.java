@@ -17,6 +17,6 @@ public final class Types_StatusCodes_RestApiErrorItem {
   public String type;
   public String code;
   public String message;
-  public java.util.Map<String, Object> attribute;
+  public String attribute;
   public String url;
 }

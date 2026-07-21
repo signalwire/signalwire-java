@@ -1692,6 +1692,20 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
         and not schema.get("properties") and not schema.get("type")
     ):
         schema = _resolve_type_ref(schema, schemas)
+    # Nullable-scalar idiom: OpenAPI-3.1 spells ``X | null`` as
+    # ``anyOf/oneOf: [<X>, {type: null}]`` (mirroring python's ``X | None``). Unwrap the
+    # single non-null variant so a nullable ``string``/``integer``/… field keeps its
+    # SCALAR Java type (String/Long/…), not the union → ``Map`` fallback. Without this the
+    # generated DTO types a nullable string field as ``Map<String,Object>`` and Gson throws
+    # ``Expected BEGIN_OBJECT but was STRING`` when the wire sends the string (JAVA-1 flip
+    # made these fields actually deserialized, exposing the mistype).
+    for comb in ("anyOf", "oneOf"):
+        variants = schema.get(comb)
+        if variants:
+            non_null = [v for v in variants if _resolve_type_ref(v, schemas).get("type") != "null"
+                        and v.get("type") != "null"]
+            if len(non_null) == 1:
+                return type_field_type(non_null[0], schemas)
     if schema.get("allOf") or schema.get("oneOf") or schema.get("anyOf") or schema.get("$ref"):
         return "java.util.Map<String, Object>"
     t = _schema_type(schema)

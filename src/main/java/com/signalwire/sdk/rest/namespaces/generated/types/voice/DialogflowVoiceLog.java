@@ -23,5 +23,5 @@ public final class DialogflowVoiceLog {
   public String type;
   public Object url;
   public String status;
-  public java.util.Map<String, Object> duration;
+  public Long duration;
 }

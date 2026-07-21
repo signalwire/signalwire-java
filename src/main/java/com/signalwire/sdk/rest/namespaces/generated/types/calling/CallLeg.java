@@ -18,14 +18,14 @@ public final class CallLeg {
   public String to;
   public String direction;
   public String source;
-  public java.util.Map<String, Object> url;
+  public String url;
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;
-  public java.util.Map<String, Object> status;
-  public java.util.Map<String, Object> duration;
-  public java.util.Map<String, Object> duration_ms;
-  public java.util.Map<String, Object> billing_ms;
+  public String status;
+  public Long duration;
+  public Long duration_ms;
+  public Long billing_ms;
   public java.util.Map<String, Object> type;
-  public java.util.Map<String, Object> parent_id;
+  public String parent_id;
 }
