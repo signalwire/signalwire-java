@@ -22,10 +22,10 @@ public final class Message {
   public String kind;
   public java.util.List<Object> media;
   public Long number_of_segments;
-  public java.util.Map<String, Object> error_code;
-  public java.util.Map<String, Object> error_message;
+  public String error_code;
+  public String error_message;
   public String created_at;
   public String project_id;
-  public java.util.Map<String, Object> status_callback_url;
+  public String status_callback_url;
   public String message_uri;
 }

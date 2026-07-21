@@ -14,7 +14,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
  */
 public final class ConferenceToken {
   public String id;
-  public java.util.Map<String, Object> name;
+  public String name;
   public String token;
   public java.util.List<Object> scopes;
 }

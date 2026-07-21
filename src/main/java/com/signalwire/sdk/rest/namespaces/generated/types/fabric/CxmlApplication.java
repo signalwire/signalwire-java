@@ -16,16 +16,16 @@ public final class CxmlApplication {
   public String id;
   public String project_id;
   public String friendly_name;
-  public java.util.Map<String, Object> voice_url;
+  public String voice_url;
   public java.util.Map<String, Object> voice_method;
-  public java.util.Map<String, Object> voice_fallback_url;
+  public String voice_fallback_url;
   public java.util.Map<String, Object> voice_fallback_method;
-  public java.util.Map<String, Object> status_callback;
+  public String status_callback;
   public java.util.Map<String, Object> status_callback_method;
-  public java.util.Map<String, Object> sms_url;
+  public String sms_url;
   public java.util.Map<String, Object> sms_method;
-  public java.util.Map<String, Object> sms_fallback_url;
+  public String sms_fallback_url;
   public java.util.Map<String, Object> sms_fallback_method;
-  public java.util.Map<String, Object> sms_status_callback;
+  public String sms_status_callback;
   public java.util.Map<String, Object> sms_status_callback_method;
 }

@@ -13,8 +13,8 @@ import org.junit.jupiter.api.io.TempDir;
 class RegistryTest {
 
   @Test
-  void testRegistryHas17Skills() {
-    assertEquals(17, SkillRegistry.list().size());
+  void testRegistryHas18Skills() {
+    assertEquals(18, SkillRegistry.list().size());
   }
 
   @Test
@@ -37,7 +37,8 @@ class RegistryTest {
     assertTrue(skills.contains("info_gatherer"));
     assertTrue(skills.contains("claude_skills"));
     assertTrue(skills.contains("custom_skills"));
-    assertFalse(skills.contains("mcp_gateway"), "mcp_gateway is Python-only, not ported");
+    // mcp_gateway CLIENT half is now ported (the gateway SERVER stays Python-only).
+    assertTrue(skills.contains("mcp_gateway"));
   }
 
   @Test

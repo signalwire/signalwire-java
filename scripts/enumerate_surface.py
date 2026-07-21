@@ -89,6 +89,9 @@ _CLASS_RENAMES: dict[str, str] = {
     "ApiNinjaTriviaSkill": "ApiNinjasTriviaSkill",
     "DatetimeSkill": "DateTimeSkill",
     "SwmlTransferSkill": "SWMLTransferSkill",
+    # Java's idiomatic McpGatewaySkill → the reference's MCPGatewaySkill
+    # (Python upper-cases the MCP acronym). Rename, not omission (RULES.md §2).
+    "McpGatewaySkill": "MCPGatewaySkill",
     # RELAY action-class folds. Java's ``PlayAndCollectAction`` (prefix
     # ``play_and_collect``, control surface stop/pause/resume/volume +
     # start_input_timers) is the reference's ``CollectAction``; Java's

@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** RegistryOrders — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryOrders extends BaseResource {
@@ -17,7 +18,16 @@ public class RegistryOrders extends BaseResource {
   }
 
   /** get (generated from operation 'retrieve_order'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse get(
+      String id, java.util.Map<String, String> params) {
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse.class);
   }
 }

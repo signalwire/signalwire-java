@@ -21,7 +21,7 @@ public final class MessageLog {
   public String kind;
   public String source;
   public String type;
-  public java.util.Map<String, Object> url;
+  public String url;
   public Long number_of_segments;
   public Double charge;
   public java.util.List<Object> charge_details;

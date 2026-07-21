@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VoiceLogs — REST resource client for the 'voice' API namespace. */
 public class VoiceLogs extends ReadResource {
@@ -17,7 +18,16 @@ public class VoiceLogs extends ReadResource {
   }
 
   /** listEvents (generated from operation 'list_voice_log_events'). */
-  public java.util.Map<String, Object> listEvents(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "events", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.voice.LogEventsListResponse listEvents(
+      String id, java.util.Map<String, String> params) {
+    return listEvents(id, params, (RequestOptions) null);
+  }
+
+  /** listEvents with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.voice.LogEventsListResponse listEvents(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "events", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.voice.LogEventsListResponse.class);
   }
 }

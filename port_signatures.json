@@ -20204,6 +20204,15 @@
                 }
               ],
               "returns": "void"
+            },
+            "get_code": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "int"
             }
           }
         }
@@ -28710,6 +28719,16 @@
               ],
               "returns": "bool"
             },
+            "is_success_code": {
+              "params": [
+                {
+                  "name": "code",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            },
             "is_terminal_action_state": {
               "params": [
                 {
@@ -28959,7 +28978,7 @@
                   "required": true
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "any"
             }
           }
         },
@@ -29212,6 +29231,13 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
@@ -30197,6 +30223,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30246,6 +30279,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30270,6 +30310,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30298,6 +30345,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30364,6 +30418,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30388,6 +30449,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30418,6 +30486,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30439,6 +30514,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30457,6 +30539,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30501,6 +30590,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30525,6 +30621,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30612,6 +30715,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30630,6 +30740,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30658,6 +30775,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30697,6 +30821,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30728,6 +30859,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30793,6 +30931,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30817,6 +30962,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30847,6 +30999,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30871,6 +31030,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30907,6 +31073,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -30931,6 +31104,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -30976,6 +31156,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31000,6 +31187,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31030,6 +31224,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31054,6 +31255,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31091,6 +31299,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31115,6 +31330,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31180,6 +31402,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31204,6 +31433,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31247,6 +31483,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31271,6 +31514,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31309,6 +31559,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31336,6 +31593,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31360,6 +31624,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -31420,6 +31691,13 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -31444,6 +31722,13 @@
                 {
                   "name": "extras",
                   "type": "optional<dict<string,any>>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
                   "kind": "keyword",
                   "default": null
@@ -39002,9 +39287,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.chat_types_generated.ChatToken"
             }
           }
         }
@@ -39232,6 +39524,13 @@
                   "name": "chunkId",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -39253,6 +39552,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -39260,7 +39566,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.datasphere_types_generated.ChunkResponse"
             },
             "list_chunks": {
               "params": [
@@ -39274,6 +39580,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -39281,7 +39594,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.datasphere_types_generated.ChunkListResponse"
             },
             "search": {
               "params": [
@@ -39350,10 +39663,26 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.datasphere_types_generated.SearchResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:DocumentListResponse",
+              "class:Document",
+              "class:DocumentCreateRequest",
+              "class:DocumentUpdateRequest"
+            ]
           }
         }
       }
@@ -40000,6 +40329,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:AIAgentListResponse",
+              "class:AIAgentResponse",
+              "class:AIAgentCreateRequest",
+              "class:AIAgentUpdateRequest"
+            ]
           }
         },
         "CallFlows": {
@@ -40033,9 +40371,16 @@
                   "name": "body",
                   "type": "dict<string,any>",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CallFlowVersionDeployResponse"
             },
             "list_addresses": {
               "params": [
@@ -40049,6 +40394,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40056,7 +40408,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CallFlowAddressListResponse"
             },
             "list_versions": {
               "params": [
@@ -40070,6 +40422,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40077,8 +40436,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CallFlowVersionListResponse"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:CallFlowListResponse",
+              "class:CallFlowResponse",
+              "class:CallFlowCreateRequest",
+              "class:CallFlowUpdateRequest"
+            ]
           }
         },
         "ConferenceRooms": {
@@ -40109,6 +40477,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40116,8 +40491,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.ConferenceRoomAddressListResponse"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:ConferenceRoomListResponse",
+              "class:ConferenceRoomResponse",
+              "class:ConferenceRoomCreateRequest",
+              "class:ConferenceRoomUpdateRequest"
+            ]
           }
         },
         "CxmlApplications": {
@@ -40146,6 +40530,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -40162,20 +40553,11 @@
                   "required": true
                 },
                 {
-                  "name": "params",
-                  "type": "any",
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
-                  "kind": "var_keyword",
-                  "default": {}
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "list": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -40185,7 +40567,30 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CxmlApplicationResponse"
+            },
+            "list": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false,
+                  "kind": "var_keyword",
+                  "default": {}
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CxmlApplicationListResponse"
             },
             "list_addresses": {
               "params": [
@@ -40199,6 +40604,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40206,7 +40618,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CxmlApplicationAddressListResponse"
             },
             "update": {
               "params": [
@@ -40323,9 +40735,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.CxmlApplicationResponse"
             }
           }
         },
@@ -40345,6 +40764,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:CXMLScriptListResponse",
+              "class:CXMLScriptResponse",
+              "class:CXMLScriptCreateRequest",
+              "class:CXMLScriptUpdateRequest"
+            ]
           }
         },
         "CxmlWebhooks": {
@@ -40363,6 +40791,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:CXMLWebhookListResponse",
+              "class:CXMLWebhookResponse",
+              "class:CXMLWebhookCreateRequest",
+              "class:CXMLWebhookUpdateRequest"
+            ]
           }
         },
         "FabricAddresses": {
@@ -40386,10 +40823,24 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
+          },
+          "crud_base": {
+            "base": "ReadResource",
+            "bind": [
+              "class:FabricAddressesResponse",
+              "class:FabricAddress"
+            ]
           }
         },
         "FabricTokens": {
@@ -40426,9 +40877,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.EmbedsTokensResponse"
             },
             "create_guest_token": {
               "params": [
@@ -40455,9 +40913,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberGuestTokenCreateResponse"
             },
             "create_invite_token": {
               "params": [
@@ -40484,9 +40949,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberInviteTokenCreateResponse"
             },
             "create_subscriber_token": {
               "params": [
@@ -40583,9 +41055,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberTokenResponse"
             },
             "refresh_subscriber_token": {
               "params": [
@@ -40605,9 +41084,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberRefreshTokenResponse"
             }
           }
         },
@@ -40627,6 +41113,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:FreeswitchConnectorListResponse",
+              "class:FreeswitchConnectorResponse",
+              "class:FreeswitchConnectorCreateRequest",
+              "class:FreeswitchConnectorUpdateRequest"
+            ]
           }
         },
         "GenericResources": {
@@ -40668,9 +41163,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.DomainApplicationResponse"
             },
             "assign_phone_route": {
               "params": [
@@ -40701,9 +41203,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.PhoneRouteResponse"
             },
             "delete": {
               "params": [
@@ -40715,6 +41224,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -40729,6 +41245,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -40747,6 +41270,13 @@
                   "kind": "self"
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40754,7 +41284,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.ResourceListResponse"
             },
             "list_addresses": {
               "params": [
@@ -40768,6 +41298,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40775,7 +41312,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.ResourceAddressListResponse"
             }
           }
         },
@@ -40795,6 +41332,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:RelayApplicationListResponse",
+              "class:RelayApplicationResponse",
+              "class:RelayApplicationCreateRequest",
+              "class:RelayApplicationUpdateRequest"
+            ]
           }
         },
         "SipEndpoints": {
@@ -40813,6 +41359,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:SipEndpointListResponse",
+              "class:SipEndpointResponse",
+              "class:SipEndpointCreateRequest",
+              "class:SipEndpointUpdateRequest"
+            ]
           }
         },
         "SipGateways": {
@@ -40831,6 +41386,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:SipGatewayListResponse",
+              "class:SipGatewayResponse",
+              "class:SipGatewayRequest",
+              "class:SipGatewayRequestUpdate"
+            ]
           }
         },
         "Subscribers": {
@@ -40913,9 +41477,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberSIPEndpoint"
             },
             "delete_sip_endpoint": {
               "params": [
@@ -40932,6 +41503,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -40953,6 +41531,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40960,7 +41545,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberSIPEndpoint"
             },
             "list_sip_endpoints": {
               "params": [
@@ -40974,6 +41559,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -40981,7 +41573,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberSipEndpointListResponse"
             },
             "update_sip_endpoint": {
               "params": [
@@ -41054,10 +41646,26 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.fabric_types_generated.SubscriberSIPEndpoint"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:SubscriberListResponse",
+              "class:SubscriberResponse",
+              "class:SubscriberRequest",
+              "class:SubscriberRequest"
+            ]
           }
         },
         "SwmlScripts": {
@@ -41076,6 +41684,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:SwmlScriptListResponse",
+              "class:SwmlScriptResponse",
+              "class:SwmlScriptCreateRequest",
+              "class:SwmlScriptUpdateRequest"
+            ]
           }
         },
         "SwmlWebhooks": {
@@ -41094,6 +41711,15 @@
               ],
               "returns": "void"
             }
+          },
+          "crud_base": {
+            "base": "FabricResource",
+            "bind": [
+              "class:SWMLWebhookListResponse",
+              "class:SWMLWebhookResponse",
+              "class:SWMLWebhookCreateRequest",
+              "class:SWMLWebhookUpdateRequest"
+            ]
           }
         }
       }
@@ -55789,10 +56415,24 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
+          },
+          "crud_base": {
+            "base": "ReadResource",
+            "bind": [
+              "class:LogListResponse",
+              "class:LogResponse"
+            ]
           }
         }
       }
@@ -56333,6 +56973,13 @@
                   "kind": "self"
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -56340,7 +56987,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.logs_types_generated.ConferencesResponse"
             }
           }
         }
@@ -56872,10 +57519,24 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
+          },
+          "crud_base": {
+            "base": "ReadResource",
+            "bind": [
+              "class:LogListResponse",
+              "class:LogRetrieveResponse"
+            ]
           }
         }
       }
@@ -57414,9 +58075,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.relay.message.Message"
             },
             "update": {
               "params": [
@@ -57441,9 +58109,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.relay.message.Message"
             }
           }
         }
@@ -57848,9 +58523,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.project_types_generated.TokenResponse"
             },
             "delete": {
               "params": [
@@ -57862,6 +58544,13 @@
                   "name": "tokenId",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -57897,9 +58586,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.project_types_generated.TokenResponse"
             }
           }
         }
@@ -58131,10 +58827,26 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:ProjectList",
+              "class:Project",
+              "class:ProjectCreate",
+              "class:ProjectUpdate"
+            ]
           }
         }
       }
@@ -58474,9 +59186,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.pubsub_types_generated.PubSubToken"
             }
           }
         }
@@ -58782,9 +59501,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.AddressResponse"
             },
             "delete": {
               "params": [
@@ -58796,6 +59522,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -58812,20 +59545,11 @@
                   "required": true
                 },
                 {
-                  "name": "params",
-                  "type": "any",
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
-                  "kind": "var_keyword",
-                  "default": {}
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "list": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -58835,7 +59559,30 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.AddressResponse"
+            },
+            "list": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false,
+                  "kind": "var_keyword",
+                  "default": {}
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.AddressListResponse"
             }
           }
         },
@@ -58886,9 +59633,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             }
           }
         },
@@ -58920,6 +59674,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -58927,7 +59688,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberLookupResponse"
             }
           }
         },
@@ -59007,9 +59768,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.MfaResponse"
             },
             "sms": {
               "params": [
@@ -59071,9 +59839,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.MfaResponse"
             },
             "verify": {
               "params": [
@@ -59098,9 +59873,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.MfaVerifyResponse"
             }
           }
         },
@@ -59143,9 +59925,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.NumberGroupMembershipResponse"
             },
             "delete_membership": {
               "params": [
@@ -59157,6 +59946,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -59173,6 +59969,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59180,7 +59983,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.NumberGroupMembershipResponse"
             },
             "list_memberships": {
               "params": [
@@ -59194,6 +59997,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59201,8 +60011,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.NumberGroupMembershipListResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:NumberGroupListResponse",
+              "class:NumberGroupResponse",
+              "class:CreateNumberGroupRequest",
+              "class:UpdateNumberGroupRequest"
+            ]
           }
         },
         "PhoneNumbers": {
@@ -59228,6 +60047,13 @@
                   "kind": "self"
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59235,7 +60061,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.AvailablePhoneNumbersResponse"
             },
             "set_ai_agent": {
               "params": [
@@ -59254,6 +60080,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59261,7 +60094,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_call_flow": {
               "params": [
@@ -59286,6 +60119,13 @@
                   "default": null
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59293,7 +60133,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_cxml_application": {
               "params": [
@@ -59312,6 +60152,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59319,7 +60166,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_cxml_webhook": {
               "params": [
@@ -59350,6 +60197,13 @@
                   "default": null
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59357,7 +60211,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_relay_application": {
               "params": [
@@ -59376,6 +60230,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59383,7 +60244,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_relay_topic": {
               "params": [
@@ -59408,6 +60269,13 @@
                   "default": null
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59415,7 +60283,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             },
             "set_swml_webhook": {
               "params": [
@@ -59434,6 +60302,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "extra",
                   "type": "any",
                   "required": false,
@@ -59441,8 +60316,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneNumberResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:PhoneNumberListResponse",
+              "class:PhoneNumberResponse",
+              "class:PurchasePhoneNumberRequest",
+              "class:UpdatePhoneNumberRequest"
+            ]
           }
         },
         "Queues": {
@@ -59478,6 +60362,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59485,7 +60376,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.QueueMemberResponse"
             },
             "get_next_member": {
               "params": [
@@ -59499,6 +60390,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59506,7 +60404,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.QueueMemberResponse"
             },
             "list_members": {
               "params": [
@@ -59520,6 +60418,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59527,8 +60432,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.QueueMemberListResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:QueueListResponse",
+              "class:QueueResponse",
+              "class:CreateQueueRequest",
+              "class:UpdateQueueRequest"
+            ]
           }
         },
         "Recordings": {
@@ -59557,6 +60471,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -59571,6 +60492,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -59589,6 +60517,13 @@
                   "kind": "self"
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59596,7 +60531,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.RecordingListResponse"
             }
           }
         },
@@ -59626,9 +60561,16 @@
                   "name": "body",
                   "type": "dict<string,any>",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.BrandResponse"
             },
             "create_campaign": {
               "params": [
@@ -59645,9 +60587,16 @@
                   "name": "body",
                   "type": "dict<string,any>",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.CampaignResponse"
             },
             "get": {
               "params": [
@@ -59661,20 +60610,11 @@
                   "required": true
                 },
                 {
-                  "name": "params",
-                  "type": "any",
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
-                  "kind": "var_keyword",
-                  "default": {}
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "list": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -59684,7 +60624,30 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.BrandResponse"
+            },
+            "list": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false,
+                  "kind": "var_keyword",
+                  "default": {}
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.BrandListResponse"
             },
             "list_campaigns": {
               "params": [
@@ -59698,6 +60661,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59705,7 +60675,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.CampaignListResponse"
             }
           }
         },
@@ -59756,9 +60726,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.OrderResponse"
             },
             "get": {
               "params": [
@@ -59772,6 +60749,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59779,7 +60763,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.CampaignResponse"
             },
             "list_numbers": {
               "params": [
@@ -59793,6 +60777,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59800,7 +60791,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.AssignedNumberListResponse"
             },
             "list_orders": {
               "params": [
@@ -59814,6 +60805,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59821,7 +60819,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.OrderListResponse"
             },
             "update": {
               "params": [
@@ -59847,9 +60845,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.CampaignResponse"
             }
           }
         },
@@ -59879,6 +60884,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -59913,6 +60925,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -59920,7 +60939,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.OrderResponse"
             }
           }
         },
@@ -59952,20 +60971,11 @@
                   "required": true
                 },
                 {
-                  "name": "params",
-                  "type": "any",
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
-                  "kind": "var_keyword",
-                  "default": {}
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "list": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -59975,7 +60985,30 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.ShortCodeResponse"
+            },
+            "list": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false,
+                  "kind": "var_keyword",
+                  "default": {}
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.ShortCodeListResponse"
             },
             "update": {
               "params": [
@@ -60048,9 +61081,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.ShortCodeResponse"
             }
           }
         },
@@ -60077,6 +61117,13 @@
                   "kind": "self"
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -60084,7 +61131,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.SipProfileResponse"
             },
             "update": {
               "params": [
@@ -60133,9 +61180,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.SipProfileResponse"
             }
           }
         },
@@ -60165,9 +61219,16 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.VerifiedCallerIDResponse"
             },
             "submit_verification": {
               "params": [
@@ -60192,10 +61253,26 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.VerifiedCallerIDResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:VerifiedCallerIDListResponse",
+              "class:VerifiedCallerIDResponse",
+              "class:CreateVerifiedCallerIDRequest",
+              "class:UpdateVerifiedCallerIDRequest"
+            ]
           }
         }
       }
@@ -68347,6 +69424,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68354,7 +69438,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ConferenceToken"
             },
             "reset": {
               "params": [
@@ -68366,9 +69450,16 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ConferenceToken"
             }
           }
         },
@@ -68411,9 +69502,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.Stream"
             },
             "list_conference_tokens": {
               "params": [
@@ -68427,6 +69525,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68434,7 +69539,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListConferenceTokensResponse"
             },
             "list_streams": {
               "params": [
@@ -68448,6 +69553,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68455,8 +69567,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListStreamsResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:ListConferencesResponse",
+              "class:Conference",
+              "class:CreateConferenceRequest",
+              "class:UpdateConferenceRequest"
+            ]
           }
         },
         "VideoRoomRecordings": {
@@ -68485,6 +69606,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -68501,20 +69629,11 @@
                   "required": true
                 },
                 {
-                  "name": "params",
-                  "type": "any",
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
                   "required": false,
-                  "kind": "var_keyword",
-                  "default": {}
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "list": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
+                  "kind": "keyword",
+                  "default": null
                 },
                 {
                   "name": "params",
@@ -68524,7 +69643,30 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.RoomRecording"
+            },
+            "list": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
+                  "name": "params",
+                  "type": "any",
+                  "required": false,
+                  "kind": "var_keyword",
+                  "default": {}
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListRoomRecordingsResponse"
             },
             "list_events": {
               "params": [
@@ -68538,6 +69680,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68545,7 +69694,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListRoomRecordingEventsResponse"
             }
           }
         },
@@ -68577,6 +69726,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68584,7 +69740,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListRoomSessionEventsResponse"
             },
             "list_members": {
               "params": [
@@ -68598,6 +69754,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68605,7 +69768,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListRoomSessionMembersResponse"
             },
             "list_recordings": {
               "params": [
@@ -68619,6 +69782,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68626,17 +69796,31 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListRoomSessionRecordingsResponse"
             },
             "paginate": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
+          },
+          "crud_base": {
+            "base": "ReadResource",
+            "bind": [
+              "class:ListRoomSessionsResponse",
+              "class:RoomSessionSummary"
+            ]
           }
         },
         "VideoRoomTokens": {
@@ -68792,9 +69976,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.RoomTokenResponse"
             }
           }
         },
@@ -68837,9 +70028,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.Stream"
             },
             "list_streams": {
               "params": [
@@ -68853,6 +70051,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68860,8 +70065,17 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.ListStreamsResponse"
             }
+          },
+          "crud_base": {
+            "base": "CrudResource",
+            "bind": [
+              "class:ListRoomsResponse",
+              "class:RoomResponse",
+              "class:CreateRoomRequest",
+              "class:UpdateRoomRequest"
+            ]
           }
         },
         "VideoStreams": {
@@ -68890,6 +70104,13 @@
                   "name": "id",
                   "type": "string",
                   "required": true
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
               "returns": "dict<string,any>"
@@ -68906,6 +70127,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -68913,7 +70141,7 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.Stream"
             },
             "update": {
               "params": [
@@ -68938,9 +70166,16 @@
                   "required": false,
                   "kind": "keyword",
                   "default": null
+                },
+                {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.video_types_generated.Stream"
             }
           }
         }
@@ -71966,6 +73201,13 @@
                   "required": true
                 },
                 {
+                  "name": "request_options",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "kind": "keyword",
+                  "default": null
+                },
+                {
                   "name": "params",
                   "type": "any",
                   "required": false,
@@ -71973,17 +73215,31 @@
                   "default": {}
                 }
               ],
-              "returns": "dict<string,any>"
+              "returns": "class:signalwire.rest.namespaces.voice_types_generated.LogEventsListResponse"
             },
             "paginate": {
               "params": [
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "request_options",
+                  "kind": "keyword",
+                  "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                  "required": false,
+                  "default": null
                 }
               ],
               "returns": "class:signalwire.rest._pagination.PaginatedIterator"
             }
+          },
+          "crud_base": {
+            "base": "ReadResource",
+            "bind": [
+              "class:LogListResponse",
+              "class:VoiceLog"
+            ]
           }
         }
       }
@@ -74221,6 +75477,118 @@
         }
       }
     },
+    "signalwire.skills.mcp_gateway.skill": {
+      "classes": {
+        "MCPGatewaySkill": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "get_description": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_global_data": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_hints": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_name": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "get_parameter_schema": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
+            "get_prompt_sections": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<dict<string,any>>"
+            },
+            "get_required_packages": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<string>"
+            },
+            "get_version": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "register_tools": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "list<class:signalwire.swaig.ToolDefinition>"
+            },
+            "setup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "params",
+                  "type": "dict<string,any>",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
+            }
+          }
+        }
+      }
+    },
     "signalwire.skills.native_vector_search.skill": {
       "classes": {
         "NativeVectorSearchSkill": {
@@ -74720,6 +76088,10 @@
               "returns": "class:signalwire.skills.SkillName"
             },
             "math": {
+              "params": [],
+              "returns": "class:signalwire.skills.SkillName"
+            },
+            "mcp_gateway": {
               "params": [],
               "returns": "class:signalwire.skills.SkillName"
             },

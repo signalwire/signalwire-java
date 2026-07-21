@@ -115,10 +115,20 @@ public class HttpClient {
   }
 
   private static java.net.http.HttpClient newHttpClient() {
-    return java.net.http.HttpClient.newBuilder()
-        .version(java.net.http.HttpClient.Version.HTTP_1_1)
-        .connectTimeout(CONNECT_TIMEOUT)
-        .build();
+    java.net.http.HttpClient.Builder builder =
+        java.net.http.HttpClient.newBuilder()
+            .version(java.net.http.HttpClient.Version.HTTP_1_1)
+            .connectTimeout(CONNECT_TIMEOUT);
+    // A5 fleet CA-var contract (hard-cut, no aliases): a custom CA bundle for the REST transport is
+    // supplied via SIGNALWIRE_REST_CA_FILE. When set, build an SSLContext that trusts ONLY that
+    // bundle so a private/self-signed CA is honored (parity with the Python reference
+    // rest/_base.py:163 `self._session.verify = _rest_ca_file`). Unset → the JDK default trust
+    // store.
+    String caFile = System.getenv("SIGNALWIRE_REST_CA_FILE");
+    if (caFile != null && !caFile.isEmpty()) {
+      builder.sslContext(TlsContext.fromCaFile(caFile));
+    }
+    return builder.build();
   }
 
   // ── Public methods ───────────────────────────────────────────────

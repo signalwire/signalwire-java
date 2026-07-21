@@ -18,9 +18,11 @@ public final class StringProperty {
   public String type;
 
   /** wire key: enum */
+  @com.google.gson.annotations.SerializedName("enum")
   public java.util.List<Object> enum_;
 
   /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
   public String default_;
 
   public String pattern;

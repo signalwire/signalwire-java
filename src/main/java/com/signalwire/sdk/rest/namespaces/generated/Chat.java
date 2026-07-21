@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Chat — REST resource client for the 'chat' API namespace. */
 public class Chat extends BaseResource {
@@ -17,8 +18,17 @@ public class Chat extends BaseResource {
   }
 
   /** createToken (generated from operation 'create_chat_token'). */
-  public java.util.Map<String, Object> createToken(CreateTokenRequest request) {
-    return restPost(getBasePath(), request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.chat.ChatToken createToken(
+      CreateTokenRequest request) {
+    return createToken(request, (RequestOptions) null);
+  }
+
+  /** createToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.chat.ChatToken createToken(
+      CreateTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.chat.ChatToken.class);
   }
 
   /** Closed typed request for {@link #createToken} (builder + extras door). */

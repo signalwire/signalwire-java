@@ -40,6 +40,19 @@ export SWML_BASIC_AUTH_PASSWORD=mysecurepassword
 | `SWML_DOMAIN` | - | Domain name for SSL (used for URL generation) |
 | `SWML_SSL_VERIFY_MODE` | `CERT_REQUIRED` | SSL verification mode |
 
+### Custom CA Certificates (outbound clients)
+
+When the SDK's outbound REST and RELAY clients must trust a private / self-signed
+Certificate Authority (e.g. an on-prem SignalWire deployment behind a corporate CA),
+point these variables at a PEM CA-bundle file. When set, the client builds its TLS
+trust store from that bundle instead of the JVM default; when unset, the JVM default
+trust store is used.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SIGNALWIRE_REST_CA_FILE` | - | Path to a PEM CA-bundle the REST client trusts for outbound HTTPS |
+| `SIGNALWIRE_RELAY_CA_FILE` | - | Path to a PEM CA-bundle the RELAY WebSocket client trusts for outbound WSS |
+
 ### Authentication
 
 | Variable | Default | Description |

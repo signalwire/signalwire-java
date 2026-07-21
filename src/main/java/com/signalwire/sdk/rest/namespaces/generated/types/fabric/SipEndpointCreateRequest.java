@@ -22,5 +22,5 @@ public final class SipEndpointCreateRequest {
   public java.util.List<Object> codecs;
   public String encryption;
   public String call_handler;
-  public java.util.Map<String, Object> calling_handler_resource_id;
+  public String calling_handler_resource_id;
 }

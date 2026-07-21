@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.FabricResourcePUT;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** ConferenceRooms — REST resource client for the 'fabric' API namespace. */
 public class ConferenceRooms extends FabricResourcePUT {
@@ -18,8 +19,19 @@ public class ConferenceRooms extends FabricResourcePUT {
 
   /** listAddresses (generated from operation 'list_conference_room_addresses'). */
   @Override
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params) {
-    return restGet("/fabric/resources/conference_room/" + id + "/addresses", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ConferenceRoomAddressListResponse
+      listAddresses(String id, java.util.Map<String, String> params) {
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  @Override
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ConferenceRoomAddressListResponse
+      listAddresses(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet("/fabric/resources/conference_room/" + id + "/addresses", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.ConferenceRoomAddressListResponse
+            .class);
   }
 }

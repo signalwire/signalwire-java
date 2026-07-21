@@ -14,11 +14,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
  */
 public final class Stream {
   public String id;
-  public java.util.Map<String, Object> url;
-  public java.util.Map<String, Object> stream_type;
-  public java.util.Map<String, Object> width;
-  public java.util.Map<String, Object> height;
-  public java.util.Map<String, Object> fps;
+  public String url;
+  public String stream_type;
+  public Long width;
+  public Long height;
+  public Long fps;
   public String created_at;
   public String updated_at;
 }

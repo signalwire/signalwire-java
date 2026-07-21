@@ -14,5 +14,6 @@ package com.signalwire.sdk.swml.generated;
  */
 public final class ConstProperty {
   /** wire key: const */
+  @com.google.gson.annotations.SerializedName("const")
   public java.util.Map<String, Object> const_;
 }

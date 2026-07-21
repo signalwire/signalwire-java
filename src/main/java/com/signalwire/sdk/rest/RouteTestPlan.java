@@ -124,8 +124,24 @@ final class RouteTestPlan {
       return Collections.emptyMap();
     }
 
+    // RequestOptions-carrying overloads (plan 4.2 / PY-9) — intercept them too so the
+    // generated full overload records instead of falling through to the real transport.
+    @Override
+    public Map<String, Object> get(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return Collections.emptyMap();
+    }
+
     @Override
     public Map<String, Object> post(String path, Map<String, Object> body) {
+      CALLS.add(new Call("POST", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, Object> post(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
       CALLS.add(new Call("POST", wire(path)));
       return Collections.emptyMap();
     }
@@ -137,13 +153,33 @@ final class RouteTestPlan {
     }
 
     @Override
+    public Map<String, Object> put(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
+      CALLS.add(new Call("PUT", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
     public Map<String, Object> patch(String path, Map<String, Object> body) {
       CALLS.add(new Call("PATCH", wire(path)));
       return Collections.emptyMap();
     }
 
     @Override
+    public Map<String, Object> patch(
+        String path, Map<String, Object> body, RequestOptions requestOptions) {
+      CALLS.add(new Call("PATCH", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
     public Map<String, Object> delete(String path) {
+      CALLS.add(new Call("DELETE", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public Map<String, Object> delete(String path, RequestOptions requestOptions) {
       CALLS.add(new Call("DELETE", wire(path)));
       return Collections.emptyMap();
     }
@@ -176,9 +212,33 @@ final class RouteTestPlan {
     return p != null && p.getName().startsWith(REST_PKG);
   }
 
-  /** Is this a route method (returns a Map — the SDK's wire-response shape)? */
+  /** The package holding the generated typed response DTOs the route methods return. */
+  private static final String GEN_TYPES_PKG = "com.signalwire.sdk.rest.namespaces.generated.types";
+
+  /**
+   * A route method's wire-response return type: a {@code Map} (decoded wire body), a generated
+   * typed {@code *Response} DTO (JAVA-1 typed-returns flip), or {@code Object} (the fabric {@code
+   * listAddresses} base, covariantly overridden to a DTO). Recognising all three keeps a flipped
+   * route in the test plan instead of silently dropping it.
+   */
+  private static boolean isWireResponseType(Class<?> rt) {
+    if (Map.class.isAssignableFrom(rt) || rt == Object.class) {
+      return true;
+    }
+    Package p = rt.getPackage();
+    return p != null && p.getName().startsWith(GEN_TYPES_PKG);
+  }
+
+  /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    return Map.class.isAssignableFrom(m.getReturnType());
+    if (!isWireResponseType(m.getReturnType())) {
+      return false;
+    }
+    // Skip the RequestOptions-carrying full overload (plan 4.2 / PY-9); its no-RO
+    // convenience sibling dispatches the identical wire route, so registering both would
+    // emit a duplicate test-plan entry for the same route.
+    int n = m.getParameterCount();
+    return n == 0 || m.getParameterTypes()[n - 1] != RequestOptions.class;
   }
 
   /** Public, non-static, instance methods not declared by Object, sorted by name then arity. */

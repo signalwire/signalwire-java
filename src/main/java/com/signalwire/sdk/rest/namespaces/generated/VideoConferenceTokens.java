@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VideoConferenceTokens — REST resource client for the 'video' API namespace. */
 public class VideoConferenceTokens extends BaseResource {
@@ -17,12 +18,32 @@ public class VideoConferenceTokens extends BaseResource {
   }
 
   /** get (generated from operation 'get_conference_token'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken get(
+      String id, java.util.Map<String, String> params) {
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken.class);
   }
 
   /** reset (generated from operation 'reset_conference_token'). */
-  public java.util.Map<String, Object> reset(String id) {
-    return restPost(getBasePath() + "/" + id + "/" + "reset", new java.util.LinkedHashMap<>());
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken reset(String id) {
+    return reset(id, (RequestOptions) null);
+  }
+
+  /** reset with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken reset(
+      String id, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + id + "/" + "reset",
+            new java.util.LinkedHashMap<>(),
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ConferenceToken.class);
   }
 }

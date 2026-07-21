@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** RegistryCampaigns — REST resource client for the 'relay-rest' API namespace. */
 public class RegistryCampaigns extends BaseResource {
@@ -17,29 +18,74 @@ public class RegistryCampaigns extends BaseResource {
   }
 
   /** get (generated from operation 'retrieve_campaign'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse get(
+      String id, java.util.Map<String, String> params) {
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse.class);
   }
 
   /** update (generated from operation 'update_campaign'). */
-  public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse update(
+      String id, UpdateRequest request) {
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPut(getBasePath() + "/" + id, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse.class);
   }
 
   /** listNumbers (generated from operation 'list_number_assignments'). */
-  public java.util.Map<String, Object> listNumbers(
-      String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "numbers", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AssignedNumberListResponse
+      listNumbers(String id, java.util.Map<String, String> params) {
+    return listNumbers(id, params, (RequestOptions) null);
+  }
+
+  /** listNumbers with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AssignedNumberListResponse
+      listNumbers(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "numbers", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AssignedNumberListResponse
+            .class);
   }
 
   /** listOrders (generated from operation 'list_orders'). */
-  public java.util.Map<String, Object> listOrders(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "orders", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderListResponse listOrders(
+      String id, java.util.Map<String, String> params) {
+    return listOrders(id, params, (RequestOptions) null);
+  }
+
+  /** listOrders with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderListResponse listOrders(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "orders", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderListResponse.class);
   }
 
   /** createOrder (generated from operation 'create_order'). */
-  public java.util.Map<String, Object> createOrder(String id, CreateOrderRequest request) {
-    return restPost(getBasePath() + "/" + id + "/" + "orders", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse createOrder(
+      String id, CreateOrderRequest request) {
+    return createOrder(id, request, (RequestOptions) null);
+  }
+
+  /** createOrder with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse createOrder(
+      String id, CreateOrderRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "orders", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.OrderResponse.class);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

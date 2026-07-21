@@ -23,5 +23,5 @@ public final class FabricVoiceLog {
   public String type;
   public Object url;
   public String direction;
-  public java.util.Map<String, Object> status;
+  public String status;
 }

@@ -16,5 +16,5 @@ public final class RelayApplication {
   public String id;
   public String name;
   public String topic;
-  public java.util.Map<String, Object> call_status_callback_url;
+  public String call_status_callback_url;
 }

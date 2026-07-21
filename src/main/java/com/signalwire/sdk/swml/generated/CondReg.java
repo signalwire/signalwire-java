@@ -17,5 +17,6 @@ public final class CondReg {
   public java.util.List<Object> then;
 
   /** wire key: else */
+  @com.google.gson.annotations.SerializedName("else")
   public java.util.List<Object> else_;
 }

@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VideoRooms — REST resource client for the 'video' API namespace. */
 public class VideoRooms extends CrudResource {
@@ -17,14 +18,31 @@ public class VideoRooms extends CrudResource {
   }
 
   /** listStreams (generated from operation 'list_room_streams'). */
-  public java.util.Map<String, Object> listStreams(
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse listStreams(
       String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "streams", params);
+    return listStreams(id, params, (RequestOptions) null);
+  }
+
+  /** listStreams with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse listStreams(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "streams", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListStreamsResponse.class);
   }
 
   /** createStream (generated from operation 'create_room_stream'). */
-  public java.util.Map<String, Object> createStream(String id, CreateStreamRequest request) {
-    return restPost(getBasePath() + "/" + id + "/" + "streams", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.Stream createStream(
+      String id, CreateStreamRequest request) {
+    return createStream(id, request, (RequestOptions) null);
+  }
+
+  /** createStream with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.Stream createStream(
+      String id, CreateStreamRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "streams", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.Stream.class);
   }
 
   /** Closed typed request for {@link #createStream} (builder + extras door). */

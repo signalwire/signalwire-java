@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** NumberGroups — REST resource client for the 'relay-rest' API namespace. */
 public class NumberGroups extends CrudResource {
@@ -17,26 +18,68 @@ public class NumberGroups extends CrudResource {
   }
 
   /** listMemberships (generated from operation 'list_number_group_memberships'). */
-  public java.util.Map<String, Object> listMemberships(
-      String groupId, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + groupId + "/" + "number_group_memberships", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest
+          .NumberGroupMembershipListResponse
+      listMemberships(String groupId, java.util.Map<String, String> params) {
+    return listMemberships(groupId, params, (RequestOptions) null);
+  }
+
+  /** listMemberships with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest
+          .NumberGroupMembershipListResponse
+      listMemberships(
+          String groupId, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(
+            getBasePath() + "/" + groupId + "/" + "number_group_memberships",
+            params,
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest
+            .NumberGroupMembershipListResponse.class);
   }
 
   /** addMembership (generated from operation 'create_number_group_membership'). */
-  public java.util.Map<String, Object> addMembership(String groupId, AddMembershipRequest request) {
-    return restPost(
-        getBasePath() + "/" + groupId + "/" + "number_group_memberships", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+      addMembership(String groupId, AddMembershipRequest request) {
+    return addMembership(groupId, request, (RequestOptions) null);
+  }
+
+  /** addMembership with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+      addMembership(String groupId, AddMembershipRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + groupId + "/" + "number_group_memberships",
+            request.toBody(),
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+            .class);
   }
 
   /** getMembership (generated from operation 'retrieve_number_group_membership'). */
-  public java.util.Map<String, Object> getMembership(
-      String id, java.util.Map<String, String> params) {
-    return restGet("/relay/rest/number_group_memberships/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+      getMembership(String id, java.util.Map<String, String> params) {
+    return getMembership(id, params, (RequestOptions) null);
+  }
+
+  /** getMembership with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+      getMembership(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet("/relay/rest/number_group_memberships/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.NumberGroupMembershipResponse
+            .class);
   }
 
   /** deleteMembership (generated from operation 'delete_number_group_membership'). */
   public java.util.Map<String, Object> deleteMembership(String id) {
-    return restDelete("/relay/rest/number_group_memberships/" + id);
+    return deleteMembership(id, (RequestOptions) null);
+  }
+
+  /** deleteMembership with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> deleteMembership(String id, RequestOptions requestOptions) {
+    return restDelete("/relay/rest/number_group_memberships/" + id, requestOptions);
   }
 
   /** Closed typed request for {@link #addMembership} (builder + extras door). */

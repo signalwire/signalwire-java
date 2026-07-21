@@ -33,7 +33,7 @@ public final class SkillRegistry {
   private final Map<String, Supplier<SkillBase>> instanceSkills = new LinkedHashMap<>();
 
   static {
-    // Register all 17 built-in skills
+    // Register all 18 built-in skills
     register("datetime", DatetimeSkill::new);
     register("math", MathSkill::new);
     register("joke", JokeSkill::new);
@@ -51,6 +51,7 @@ public final class SkillRegistry {
     register("info_gatherer", InfoGathererSkill::new);
     register("claude_skills", ClaudeSkillsSkill::new);
     register("custom_skills", CustomSkillsSkill::new);
+    register("mcp_gateway", McpGatewaySkill::new);
   }
 
   /** Env var seeding external skill-search directories. Mirrors Python's registry.py. */

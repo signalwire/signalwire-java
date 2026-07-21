@@ -364,6 +364,51 @@ tasks.register('envelopeDump', JavaExec) {
     dependsOn 'testClasses'
 }
 
+// paginationDump — PAGINATION-CORPUS differ (porting-sdk/scripts/diff_port_pagination.py). Arms the
+// three corpus page sequences FIFO on the mock's list endpoint and walks the real PaginatedIterator,
+// emitting the per-fixture continued/guarded/terminated classification. Uses the TEST runtime
+// classpath (depends on MockTest's harness), like envelopeDump.
+tasks.register('paginationDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the REST pagination corpus classifications as JSON (cross-port pagination differ).'
+    mainClass = 'com.signalwire.sdk.rest.PaginationDump'
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn 'testClasses'
+}
+
+// relayLivenessDump — RELAY-LIVENESS differ (porting-sdk/scripts/diff_port_relay_liveness.py).
+// Drives the RelayClient through the shared relay-liveness corpus (cred/contract/dead-peer/
+// black-hole/reconnect/max-active-calls) against embedded RELAY mocks and emits the per-fixture
+// classification map.
+tasks.register('relayLivenessDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the RELAY connection+error liveness classifications as JSON (cross-port relay-liveness differ).'
+    mainClass = 'com.signalwire.sdk.relay.RelayLivenessDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// secureDefaultDump — SECURE-DEFAULT differ (porting-sdk/scripts/diff_port_secure_default.py).
+// Renders SWML for a default (secure) tool + a secure=false tool with the fixed corpus call_id and
+// emits, per tool, whether it is secure and whether the rendered webhook reflects that (a __token /
+// meta_data_token present iff secure).
+tasks.register('secureDefaultDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the secure-default SWML render classifications as JSON (cross-port secure-default differ).'
+    mainClass = 'com.signalwire.sdk.tools.SecureDefaultDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+// secretScrubDump — SECRET-SCRUB-LIVE differ (porting-sdk/scripts/diff_port_secret_scrub.py).
+// Drives the RelayClient through connect + an inbound authorization.state event at debug log level
+// with fixture sentinel credentials, captures its own stdout+stderr, and reports per-sentinel
+// whether it leaked.
+tasks.register('secretScrubDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the secret-scrub leak classifications as JSON (cross-port secret-scrub differ).'
+    mainClass = 'com.signalwire.sdk.tools.SecretScrubDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 jar {
     manifest {
         attributes 'Implementation-Title': 'SignalWire AI Agents SDK',

@@ -25,6 +25,7 @@ public final class CallingJoinConferenceParams {
   public String node_id;
 
   /** wire key: record */
+  @com.google.gson.annotations.SerializedName("record")
   public String record_;
 
   public String recording_status_callback;

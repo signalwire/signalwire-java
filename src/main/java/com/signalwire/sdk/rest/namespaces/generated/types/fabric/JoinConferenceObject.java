@@ -23,6 +23,7 @@ public final class JoinConferenceObject {
   public java.util.Map<String, Object> max_participants;
 
   /** wire key: record */
+  @com.google.gson.annotations.SerializedName("record")
   public String record_;
 
   public String region;

@@ -6,6 +6,7 @@
  */
 package com.signalwire.sdk.rest;
 
+import com.google.gson.Gson;
 import java.util.Map;
 
 /**
@@ -29,8 +30,32 @@ import java.util.Map;
  */
 public class BaseResource {
 
+  /**
+   * Shared JSON codec used to project a decoded wire {@code Map<String,Object>} onto a generated
+   * typed response DTO. The generated resource methods return the closed spec-typed {@code
+   * *Response} DTOs (JAVA-1 typed-returns flip); each still hits the {@code rest*} verb receiver
+   * (which decodes the body to a {@code Map}) and then re-projects that Map onto the DTO here.
+   * Mirrors the Python reference, whose typed methods {@code cast(...)} the same runtime dict to
+   * the response type — a static view over the wire JSON, never a validating parse.
+   */
+  private static final Gson RESPONSE_GSON = new Gson();
+
   private final HttpClient httpClient;
   private final String basePath;
+
+  /**
+   * Project a decoded wire {@code Map} onto a generated response DTO of type {@code T}. A {@code
+   * null} raw (e.g. a bodyless DELETE) yields {@code null}. Unknown wire keys are ignored and
+   * absent DTO fields stay {@code null} — the same lenient, non-validating view the Python
+   * reference's {@code cast()} gives (the server response shape is never asserted at the SDK
+   * boundary).
+   */
+  protected static <T> T asType(Map<String, Object> raw, Class<T> type) {
+    if (raw == null) {
+      return null;
+    }
+    return RESPONSE_GSON.fromJson(RESPONSE_GSON.toJsonTree(raw), type);
+  }
 
   /**
    * @param httpClient the HTTP client
@@ -47,9 +72,21 @@ public class BaseResource {
     return httpClient.get(path, params);
   }
 
+  /** GET {@code path} with query parameters and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restGet(
+      String path, Map<String, String> params, RequestOptions requestOptions) {
+    return httpClient.get(path, params, requestOptions);
+  }
+
   /** POST {@code path} with a JSON body. */
   protected Map<String, Object> restPost(String path, Map<String, Object> body) {
     return httpClient.post(path, body);
+  }
+
+  /** POST {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPost(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.post(path, body, requestOptions);
   }
 
   /** PUT {@code path} with a JSON body. */
@@ -57,14 +94,31 @@ public class BaseResource {
     return httpClient.put(path, body);
   }
 
+  /** PUT {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPut(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.put(path, body, requestOptions);
+  }
+
   /** PATCH {@code path} with a JSON body. */
   protected Map<String, Object> restPatch(String path, Map<String, Object> body) {
     return httpClient.patch(path, body);
   }
 
+  /** PATCH {@code path} with a JSON body and a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restPatch(
+      String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return httpClient.patch(path, body, requestOptions);
+  }
+
   /** DELETE {@code path}. */
   protected Map<String, Object> restDelete(String path) {
     return httpClient.delete(path);
+  }
+
+  /** DELETE {@code path} with a per-request {@link RequestOptions} override. */
+  protected Map<String, Object> restDelete(String path, RequestOptions requestOptions) {
+    return httpClient.delete(path, requestOptions);
   }
 
   /** The base path for this resource. */

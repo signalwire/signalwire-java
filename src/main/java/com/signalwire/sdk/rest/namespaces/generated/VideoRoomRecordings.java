@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** VideoRoomRecordings — REST resource client for the 'video' API namespace. */
 public class VideoRoomRecordings extends BaseResource {
@@ -17,22 +18,55 @@ public class VideoRoomRecordings extends BaseResource {
   }
 
   /** list (generated from operation 'list_room_recordings'). */
-  public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingsResponse list(
+      java.util.Map<String, String> params) {
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingsResponse list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath(), params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingsResponse.class);
   }
 
   /** get (generated from operation 'get_room_recording'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.RoomRecording get(
+      String id, java.util.Map<String, String> params) {
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.RoomRecording get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.RoomRecording.class);
   }
 
   /** delete (generated from operation 'delete_room_recording'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** listEvents (generated from operation 'list_room_recording_events'). */
-  public java.util.Map<String, Object> listEvents(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "events", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingEventsResponse
+      listEvents(String id, java.util.Map<String, String> params) {
+    return listEvents(id, params, (RequestOptions) null);
+  }
+
+  /** listEvents with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingEventsResponse
+      listEvents(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "events", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingEventsResponse
+            .class);
   }
 }

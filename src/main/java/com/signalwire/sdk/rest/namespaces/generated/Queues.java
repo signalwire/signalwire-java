@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Queues — REST resource client for the 'relay-rest' API namespace. */
 public class Queues extends CrudResource {
@@ -17,20 +18,50 @@ public class Queues extends CrudResource {
   }
 
   /** listMembers (generated from operation 'list_queue_members'). */
-  public java.util.Map<String, Object> listMembers(
-      String queueId, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + queueId + "/" + "members", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberListResponse
+      listMembers(String queueId, java.util.Map<String, String> params) {
+    return listMembers(queueId, params, (RequestOptions) null);
+  }
+
+  /** listMembers with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberListResponse
+      listMembers(
+          String queueId, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + queueId + "/" + "members", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberListResponse.class);
   }
 
   /** getNextMember (generated from operation 'retrieve_next_queue_member'). */
-  public java.util.Map<String, Object> getNextMember(
-      String queueId, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + queueId + "/" + "members" + "/" + "next", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse
+      getNextMember(String queueId, java.util.Map<String, String> params) {
+    return getNextMember(queueId, params, (RequestOptions) null);
+  }
+
+  /** getNextMember with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse
+      getNextMember(
+          String queueId, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(
+            getBasePath() + "/" + queueId + "/" + "members" + "/" + "next", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse.class);
   }
 
   /** getMember (generated from operation 'retrieve_queue_member'). */
-  public java.util.Map<String, Object> getMember(
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse getMember(
       String queueId, String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + queueId + "/" + "members" + "/" + id, params);
+    return getMember(queueId, id, params, (RequestOptions) null);
+  }
+
+  /** getMember with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse getMember(
+      String queueId,
+      String id,
+      java.util.Map<String, String> params,
+      RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + queueId + "/" + "members" + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.QueueMemberResponse.class);
   }
 }

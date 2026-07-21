@@ -18,10 +18,10 @@ public final class Document {
   public String status;
   public java.util.List<Object> tags;
   public String chunking_strategy;
-  public java.util.Map<String, Object> max_sentences_per_chunk;
-  public java.util.Map<String, Object> split_newlines;
-  public java.util.Map<String, Object> overlap_size;
-  public java.util.Map<String, Object> chunk_size;
+  public Long max_sentences_per_chunk;
+  public Boolean split_newlines;
+  public Long overlap_size;
+  public Long chunk_size;
   public Long number_of_chunks;
   public String chunks_uri;
   public String created_at;

@@ -15,7 +15,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.projects;
 public final class Project {
   public String id;
   public String name;
-  public java.util.Map<String, Object> parent_project_id;
+  public String parent_project_id;
   public Boolean subproject;
   public String region_preference;
   public Boolean protect_recordings;

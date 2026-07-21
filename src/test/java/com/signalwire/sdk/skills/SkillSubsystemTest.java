@@ -215,7 +215,7 @@ class SkillSubsystemTest {
     List<Map<String, Object>> listed = registry.listSkills();
     List<Map<String, Object>> discovered = registry.discoverSkills();
     assertEquals(listed, discovered);
-    assertEquals(17, listed.size());
+    assertEquals(18, listed.size());
     // Each entry carries a name and description.
     Map<String, Object> mathEntry =
         listed.stream().filter(e -> "math".equals(e.get("name"))).findFirst().orElseThrow();

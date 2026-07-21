@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** FabricTokens — REST resource client for the 'fabric' API namespace. */
 public class FabricTokens extends BaseResource {
@@ -17,29 +18,80 @@ public class FabricTokens extends BaseResource {
   }
 
   /** createSubscriberToken (generated from operation 'create_subscriber_token'). */
-  public java.util.Map<String, Object> createSubscriberToken(CreateSubscriberTokenRequest request) {
-    return restPost("/fabric/subscribers/tokens", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberTokenResponse
+      createSubscriberToken(CreateSubscriberTokenRequest request) {
+    return createSubscriberToken(request, (RequestOptions) null);
+  }
+
+  /** createSubscriberToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberTokenResponse
+      createSubscriberToken(CreateSubscriberTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/subscribers/tokens", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberTokenResponse.class);
   }
 
   /** refreshSubscriberToken (generated from operation 'refresh_subscriber_token'). */
-  public java.util.Map<String, Object> refreshSubscriberToken(
-      RefreshSubscriberTokenRequest request) {
-    return restPost("/fabric/subscribers/tokens/refresh", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberRefreshTokenResponse
+      refreshSubscriberToken(RefreshSubscriberTokenRequest request) {
+    return refreshSubscriberToken(request, (RequestOptions) null);
+  }
+
+  /** refreshSubscriberToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberRefreshTokenResponse
+      refreshSubscriberToken(RefreshSubscriberTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/subscribers/tokens/refresh", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberRefreshTokenResponse
+            .class);
   }
 
   /** createInviteToken (generated from operation 'create_subscriber_invite_token'). */
-  public java.util.Map<String, Object> createInviteToken(CreateInviteTokenRequest request) {
-    return restPost("/fabric/subscriber/invites", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .SubscriberInviteTokenCreateResponse
+      createInviteToken(CreateInviteTokenRequest request) {
+    return createInviteToken(request, (RequestOptions) null);
+  }
+
+  /** createInviteToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .SubscriberInviteTokenCreateResponse
+      createInviteToken(CreateInviteTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/subscriber/invites", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric
+            .SubscriberInviteTokenCreateResponse.class);
   }
 
   /** createGuestToken (generated from operation 'create_subscriber_guest_token'). */
-  public java.util.Map<String, Object> createGuestToken(CreateGuestTokenRequest request) {
-    return restPost("/fabric/guests/tokens", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .SubscriberGuestTokenCreateResponse
+      createGuestToken(CreateGuestTokenRequest request) {
+    return createGuestToken(request, (RequestOptions) null);
+  }
+
+  /** createGuestToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .SubscriberGuestTokenCreateResponse
+      createGuestToken(CreateGuestTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/guests/tokens", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.SubscriberGuestTokenCreateResponse
+            .class);
   }
 
   /** createEmbedToken (generated from operation 'create_embeds_token'). */
-  public java.util.Map<String, Object> createEmbedToken(CreateEmbedTokenRequest request) {
-    return restPost("/fabric/embeds/tokens", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.EmbedsTokensResponse
+      createEmbedToken(CreateEmbedTokenRequest request) {
+    return createEmbedToken(request, (RequestOptions) null);
+  }
+
+  /** createEmbedToken with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.EmbedsTokensResponse
+      createEmbedToken(CreateEmbedTokenRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost("/fabric/embeds/tokens", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.EmbedsTokensResponse.class);
   }
 
   /** Closed typed request for {@link #createSubscriberToken} (builder + extras door). */

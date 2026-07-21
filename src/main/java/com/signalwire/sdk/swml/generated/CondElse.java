@@ -14,5 +14,6 @@ package com.signalwire.sdk.swml.generated;
  */
 public final class CondElse {
   /** wire key: else */
+  @com.google.gson.annotations.SerializedName("else")
   public java.util.List<Object> else_;
 }

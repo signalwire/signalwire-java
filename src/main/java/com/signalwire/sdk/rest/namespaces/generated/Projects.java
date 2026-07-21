@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Projects — REST resource client for the 'projects' API namespace. */
 public class Projects extends CrudResource {
@@ -18,8 +19,14 @@ public class Projects extends CrudResource {
 
   /** rotateSigningKey (generated from operation 'rotate_signing_key'). */
   public java.util.Map<String, Object> rotateSigningKey(String id) {
+    return rotateSigningKey(id, (RequestOptions) null);
+  }
+
+  /** rotateSigningKey with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> rotateSigningKey(String id, RequestOptions requestOptions) {
     return restPost(
         getBasePath() + "/" + id + "/" + "signing-key" + "/" + "rotate",
-        new java.util.LinkedHashMap<>());
+        new java.util.LinkedHashMap<>(),
+        requestOptions);
   }
 }

@@ -18,8 +18,8 @@ public final class SWMLWebhook {
   public String used_for;
   public String primary_request_url;
   public java.util.Map<String, Object> primary_request_method;
-  public java.util.Map<String, Object> fallback_request_url;
+  public String fallback_request_url;
   public java.util.Map<String, Object> fallback_request_method;
-  public java.util.Map<String, Object> status_callback_url;
+  public String status_callback_url;
   public java.util.Map<String, Object> status_callback_method;
 }

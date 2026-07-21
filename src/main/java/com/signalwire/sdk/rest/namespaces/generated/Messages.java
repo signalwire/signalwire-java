@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Messages — REST resource client for the 'messages' API namespace. */
 public class Messages extends BaseResource {
@@ -17,13 +18,31 @@ public class Messages extends BaseResource {
   }
 
   /** create (generated from operation 'create_message'). */
-  public java.util.Map<String, Object> create(CreateRequest request) {
-    return restPost(getBasePath(), request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message create(
+      CreateRequest request) {
+    return create(request, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message create(
+      CreateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.messages.Message.class);
   }
 
   /** update (generated from operation 'update_message'). */
-  public java.util.Map<String, Object> update(String messageId, UpdateRequest request) {
-    return restPatch(getBasePath() + "/" + messageId, request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message update(
+      String messageId, UpdateRequest request) {
+    return update(messageId, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.messages.Message update(
+      String messageId, UpdateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPatch(getBasePath() + "/" + messageId, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.messages.Message.class);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

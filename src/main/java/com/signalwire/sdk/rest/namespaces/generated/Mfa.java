@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** Mfa — REST resource client for the 'relay-rest' API namespace. */
 public class Mfa extends BaseResource {
@@ -17,18 +18,46 @@ public class Mfa extends BaseResource {
   }
 
   /** sms (generated from operation 'request_mfa_sms'). */
-  public java.util.Map<String, Object> sms(SmsRequest request) {
-    return restPost(getBasePath() + "/" + "sms", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse sms(
+      SmsRequest request) {
+    return sms(request, (RequestOptions) null);
+  }
+
+  /** sms with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse sms(
+      SmsRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + "sms", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse.class);
   }
 
   /** call (generated from operation 'request_mfa_call'). */
-  public java.util.Map<String, Object> call(CallRequest request) {
-    return restPost(getBasePath() + "/" + "call", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse call(
+      CallRequest request) {
+    return call(request, (RequestOptions) null);
+  }
+
+  /** call with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse call(
+      CallRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + "call", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaResponse.class);
   }
 
   /** verify (generated from operation 'verify_mfa_token'). */
-  public java.util.Map<String, Object> verify(String requestId, VerifyRequest request) {
-    return restPost(getBasePath() + "/" + requestId + "/" + "verify", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaVerifyResponse verify(
+      String requestId, VerifyRequest request) {
+    return verify(requestId, request, (RequestOptions) null);
+  }
+
+  /** verify with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaVerifyResponse verify(
+      String requestId, VerifyRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + requestId + "/" + "verify", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.MfaVerifyResponse.class);
   }
 
   /** Closed typed request for {@link #sms} (builder + extras door). */

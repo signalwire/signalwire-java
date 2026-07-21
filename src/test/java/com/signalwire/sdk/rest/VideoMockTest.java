@@ -52,10 +52,10 @@ class VideoMockTest {
     @Test
     @DisplayName("list_streams returns data collection")
     void listStreams() {
-      Map<String, Object> body = client.video().rooms().listStreams("room-1", java.util.Map.of());
+      var body = client.video().rooms().listStreams("room-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"), "expected 'data' in keys " + body.keySet());
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data, "expected 'data' to be set");
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -66,7 +66,7 @@ class VideoMockTest {
     @Test
     @DisplayName("create_stream posts kwargs in body")
     void createStream() {
-      Map<String, Object> body =
+      var body =
           client
               .video()
               .rooms()
@@ -118,11 +118,10 @@ class VideoMockTest {
 
     @Test
     void listEventsUsesEventsSubpath() {
-      Map<String, Object> body =
-          client.video().roomSessions().listEvents("sess-1", java.util.Map.of());
+      var body = client.video().roomSessions().listEvents("sess-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -131,10 +130,9 @@ class VideoMockTest {
 
     @Test
     void listRecordingsUsesRecordingsSubpath() {
-      Map<String, Object> body =
-          client.video().roomSessions().listRecordings("sess-2", java.util.Map.of());
+      var body = client.video().roomSessions().listRecordings("sess-2", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -150,10 +148,10 @@ class VideoMockTest {
 
     @Test
     void listReturnsDataCollection() {
-      Map<String, Object> body = client.video().roomRecordings().list(java.util.Map.of());
+      var body = client.video().roomRecordings().list(java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -162,7 +160,7 @@ class VideoMockTest {
 
     @Test
     void getReturnsSingleRecording() {
-      Map<String, Object> body = client.video().roomRecordings().get("rec-xyz", java.util.Map.of());
+      var body = client.video().roomRecordings().get("rec-xyz", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -183,10 +181,9 @@ class VideoMockTest {
 
     @Test
     void listEventsUsesEventsSubpath() {
-      Map<String, Object> body =
-          client.video().roomRecordings().listEvents("rec-1", java.util.Map.of());
+      var body = client.video().roomRecordings().listEvents("rec-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -202,11 +199,10 @@ class VideoMockTest {
 
     @Test
     void listConferenceTokens() {
-      Map<String, Object> body =
-          client.video().conferences().listConferenceTokens("conf-1", java.util.Map.of());
+      var body = client.video().conferences().listConferenceTokens("conf-1", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -215,11 +211,10 @@ class VideoMockTest {
 
     @Test
     void listStreams() {
-      Map<String, Object> body =
-          client.video().conferences().listStreams("conf-2", java.util.Map.of());
+      var body = client.video().conferences().listStreams("conf-2", java.util.Map.of());
       assertNotNull(body);
-      assertTrue(body.containsKey("data"));
-      assertTrue(body.get("data") instanceof List);
+      assertNotNull(body.data);
+      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
@@ -235,7 +230,7 @@ class VideoMockTest {
 
     @Test
     void getReturnsSingleToken() {
-      Map<String, Object> body = client.video().conferenceTokens().get("tok-1", java.util.Map.of());
+      var body = client.video().conferenceTokens().get("tok-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -246,7 +241,7 @@ class VideoMockTest {
 
     @Test
     void resetPostsToResetSubpath() {
-      Map<String, Object> body = client.video().conferenceTokens().reset("tok-2");
+      var body = client.video().conferenceTokens().reset("tok-2");
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -270,7 +265,7 @@ class VideoMockTest {
 
     @Test
     void getReturnsStreamResource() {
-      Map<String, Object> body = client.video().streams().get("stream-1", java.util.Map.of());
+      var body = client.video().streams().get("stream-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -280,7 +275,7 @@ class VideoMockTest {
 
     @Test
     void updateUsesPutWithKwargs() {
-      Map<String, Object> body =
+      var body =
           client
               .video()
               .streams()

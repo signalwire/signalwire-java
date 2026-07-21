@@ -49,7 +49,7 @@ class RegistryMockTest {
 
     @Test
     void listReturnsDict() {
-      Map<String, Object> body = client.registry().brands().list(java.util.Map.of());
+      var body = client.registry().brands().list(java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -60,7 +60,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().brands().get("brand-77", java.util.Map.of());
+      var body = client.registry().brands().get("brand-77", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -70,8 +70,7 @@ class RegistryMockTest {
 
     @Test
     void listCampaignsUsesBrandSubpath() {
-      Map<String, Object> body =
-          client.registry().brands().listCampaigns("brand-1", java.util.Map.of());
+      var body = client.registry().brands().listCampaigns("brand-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -82,7 +81,7 @@ class RegistryMockTest {
 
     @Test
     void createCampaignPostsToBrandSubpath() {
-      Map<String, Object> body =
+      var body =
           client
               .registry()
               .brands()
@@ -105,7 +104,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().campaigns().get("camp-1", java.util.Map.of());
+      var body = client.registry().campaigns().get("camp-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -115,7 +114,7 @@ class RegistryMockTest {
 
     @Test
     void updateUsesPut() {
-      Map<String, Object> body =
+      var body =
           client
               .registry()
               .campaigns()
@@ -137,8 +136,7 @@ class RegistryMockTest {
 
     @Test
     void listNumbersUsesNumbersSubpath() {
-      Map<String, Object> body =
-          client.registry().campaigns().listNumbers("camp-3", java.util.Map.of());
+      var body = client.registry().campaigns().listNumbers("camp-3", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();
@@ -149,7 +147,7 @@ class RegistryMockTest {
 
     @Test
     void createOrderPostsToOrdersSubpath() {
-      Map<String, Object> body =
+      var body =
           client
               .registry()
               .campaigns()
@@ -176,7 +174,7 @@ class RegistryMockTest {
 
     @Test
     void getUsesIdInPath() {
-      Map<String, Object> body = client.registry().orders().get("order-1", java.util.Map.of());
+      var body = client.registry().orders().get("order-1", java.util.Map.of());
       assertNotNull(body);
 
       MockTest.JournalEntry j = mock.last();

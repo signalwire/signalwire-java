@@ -14,5 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class Switch {
   /** wire key: switch */
+  @com.google.gson.annotations.SerializedName("switch")
   public java.util.Map<String, Object> switch_;
 }

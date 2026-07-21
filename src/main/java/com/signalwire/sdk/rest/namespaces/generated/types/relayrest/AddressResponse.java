@@ -20,8 +20,8 @@ public final class AddressResponse {
   public String last_name;
   public String street_number;
   public String street_name;
-  public java.util.Map<String, Object> address_type;
-  public java.util.Map<String, Object> address_number;
+  public String address_type;
+  public String address_number;
   public String city;
   public String state;
   public String postal_code;

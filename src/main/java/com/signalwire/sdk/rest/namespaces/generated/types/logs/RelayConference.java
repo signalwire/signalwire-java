@@ -17,13 +17,13 @@ public final class RelayConference {
   public String created_at;
   public String project_id;
   public String region;
-  public java.util.Map<String, Object> name;
-  public java.util.Map<String, Object> status;
-  public java.util.Map<String, Object> max_size;
+  public String name;
+  public String status;
+  public Long max_size;
   public Long current_participants;
   public String updated_at;
   public String type;
-  public java.util.Map<String, Object> recording_url;
-  public java.util.Map<String, Object> recording_duration;
-  public java.util.Map<String, Object> recording_file_size;
+  public String recording_url;
+  public Long recording_duration;
+  public Long recording_file_size;
 }

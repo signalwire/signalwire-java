@@ -542,7 +542,10 @@ class ActionsMockTest {
     Map<String, Object> tapDevice = new LinkedHashMap<>();
     tapDevice.put("type", "rtp");
     tapDevice.put("params", Map.of("addr", "203.0.113.1", "port", 4000));
-    call.tap(Map.of("type", "audio"), tapDevice, "tap-ctl");
+    // The calling.tap wire schema requires tap.{type,params} (PublicCallTapParams.cs); a bare
+    // {type} is INVALID_PARAMS on the real mock. execute() now RAISES on that error frame (A2)
+    // instead of swallowing it, so the fixture must send a schema-valid tap config.
+    call.tap(Map.of("type", "audio", "params", Map.of()), tapDevice, "tap-ctl");
 
     List<RelayMockTest.JournalEntry> entries = mock.journalRecv(Constants.METHOD_TAP);
     assertEquals(1, entries.size());
@@ -565,7 +568,8 @@ class ActionsMockTest {
     Map<String, Object> tapDevice = new LinkedHashMap<>();
     tapDevice.put("type", "rtp");
     tapDevice.put("params", Map.of("addr", "203.0.113.1", "port", 4000));
-    Action.TapAction action = call.tap(Map.of("type", "audio"), tapDevice, "tap-stop");
+    Action.TapAction action =
+        call.tap(Map.of("type", "audio", "params", Map.of()), tapDevice, "tap-stop");
     action.stop();
 
     List<RelayMockTest.JournalEntry> stops = mock.journalRecv(Constants.METHOD_TAP_STOP);

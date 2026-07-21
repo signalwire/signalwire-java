@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.CrudResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** DatasphereDocuments — REST resource client for the 'datasphere' API namespace. */
 public class DatasphereDocuments extends CrudResource {
@@ -17,25 +18,63 @@ public class DatasphereDocuments extends CrudResource {
   }
 
   /** search (generated from operation 'search_documents'). */
-  public java.util.Map<String, Object> search(SearchRequest request) {
-    return restPost(getBasePath() + "/" + "search", request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse search(
+      SearchRequest request) {
+    return search(request, (RequestOptions) null);
+  }
+
+  /** search with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse search(
+      SearchRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + "search", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.SearchResponse.class);
   }
 
   /** listChunks (generated from operation 'list_document_chunks'). */
-  public java.util.Map<String, Object> listChunks(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse listChunks(
       String documentId, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + documentId + "/" + "chunks", params);
+    return listChunks(documentId, params, (RequestOptions) null);
+  }
+
+  /** listChunks with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse listChunks(
+      String documentId, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + documentId + "/" + "chunks", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkListResponse.class);
   }
 
   /** getChunk (generated from operation 'get_document_chunk'). */
-  public java.util.Map<String, Object> getChunk(
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse getChunk(
       String documentId, String chunkId, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId, params);
+    return getChunk(documentId, chunkId, params, (RequestOptions) null);
+  }
+
+  /** getChunk with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse getChunk(
+      String documentId,
+      String chunkId,
+      java.util.Map<String, String> params,
+      RequestOptions requestOptions) {
+    return asType(
+        restGet(
+            getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId,
+            params,
+            requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.datasphere.ChunkResponse.class);
   }
 
   /** deleteChunk (generated from operation 'delete_document_chunk'). */
   public java.util.Map<String, Object> deleteChunk(String documentId, String chunkId) {
-    return restDelete(getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId);
+    return deleteChunk(documentId, chunkId, (RequestOptions) null);
+  }
+
+  /** deleteChunk with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> deleteChunk(
+      String documentId, String chunkId, RequestOptions requestOptions) {
+    return restDelete(
+        getBasePath() + "/" + documentId + "/" + "chunks" + "/" + chunkId, requestOptions);
   }
 
   /** Closed typed request for {@link #search} (builder + extras door). */

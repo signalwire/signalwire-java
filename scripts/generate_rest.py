@@ -386,6 +386,8 @@ class Spec:
         self.namespace_attr = (doc.get("x-sdk-namespace") or {}).get("attr") or ""
         self.ops: dict[str, tuple[str, str, bool]] = {}
         self.op_body: dict[str, dict] = {}
+        # Per-operation 200/201/2XX JSON response schema (for the typed-return flip).
+        self.op_response: dict[str, dict] = {}
         for path, item in (doc.get("paths") or {}).items():
             for verb in ("get", "post", "put", "patch", "delete"):
                 o = item.get(verb)
@@ -395,6 +397,11 @@ class Spec:
                     content = body.get("content") or {}
                     media = content.get("application/json") or (next(iter(content.values())) if content else {})
                     self.op_body[o["operationId"]] = (media or {}).get("schema") or {}
+                    responses = o.get("responses") or {}
+                    ok = responses.get("200") or responses.get("201") or responses.get("2XX") or {}
+                    rc = (ok.get("content") or {})
+                    rmedia = rc.get("application/json") or (next(iter(rc.values())) if rc else {})
+                    self.op_response[o["operationId"]] = (rmedia or {}).get("schema") or {}
         self.schemas = ((doc.get("components") or {}).get("schemas")) or {}
 
     def resources(self) -> list[tuple[str, dict]]:
@@ -689,9 +696,44 @@ def ordered_fields(fields):
 # Sidecar accumulator: (ClassName, javaMethod) -> [param records].
 _SIDECAR: dict[tuple[str, str], list[dict]] = {}
 
+# CRUD-base accumulator: ClassName -> {"base": <baseName>, "bind": [<class:Leaf>...]}.
+# A resource extending a method-contract base (CrudResource/FabricResource/ReadResource)
+# publishes its typed CRUD contract STRUCTURALLY, exactly as the Python reference does via
+# the generic ``CrudResource[TList, TItem, TCreate, TUpdate]`` bind. The Java CRUD methods
+# are inherited from the (non-generic) base, so the bind — not a per-method return — is the
+# cross-port contract the signature enumerator emits as ``crud_base`` and the drift gate
+# compares for equivalence. Bind order mirrors the reference:
+#   CrudResource/FabricResource: [listResponse, itemResponse, createRequest, updateRequest]
+#   ReadResource:                [listResponse, itemResponse]
+_CRUD_BASES: dict[str, dict] = {}
+
+
+# The per-call request_options envelope (plan 4.2 / PY-9): the reference threads a
+# keyword-only ``request_options: RequestOptions | None = None`` onto EVERY generated
+# resource verb (list/get/create/update/delete, command-dispatch, set_methods). Java's
+# named idiom is a trailing optional ``RequestOptions requestOptions`` param; the
+# sidecar records it as the oracle's keyword param so the drift gate compares equal.
+_REQUEST_OPTIONS_JAVA_PARAM = "RequestOptions requestOptions"
+_REQUEST_OPTIONS_SIDECAR = {
+    "name": "request_options",
+    "kind": "keyword",
+    "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+    "required": False,
+    "default": None,
+}
+
 
 def _register_sidecar(cls: str, java_method: str, records: list[dict]) -> None:
-    _SIDECAR[(cls, java_method)] = records
+    # request_options is recorded on every generated verb. In the oracle it sits AFTER
+    # the id/keyword-fields/extras but BEFORE a trailing ``**params`` var_keyword query
+    # bag (which the Python enumerator drops for GET/list). Insert it just before any
+    # trailing var_keyword record so the overlapping-prefix drift compare aligns.
+    recs = list(records)
+    insert_at = len(recs)
+    while insert_at > 0 and recs[insert_at - 1].get("kind") == "var_keyword":
+        insert_at -= 1
+    recs.insert(insert_at, dict(_REQUEST_OPTIONS_SIDECAR))
+    _SIDECAR[(cls, java_method)] = recs
 
 
 # ---------------------------------------------------------------------------
@@ -835,6 +877,152 @@ def abs_java_path(full: str, id_args: list[str]) -> str:
     return " + ".join(out) if out else '""'
 
 
+# ---------------------------------------------------------------------------
+# Typed response returns (JAVA-1 flip).
+#
+# Each generated resource method returns the closed spec-typed ``*Response`` DTO
+# (the emitted ``types/<sub>/<Name>`` class), NOT ``Map<String,Object>`` — mirroring
+# the Python reference, whose typed methods annotate ``-> <Name>Response`` and
+# ``cast(...)`` the runtime dict to it. The DTO name is the sanitised leaf of the
+# operation's 200/201/2XX JSON response ``$ref`` (a list response's ``{type:array,
+# items:{$ref}}`` is unwrapped to the item's ref, so the derived name matches the
+# hand *ListResponse binding). A GET-list wrapper schema that is itself a $ref
+# resolves to that named wrapper. An operation with NO response ``$ref`` (a bodyless
+# 204 delete, an inline/array-of-scalar response) keeps ``Map<String,Object>`` — the
+# reference's ``dict[str, Any]``.
+# ---------------------------------------------------------------------------
+
+# The DTO java sub-package for a spec dir (strips '-', matching emit_types' `sub`).
+def _types_subpackage(spec_name: str) -> str:
+    return spec_name.replace("-", "")
+
+
+def _response_raw_leaf(schema: dict) -> str:
+    """The RAW (unsanitised) schema-name leaf of a 200/201 response ``$ref``
+    (array-unwrapped), or '' when the response carries no named ref."""
+    if not isinstance(schema, dict):
+        return ""
+    ref = schema.get("$ref", "")
+    if not ref and schema.get("type") == "array":
+        ref = (schema.get("items") or {}).get("$ref", "")
+    if not ref:
+        return ""
+    return ref.rsplit("/", 1)[-1]
+
+
+def response_ref_leaf(schema: dict, spec: Spec | None = None) -> str:
+    """The sanitised Java class leaf for a 200/201 response schema's ``$ref``
+    (array-unwrapped) — but ONLY when that schema is actually EMITTED as an object DTO
+    (``emit_types`` emits a class for ``is_object_schema`` object schemas). A response
+    whose ref resolves to a NON-object schema (a scalar/array/union alias the reference —
+    and this generator — do NOT surface as a class) yields '' → the method keeps its
+    ``Map`` return (mirroring the reference's ``dict[str, Any]`` for such ops)."""
+    raw = _response_raw_leaf(schema)
+    if not raw:
+        return ""
+    if spec is not None:
+        node = spec.schemas.get(raw)
+        if not (isinstance(node, dict) and is_object_schema(node)):
+            return ""
+    return type_name(raw)
+
+
+def response_java_type(spec: Spec, op_id: str) -> str:
+    """The fully-qualified Java return type for an operation: the generated response
+    DTO class (``types.<sub>.<Name>``) when the op has a named OBJECT response schema,
+    else ``java.util.Map<String, Object>``."""
+    leaf = response_ref_leaf(spec.op_response.get(op_id) or {}, spec)
+    if not leaf:
+        return "java.util.Map<String, Object>"
+    return f"{TYPES_PACKAGE}.{_types_subpackage(spec.name)}.{leaf}"
+
+
+def item_java_type(spec: Spec, anchor: str, markup: dict) -> str:
+    """The resource's item response DTO (the GET-by-id 200 response) — the return type
+    of create/update and the set_* helpers. Falls back to Map when absent."""
+    coll = collection_segment(anchor, markup)
+    for path, item in (spec.doc.get("paths") or {}).items():
+        if path.startswith(coll + "/{") and path.count("/{") == 1 and path.endswith("}"):
+            op = item.get("get")
+            if op and op.get("operationId"):
+                return response_java_type(spec, op["operationId"])
+    return "java.util.Map<String, Object>"
+
+
+def _request_ref_leaf(schema: dict) -> str:
+    """The sanitised type leaf of a request-body schema's ``$ref``, or '' when the body
+    is a union / inline (no single named ref). Used for the crud_base bind tokens, which
+    mirror the reference's ``leaf(req_ref)`` — the RAW schema leaf, not object-gated."""
+    if not isinstance(schema, dict):
+        return ""
+    ref = schema.get("$ref", "")
+    if not ref:
+        return ""
+    return type_name(ref.rsplit("/", 1)[-1])
+
+
+def _response_bind_leaf(schema: dict) -> str:
+    """The sanitised type leaf for a crud_base RESPONSE bind — the RAW schema leaf
+    (array-unwrapped), matching the reference's ``leaf(res_ref)``; NOT object-gated (the
+    bind is a structural type token compared by leaf, not an emitted return type)."""
+    return type_name(_response_raw_leaf(schema)) if _response_raw_leaf(schema) else ""
+
+
+def _collection_roles(spec: Spec, anchor: str, markup: dict) -> dict[str, dict]:
+    """Map role -> operation dict {verb, op_id} for the resource's collection + item
+    ops (list/create on the collection, get/update/delete on the item), mirroring the
+    reference ``group_resources`` roles. Used to derive the crud_base type binds."""
+    coll = collection_segment(anchor, markup)
+    roles: dict[str, dict] = {}
+    for path, item in (spec.doc.get("paths") or {}).items():
+        is_item = path.startswith(coll + "/{") and path.count("/{") == 1 and path.endswith("}")
+        is_coll = path == coll
+        if not (is_item or is_coll):
+            continue
+        for verb in ("get", "post", "put", "patch", "delete"):
+            o = item.get(verb)
+            if not (o and o.get("operationId")):
+                continue
+            if verb == "get":
+                role = "get" if is_item else "list"
+            elif verb == "post":
+                role = "create"
+            elif verb in ("put", "patch"):
+                role = "update"
+            else:
+                role = "delete"
+            roles.setdefault(role, {"verb": verb, "op": o["operationId"]})
+    return roles
+
+
+def _crud_bind(spec: Spec, anchor: str, markup: dict, base: str) -> list[str]:
+    """The crud_base bind token list for a resource — ``class:<Leaf>`` for each bound
+    generated type, in the reference's order. Returns [] when the base takes no bind."""
+    roles = _collection_roles(spec, anchor, markup)
+    item_leaf = _response_bind_leaf(spec.op_response.get((roles.get("get") or {}).get("op", ""), {}) or {})
+    list_leaf = _response_bind_leaf(spec.op_response.get((roles.get("list") or {}).get("op", ""), {}) or {})
+    binds: list[str] = []
+    if base == "ReadResource":
+        binds = [list_leaf or item_leaf, item_leaf]
+    elif base in ("CrudResource", "FabricResource"):
+        create_leaf = _request_ref_leaf(spec.op_body.get((roles.get("create") or {}).get("op", ""), {}) or {})
+        update_leaf = _request_ref_leaf(spec.op_body.get((roles.get("update") or {}).get("op", ""), {}) or {})
+        binds = [list_leaf or item_leaf, item_leaf, create_leaf, update_leaf]
+    return [f"class:{b}" if b else "any" for b in binds]
+
+
+def _is_map_type(java_type: str) -> bool:
+    return java_type.startswith("java.util.Map<")
+
+
+def _wrap_return(java_type: str, map_expr: str) -> str:
+    """A return-statement expression: pass the raw Map through when the return is Map,
+    else project it onto the typed DTO via ``asType``."""
+    if _is_map_type(java_type):
+        return map_expr
+    return f"asType({map_expr}, {java_type}.class)"
+
+
 def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
                 method_snake: str, op_id: str, is_override: bool = False) -> tuple[str, str]:
     """Return (method_java, builder_java_or_empty)."""
@@ -857,6 +1045,17 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
     # The hand bases (BaseResource/…) expose exactly these protected receivers.
     verb_fn = {"post": "restPost", "put": "restPut", "patch": "restPatch"}.get(verb, "")
 
+    # Every generated verb carries a trailing optional ``RequestOptions requestOptions``
+    # (plan 4.2 / PY-9) threaded to the base rest* receiver's request_options overload.
+    # We emit TWO overloads: a convenience form WITHOUT requestOptions (delegating with a
+    # null options → the client default) so existing callers keep compiling, and the FULL
+    # form carrying requestOptions (the parity surface — the enumerator's sidecar unfold
+    # records request_options for the collapsed method, so the surface reflects it). The
+    # ``convenience_args`` are the delegate call arguments (all params except the trailing
+    # requestOptions, which the convenience overload passes as ``null``).
+    ro_param = _REQUEST_OPTIONS_JAVA_PARAM
+    # Typed return DTO (JAVA-1): the op's 200/201 response type, or Map when none.
+    ret_type = response_java_type(spec, op_id)
     if write_verb and has_body:
         body_schema = spec.op_body.get(op_id) or {}
         if is_object_body(spec, body_schema):
@@ -865,38 +1064,53 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             req_cls = snake_to_pascal(method_snake) + "Request"
             builder_src = emit_request_builder(cls, method_snake, ftuples)
             _register_sidecar(cls, name, sidecar_records_for_fields(spec, fields, id_records))
-            params = id_params + [f"{req_cls} request"]
-            call = f"    return {verb_fn}({path_expr}, request.toBody());"
+            base_params = id_params + [f"{req_cls} request"]
+            call_args = id_args + ["request"]
+            map_expr = f"{verb_fn}({path_expr}, request.toBody(), requestOptions)"
         else:
             # §5.2 union body → a single Map body param.
-            params = id_params + ["java.util.Map<String, Object> body"]
+            base_params = id_params + ["java.util.Map<String, Object> body"]
+            call_args = id_args + ["body"]
             _register_sidecar(cls, name, id_records + [
                 {"name": "body", "kind": "positional", "type": "dict<string,any>", "required": True}])
-            call = f"    return {verb_fn}({path_expr}, body);"
+            map_expr = f"{verb_fn}({path_expr}, body, requestOptions)"
     elif write_verb:
-        params = id_params
+        base_params = list(id_params)
+        call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
-        call = f"    return {verb_fn}({path_expr}, new java.util.LinkedHashMap<>());"
+        map_expr = f"{verb_fn}({path_expr}, new java.util.LinkedHashMap<>(), requestOptions)"
     elif verb == "get":
         # §5.3 GET query door → a trailing query-params map (var_keyword).
-        params = id_params + ["java.util.Map<String, String> params"]
+        base_params = id_params + ["java.util.Map<String, String> params"]
+        call_args = id_args + ["params"]
         _register_sidecar(cls, name, id_records + [
             {"name": "params", "kind": "var_keyword", "type": "any", "required": False, "default": {}}])
-        call = f"    return restGet({path_expr}, params);"
+        map_expr = f"restGet({path_expr}, params, requestOptions)"
     else:  # delete
-        params = id_params
+        base_params = list(id_params)
+        call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
-        call = f"    return restDelete({path_expr});"
+        map_expr = f"restDelete({path_expr}, requestOptions)"
 
-    sig = ", ".join(params)
+    call = f"    return {_wrap_return(ret_type, map_expr)};"
     override = "  @Override\n" if is_override else ""
-    method = (f"  /** {name} (generated from operation {op_id!r}). */\n"
-              f"{override}  public java.util.Map<String, Object> {name}({sig}) {{\n{call}\n  }}")
+    full_sig = ", ".join(base_params + [ro_param])
+    conv_sig = ", ".join(base_params)
+    conv_call_args = ", ".join(call_args + ["(RequestOptions) null"])
+    method = (
+        f"  /** {name} (generated from operation {op_id!r}). */\n"
+        f"{override}  public {ret_type} {name}({conv_sig}) {{\n"
+        f"    return {name}({conv_call_args});\n"
+        f"  }}\n"
+        f"  /** {name} with a per-request {{@link RequestOptions}} override. */\n"
+        f"{override}  public {ret_type} {name}({full_sig}) {{\n{call}\n  }}"
+    )
     return method, builder_src
 
 
 def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
-                    update_schema_fields: set[str], field_schemas: dict[str, dict]) -> tuple[str, str]:
+                    update_schema_fields: set[str], field_schemas: dict[str, dict],
+                    item_type: str = "java.util.Map<String, Object>") -> tuple[str, str]:
     handler = sm.get("handler")
     if not handler:
         raise SystemExit(f"{markup['name']}.{sm_name}: set_method missing handler")
@@ -904,6 +1118,7 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
     name = snake_to_lower_camel(sm_name)
     args = sm.get("args") or {}
     params = ["String resourceId"]
+    call_idents = ["resourceId"]
     records: list[dict] = [{"name": "resource_id", "kind": "positional", "type": "string", "required": True}]
     build = ["    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();",
              f"    body.put(\"call_handler\", {java_str(handler)});"]
@@ -918,6 +1133,7 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
         required = bool(arg.get("required"))
         jtype = java_field_type(spec, field_schemas.get(field, {}))
         params.append(f"{jtype} {ident}")
+        call_idents.append(ident)
         rec: dict = {"name": arg_name, "kind": "positional",
                      "type": canonical_type(spec, field_schemas.get(field, {}), required),
                      "required": required}
@@ -928,14 +1144,25 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
             build.append(f"    body.put({java_str(field)}, {ident});")
         records.append(rec)
     params.append("java.util.Map<String, Object> extra")
+    call_idents.append("extra")
     records.append({"name": "extra", "kind": "var_keyword", "type": "any", "required": False, "default": {}})
     _register_sidecar(cls, name, records)
     build.append("    if (extra != null) { body.putAll(extra); }")
-    build.append("    return update(resourceId, body);")
-    sig = ", ".join(params)
-    method = (f"  /** {name} — sets call_handler={handler!r} + bound update fields (§7). */\n"
-              f"  public java.util.Map<String, Object> {name}({sig}) {{\n"
-              + "\n".join(build) + "\n  }")
+    # set_* wraps update() and returns the resource item DTO (JAVA-1), mirroring the
+    # reference whose set_* return the resource item type.
+    build.append(
+        f"    return {_wrap_return(item_type, 'update(resourceId, body, requestOptions)')};")
+    conv_sig = ", ".join(params)
+    full_sig = ", ".join(params + [_REQUEST_OPTIONS_JAVA_PARAM])
+    conv_delegate = ", ".join(call_idents + ["(RequestOptions) null"])
+    method = (
+        f"  /** {name} — sets call_handler={handler!r} + bound update fields (§7). */\n"
+        f"  public {item_type} {name}({conv_sig}) {{\n"
+        f"    return {name}({conv_delegate});\n"
+        f"  }}\n"
+        f"  /** {name} with a per-request {{@link RequestOptions}} override. */\n"
+        f"  public {item_type} {name}({full_sig}) {{\n"
+        + "\n".join(build) + "\n  }")
     return method, ""
 
 
@@ -1003,7 +1230,8 @@ def gen_header(desc: str) -> str:
         f"// {desc}\n"
         "\n"
         f"package {GEN_PACKAGE};\n\n"
-        f"import {REST_PACKAGE}.HttpClient;\n\n"
+        f"import {REST_PACKAGE}.HttpClient;\n"
+        f"import {REST_PACKAGE}.RequestOptions;\n\n"
     )
 
 
@@ -1022,6 +1250,9 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         base = join_path(spec.server_path, op[1].lstrip("/"))
     else:
         base = join_path(spec.server_path, anchor.lstrip("/"))
+    # Every command returns the resource's 200 response DTO (calling: CallResponse),
+    # resolved once from the command op's response — matching the reference (JAVA-1).
+    ret_type = response_java_type(spec, "call-commands")
 
     lines = [gen_header(f"Generated command-dispatch resource for the {spec.name!r} namespace.")]
     lines.append(f"/**\n * {name} — command-dispatch resource ({spec.name} spec). Each method POSTs\n"
@@ -1035,13 +1266,29 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
     lines.append("  public String getBasePath() { return BASE_PATH; }")
     lines.append("")
     lines.append("  private java.util.Map<String, Object> execute("
-                 "String command, String callId, java.util.Map<String, Object> params) {")
+                 "String command, String callId, java.util.Map<String, Object> params, "
+                 "RequestOptions requestOptions) {")
     lines.append("    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();")
     lines.append("    body.put(\"command\", command);")
     lines.append("    body.put(\"params\", params);")
     lines.append("    if (callId != null) { body.put(\"id\", callId); }")
-    lines.append("    return httpClient.post(BASE_PATH, body);")
+    lines.append("    return httpClient.post(BASE_PATH, body, requestOptions);")
     lines.append("  }")
+    if not _is_map_type(ret_type):
+        # This command-dispatch resource does not extend BaseResource, so project the
+        # decoded wire Map onto the typed response DTO with a local Gson (same lenient,
+        # non-validating view BaseResource.asType gives the CRUD resources).
+        lines.append("")
+        lines.append("  private static final com.google.gson.Gson RESPONSE_GSON ="
+                     " new com.google.gson.Gson();")
+        lines.append("")
+        lines.append("  private static <T> T asType(java.util.Map<String, Object> raw,"
+                     " Class<T> type) {")
+        lines.append("    if (raw == null) {")
+        lines.append("      return null;")
+        lines.append("    }")
+        lines.append("    return RESPONSE_GSON.fromJson(RESPONSE_GSON.toJsonTree(raw), type);")
+        lines.append("  }")
 
     mapping = (spec.schemas.get(request).get("discriminator") or {}).get("mapping") or {}
     builders: list[str] = []
@@ -1061,12 +1308,21 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         _register_sidecar(name, mname, records)
 
         id_param = ["String callId"] if with_id else []
-        params = id_param + [f"{req_cls} request"]
+        base_params = id_param + [f"{req_cls} request"]
+        full_params = base_params + [_REQUEST_OPTIONS_JAVA_PARAM]
+        conv_delegate = (["callId"] if with_id else []) + ["request", "(RequestOptions) null"]
         call_arg = "callId" if with_id else "null"
         lines.append("")
+        # Convenience overload (no requestOptions) delegating to the full form so existing
+        # callers keep compiling; the full form is the parity surface (request_options).
+        exec_expr = f"execute({java_str(cmd)}, {call_arg}, request.toBody(), requestOptions)"
         lines.append(f"  /** {mname} — command {cmd!r}. */")
-        lines.append(f"  public java.util.Map<String, Object> {mname}({', '.join(params)}) {{")
-        lines.append(f"    return execute({java_str(cmd)}, {call_arg}, request.toBody());")
+        lines.append(f"  public {ret_type} {mname}({', '.join(base_params)}) {{")
+        lines.append(f"    return {mname}({', '.join(conv_delegate)});")
+        lines.append("  }")
+        lines.append(f"  /** {mname} — command {cmd!r} with a per-request {{@link RequestOptions}} override. */")
+        lines.append(f"  public {ret_type} {mname}({', '.join(full_params)}) {{")
+        lines.append(f"    return {_wrap_return(ret_type, exec_expr)};")
         lines.append("  }")
 
     for b in builders:
@@ -1118,6 +1374,14 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
     if base == "FabricResource":
         extends = "FabricResourcePUT" if markup.get("update_method") == "PUT" else "FabricResource"
     bp = base_path(spec, anchor, markup)
+
+    # Register the structural CRUD contract (crud_base) for a method-contract base — the
+    # cross-port typed bind the reference publishes via its generic CrudResource[...] and
+    # the signature enumerator emits as the class's ``crud_base`` node (JAVA-1/2).
+    if base in ("CrudResource", "FabricResource", "ReadResource"):
+        binds = _crud_bind(spec, anchor, markup, base)
+        if binds:
+            _CRUD_BASES[name] = {"base": base, "bind": binds}
 
     header = gen_header(f"Generated REST resource for the {spec.name!r} namespace.")
     lines = [header]
@@ -1173,8 +1437,10 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
             raise SystemExit(f"{name}: set_methods require a CRUD base, got {base}")
         upd_fields = update_request_fields(spec, anchor, markup)
         upd_field_schemas = update_field_schemas(spec, anchor, markup)
+        sm_item_type = item_java_type(spec, anchor, markup)
         for sm_name, sm in set_methods.items():
-            method_src, _ = emit_set_method(spec, markup, sm_name, sm, upd_fields, upd_field_schemas)
+            method_src, _ = emit_set_method(
+                spec, markup, sm_name, sm, upd_fields, upd_field_schemas, sm_item_type)
             lines.append("")
             lines.append(method_src)
 
@@ -1426,6 +1692,20 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
         and not schema.get("properties") and not schema.get("type")
     ):
         schema = _resolve_type_ref(schema, schemas)
+    # Nullable-scalar idiom: OpenAPI-3.1 spells ``X | null`` as
+    # ``anyOf/oneOf: [<X>, {type: null}]`` (mirroring python's ``X | None``). Unwrap the
+    # single non-null variant so a nullable ``string``/``integer``/… field keeps its
+    # SCALAR Java type (String/Long/…), not the union → ``Map`` fallback. Without this the
+    # generated DTO types a nullable string field as ``Map<String,Object>`` and Gson throws
+    # ``Expected BEGIN_OBJECT but was STRING`` when the wire sends the string (JAVA-1 flip
+    # made these fields actually deserialized, exposing the mistype).
+    for comb in ("anyOf", "oneOf"):
+        variants = schema.get(comb)
+        if variants:
+            non_null = [v for v in variants if _resolve_type_ref(v, schemas).get("type") != "null"
+                        and v.get("type") != "null"]
+            if len(non_null) == 1:
+                return type_field_type(non_null[0], schemas)
     if schema.get("allOf") or schema.get("oneOf") or schema.get("anyOf") or schema.get("$ref"):
         return "java.util.Map<String, Object>"
     t = _schema_type(schema)
@@ -1545,6 +1825,12 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
         jtype = type_field_type(psc if isinstance(psc, dict) else {}, schemas)
         if field != wire_key:
             lines.append(f"  /** wire key: {wire_key} */")
+            # The Java field name was sanitised away from the exact wire key (a
+            # reserved word, a leading digit, a non-identifier rune, or a de-duped
+            # collision). Gson matches by field name by default, so bind the exact
+            # wire key explicitly — else the typed-return projection would silently
+            # leave this field null.
+            lines.append(f"  @com.google.gson.annotations.SerializedName({java_str(wire_key)})")
         if overlay_deprecated(wire_key, raw_name):
             # deprecated: still emitted (back-compat), flagged idiomatically so tooling
             # and IDEs surface it. javadoc @deprecated + the @Deprecated annotation.
@@ -1638,6 +1924,7 @@ def emit_types(psdk: Path, outs: dict[str, str], type_ns: list[tuple[str, str, s
 def build_outputs(psdk: Path) -> dict[str, str]:
     load_bases(psdk)  # validate x-sdk-bases (fail loud)
     _SIDECAR.clear()
+    _CRUD_BASES.clear()
     resource_dirs, type_ns = discover_specs(psdk)
     specs = [load_spec(psdk, ns) for ns in resource_dirs]
     outs: dict[str, str] = {}
@@ -1672,13 +1959,17 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     sidecar: dict[str, list[dict]] = {}
     for (cls, java_method) in sorted(_SIDECAR.keys()):
         sidecar[f"{cls}::{java_method}"] = _SIDECAR[(cls, java_method)]
+    crud_bases = {name: _CRUD_BASES[name] for name in sorted(_CRUD_BASES.keys())}
     outs["rest_signatures.json"] = _json.dumps(
         {
             "_comment": "Code generated by scripts/generate_rest.py; DO NOT EDIT. "
                         "Canonical typed-param records for generated REST operation/"
                         "command/set methods; consumed by scripts/enumerate_signatures.py "
-                        "to unfold the reflected Java builder params onto the oracle shape.",
+                        "to unfold the reflected Java builder params onto the oracle shape. "
+                        "``crud_bases`` publishes each CRUD/Read/Fabric resource's structural "
+                        "typed bind (the enumerator emits it as the class's ``crud_base``).",
             "methods": sidecar,
+            "crud_bases": crud_bases,
         },
         indent=2, sort_keys=False,
     ) + "\n"

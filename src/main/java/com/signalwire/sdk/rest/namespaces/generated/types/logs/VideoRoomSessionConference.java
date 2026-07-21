@@ -19,11 +19,11 @@ public final class VideoRoomSessionConference {
   public String source;
   public String type;
   public String url;
-  public java.util.Map<String, Object> room_name;
-  public java.util.Map<String, Object> status;
+  public String room_name;
+  public String status;
   public Boolean locked;
-  public java.util.Map<String, Object> started_at;
-  public java.util.Map<String, Object> ended_at;
+  public String started_at;
+  public String ended_at;
   public String charge;
   public java.util.List<Object> charge_details;
 }

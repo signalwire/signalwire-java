@@ -14,5 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class Contexts {
   /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
   public java.util.Map<String, Object> default_;
 }

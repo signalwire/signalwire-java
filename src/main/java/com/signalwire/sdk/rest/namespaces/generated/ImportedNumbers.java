@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** ImportedNumbers — REST resource client for the 'relay-rest' API namespace. */
 public class ImportedNumbers extends BaseResource {
@@ -17,8 +18,17 @@ public class ImportedNumbers extends BaseResource {
   }
 
   /** create (generated from operation 'create_imported_phone_number'). */
-  public java.util.Map<String, Object> create(CreateRequest request) {
-    return restPost(getBasePath(), request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse create(
+      CreateRequest request) {
+    return create(request, (RequestOptions) null);
+  }
+
+  /** create with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse create(
+      CreateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath(), request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
   }
 
   /** Closed typed request for {@link #create} (builder + extras door). */

@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 3a6886e044403e41b9d252231bb05701e3552317",
+  "generated_from": "signalwire-java @ a21b0a7dc71aa6463693d06e961f9c75eb4b6227",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1384,7 +1384,8 @@
           "unreceive"
         ],
         "RelayError": [
-          "__init__"
+          "__init__",
+          "get_code"
         ]
       },
       "functions": []
@@ -1393,6 +1394,7 @@
       "classes": {
         "Constants": [
           "is_call_gone_code",
+          "is_success_code",
           "is_terminal_action_state",
           "is_terminal_call_state",
           "is_terminal_message_state"
@@ -3271,6 +3273,15 @@
       },
       "functions": []
     },
+    "signalwire.rest.tls_context": {
+      "classes": {
+        "TlsContext": [
+          "from_ca_file",
+          "socket_factory"
+        ]
+      },
+      "functions": []
+    },
     "signalwire.runtime.env_provider": {
       "classes": {
         "EnvProvider": [
@@ -3545,6 +3556,23 @@
           "register_tools",
           "setup",
           "supports_multiple_instances"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.skills.mcp_gateway.skill": {
+      "classes": {
+        "MCPGatewaySkill": [
+          "get_description",
+          "get_global_data",
+          "get_hints",
+          "get_name",
+          "get_parameter_schema",
+          "get_prompt_sections",
+          "get_required_packages",
+          "get_version",
+          "register_tools",
+          "setup"
         ]
       },
       "functions": []

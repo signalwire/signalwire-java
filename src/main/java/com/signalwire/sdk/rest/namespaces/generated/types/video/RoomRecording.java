@@ -15,14 +15,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
 public final class RoomRecording {
   public String id;
   public String room_session_id;
-  public java.util.Map<String, Object> status;
-  public java.util.Map<String, Object> started_at;
-  public java.util.Map<String, Object> finished_at;
-  public java.util.Map<String, Object> duration;
-  public java.util.Map<String, Object> size_in_bytes;
-  public java.util.Map<String, Object> format;
+  public String status;
+  public String started_at;
+  public String finished_at;
+  public Long duration;
+  public Long size_in_bytes;
+  public String format;
   public Double cost_in_dollars;
-  public java.util.Map<String, Object> uri;
+  public String uri;
   public String created_at;
   public String updated_at;
 }

@@ -18,7 +18,7 @@ public final class FabricDeviceLeg {
   public String to;
   public String direction;
   public String source;
-  public java.util.Map<String, Object> url;
+  public String url;
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;

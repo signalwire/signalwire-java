@@ -9,6 +9,7 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.BaseResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** CxmlApplications — REST resource client for the 'fabric' API namespace. */
 public class CxmlApplications extends BaseResource {
@@ -17,29 +18,74 @@ public class CxmlApplications extends BaseResource {
   }
 
   /** list (generated from operation 'list_cxml_applications'). */
-  public java.util.Map<String, Object> list(java.util.Map<String, String> params) {
-    return restGet(getBasePath(), params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationListResponse list(
+      java.util.Map<String, String> params) {
+    return list(params, (RequestOptions) null);
+  }
+
+  /** list with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationListResponse list(
+      java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath(), params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationListResponse
+            .class);
   }
 
   /** get (generated from operation 'get_cxml_application'). */
-  public java.util.Map<String, Object> get(String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id, params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse get(
+      String id, java.util.Map<String, String> params) {
+    return get(id, params, (RequestOptions) null);
+  }
+
+  /** get with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse get(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id, params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse.class);
   }
 
   /** update (generated from operation 'update_cxml_application'). */
-  public java.util.Map<String, Object> update(String id, UpdateRequest request) {
-    return restPut(getBasePath() + "/" + id, request.toBody());
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse update(
+      String id, UpdateRequest request) {
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPut(getBasePath() + "/" + id, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationResponse.class);
   }
 
   /** delete (generated from operation 'delete_cxml_application'). */
   public java.util.Map<String, Object> delete(String id) {
-    return restDelete(getBasePath() + "/" + id);
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 
   /** listAddresses (generated from operation 'list_cxml_application_addresses'). */
-  public java.util.Map<String, Object> listAddresses(
-      String id, java.util.Map<String, String> params) {
-    return restGet(getBasePath() + "/" + id + "/" + "addresses", params);
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .CxmlApplicationAddressListResponse
+      listAddresses(String id, java.util.Map<String, String> params) {
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .CxmlApplicationAddressListResponse
+      listAddresses(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CxmlApplicationAddressListResponse
+            .class);
   }
 
   /** Closed typed request for {@link #update} (builder + extras door). */

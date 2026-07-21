@@ -18,6 +18,8 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 
 /**
  * Tests for {@code SwaigTest --class <FQCN> --list-tools}, the in-process file-loader path that
@@ -26,6 +28,11 @@ import org.junit.jupiter.api.Test;
  * host) whose tools are invisible to {@code --list-tools --url} because the SWML doc has no {@code
  * <ai>} verb to walk.
  */
+// Swaps the process-global System.out/err in @BeforeEach; JUnit runs test classes
+// concurrently, so lock the shared stream resources to serialize against every other
+// stream-capturing class (else a sibling swap races this capture -> empty stderr assertion).
+@ResourceLock(Resources.SYSTEM_OUT)
+@ResourceLock(Resources.SYSTEM_ERR)
 class SwaigTestCliTest {
 
   private ByteArrayOutputStream stdout;

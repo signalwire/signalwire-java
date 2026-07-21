@@ -125,19 +125,56 @@ class AuthTest {
   // ======== Secure tool integration ========
 
   @Test
-  void testSecureToolRejectsWithoutToken() {
+  @SuppressWarnings("unchecked")
+  void testSecureToolRendersWebhookToken() {
+    // A1 secure contract (SECURE-DEFAULT gate): the per-tool SWAIG token is a WIRE artifact — a
+    // secure tool's RENDERED webhook carries a meta_data_token; an insecure one does not. (Matching
+    // the Python reference, onFunctionCall dispatches WITHOUT validating the token; the /swaig HTTP
+    // handler validates the round-tripped token, so it is the rendered surface that is pinned
+    // here.)
     AgentBase agent = AgentBase.builder().name("test").authUser("u").authPassword("p").build();
-    var td =
+    agent.setPromptText("Test");
+    agent.defineTool(
         new com.signalwire.sdk.swaig.ToolDefinition(
             "secure_func",
             "Secure function",
             java.util.Map.of(),
-            (a, r) -> new com.signalwire.sdk.swaig.FunctionResult("secret"));
-    td.setSecure(true);
-    agent.defineTool(td);
+            (a, r) -> new com.signalwire.sdk.swaig.FunctionResult("secret")));
+    agent.defineTool(
+        new com.signalwire.sdk.swaig.ToolDefinition(
+                "insecure_func",
+                "Insecure function",
+                java.util.Map.of(),
+                (a, r) -> new com.signalwire.sdk.swaig.FunctionResult("open"))
+            .setSecure(false));
 
-    var result = agent.onFunctionCall("secure_func", java.util.Map.of(), java.util.Map.of());
-    assertTrue(result.getResponse().contains("Unauthorized"));
+    var swml = agent.renderSwml("http://localhost:3000");
+    var sections = (java.util.Map<String, Object>) swml.get("sections");
+    var main = (java.util.List<java.util.Map<String, Object>>) sections.get("main");
+    var ai =
+        main.stream()
+            .filter(v -> v.containsKey("ai"))
+            .findFirst()
+            .map(v -> (java.util.Map<String, Object>) v.get("ai"))
+            .orElseThrow();
+    var swaig = (java.util.Map<String, Object>) ai.get("SWAIG");
+    var functions = (java.util.List<java.util.Map<String, Object>>) swaig.get("functions");
+
+    var secure =
+        functions.stream()
+            .filter(fn -> "secure_func".equals(fn.get("function")))
+            .findFirst()
+            .orElseThrow();
+    var insecure =
+        functions.stream()
+            .filter(fn -> "insecure_func".equals(fn.get("function")))
+            .findFirst()
+            .orElseThrow();
+
+    // secure tool (the A1 default) → rendered webhook carries a token; insecure tool → none.
+    assertNotNull(secure.get("meta_data_token"), "secure tool must render a webhook token");
+    assertFalse(String.valueOf(secure.get("meta_data_token")).isEmpty(), "token must be non-empty");
+    assertNull(insecure.get("meta_data_token"), "insecure tool must NOT render a webhook token");
   }
 
   // ======== Environment variable auth ========

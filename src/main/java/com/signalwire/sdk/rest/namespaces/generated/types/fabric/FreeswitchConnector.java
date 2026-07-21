@@ -16,6 +16,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 public final class FreeswitchConnector {
   public String id;
   public String name;
-  public java.util.Map<String, Object> caller_id;
-  public java.util.Map<String, Object> send_as;
+  public String caller_id;
+  public String send_as;
 }
