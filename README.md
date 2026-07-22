@@ -241,6 +241,15 @@ implementation 'com.signalwire:signalwire-sdk:4.0.0'
 
 A single artifact provides the agents framework, the RELAY WebSocket client, and the REST client -- no optional modules or extras to select.
 
+**Building from source** (until the Maven Central release is live, or to run against unreleased changes):
+
+```bash
+git clone https://github.com/signalwire/signalwire-java.git
+cd signalwire-java
+./gradlew jar                 # produces build/libs/signalwire-sdk-<version>.jar
+./gradlew publishToMavenLocal # installs it into your local ~/.m2 for a Gradle/Maven dependency
+```
+
 ## Documentation
 
 Full reference documentation is available at **[developer.signalwire.com/sdks/agents-sdk](https://developer.signalwire.com/sdks/agents-sdk)**.
@@ -293,8 +302,14 @@ Guides are also available in the [`docs/`](docs/) directory:
 | `SWML_SSL_ENABLED` | Agents | Enable HTTPS (`true`, `1`, `yes`) |
 | `SWML_SSL_CERT_PATH` | Agents | Path to SSL certificate |
 | `SWML_SSL_KEY_PATH` | Agents | Path to SSL private key |
+| `SIGNALWIRE_REST_CA_FILE` | REST | Path to a custom CA bundle for the REST (HTTP) transport (private/self-signed platform cert) |
+| `SIGNALWIRE_RELAY_CA_FILE` | RELAY | Path to a custom CA bundle for the RELAY (WebSocket) transport |
 | `SIGNALWIRE_LOG_LEVEL` | All | Logging level (`debug`, `info`, `warn`, `error`) |
 | `SIGNALWIRE_LOG_MODE` | All | Set to `off` to suppress all logging |
+
+Your `SIGNALWIRE_PROJECT_ID`, `SIGNALWIRE_API_TOKEN`, and `SIGNALWIRE_SPACE` are on the
+[SignalWire dashboard](https://my.signalwire.com) under **API** — the project ID and a
+generated API token, and your space hostname (`<name>.signalwire.com`).
 
 ## Testing
 

@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 
 public class DatasphereSkill implements SkillBase {
@@ -101,10 +102,15 @@ public class DatasphereSkill implements SkillBase {
                         + Base64.getEncoder()
                             .encodeToString(authStr.getBytes(StandardCharsets.UTF_8));
 
-                HttpClient client = HttpClient.newHttpClient();
+                // Bound the fetch so a hung upstream can't wedge the SWAIG call:
+                // a 10s connect cap + a 30s request cap (matches the Python
+                // reference's requests default; DataSphere has no explicit cap).
+                HttpClient client =
+                    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
                 HttpRequest request =
                     HttpRequest.newBuilder()
                         .uri(URI.create(url))
+                        .timeout(Duration.ofSeconds(30))
                         .header("Content-Type", "application/json")
                         .header("Authorization", authHeader)
                         .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(body)))

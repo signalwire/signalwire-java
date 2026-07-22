@@ -178,7 +178,9 @@ public class WebSearchSkill implements SkillBase {
               "%s/customsearch/v1?key=%s&cx=%s&q=%s&num=%d",
               base, apiKey, searchEngineId, encodedQuery, numResults);
 
-      HttpClient client = HttpClient.newHttpClient();
+      // Bound the connect phase too (not just the request) so a hung TCP/TLS
+      // handshake can't run past the per-page timeout.
+      HttpClient client = HttpClient.newBuilder().connectTimeout(pageTimeout()).build();
       HttpRequest request =
           HttpRequest.newBuilder()
               .uri(URI.create(url))

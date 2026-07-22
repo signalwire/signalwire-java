@@ -33,7 +33,7 @@ client.calling().dial(
 
 ## Features
 
-- Single `RestClient` with 20 namespaced sub-objects for every API
+- Single `RestClient` with 22 namespaced sub-objects for every API
 - All calling commands: dial, play, record, collect, detect, tap, stream, AI, transcribe
 - Full Fabric API: resource types with CRUD + addresses, tokens, and generic resources
 - Datasphere: document management and semantic search
@@ -41,6 +41,36 @@ client.calling().dial(
 - Phone number management, 10DLC registry, MFA, logs, and more
 - Uses `java.net.http.HttpClient` for connection pooling across all calls
 - Map returns -- raw JSON decoded to Maps, no wrapper objects to learn
+
+## Request Options (per-call timeout & retries)
+
+Every request's transport behavior -- timeout, retries, retry backoff, retry-on-status,
+and an abort signal -- is controlled by an immutable `RequestOptions`. Build one with
+`RequestOptions.builder()` (all fields optional) and apply it two ways:
+
+```java
+import com.signalwire.sdk.rest.RequestOptions;
+
+var opts = RequestOptions.builder()
+    .timeout(5.0)                 // seconds; caps the whole request
+    .retries(2)                   // retry a failed request up to N times
+    .retryOnStatus(java.util.Set.of(429, 503))
+    .build();
+
+// Client default -- applied to every request unless overridden per-call:
+var client = RestClient.builder()
+    .project("your-project-id").token("your-api-token").space("example.signalwire.com")
+    .requestOptions(opts)
+    .build();
+
+// Per-call override -- pass RequestOptions as the trailing argument on any
+// CRUD/list/get/create/update/delete method (merged over the client default):
+var agent = client.fabric().aiAgents().get("agent-id",
+    RequestOptions.builder().timeout(2.0).build());
+```
+
+A per-call `RequestOptions` is merged over the client default, so you can set a global
+timeout on the client and tighten it for a single latency-sensitive call.
 
 ## Documentation
 
@@ -71,6 +101,7 @@ client.calling().dial(
 | `SIGNALWIRE_PROJECT_ID` | Project ID for authentication |
 | `SIGNALWIRE_API_TOKEN` | API token for authentication |
 | `SIGNALWIRE_SPACE` | Space hostname (e.g. `example.signalwire.com`) |
+| `SIGNALWIRE_REST_CA_FILE` | Path to a custom CA bundle for the REST transport (private/self-signed platform cert) |
 | `SIGNALWIRE_LOG_LEVEL` | Log level (`debug` for HTTP request details) |
 
 ## Module Structure
@@ -87,5 +118,5 @@ com.signalwire.sdk.rest/
         PhoneNumbersNamespace.java  -- Phone number management
         DatasphereNamespace.java    -- Document management and search
         VideoNamespace.java         -- Video rooms and sessions
-        ... and 15 more
+        ... and 17 more
 ```

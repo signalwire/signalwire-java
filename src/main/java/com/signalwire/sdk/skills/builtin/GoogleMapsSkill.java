@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 
 public class GoogleMapsSkill implements SkillBase {
@@ -66,10 +67,18 @@ public class GoogleMapsSkill implements SkillBase {
                         + URLEncoder.encode(address, StandardCharsets.UTF_8)
                         + "&key="
                         + apiKey;
-                HttpClient client = HttpClient.newHttpClient();
+                // Bound the Google Maps fetch so a hung endpoint can't wedge the
+                // SWAIG call: 10s connect + 30s request (matches the Python
+                // reference's requests.get(..., timeout=30), google_maps/skill.py).
+                HttpClient client =
+                    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
                 HttpResponse<String> resp =
                     client.send(
-                        HttpRequest.newBuilder().uri(URI.create(url)).GET().build(),
+                        HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(Duration.ofSeconds(30))
+                            .GET()
+                            .build(),
                         HttpResponse.BodyHandlers.ofString());
                 Map<String, Object> result =
                     new Gson()
@@ -114,10 +123,18 @@ public class GoogleMapsSkill implements SkillBase {
                         + destinations
                         + "&key="
                         + apiKey;
-                HttpClient client = HttpClient.newHttpClient();
+                // Bound the Google Maps fetch so a hung endpoint can't wedge the
+                // SWAIG call: 10s connect + 30s request (matches the Python
+                // reference's requests.get(..., timeout=30), google_maps/skill.py).
+                HttpClient client =
+                    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
                 HttpResponse<String> resp =
                     client.send(
-                        HttpRequest.newBuilder().uri(URI.create(url)).GET().build(),
+                        HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .timeout(Duration.ofSeconds(30))
+                            .GET()
+                            .build(),
                         HttpResponse.BodyHandlers.ofString());
                 Map<String, Object> result =
                     new Gson()

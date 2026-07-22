@@ -12,6 +12,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 
 public class WikipediaSearchSkill implements SkillBase {
@@ -93,7 +94,10 @@ public class WikipediaSearchSkill implements SkillBase {
         wikiBase = wikiBase.substring(0, wikiBase.length() - 1);
       }
 
-      HttpClient client = HttpClient.newHttpClient();
+      // Bound each Wikipedia fetch so a hung endpoint can't wedge the SWAIG call:
+      // 10s connect + a 10s request cap (matches the Python reference's
+      // requests.get(..., timeout=10), wikipedia_search/skill.py).
+      HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
       // Step 1: search for articles matching the query.
       String searchUrl =
@@ -105,7 +109,11 @@ public class WikipediaSearchSkill implements SkillBase {
               + numResults;
       HttpResponse<String> searchResponse =
           client.send(
-              HttpRequest.newBuilder().uri(URI.create(searchUrl)).GET().build(),
+              HttpRequest.newBuilder()
+                  .uri(URI.create(searchUrl))
+                  .timeout(Duration.ofSeconds(10))
+                  .GET()
+                  .build(),
               HttpResponse.BodyHandlers.ofString());
       Map<String, Object> searchData =
           new Gson()
@@ -131,7 +139,11 @@ public class WikipediaSearchSkill implements SkillBase {
                 + URLEncoder.encode(title, StandardCharsets.UTF_8);
         HttpResponse<String> extractResponse =
             client.send(
-                HttpRequest.newBuilder().uri(URI.create(extractUrl)).GET().build(),
+                HttpRequest.newBuilder()
+                    .uri(URI.create(extractUrl))
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build(),
                 HttpResponse.BodyHandlers.ofString());
         Map<String, Object> extractData =
             new Gson()

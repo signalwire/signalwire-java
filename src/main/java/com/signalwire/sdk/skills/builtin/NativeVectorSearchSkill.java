@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -119,10 +120,15 @@ public class NativeVectorSearchSkill implements SkillBase {
                 // native_vector_search/skill.py _search_remote (NOT the bare
                 // remote_url). remote_base_url has any user:pass@ stripped.
                 String searchUrl = remoteBaseUrl + "/search";
-                HttpClient client = HttpClient.newHttpClient();
+                // Bound the remote search so a hung backend can't wedge the SWAIG
+                // call: 10s connect + 30s request (matches the Python reference's
+                // _search_remote timeout=30, native_vector_search/skill.py).
+                HttpClient client =
+                    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
                 HttpRequest.Builder builder =
                     HttpRequest.newBuilder()
                         .uri(URI.create(searchUrl))
+                        .timeout(Duration.ofSeconds(30))
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofString(new Gson().toJson(body)));
                 if (remoteAuth != null) {
