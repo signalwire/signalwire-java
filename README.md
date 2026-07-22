@@ -28,7 +28,7 @@ _Build AI voice agents, control live calls over WebSocket, and manage every Sign
 |-----------|-------------|------------|
 | **AI Agents** | Build voice agents that handle calls autonomously -- the platform runs the AI pipeline, your code defines the persona, tools, and call flow | [Agent Guide](#ai-agents) |
 | **RELAY Client** | Control live calls and SMS/MMS in real time over WebSocket -- answer, play, record, collect DTMF, conference, transfer, and more | [RELAY docs](relay/README.md) |
-| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 18+ API namespaces | [REST docs](rest/README.md) |
+| **REST Client** | Manage SignalWire resources over HTTP -- phone numbers, SIP endpoints, Fabric AI agents, video rooms, messaging, and 22 API namespaces | [REST docs](rest/README.md) |
 
 ```groovy
 // build.gradle -- requires Java 21+
@@ -211,7 +211,7 @@ public class QuickstartRest {
 }
 ```
 
-- 20 namespaced API surfaces: Fabric (13 resource types), Calling (37 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
+- 22 namespaced API surfaces: Fabric (16 resource types), Calling (37 commands), Video, Datasphere, Phone Numbers, SIP, Queues, Recordings, and more
 - Uses `java.net.http.HttpClient` for connection pooling
 - Map returns -- raw JSON decoded to Maps, no wrapper objects
 
