@@ -41,9 +41,10 @@ jobs:
         run: |
           set -euo pipefail
           port_sha='${{ github.sha }}'
-          # PINNED to wave/1-aplus (matches the porting-sdk checkout ref below) so the
-          # last-green cache marker keys on the same oracle CI actually checks out.
-          # REVERT to /commits/main when porting-sdk wave/1-aplus merges.
+          # Keys the last-green cache marker on porting-sdk main's SHA (the steady-state
+          # checkout ref). A coordinated pass sets the PORTING_SDK_REF variable to a wave
+          # branch; the marker still keys on main, so a pinned run simply won't hit the
+          # cache and re-runs — which is the desired behavior during a coordinated pass.
           psdk_sha=$(GH_TOKEN="$PSDK_TOKEN" gh api repos/signalwire/porting-sdk/commits/main --jq .sha)
           echo "cache_key=multi-os-green-v1-${port_sha}-${psdk_sha}" >> "$GITHUB_OUTPUT"
       - name: Probe last-green marker
@@ -86,12 +87,10 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
-          # PINNED to wave/1-aplus: the mcp_gateway skill oracle (MCPGatewaySkill +
-          # verify_ssl) and the verify_ssl_parity/tls_verify java entries live on
-          # porting-sdk wave/1-aplus, not yet on main — without this pin the DRIFT /
-          # verify_ssl_parity gates go RED in CI even though local passes.
-          # REVERT this ref to main when porting-sdk wave/1-aplus merges.
-          ref: main
+          # Coordinated-pass pin: 'main' normally; set the PORTING_SDK_REF repo variable
+          # to a wave branch to test a coordinated porting-sdk change, declared on the PR
+          # (see porting-sdk/COORDINATED_PASS.md). No revert commit.
+          ref: ${{ vars.PORTING_SDK_REF || 'main' }}
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 
