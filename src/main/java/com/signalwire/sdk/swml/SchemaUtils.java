@@ -155,8 +155,13 @@ public class SchemaUtils {
    * by wiring {@code com.networknt:json-schema-validator} or similar here.
    */
   private void initFullValidator() {
-    // Reserved for full-validator integration.
-    this.fullValidator = null;
+    // The focused draft-2020-12 subset validator (validateVerbFull) operates
+    // directly on the loaded schema — no external validator object is needed.
+    // Mark full validation available whenever the schema carries verb defs so
+    // validateVerb() routes closed-key / type / required checks through it
+    // (falls back to the lightweight required-only check when the schema is
+    // empty, e.g. a mocked/partial schema).
+    this.fullValidator = (schema != null && !verbs.isEmpty()) ? this : null;
   }
 
   /**
@@ -249,8 +254,396 @@ public class SchemaUtils {
 
   private Map.Entry<Boolean, List<String>> validateVerbFull(
       String verbName, Map<String, Object> verbConfig) {
-    // Reserved for full-validator wiring; falls back to lightweight check.
-    return validateVerbLightweight(verbName, verbConfig);
+    // Full structural validation against the vendored SWML JSON Schema
+    // (draft 2020-12). Python delegates this to jsonschema-rs by wrapping the
+    // verb in a minimal document; the Java port ships a focused validator over
+    // the exact keyword subset the SWML schema uses (type, properties,
+    // required, unevaluatedProperties/additionalProperties closed-key checks,
+    // $ref, oneOf/anyOf/allOf/not, const, enum, pattern, if/then/else, items).
+    // This enforces the strict-render contract — unknown/misspelled keys on a
+    // closed verb, wrong-typed config, and missing required keys all raise —
+    // matching Python's add_verb choke point.
+    VerbInfo v = verbs.get(verbName);
+    if (v == null) {
+      return new AbstractMap.SimpleImmutableEntry<>(
+          false, Collections.singletonList("Unknown verb: " + verbName));
+    }
+    // The inner verb schema (definition.properties[verbName]) is what
+    // constrains the config object (e.g. Answer.properties.answer). Validate
+    // the config directly against it. If the shape is missing, fall back to the
+    // lightweight required-only check rather than over-raise.
+    if (!v.definition.has("properties")) {
+      return validateVerbLightweight(verbName, verbConfig);
+    }
+    JsonObject outerProps = v.definition.getAsJsonObject("properties");
+    if (!outerProps.has(verbName) || !outerProps.get(verbName).isJsonObject()) {
+      return validateVerbLightweight(verbName, verbConfig);
+    }
+    JsonObject innerSchema = outerProps.getAsJsonObject(verbName);
+    JsonElement configEl = new Gson().toJsonTree(verbConfig);
+    List<String> errors = new ArrayList<>();
+    // The ai verb is validated TOP-LEVEL-KEYS ONLY (reject unknown/misspelled
+    // top-level keys + require `prompt`; ai.params stays open). Its deep
+    // sub-schema (prompt.pom / SWAIG function shapes) legitimately renders
+    // shapes the bundled JSON-schema does not fully accept — e.g. an empty
+    // prompt.pom [] for a promptless agent, or SWAIG defaults/webhook fields —
+    // so full-deep-validating the ai verb would FALSE-REJECT valid documents.
+    // The reference (jsonschema-rs on the same schema) does not surface these as
+    // errors at add_verb for the ai verb in practice; the strict-render contract
+    // for ai is only the top-level-key check. Match that here.
+    JsonObject aiObject = aiTopLevelSchema(verbName, innerSchema);
+    if (aiObject != null) {
+      validateTopLevelOnly(aiObject, configEl, errors);
+    } else {
+      validateAgainst(innerSchema, configEl, "$", errors);
+    }
+    if (errors.isEmpty()) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    String joined = String.join("; ", errors);
+    if (joined.length() > 500) {
+      joined = joined.substring(0, 500) + "...";
+    }
+    return new AbstractMap.SimpleImmutableEntry<>(
+        false,
+        Collections.singletonList("Schema validation error for '" + verbName + "': " + joined));
+  }
+
+  /**
+   * If {@code verbName} is the {@code ai} verb and its inner schema is a {@code $ref} to a closed
+   * object (AIObject), return that resolved object so the ai verb can be validated top-level-only.
+   * Returns {@code null} for every other verb (which gets full validation).
+   */
+  private JsonObject aiTopLevelSchema(String verbName, JsonObject innerSchema) {
+    if (!"ai".equals(verbName)) {
+      return null;
+    }
+    if (innerSchema.has("$ref") && innerSchema.get("$ref").isJsonPrimitive()) {
+      return resolveRef(innerSchema.get("$ref").getAsString());
+    }
+    return innerSchema;
+  }
+
+  /**
+   * Top-level-key validation of an object against {@code objSchema}: enforce {@code required} and
+   * the closed-key check ({@code unevaluatedProperties:{"not":{}}}) over the object's own keys, but
+   * do NOT descend into property values. Used for the ai verb (see validateVerbFull).
+   */
+  private void validateTopLevelOnly(JsonObject objSchema, JsonElement value, List<String> errors) {
+    if (!value.isJsonObject()) {
+      errors.add("$ must be an object");
+      return;
+    }
+    JsonObject obj = value.getAsJsonObject();
+    JsonObject props =
+        objSchema.has("properties") && objSchema.get("properties").isJsonObject()
+            ? objSchema.getAsJsonObject("properties")
+            : null;
+    if (objSchema.has("required") && objSchema.get("required").isJsonArray()) {
+      for (JsonElement r : objSchema.getAsJsonArray("required")) {
+        if (r.isJsonPrimitive() && r.getAsJsonPrimitive().isString() && !obj.has(r.getAsString())) {
+          errors.add("$ is missing required property '" + r.getAsString() + "'");
+        }
+      }
+    }
+    boolean closed = false;
+    if (objSchema.has("unevaluatedProperties")
+        && objSchema.get("unevaluatedProperties").isJsonObject()) {
+      JsonObject up = objSchema.getAsJsonObject("unevaluatedProperties");
+      closed = up.has("not") && up.getAsJsonObject("not").size() == 0;
+    }
+    if (objSchema.has("additionalProperties")
+        && objSchema.get("additionalProperties").isJsonPrimitive()
+        && objSchema.get("additionalProperties").getAsJsonPrimitive().isBoolean()) {
+      closed = closed || !objSchema.get("additionalProperties").getAsBoolean();
+    }
+    if (closed) {
+      for (String key : obj.keySet()) {
+        if (props == null || !props.has(key)) {
+          errors.add("$ has unknown property '" + key + "'");
+        }
+      }
+    }
+  }
+
+  // ---- focused draft-2020-12 subset validator -------------------------------
+  //
+  // Handles exactly the keywords the SWML schema uses. Unknown keywords are
+  // ignored (never over-raise). The `unevaluatedProperties` keyword is treated
+  // as a local closed/open-key control: the SWML schema never mixes it with
+  // sibling-property-adding composition inside the same object (verified), so a
+  // closed object ({"not":{}}) allows only its own `properties` keys while an
+  // open one ({}) allows extras — matching jsonschema-rs on this schema.
+
+  private static final int MAX_DEPTH = 64;
+
+  private void validateAgainst(
+      JsonElement schemaEl, JsonElement value, String path, List<String> errors) {
+    validateAgainst(schemaEl, value, path, errors, 0);
+  }
+
+  private void validateAgainst(
+      JsonElement schemaEl, JsonElement value, String path, List<String> errors, int depth) {
+    if (depth > MAX_DEPTH || !schemaEl.isJsonObject()) {
+      return;
+    }
+    JsonObject schema = schemaEl.getAsJsonObject();
+
+    // $ref — resolve and validate against the referenced def.
+    if (schema.has("$ref") && schema.get("$ref").isJsonPrimitive()) {
+      JsonObject resolved = resolveRef(schema.get("$ref").getAsString());
+      if (resolved != null) {
+        validateAgainst(resolved, value, path, errors, depth + 1);
+      }
+      // A $ref node in this schema carries no sibling constraints worth
+      // enforcing beyond the target (only description/title), so we're done.
+      return;
+    }
+
+    // allOf — must satisfy every subschema.
+    if (schema.has("allOf") && schema.get("allOf").isJsonArray()) {
+      for (JsonElement sub : schema.getAsJsonArray("allOf")) {
+        validateAgainst(sub, value, path, errors, depth + 1);
+      }
+    }
+
+    // oneOf — exactly one subschema must match.
+    if (schema.has("oneOf") && schema.get("oneOf").isJsonArray()) {
+      int matches = 0;
+      for (JsonElement sub : schema.getAsJsonArray("oneOf")) {
+        if (matchesQuiet(sub, value, depth + 1)) {
+          matches++;
+        }
+      }
+      if (matches != 1) {
+        errors.add(path + " must match exactly one schema (matched " + matches + ")");
+      }
+    }
+
+    // anyOf — at least one subschema must match.
+    if (schema.has("anyOf") && schema.get("anyOf").isJsonArray()) {
+      boolean any = false;
+      for (JsonElement sub : schema.getAsJsonArray("anyOf")) {
+        if (matchesQuiet(sub, value, depth + 1)) {
+          any = true;
+          break;
+        }
+      }
+      if (!any) {
+        errors.add(path + " does not match any allowed schema");
+      }
+    }
+
+    // not — the subschema must NOT match.
+    if (schema.has("not") && schema.get("not").isJsonObject()) {
+      if (matchesQuiet(schema.getAsJsonObject("not"), value, depth + 1)) {
+        errors.add(path + " must not match the forbidden schema");
+      }
+    }
+
+    // if/then/else.
+    if (schema.has("if") && schema.get("if").isJsonObject()) {
+      boolean cond = matchesQuiet(schema.getAsJsonObject("if"), value, depth + 1);
+      if (cond && schema.has("then")) {
+        validateAgainst(schema.get("then"), value, path, errors, depth + 1);
+      } else if (!cond && schema.has("else")) {
+        validateAgainst(schema.get("else"), value, path, errors, depth + 1);
+      }
+    }
+
+    // const.
+    if (schema.has("const")) {
+      if (!schema.get("const").equals(value)) {
+        errors.add(path + " must equal the required constant");
+      }
+    }
+
+    // enum.
+    if (schema.has("enum") && schema.get("enum").isJsonArray()) {
+      boolean found = false;
+      for (JsonElement e : schema.getAsJsonArray("enum")) {
+        if (e.equals(value)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        errors.add(path + " is not one of the allowed values");
+      }
+    }
+
+    // type.
+    if (schema.has("type")) {
+      checkType(schema.get("type"), value, path, errors);
+    }
+
+    // pattern (strings only).
+    if (schema.has("pattern") && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+      String pat = schema.get("pattern").getAsString();
+      try {
+        if (!java.util.regex.Pattern.compile(pat).matcher(value.getAsString()).find()) {
+          errors.add(path + " does not match the required pattern");
+        }
+      } catch (java.util.regex.PatternSyntaxException ignored) {
+        // Unenforceable pattern — do not over-raise.
+      }
+    }
+
+    // Object-shape keywords.
+    if (value.isJsonObject()) {
+      JsonObject obj = value.getAsJsonObject();
+
+      // required.
+      if (schema.has("required") && schema.get("required").isJsonArray()) {
+        for (JsonElement r : schema.getAsJsonArray("required")) {
+          if (r.isJsonPrimitive() && r.getAsJsonPrimitive().isString()) {
+            String key = r.getAsString();
+            if (!obj.has(key)) {
+              errors.add(path + " is missing required property '" + key + "'");
+            }
+          }
+        }
+      }
+
+      // properties — validate present values against their subschemas.
+      JsonObject props =
+          schema.has("properties") && schema.get("properties").isJsonObject()
+              ? schema.getAsJsonObject("properties")
+              : null;
+      if (props != null) {
+        for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
+          if (props.has(e.getKey())) {
+            validateAgainst(
+                props.get(e.getKey()), e.getValue(), path + "." + e.getKey(), errors, depth + 1);
+          }
+        }
+      }
+
+      // additionalProperties / unevaluatedProperties handling for keys not
+      // named in `properties`. The SWML schema uses:
+      //   - {"not":{}} or false  -> CLOSED: any undeclared key is an error
+      //     (the closed-verb / closed-AI-object case the strict-render contract
+      //     turns on).
+      //   - {} (empty schema)     -> OPEN: undeclared keys allowed (ai.params).
+      //   - {"type":...}          -> undeclared keys must VALIDATE against that
+      //     subschema (e.g. Section allows arbitrary section names whose value
+      //     is an array of SWMLMethod). NOT a close.
+      JsonElement extraCtl =
+          schema.has("unevaluatedProperties")
+              ? schema.get("unevaluatedProperties")
+              : (schema.has("additionalProperties") ? schema.get("additionalProperties") : null);
+      if (extraCtl != null) {
+        boolean closed = false;
+        JsonObject extraSchema = null;
+        if (extraCtl.isJsonPrimitive() && extraCtl.getAsJsonPrimitive().isBoolean()) {
+          closed = !extraCtl.getAsBoolean();
+        } else if (extraCtl.isJsonObject()) {
+          JsonObject ec = extraCtl.getAsJsonObject();
+          if (ec.size() == 0) {
+            closed = false; // {} = open
+          } else if (ec.has("not") && ec.getAsJsonObject("not").size() == 0) {
+            closed = true; // {"not":{}} = closed
+          } else {
+            extraSchema = ec; // real subschema for extras
+          }
+        }
+        for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
+          if (props != null && props.has(e.getKey())) {
+            continue;
+          }
+          if (closed) {
+            errors.add(path + " has unknown property '" + e.getKey() + "'");
+          } else if (extraSchema != null) {
+            validateAgainst(extraSchema, e.getValue(), path + "." + e.getKey(), errors, depth + 1);
+          }
+        }
+      }
+    }
+
+    // Array-shape keywords.
+    if (value.isJsonArray()) {
+      JsonArray arr = value.getAsJsonArray();
+      if (schema.has("items") && schema.get("items").isJsonObject()) {
+        JsonObject items = schema.getAsJsonObject("items");
+        for (int i = 0; i < arr.size(); i++) {
+          validateAgainst(items, arr.get(i), path + "[" + i + "]", errors, depth + 1);
+        }
+      }
+      if (schema.has("minItems") && schema.get("minItems").isJsonPrimitive()) {
+        if (arr.size() < schema.get("minItems").getAsInt()) {
+          errors.add(path + " has too few items");
+        }
+      }
+    }
+  }
+
+  /** True when {@code value} validates cleanly against {@code schemaEl} (no errors collected). */
+  private boolean matchesQuiet(JsonElement schemaEl, JsonElement value, int depth) {
+    List<String> local = new ArrayList<>();
+    validateAgainst(schemaEl, value, "$", local, depth);
+    return local.isEmpty();
+  }
+
+  /** Resolve a local {@code #/$defs/Name} reference against the loaded schema. */
+  private JsonObject resolveRef(String ref) {
+    final String prefix = "#/$defs/";
+    if (!ref.startsWith(prefix) || schema == null || !schema.has("$defs")) {
+      return null;
+    }
+    String name = ref.substring(prefix.length());
+    JsonObject defs = schema.getAsJsonObject("$defs");
+    if (defs.has(name) && defs.get(name).isJsonObject()) {
+      return defs.getAsJsonObject(name);
+    }
+    return null;
+  }
+
+  /** JSON-Schema {@code type} check (string or array of strings). */
+  private void checkType(JsonElement typeEl, JsonElement value, String path, List<String> errors) {
+    List<String> allowed = new ArrayList<>();
+    if (typeEl.isJsonPrimitive() && typeEl.getAsJsonPrimitive().isString()) {
+      allowed.add(typeEl.getAsString());
+    } else if (typeEl.isJsonArray()) {
+      for (JsonElement t : typeEl.getAsJsonArray()) {
+        if (t.isJsonPrimitive() && t.getAsJsonPrimitive().isString()) {
+          allowed.add(t.getAsString());
+        }
+      }
+    }
+    if (allowed.isEmpty()) {
+      return;
+    }
+    for (String t : allowed) {
+      if (typeMatches(t, value)) {
+        return;
+      }
+    }
+    errors.add(path + " has the wrong type (expected " + allowed + ")");
+  }
+
+  private boolean typeMatches(String type, JsonElement value) {
+    switch (type) {
+      case "object":
+        return value.isJsonObject();
+      case "array":
+        return value.isJsonArray();
+      case "null":
+        return value.isJsonNull();
+      case "string":
+        return value.isJsonPrimitive() && value.getAsJsonPrimitive().isString();
+      case "boolean":
+        return value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean();
+      case "number":
+        return value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber();
+      case "integer":
+        if (!(value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber())) {
+          return false;
+        }
+        double d = value.getAsDouble();
+        return d == Math.rint(d) && !Double.isInfinite(d);
+      default:
+        return true; // unknown type token — do not over-raise
+    }
   }
 
   private Map.Entry<Boolean, List<String>> validateVerbLightweight(
@@ -274,8 +667,20 @@ public class SchemaUtils {
       return new AbstractMap.SimpleImmutableEntry<>(
           false, Collections.singletonList("Schema validator not initialized"));
     }
-    // Reserved for full-validator wiring.
-    return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    // Validate the whole document against the root schema with the focused
+    // draft-2020-12 validator. Mirrors Python's full-validator path.
+    JsonElement docEl = new Gson().toJsonTree(document);
+    List<String> errors = new ArrayList<>();
+    validateAgainst(schema, docEl, "$", errors);
+    if (errors.isEmpty()) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    String joined = String.join("; ", errors);
+    if (joined.length() > 500) {
+      joined = joined.substring(0, 500) + "...";
+    }
+    return new AbstractMap.SimpleImmutableEntry<>(
+        false, Collections.singletonList("Document validation error: " + joined));
   }
 
   /**

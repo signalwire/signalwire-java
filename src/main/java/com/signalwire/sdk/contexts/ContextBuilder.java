@@ -331,6 +331,51 @@ public class ContextBuilder {
                   + "when contexts/steps are in use. Rename your "
                   + "tool(s) to avoid the collision.");
         }
+
+        // Validate step set_functions([...]) whitelists against the known tool
+        // universe. A step that whitelists a function which is neither a
+        // registered SWAIG tool nor a reserved native tool is a DANGLING
+        // reference: it renders a step whose active-function set silently
+        // points at nothing (r5 F3 / strict-render GAP 2 — get_datetime vs
+        // get_current_time). Only enforce when a real registry is present (the
+        // supplier is wired by AgentBase.defineContexts); a bare ContextBuilder
+        // with no agent cannot know the tool universe, so it must not red a
+        // valid document there. Mirrors Python ContextBuilder.validate().
+        Set<String> knownFunctions = new HashSet<>(RESERVED_NATIVE_TOOL_NAMES);
+        knownFunctions.addAll(registered);
+        for (var ctxEntry : contexts.entrySet()) {
+          String contextName = ctxEntry.getKey();
+          Context context = ctxEntry.getValue();
+          for (var stepEntry : context.getSteps().entrySet()) {
+            String stepName = stepEntry.getKey();
+            Object funcs = stepEntry.getValue().getFunctions();
+            // "none" and [] are explicit disable-all — not lists of references
+            // to resolve.
+            if (!(funcs instanceof List)) {
+              continue;
+            }
+            for (Object fnObj : (List<?>) funcs) {
+              String fn = String.valueOf(fnObj);
+              if (!knownFunctions.contains(fn)) {
+                List<String> available = new ArrayList<>(knownFunctions);
+                Collections.sort(available);
+                throw new IllegalStateException(
+                    "Step '"
+                        + stepName
+                        + "' in context '"
+                        + contextName
+                        + "' whitelists function '"
+                        + fn
+                        + "' via set_functions(), but no such SWAIG tool is "
+                        + "registered on the agent and it is not a reserved "
+                        + "native tool. This would emit a dangling function "
+                        + "reference. Register the tool (define_tool / a skill) "
+                        + "or remove it from the step. Available: "
+                        + available);
+              }
+            }
+          }
+        }
       }
     }
   }

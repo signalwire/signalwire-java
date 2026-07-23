@@ -521,6 +521,13 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # request_options envelope; its oracle-exact keyword+optional shape is pinned via
     # METHOD_SIGNATURE_OVERRIDES (which short-circuits the overload collapse), so no
     # PREFER_FULL entry is needed here.
+    # BedrockAgent exposes Python's full __init__(name, route, system_prompt, voice_id,
+    # temperature, top_p, max_tokens) via the 7-arg constructor, alongside the two
+    # convenience constructors (no-arg / (name, route)). The full overload is the parity
+    # surface (matches the oracle's __init__ recorded once C1-O1 added agents/__init__.py
+    # so griffe loads it); the fewest-arg no-arg form would collapse __init__ to (self)
+    # and hide every param.
+    ("BedrockAgent", "__init__"),
 }
 
 # Java skill class renames to match Python casing
@@ -942,6 +949,12 @@ KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
     ("signalwire", None, "RestClient"),
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_prompt_llm_params"),
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_post_prompt_llm_params"),
+    # BedrockAgent overrides both LLM-param setters (Python: `set_prompt_llm_params(self,
+    # **params)` / `set_post_prompt_llm_params(self, **params)`); the oracle strips the
+    # `**params` tail (self-only) while Java exposes it as one trailing `Map<String,Object>
+    # params`. Same optional-kwargs-door idiom as the base mixin — mark the tail optional.
+    ("signalwire.agents.bedrock", "BedrockAgent", "set_prompt_llm_params"),
+    ("signalwire.agents.bedrock", "BedrockAgent", "set_post_prompt_llm_params"),
     ("signalwire.core.swml_handler", "SWMLVerbHandler", "build_config"),
 }
 

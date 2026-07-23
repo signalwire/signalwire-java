@@ -316,6 +316,19 @@ tasks.register('swmlDump', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// strictRenderDump — SWML STRICT-RENDER differ
+// (porting-sdk/scripts/diff_port_strict_render.py). Builds each strict_render
+// corpus case in Java idiom, catches each build's exception as "raised" (clean
+// = "ok"), and emits ONE JSON object {case-id -> "raised"|"ok"} to stdout.
+// Invoke with --quiet --console=plain so only that JSON reaches stdout:
+//   ./gradlew --quiet --console=plain strictRenderDump
+tasks.register('strictRenderDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the strict-render corpus outcomes as JSON (cross-port strict-render differ).'
+    mainClass = 'com.signalwire.sdk.tools.StrictRenderDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 // stateDump — STATE differ (porting-sdk/scripts/diff_port_state.py).
 tasks.register('stateDump', JavaExec) {
     group = 'verification'

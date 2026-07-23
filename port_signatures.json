@@ -571,6 +571,41 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "route",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "system_prompt",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "voice_id",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "temperature",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "top_p",
+                  "type": "float",
+                  "required": true
+                },
+                {
+                  "name": "max_tokens",
+                  "type": "int",
+                  "required": true
                 }
               ],
               "returns": "void"
@@ -686,7 +721,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.agents.bedrock.BedrockAgent"
@@ -700,7 +735,7 @@
                 {
                   "name": "params",
                   "type": "dict<string,any>",
-                  "required": true
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.agents.bedrock.BedrockAgent"

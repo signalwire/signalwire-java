@@ -80,10 +80,10 @@ class SchemaUtilsParityTest {
   }
 
   @Test
-  void testValidateDocument_NoFullValidator() {
-    // Java port doesn't ship a full validator yet; validateDocument
-    // must return (false, ["Schema validator not initialized"]) — same
-    // contract as Python.
+  void testValidateDocument_FullValidatorRejectsBadDoc() {
+    // The port now ships a focused draft-2020-12 validator, so validateDocument
+    // actually validates. A doc whose sections omit the required "main" fails
+    // structural validation (Section.required=["main"]).
     SchemaUtils su = new SchemaUtils(null, true);
     Map<String, Object> doc = new LinkedHashMap<>();
     doc.put("version", "1.0.0");
@@ -92,8 +92,38 @@ class SchemaUtilsParityTest {
     assertFalse(res.getKey());
     assertEquals(1, res.getValue().size());
     assertTrue(
+        res.getValue().get(0).contains("Document validation error"),
+        "expected 'Document validation error', got: " + res.getValue());
+  }
+
+  @Test
+  void testValidateDocument_DisabledReturnsNotInitialized() {
+    // With validation disabled no full validator is wired, so validateDocument
+    // returns the Python "Schema validator not initialized" contract.
+    SchemaUtils su = new SchemaUtils(null, false);
+    Map<String, Object> doc = new LinkedHashMap<>();
+    doc.put("version", "1.0.0");
+    doc.put("sections", new LinkedHashMap<>());
+    Map.Entry<Boolean, List<String>> res = su.validateDocument(doc);
+    assertFalse(res.getKey());
+    assertTrue(
         res.getValue().get(0).contains("validator not initialized"),
         "expected 'validator not initialized', got: " + res.getValue());
+  }
+
+  @Test
+  void testValidateDocument_GoodDocPasses() {
+    // A minimal well-formed doc (sections.main = [answer]) validates clean.
+    SchemaUtils su = new SchemaUtils(null, true);
+    Map<String, Object> answer = new LinkedHashMap<>();
+    answer.put("answer", new LinkedHashMap<>(Map.of("max_duration", 5)));
+    Map<String, Object> sections = new LinkedHashMap<>();
+    sections.put("main", List.of(answer));
+    Map<String, Object> doc = new LinkedHashMap<>();
+    doc.put("version", "1.0.0");
+    doc.put("sections", sections);
+    Map.Entry<Boolean, List<String>> res = su.validateDocument(doc);
+    assertTrue(res.getKey(), "expected a well-formed doc to validate, got: " + res.getValue());
   }
 
   @Test

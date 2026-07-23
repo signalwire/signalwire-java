@@ -34,12 +34,10 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: signalwire/porting-sdk
-          # PINNED to the Wave-1 A+ campaign branch: this branch's SURFACE gate must diff
-          # against the wave/1-aplus python_signatures.json oracle (which carries the
-          # request_options additions this port adopts); main's oracle would let the new
-          # optional params pass vacuously as tolerated extras. REVERT this ref to main
-          # when porting-sdk wave/1-aplus merges.
-          ref: main
+          # Coordinated-pass pin: 'main' normally; set the PORTING_SDK_REF repo variable
+          # to a wave branch to test a coordinated porting-sdk change, declared on the PR
+          # (see porting-sdk/COORDINATED_PASS.md). No revert commit.
+          ref: ${{ vars.PORTING_SDK_REF || 'main' }}
           path: porting-sdk
           token: ${{ secrets.PORTING_SDK_TOKEN }}
 

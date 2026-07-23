@@ -84,7 +84,7 @@ $GRADLE jar
 7. **DataMap** (`datamap/DataMap.java`) -- Server-side API integration without webhooks
 8. **FunctionResult** (`swaig/FunctionResult.java`) -- 40+ action methods for tool responses
 9. **RelayClient** (`relay/RelayClient.java`) -- Real-time call control via WebSocket
-10. **RestClient** (`rest/RestClient.java`) -- REST API client with 20 namespaces
+10. **RestClient** (`rest/RestClient.java`) -- REST API client with 22 namespaces
 
 ### Key Patterns
 
@@ -136,7 +136,7 @@ com.signalwire.sdk/
     security/     SessionManager (HMAC-SHA256 tokens)
     logging/      Logger (level-controlled, env-var driven)
     relay/        RelayClient, Call, Action, Message, RelayEvent, Constants
-    rest/         RestClient, HttpClient, CrudResource, 20 namespaces
+    rest/         RestClient, HttpClient, CrudResource, 22 namespaces
 ```
 
 ### Testing

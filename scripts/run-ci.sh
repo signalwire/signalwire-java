@@ -169,7 +169,7 @@ sched_gate GEN res=gradle defer=1 desc="generated-code freshness suite (GEN-FRES
 # shell to ./gradlew. NOTE java's hyphen spelling BEHAVIORAL-WIRE-RELAY.
 sched_gate BEHAVIORAL res=gradle defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI/SECURE-DEFAULT/CA-VAR/SECRET-SCRUB)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
-        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI,SECURE-DEFAULT,CA-VAR,SECRET-SCRUB
+        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI,SECURE-DEFAULT,CA-VAR,SECRET-SCRUB
 
 sched_gate BEHAVIORAL-NIGHTLY tier=nightly res=gradle defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
@@ -203,6 +203,15 @@ sched_gate PACKAGE-NIGHTLY tier=nightly res=gradle defer=1 desc="package suite, 
 # ---- gates that stay standalone (native toolchains + singletons) -------------
 sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
     -- python3 "$PORTING_SDK_DIR/scripts/audit_no_cheat_tests.py" --root "$PORT_ROOT"
+
+sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on the PR (Coordinated-With: line or coordinated-pass label)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/coordinated_pass.py" --porting-sdk "$PORTING_SDK_DIR"
+
+sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) uses PORTING_SDK_REF, not a literal ref" \
+    -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
+
+sched_gate ENV-VAR-CONSISTENCY desc="REST base-url override seam present + canonical CA env names (SIGNALWIRE_REST_CA_FILE / SIGNALWIRE_RELAY_CA_FILE)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/env_var_consistency.py" --port java --repo "$PORT_ROOT"
 
 sched_gate FMT res=gradle defer=1 desc="run-format.sh (local: apply; CI: --check)" \
     -- bash scripts/run-format.sh ${CI:+--check}
