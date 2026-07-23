@@ -632,10 +632,14 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
 #
 # NOT a laundered omission: this REMOVES port-only getter surface the reference never
 # had; the members that remain (AIChatClient's API verbs, AIChatError.__init__) match
-# the oracle exactly. The reference-only ``__aenter__``/``__aexit__``/``close`` on
-# AIChatClient are the async-session lifecycle idiom Java's sessionless
-# java.net.http.HttpClient has no analogue for (TS/PHP omit identically) — those are
-# the sole irreducible PORT_OMISSIONS, handled in PORT_OMISSIONS.md, not here.
+# the oracle exactly. The reference-only ``__aenter__``/``__aexit__`` on AIChatClient
+# are the async-context-manager (``async with``) scoped-lifetime idiom; Java expresses
+# the IDENTICAL capability through ``AutoCloseable`` + try-with-resources
+# (``try (var c = new AIChatClient(...))``), whose ``close()`` is the analogue of the
+# reference's ``close``/``__aexit__``. So the two dunders FOLD onto AutoCloseable and
+# are INJECTED into the surface (see the injection at the override apply site below) —
+# target ZERO ai_chat omissions, exactly as .NET folds IDisposable/``using`` (its
+# SURFACE_METHOD_INJECTIONS injects the same names).
 _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     # Response @dataclasses — oracle records them method-less (fields are attributes).
     "ConversationInfo": [],
@@ -651,11 +655,14 @@ _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     "RateLimitError": [],
     "ChatInProgressError": [],
     "SummaryError": [],
-    # Client — keep the API verbs + __init__; drop the get_url getter (``url`` is a
-    # public attribute on the reference, not a method).
+    # Client — keep the API verbs + __init__ + the AutoCloseable ``close``; INJECT the
+    # ``__aenter__``/``__aexit__`` context-manager dunders (folded onto AutoCloseable /
+    # try-with-resources, the Java analogue of Python's ``async with`` — see the inject
+    # note at the apply site). Drop the get_url getter (``url`` is a public attribute on
+    # the reference, not a method).
     "AIChatClient": [
-        "__init__", "chat", "close", "create_conversation", "delete", "end", "log",
-        "summarize",
+        "__aenter__", "__aexit__", "__init__", "chat", "close", "create_conversation",
+        "delete", "end", "log", "summarize",
     ],
 }
 
@@ -1247,6 +1254,17 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         if not native and cls_name in _AI_CHAT_MEMBER_OVERRIDES:
             keep = set(_AI_CHAT_MEMBER_OVERRIDES[cls_name])
             methods = [m for m in methods if m in keep]
+            # Inject the AutoCloseable-folded context-manager dunders that no Java
+            # method name produces directly: AIChatClient ``implements AutoCloseable``,
+            # so ``try (var c = new AIChatClient(...))`` expresses the reference's
+            # ``async with`` scoped lifetime and its public ``close()`` is the
+            # ``__aexit__`` analogue. The capability is real; inject the two dunder
+            # names so the surface matches the oracle with ZERO omissions (mirrors
+            # .NET's IDisposable/``using`` fold). Guard on the real ``close`` member so
+            # the injection only fires when the AutoCloseable capability is present.
+            for injected in ("__aenter__", "__aexit__"):
+                if injected in keep and "close" in methods:
+                    methods.append(injected)
         # Deduplicate overloaded methods; stable ordering.
         unique_sorted = sorted(set(methods))
         entry = out.setdefault(mod, {"classes": {}, "functions": []})

@@ -853,6 +853,9 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
              "default": None},
             {"name": "user_metadata", "type": "optional<dict<string,any>>",
              "required": False, "default": None},
+            {"name": "timeout", "type": "optional<int>", "required": False,
+             "default": None},
+            {"name": "reinit", "type": "bool", "required": False, "default": False},
         ],
         "returns": "class:signalwire.ai_chat.client.ChatResponse",
     },
@@ -880,10 +883,11 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         ],
         "returns": "string",
     },
-    # AIChatClient constructor: the reference records project/token/space/url/session.
-    # Java's sessionless java.net.http.HttpClient has no aiohttp-session analogue, so
-    # the port carries the first FOUR params verbatim (fold) and the reference-only
-    # 5th `session` is the sole excused divergence (PORT_SIGNATURE_OMISSIONS).
+    # AIChatClient constructor: the FIXED oracle records exactly project/token/space/url
+    # (the Python-only DI ``session`` param was dropped from the oracle upstream). Java
+    # collapses those four into a typed ``AIChatClientOptions`` value; reflection sees a
+    # single Options param, so expand it back to the reference's flat kwarg list — the
+    # Options-vs-kwargs idiom compares EQUAL with NO omission (emission covers idiom).
     ("AIChatClient", "__init__"): {
         "params": [
             {"name": "self", "kind": "self"},
