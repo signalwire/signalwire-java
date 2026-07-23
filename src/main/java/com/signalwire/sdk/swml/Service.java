@@ -432,7 +432,7 @@ public class Service implements AutoCloseable {
    */
   public SchemaUtils getSchemaUtils() {
     if (schemaUtilsInstance == null) {
-      schemaUtilsInstance = new SchemaUtils(null, true);
+      schemaUtilsInstance = new SchemaUtils(null, schemaValidation);
     }
     return schemaUtilsInstance;
   }
@@ -451,16 +451,54 @@ public class Service implements AutoCloseable {
     return this;
   }
 
-  /** Add a verb to the main section. Mirrors SWMLService.add_verb. */
+  /**
+   * Add a verb to the main section. Mirrors SWMLService.add_verb — the user-facing choke point that
+   * enforces the strict-render contract: schema validation runs here so an unknown verb, a
+   * misspelled/unknown config key on a closed verb, a wrong-typed config, or a missing required key
+   * raises {@link SchemaValidationError} instead of being appended silently. (The 38 specialized
+   * verb builders below call {@code document.addVerb} directly with configs they construct, so they
+   * are not double-validated — mirrors Python, whose add_verb is likewise the choke point.)
+   */
   public Service addVerb(String verbName, Object verbData) {
+    validateVerbOrThrow(verbName, verbData);
     document.addVerb(verbName, verbData);
     return this;
   }
 
   /** Add a verb to a named section. Mirrors SWMLService.add_verb_to_section. */
   public Service addVerbToSection(String sectionName, String verbName, Object verbData) {
+    validateVerbOrThrow(verbName, verbData);
     document.addVerbToSection(sectionName, verbName, verbData);
     return this;
+  }
+
+  /**
+   * Schema-validate a user-supplied verb config and throw {@link SchemaValidationError} if it does
+   * not satisfy the SWML schema. Mirrors the validation half of Python's {@code add_verb}: the
+   * {@code sleep}-with-integer verb takes a direct value (no dict), a non-map config for any other
+   * verb is invalid, and otherwise {@code SchemaUtils.validateVerb} decides. A no-op when schema
+   * validation is disabled.
+   */
+  @SuppressWarnings("unchecked")
+  private void validateVerbOrThrow(String verbName, Object verbData) {
+    if (!schemaValidation) {
+      return;
+    }
+    // sleep takes a direct integer value — not a config map.
+    if ("sleep".equals(verbName) && (verbData instanceof Integer || verbData instanceof Long)) {
+      return;
+    }
+    if (!(verbData instanceof Map)) {
+      throw new SchemaValidationError(
+          verbName,
+          java.util.Collections.singletonList(
+              "config for verb '" + verbName + "' must be an object"));
+    }
+    Map.Entry<Boolean, List<String>> res =
+        getSchemaUtils().validateVerb(verbName, (Map<String, Object>) verbData);
+    if (!res.getKey()) {
+      throw new SchemaValidationError(verbName, res.getValue());
+    }
   }
 
   /** Render the current document as a compact JSON string. Mirrors SWMLService.render_document. */

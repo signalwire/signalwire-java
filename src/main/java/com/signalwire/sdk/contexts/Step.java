@@ -312,6 +312,16 @@ public class Step {
     return gatherInfo;
   }
 
+  /**
+   * The step's function whitelist as set by {@link #setFunctions(Object)} — a {@code List<String>},
+   * the string {@code "none"}, or {@code null} when unset. Used by {@code
+   * ContextBuilder.validate()} to detect dangling function references (r5 F3 / strict-render GAP
+   * 2).
+   */
+  Object getFunctions() {
+    return functions;
+  }
+
   /** Render the step's prompt text from either raw text or POM sections. */
   String renderText() {
     if (text != null) {
