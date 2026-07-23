@@ -49,6 +49,7 @@ and an abort signal -- is controlled by an immutable `RequestOptions`. Build one
 `RequestOptions.builder()` (all fields optional) and apply it two ways:
 
 ```java
+import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RequestOptions;
 
 var opts = RequestOptions.builder()
