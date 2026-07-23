@@ -18,6 +18,8 @@ Five-bucket classification (see PORTING_GUIDE.md):
 
 # Format: `<fully.qualified.symbol>: <one-line rationale>`
 
+signalwire.ai_chat.client.AIChatClient.__init__: params project/token/space/url match Python verbatim; the reference-only 5th param `session` (aiohttp.ClientSession) has no cross-language analogue — Java's java.net.http.HttpClient is sessionless and injects no client session — so it is the sole excused divergence (TS/PHP omit the session param identically)
+
 signalwire.agent_server.AgentServer.__init__: Java AgentServer collapses Python's host/port/log_level/event/context kwargs into typed runtime configuration (setters and gradle props); the same construction is reachable but takes a different shape
 signalwire.agent_server.AgentServer.app: Python AgentServer.app exposes the underlying ASGI application for embedding in test rigs; Java AgentServer wraps Javalin and does not expose the framework instance directly
 signalwire.agent_server.AgentServer.logger: Python's reference exposes a logger attribute on the class for runtime introspection; Java threads logging through SLF4J without exposing a typed logger field

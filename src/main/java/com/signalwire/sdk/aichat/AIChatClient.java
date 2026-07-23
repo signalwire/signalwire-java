@@ -48,7 +48,7 @@ import java.util.Map;
  * System.out.println(reply.getText());
  * }</pre>
  */
-public class AIChatClient {
+public class AIChatClient implements AutoCloseable {
 
   /** Default endpoint path appended to a {@code space}-derived base URL. */
   static final String DEFAULT_PATH = "/api/ai/chat";
@@ -154,6 +154,21 @@ public class AIChatClient {
    */
   public String getUrl() {
     return url;
+  }
+
+  /**
+   * Release any client-side resources.
+   *
+   * <p>The AI Chat client is built on {@link java.net.http.HttpClient}, which is sessionless — each
+   * call is a self-contained request with no pooled connection state this client owns — so there is
+   * nothing to tear down. {@code close()} is a well-defined no-op that completes the lifecycle
+   * contract (mirroring the Python reference's {@code close()} on its owned aiohttp session),
+   * letting callers use the client in a try-with-resources block interchangeably with the other SDK
+   * clients.
+   */
+  @Override
+  public void close() {
+    // no-op: java.net.http.HttpClient holds no per-client session to release.
   }
 
   // ── Wire ──────────────────────────────────────────────────────────

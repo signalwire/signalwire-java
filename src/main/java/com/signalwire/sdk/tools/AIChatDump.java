@@ -53,7 +53,7 @@ import java.util.Map;
  *
  * Nothing but the JSON object is written to stdout on success.
  */
-public final class AIChatDump {
+final class AIChatDump {
 
   private AIChatDump() {}
 
