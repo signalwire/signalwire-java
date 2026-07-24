@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ a21b0a7dc71aa6463693d06e961f9c75eb4b6227",
+  "generated_from": "signalwire-java @ 6c7f22c88f7d7a2aefbffcf70bfecedd637bf012",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -85,6 +85,34 @@
           "set_prompt_llm_params",
           "set_voice"
         ]
+      },
+      "functions": []
+    },
+    "signalwire.ai_chat.client": {
+      "classes": {
+        "AIChatClient": [
+          "__aenter__",
+          "__aexit__",
+          "__init__",
+          "chat",
+          "close",
+          "create_conversation",
+          "delete",
+          "end",
+          "log",
+          "summarize"
+        ],
+        "AIChatError": [
+          "__init__"
+        ],
+        "AuthenticationError": [],
+        "ChatInProgressError": [],
+        "ChatLog": [],
+        "ChatResponse": [],
+        "ConversationInfo": [],
+        "ConversationNotFoundError": [],
+        "RateLimitError": [],
+        "SummaryError": []
       },
       "functions": []
     },

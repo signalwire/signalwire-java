@@ -308,6 +308,18 @@ tasks.register('wireDump', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
 }
 
+// aiChatDump — AI-CHAT wire-behavioral gate (porting-sdk/scripts/diff_port_ai_chat.py,
+// on the `ai-chat-client` branch — a COORDINATED pass). Reads MOCK_AI_CHAT_URL +
+// SIGNALWIRE_PROJECT_ID / SIGNALWIRE_API_TOKEN from the env the gate exports, drives the
+// AIChatClient through the shared ai_chat_corpus against the in-process mock_ai_chat, and
+// prints ONE JSON object to stdout. Run: `./gradlew -q --console=plain aiChatDump`.
+tasks.register('aiChatDump', JavaExec) {
+    group = 'verification'
+    description = 'Dump the AI-Chat corpus observations as JSON (cross-port AI-CHAT differ).'
+    mainClass = 'com.signalwire.sdk.tools.AIChatDump'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 // swmlDump — SWML differ (porting-sdk/scripts/diff_port_swml.py).
 tasks.register('swmlDump', JavaExec) {
     group = 'verification'

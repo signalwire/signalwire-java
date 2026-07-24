@@ -597,6 +597,73 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     "AbortSignal",
     "RequestOptionsSupport",
     "RequestOptionsSupportEffectiveOptions",
+    # AI Chat options-builders — the Java NAMED-param idiom for the reference's
+    # many-optional-kwargs methods (AIChatClient.__init__, chat, create_conversation,
+    # summarize). The reference passes these as keyword args on the method itself; Java
+    # models each optional-arg bundle as an immutable Options value type plus its fluent
+    # Builder. No reference class counterpart (like SWAIGFunctionBuilder / the generated
+    # <Method>Request+Builder scaffolding) — drop, not launder as PORT_ADDITIONS. The
+    # Builder inner types surface outer-qualified (parse_type_body emits nested types as
+    # <Outer><Inner>), hence both the Options and the <Options>Builder names.
+    "AIChatClientOptions",
+    "AIChatClientOptionsBuilder",
+    "ChatOptions",
+    "ChatOptionsBuilder",
+    "CreateConversationOptions",
+    "CreateConversationOptionsBuilder",
+    "SummarizeOptions",
+    "SummarizeOptionsBuilder",
+}
+
+
+# AI Chat value/error/client classes — fold the Java read-only getter idiom onto
+# the reference's attribute surface. The Python reference models the response types
+# (ConversationInfo/ChatResponse/ChatLog) as @dataclass and the errors
+# (AIChatError + subclasses) as plain Exception subclasses; the surface oracle
+# records their FIELDS as attributes, not methods, so it lists them method-less
+# (the subclasses) / with only __init__ (AIChatError's explicit constructor). Java
+# expresses the same fields as an immutable class with public getters
+# (``getId()``/``getCode()``/…) + a constructor. Those getters are the Java idiom for
+# the reference's bare attribute reads — they fold onto the (un-enumerated) attribute
+# surface, i.e. they are DROPPED, exactly as the enumerator drops the generated-DTO
+# accessors. AIChatClient additionally exposes ``getUrl()`` for its public ``url``
+# attribute (the reference sets ``self.url`` — an attribute, not a method), so it is
+# dropped too. Keyed by SURFACE class name → the exact member set to keep.
+#
+# NOT a laundered omission: this REMOVES port-only getter surface the reference never
+# had; the members that remain (AIChatClient's API verbs, AIChatError.__init__) match
+# the oracle exactly. The reference-only ``__aenter__``/``__aexit__`` on AIChatClient
+# are the async-context-manager (``async with``) scoped-lifetime idiom; Java expresses
+# the IDENTICAL capability through ``AutoCloseable`` + try-with-resources
+# (``try (var c = new AIChatClient(...))``), whose ``close()`` is the analogue of the
+# reference's ``close``/``__aexit__``. So the two dunders FOLD onto AutoCloseable and
+# are INJECTED into the surface (see the injection at the override apply site below) —
+# target ZERO ai_chat omissions, exactly as .NET folds IDisposable/``using`` (its
+# SURFACE_METHOD_INJECTIONS injects the same names).
+_AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
+    # Response @dataclasses — oracle records them method-less (fields are attributes).
+    "ConversationInfo": [],
+    "ChatResponse": [],
+    "ChatLog": [],
+    # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it);
+    # the getters (get_code/get_server_message) fold onto attributes. Subclasses add
+    # no members of their own (oracle records them empty; their Java ctor is the
+    # boilerplate super() delegator, not reference surface).
+    "AIChatError": ["__init__"],
+    "AuthenticationError": [],
+    "ConversationNotFoundError": [],
+    "RateLimitError": [],
+    "ChatInProgressError": [],
+    "SummaryError": [],
+    # Client — keep the API verbs + __init__ + the AutoCloseable ``close``; INJECT the
+    # ``__aenter__``/``__aexit__`` context-manager dunders (folded onto AutoCloseable /
+    # try-with-resources, the Java analogue of Python's ``async with`` — see the inject
+    # note at the apply site). Drop the get_url getter (``url`` is a public attribute on
+    # the reference, not a method).
+    "AIChatClient": [
+        "__aenter__", "__aexit__", "__init__", "chat", "close", "create_conversation",
+        "delete", "end", "log", "summarize",
+    ],
 }
 
 
@@ -1180,6 +1247,24 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         aliases = _SURFACE_METHOD_ALIASES.get((mod, cls_name))
         if aliases and not native:
             methods = [aliases.get(m, m) for m in methods]
+        # AI Chat getter-idiom fold: pin the value/error/client classes to their
+        # reference member set (drops the read-only getters that fold onto the
+        # reference's bare attributes; keeps __init__ where the oracle records it).
+        # Native mode keeps the Java surface verbatim for doc resolution.
+        if not native and cls_name in _AI_CHAT_MEMBER_OVERRIDES:
+            keep = set(_AI_CHAT_MEMBER_OVERRIDES[cls_name])
+            methods = [m for m in methods if m in keep]
+            # Inject the AutoCloseable-folded context-manager dunders that no Java
+            # method name produces directly: AIChatClient ``implements AutoCloseable``,
+            # so ``try (var c = new AIChatClient(...))`` expresses the reference's
+            # ``async with`` scoped lifetime and its public ``close()`` is the
+            # ``__aexit__`` analogue. The capability is real; inject the two dunder
+            # names so the surface matches the oracle with ZERO omissions (mirrors
+            # .NET's IDisposable/``using`` fold). Guard on the real ``close`` member so
+            # the injection only fires when the AutoCloseable capability is present.
+            for injected in ("__aenter__", "__aexit__"):
+                if injected in keep and "close" in methods:
+                    methods.append(injected)
         # Deduplicate overloaded methods; stable ordering.
         unique_sorted = sorted(set(methods))
         entry = out.setdefault(mod, {"classes": {}, "functions": []})

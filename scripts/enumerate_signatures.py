@@ -838,6 +838,113 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             "VideoRoomSessions", "VoiceLogs",
         )
     },
+    # AI Chat client verbs: Java collapses the reference's optional kwargs into a
+    # typed Options value (chat/create_conversation) or an Options overload
+    # (summarize); reflection sees a single Options param. Expand back to the
+    # reference's flat kwarg list (names + count + kind + type oracle-exact) so the
+    # Options-vs-kwargs idiom compares EQUAL — emission covers idiom, not an omission.
+    ("AIChatClient", "chat"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "conversation_id", "type": "string", "required": True},
+            {"name": "message", "type": "string", "required": True},
+            {"name": "role", "type": "string", "required": False, "default": "user"},
+            {"name": "config_url", "type": "optional<string>", "required": False,
+             "default": None},
+            {"name": "user_metadata", "type": "optional<dict<string,any>>",
+             "required": False, "default": None},
+            {"name": "timeout", "type": "optional<int>", "required": False,
+             "default": None},
+            {"name": "reinit", "type": "bool", "required": False, "default": False},
+        ],
+        "returns": "class:signalwire.ai_chat.client.ChatResponse",
+    },
+    ("AIChatClient", "create_conversation"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "conversation_id", "type": "string", "required": True},
+            {"name": "config_url", "type": "string", "required": True},
+            {"name": "user_message", "type": "optional<string>", "required": False,
+             "default": None},
+            {"name": "timeout", "type": "optional<int>", "required": False,
+             "default": None},
+            {"name": "user_metadata", "type": "optional<dict<string,any>>",
+             "required": False, "default": None},
+            {"name": "reinit", "type": "bool", "required": False, "default": False},
+        ],
+        "returns": "class:signalwire.ai_chat.client.ConversationInfo",
+    },
+    ("AIChatClient", "summarize"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "conversation_id", "type": "string", "required": True},
+            {"name": "summary_prompt", "type": "optional<string>", "required": False,
+             "default": None},
+        ],
+        "returns": "string",
+    },
+    # AIChatClient constructor: the FIXED oracle records exactly project/token/space/url
+    # (the Python-only DI ``session`` param was dropped from the oracle upstream). Java
+    # collapses those four into a typed ``AIChatClientOptions`` value; reflection sees a
+    # single Options param, so expand it back to the reference's flat kwarg list — the
+    # Options-vs-kwargs idiom compares EQUAL with NO omission (emission covers idiom).
+    ("AIChatClient", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "project", "type": "optional<string>", "required": False,
+             "default": None},
+            {"name": "token", "type": "optional<string>", "required": False,
+             "default": None},
+            {"name": "space", "type": "optional<string>", "required": False,
+             "default": None},
+            {"name": "url", "type": "optional<string>", "required": False,
+             "default": None},
+        ],
+        "returns": "void",
+    },
+    # AI Chat response value classes (@dataclass in the reference): pin their
+    # constructor to the reference's dataclass auto-__init__ (field order + types +
+    # defaults), so the Java POJO/record constructor folds onto the dataclass ctor.
+    ("ConversationInfo", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "id", "type": "string", "required": True},
+            {"name": "status", "type": "string", "required": True},
+            {"name": "initial_message", "type": "optional<string>", "required": False,
+             "default": None},
+        ],
+        "returns": "void",
+    },
+    ("ChatResponse", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "text", "type": "string", "required": True},
+            {"name": "conversation_id", "type": "string", "required": True},
+            {"name": "user_event", "type": "optional<dict<string,any>>",
+             "required": False, "default": None},
+        ],
+        "returns": "void",
+    },
+    ("ChatLog", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "messages", "type": "list<dict<string,any>>", "required": False,
+             "default": "list()"},
+            {"name": "call_timeline", "type": "list<dict<string,any>>",
+             "required": False, "default": "list()"},
+        ],
+        "returns": "void",
+    },
+    # AIChatError base exception __init__ (code, message) — matches the reference's
+    # explicit Exception constructor.
+    ("AIChatError", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "code", "type": "optional<int>", "required": True},
+            {"name": "message", "type": "string", "required": True},
+        ],
+        "returns": "void",
+    },
 }
 
 # Methods dropped from a canonical class: the Java builder-idiom factory has no
@@ -845,6 +952,16 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
 # __init__, synthesized separately). Keyed by (canonical_class, method_canonical).
 _METHOD_DROP: set[tuple[str, str]] = {
     ("RequestOptions", "builder"),
+    # AI Chat typed-error subclasses: the reference subclasses inherit AIChatError's
+    # __init__ and declare none of their own (the oracle records them method-less).
+    # Java must declare an explicit delegating constructor to expose the same
+    # construction, but it is not independent reference surface — drop it so the port
+    # subclass records method-less like the reference (fold, not a port-addition).
+    ("AuthenticationError", "__init__"),
+    ("ConversationNotFoundError", "__init__"),
+    ("RateLimitError", "__init__"),
+    ("ChatInProgressError", "__init__"),
+    ("SummaryError", "__init__"),
 }
 
 # Synthetic __init__ signatures injected onto a canonical class whose Java
@@ -1016,6 +1133,17 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     # BOTH sides rather than launder them as PORT_ADDITIONS.
     "EffectiveOptions",
     "AbortSignal",
+    # AI Chat options value types — the Java NAMED-param idiom for the reference's
+    # many-optional-kwargs methods (AIChatClient __init__/chat/create_conversation/
+    # summarize). Each is an immutable Options value + a fluent nested Builder with no
+    # reference class counterpart (like SWAIGFunctionBuilder). Drop on BOTH sides; the
+    # dropped kwargs are excused on the reference method via PORT_SIGNATURE_OMISSIONS
+    # (java-idiom-kwargs). The nested Builder (bare simple name ``Builder`` in package
+    # com.signalwire.sdk.aichat) is dropped by the package-scoped guard below.
+    "AIChatClientOptions",
+    "ChatOptions",
+    "CreateConversationOptions",
+    "SummarizeOptions",
 }
 
 
@@ -1066,6 +1194,14 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         if pkg == _GENERATED_PKG:
             if java_name == "ResourceTree" or java_name.endswith("Request") or java_name == "Builder":
                 continue
+
+        # AI Chat options-builders: SignatureDump emits each nested Options.Builder
+        # with the bare simple name ``Builder``; they all live in the aichat package
+        # and are the fluent NAMED-param scaffolding for the dropped Options value
+        # types above. Drop them (no reference counterpart), mirroring the surface
+        # enumerator's _SURFACE_EXCLUDED_CLASSES <Options>Builder drops.
+        if pkg == "com.signalwire.sdk.aichat" and java_name == "Builder":
+            continue
 
         # Generated wire-type / read-side-payload classes (item A/H + D). Route BY
         # PACKAGE to the oracle <ns>_types_generated / *_generated module (wins over
