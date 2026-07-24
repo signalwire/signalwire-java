@@ -286,6 +286,13 @@ _METHOD_RENAMES: dict[str, str] = {
     # Python ``SWMLService.schema_utils`` is a public attribute exposed
     # via Java's ``getSchemaUtils()`` getter.  Strip the get_ prefix.
     "get_schema_utils": "schema_utils",
+    # Python ``AgentBase.skill_manager`` is a @property holding the SkillManager
+    # (a B1 composition attribute — a class-typed instance attr the surface oracle
+    # now records via its composition-attr enrichment); Java exposes it through the
+    # ``getSkillManager()`` getter (present ONLY on AgentBase). Strip the ``get_``
+    # prefix so it folds onto the reference's attribute name (rename-not-omission;
+    # mirrors the get_pom → pom projection).
+    "get_skill_manager": "skill_manager",
     # Python's RestClient property names (rest.client.RestClient.X) are
     # served by Java's ``getX()`` accessor — strip the ``get_`` prefix so
     # both surfaces line up at the same canonical name.
@@ -506,6 +513,29 @@ _MIXIN_SURFACE_PROJECTIONS: dict[tuple[str, str], list[str]] = {
 }
 
 
+# Composition-delegate strip (§4c.1). Python keeps these methods on a HELPER OBJECT
+# that AgentBase holds by composition (``render_swml``→SwmlRenderer,
+# ``get_contexts``/``get_raw_prompt``→PromptManager, ``create_tool_token``→
+# SessionManager, ``extract_sip_username``→SWMLService). Java flattens the delegate's
+# method ALSO onto AgentBase as a pass-through convenience, so the method surfaces
+# BOTH on AgentBase and on the canonical helper class. The helper-class copy already
+# matches the reference (which files the method under the helper); the AgentBase copy
+# is the flattened duplicate that — after the diff's ``agentbase-family`` fold — reads
+# as a phantom addition (``agentbase-family.render_swml`` etc.). Strip it from
+# AgentBase's OWN declared list, but ONLY when the SAME method is already emitted on
+# its canonical helper class (guard: never drop a method that genuinely lives only on
+# AgentBase). Mirrors how _MIXIN_SURFACE_PROJECTIONS strips a projected method from
+# AgentBase after emitting it at the canonical path. Each entry:
+#   method name → (canonical helper module, helper class) where the reference files it.
+_COMPOSITION_DELEGATE_STRIP: dict[str, tuple[str, str]] = {
+    "render_swml": ("signalwire.core.swml_renderer", "SwmlRenderer"),
+    "get_contexts": ("signalwire.core.agent.prompt.manager", "PromptManager"),
+    "get_raw_prompt": ("signalwire.core.agent.prompt.manager", "PromptManager"),
+    "create_tool_token": ("signalwire.core.security.session_manager", "SessionManager"),
+    "extract_sip_username": ("signalwire.core.swml_service", "SWMLService"),
+}
+
+
 # Per-(module, class) method-NAME aliases: Java-idiom method name → the
 # reference's method name so the two compare EQUAL (Rule 2 — reconcile idiom in
 # the enumerator, not via an omission). Applied per class during module
@@ -519,6 +549,24 @@ _SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
     # reference's Python callable protocol ``__call__`` (Java has no callable
     # object protocol — a named method fills that role).
     ("signalwire.core.swaig_function", "SWAIGFunction"): {"call": "__call__"},
+    # B1 composition-attribute getters (class D catalog, B1). The reference oracle's
+    # composition-attr enrichment now records these class-typed instance attributes as
+    # members; Java exposes each through a ``getX()`` accessor. Strip the ``get_``
+    # prefix so the Java getter folds onto the reference's attribute name
+    # (rename-not-omission — the getter is the Java accessor idiom for a Python
+    # instance attribute, wire-neutral). Scoped per-(module, class) so the rename never
+    # over-matches a same-named getter on an unrelated class (``getResult`` also exists
+    # on CollectEvent, which the reference does NOT surface — excluded here).
+    # NOTE: AgentServer is intentionally NOT aliased — the reference has BOTH
+    # ``agents`` (the dict attribute) AND ``get_agents`` (the accessor method) as
+    # distinct members; Java ships a single ``getAgents()`` that matches the
+    # reference's ``get_agents`` method, so the bare ``agents`` attribute is a
+    # genuine B1 omission (no separate field member) rather than a rename target.
+    ("signalwire.pom.pom", "PromptObjectModel"): {"get_sections": "sections"},
+    ("signalwire.pom.pom", "Section"): {"get_subsections": "subsections"},
+    ("signalwire.relay.call", "Action"): {"get_result": "result"},
+    ("signalwire.relay.message", "Message"): {"get_result": "result"},
+    ("signalwire.web.web_service", "WebService"): {"get_security": "security"},
 }
 
 
@@ -1330,6 +1378,19 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
             .get("SWMLService", [])
         )
         ab_visible = set(ab_methods) | set(svc_methods)
+        # Composition-delegate strip (§4c.1): drop the flattened pass-through copy
+        # of a helper-object method from AgentBase when the SAME method is already
+        # emitted on its canonical helper class (so the reference's helper filing is
+        # matched by the helper copy, and the AgentBase duplicate stops reading as a
+        # phantom ``agentbase-family`` addition). Guarded on helper-class presence.
+        for _dm, (_hmod, _hcls) in _COMPOSITION_DELEGATE_STRIP.items():
+            if _dm not in ab_methods:
+                continue
+            helper_members = (
+                merged.get(_hmod, {}).get("classes", {}).get(_hcls, [])
+            )
+            if _dm in helper_members:
+                ab_methods = [m for m in ab_methods if m != _dm]
         for (target_mod, target_cls), expected in _MIXIN_SURFACE_PROJECTIONS.items():
             present = [m for m in expected if m in ab_visible]
             if not present:
@@ -1371,6 +1432,47 @@ def git_sha(repo: Path) -> str:
         return "N/A"
 
 
+def _collect_crud_bases(repo_root: Path,
+                        class_to_module: dict[str, str]) -> dict[str, dict]:
+    """Emit the top-level ``crud_bases`` map (spec-driven REST parity, class D1).
+
+    ``scripts/generate_rest.py`` already records each generated REST resource's
+    structural CRUD contract (base + typed bind) in the generated
+    ``rest_signatures.json`` sidecar, keyed by the bare resource class name
+    (``ConferenceRooms`` → {base, bind}). The SURFACE oracle carries the same
+    binding as a top-level ``crud_bases`` map keyed by the reference dotted
+    ``<module>.<Class>`` path, so ``diff_port_surface._fold_crud_methods`` folds
+    each resource's inherited CRUD ops (list/get/create/update/delete/paginate)
+    structurally via the UNION of the reference's and this port's maps — no
+    per-resource allow-list, no per-op class rename.
+
+    We route each resource class to its reference module via the SAME
+    class→module map the surface enumerator uses (the class names are the oracle
+    canonical names, so they resolve to ``signalwire.rest.namespaces.<ns>_
+    resources_generated.<Class>``, matching the reference's ``crud_bases`` keys).
+    A resource absent from the class map (should not happen for a shipped
+    resource) is skipped rather than emitted under a degraded path.
+    """
+    sidecar = (
+        repo_root / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
+        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+    )
+    if not sidecar.is_file():
+        return {}
+    data = json.loads(sidecar.read_text(encoding="utf-8"))
+    raw = data.get("crud_bases", {})
+    out: dict[str, dict] = {}
+    for cls_name, binding in raw.items():
+        mod = class_to_module.get(cls_name)
+        if mod is None:
+            continue  # not a reference-known resource class; skip (don't degrade)
+        out[f"{mod}.{cls_name}"] = {
+            "base": binding.get("base"),
+            "bind": list(binding.get("bind", [])),
+        }
+    return out
+
+
 def build_snapshot(repo_root: Path, reference_json: Path,
                    native: bool = False) -> dict:
     class_to_module = build_class_to_module_map(reference_json)
@@ -1378,13 +1480,21 @@ def build_snapshot(repo_root: Path, reference_json: Path,
     if not java_src.is_dir():
         raise SystemExit(f"error: java source not found at {java_src}")
     modules = enumerate_sdk(java_src, class_to_module, native=native)
-    return {
+    snapshot = {
         "version": "1",
         "generated_from": f"signalwire-java @ {git_sha(repo_root)}",
         "language": "java",
         "names": "java-native" if native else "python-reference",
         "modules": modules,
     }
+    # Spec-driven REST parity (class D1): carry the crud_base bindings so the diff
+    # folds each resource's inherited CRUD ops structurally. Only in
+    # python-reference mode (the class→module map + fold are reference-keyed).
+    if not native:
+        crud_bases = _collect_crud_bases(repo_root, class_to_module)
+        if crud_bases:
+            snapshot["crud_bases"] = crud_bases
+    return snapshot
 
 
 def _default_reference() -> Path:

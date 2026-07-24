@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 46cedc8c7d8d71e2952611c3958b0c4e83ea844e",
+  "generated_from": "signalwire-java @ 70e13af5f1dd4031b2a68a2d13798c1d04f0744d",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -111,6 +111,81 @@
           "set_voice",
           "toString",
           "to_string"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.ai_chat.client": {
+      "classes": {
+        "AIChatClient": [
+          "AIChatClient",
+          "ai_chat_client",
+          "chat",
+          "close",
+          "createConversation",
+          "create_conversation",
+          "delete",
+          "end",
+          "getUrl",
+          "get_url",
+          "log",
+          "summarize"
+        ],
+        "AIChatError": [
+          "AIChatError",
+          "ai_chat_error",
+          "getCode",
+          "getServerMessage",
+          "get_code",
+          "get_server_message"
+        ],
+        "AuthenticationError": [
+          "AuthenticationError",
+          "authentication_error"
+        ],
+        "ChatInProgressError": [
+          "ChatInProgressError",
+          "chat_in_progress_error"
+        ],
+        "ChatLog": [
+          "ChatLog",
+          "chat_log",
+          "getCallTimeline",
+          "getMessages",
+          "get_call_timeline",
+          "get_messages"
+        ],
+        "ChatResponse": [
+          "ChatResponse",
+          "chat_response",
+          "getConversationId",
+          "getText",
+          "getUserEvent",
+          "get_conversation_id",
+          "get_text",
+          "get_user_event"
+        ],
+        "ConversationInfo": [
+          "ConversationInfo",
+          "conversation_info",
+          "getId",
+          "getInitialMessage",
+          "getStatus",
+          "get_id",
+          "get_initial_message",
+          "get_status"
+        ],
+        "ConversationNotFoundError": [
+          "ConversationNotFoundError",
+          "conversation_not_found_error"
+        ],
+        "RateLimitError": [
+          "RateLimitError",
+          "rate_limit_error"
+        ],
+        "SummaryError": [
+          "SummaryError",
+          "summary_error"
         ]
       },
       "functions": []
@@ -316,7 +391,6 @@
           "get_route",
           "get_signing_key",
           "get_sip_usernames",
-          "get_skill_manager",
           "get_tools",
           "handleMcpRequest",
           "handleRequest",
@@ -404,6 +478,7 @@
           "set_web_hook_url",
           "setupGracefulShutdown",
           "setup_graceful_shutdown",
+          "skill_manager",
           "updateGlobalData",
           "update_global_data",
           "validateToolToken",
@@ -1787,6 +1862,8 @@
         ],
         "RelayError": [
           "RelayError",
+          "getCode",
+          "get_code",
           "relay_error"
         ]
       },
@@ -1796,10 +1873,12 @@
       "classes": {
         "Constants": [
           "isCallGoneCode",
+          "isSuccessCode",
           "isTerminalActionState",
           "isTerminalCallState",
           "isTerminalMessageState",
           "is_call_gone_code",
+          "is_success_code",
           "is_terminal_action_state",
           "is_terminal_call_state",
           "is_terminal_message_state"
@@ -2418,6 +2497,8 @@
           "host",
           "jwtToken",
           "jwt_token",
+          "maxActiveCalls",
+          "max_active_calls",
           "project",
           "space",
           "token"
@@ -2501,6 +2582,23 @@
           "iterator",
           "next",
           "paginated_iterator"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest._request_options": {
+      "classes": {
+        "RequestOptions": [
+          "abortSignal",
+          "abort_signal",
+          "builder",
+          "merge",
+          "retries",
+          "retryBackoff",
+          "retryOnStatus",
+          "retry_backoff",
+          "retry_on_status",
+          "timeout"
         ]
       },
       "functions": []
@@ -3998,6 +4096,8 @@
         "RestClientBuilder": [
           "build",
           "project",
+          "requestOptions",
+          "request_options",
           "space",
           "token"
         ]
@@ -4008,13 +4108,19 @@
       "classes": {
         "RestError": [
           "RestError",
+          "getBody",
+          "getHeaders",
           "getMethod",
           "getPath",
+          "getRequestId",
           "getResponseBody",
           "getStatusCode",
           "getUrl",
+          "get_body",
+          "get_headers",
           "get_method",
           "get_path",
+          "get_request_id",
           "get_response_body",
           "get_status_code",
           "get_url",
@@ -4027,6 +4133,17 @@
           "is_server_error",
           "is_unauthorized",
           "rest_error"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.rest.tls_context": {
+      "classes": {
+        "TlsContext": [
+          "fromCaFile",
+          "from_ca_file",
+          "socketFactory",
+          "socket_factory"
         ]
       },
       "functions": []
@@ -4298,6 +4415,32 @@
           "setup",
           "supportsMultipleInstances",
           "supports_multiple_instances"
+        ]
+      },
+      "functions": []
+    },
+    "signalwire.skills.builtin.mcp_gateway_skill": {
+      "classes": {
+        "McpGatewaySkill": [
+          "getDescription",
+          "getGlobalData",
+          "getHints",
+          "getName",
+          "getParameterSchema",
+          "getPromptSections",
+          "getRequiredPackages",
+          "getVersion",
+          "get_description",
+          "get_global_data",
+          "get_hints",
+          "get_name",
+          "get_parameter_schema",
+          "get_prompt_sections",
+          "get_required_packages",
+          "get_version",
+          "registerTools",
+          "register_tools",
+          "setup"
         ]
       },
       "functions": []
