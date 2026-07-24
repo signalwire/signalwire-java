@@ -1,3 +1,50 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+BEFORE YOU ADD AN ENTRY TO THIS FILE — READ THIS.
+
+Every entry here is a place the parity checker STOPS comparing. That is a real cost:
+a divergence you list is a divergence no gate will ever catch again. So entries must
+be RARE, and each one must earn its place. Default to skepticism: assume the entry is
+NOT needed and make the case that it is.
+
+The order of preference, always:
+  1. FIX THE PORT so it matches the reference (add the missing member; make the
+     signature match).
+  2. FIX THE EMISSION so idiom folds onto the reference shape — the enumerator/emitter
+     canonicalizes your language's spelling onto the oracle's (builder → __init__,
+     getters → attributes, Result<T,E> → the plain return, CamelCase → the reference
+     name, options-object/kwargs → the expanded param list, RAII/dispose → close).
+     MOST divergences are idiom and belong here, not in this file.
+  3. FIX THE REFERENCE if the oracle itself is wrong or stale (a Python-only symbol
+     that leaked into the contract, a param the reference added and the oracle never
+     re-enumerated). Fix Python / the oracle, then re-drift — do not paper over a
+     broken reference with a per-port entry.
+  4. Only when 1–3 genuinely cannot apply does an entry here become justified.
+
+An entry is JUSTIFIED ONLY IF it is irreducible after correct emission — i.e. the
+divergence survives because the two languages genuinely cannot express the same thing,
+not because the emitter hasn't folded the idiom yet. If emission COULD fold it, the
+entry is a bug in this file; go fix the emitter.
+
+Each entry MUST state WHY, concretely, in one of these forms:
+  • ADDITION — this symbol exists in the port but not the reference. Answer: is it
+    genuine port-only surface with NO reference twin (say what it is and why the
+    reference has no equivalent), or is it IDIOM the emitter should have folded (then
+    it does not belong here — fold it)? A convenience/alias/back-compat wrapper is NOT
+    a justification.
+  • OMISSION — this reference symbol has no port member. Answer: WHY can it not exist
+    here — what specific language feature is absent (e.g. no async-context-manager
+    protocol, no __init__ method protocol)? "impossible:" means the construct cannot
+    be expressed at all; if it merely LOOKS different, that's idiom → fold it, don't
+    omit it. Cite a precedent when one exists (e.g. RelayClient omits the same dunder).
+  • SIGNATURE — the symbol matches by name but its parameters differ. Answer: is the
+    difference a foldable idiom collapse (options-object, leading context/self,
+    builder) — then EXPAND it in the signature emitter so names+count match, don't list
+    it — or a genuine reference-only parameter with no cross-language analogue?
+
+If you cannot write a crisp, specific WHY that survives the "could emission fold this?"
+test, the entry is not ready. Prove it's needed before you add it.
+═══════════════════════════════════════════════════════════════════════════════ -->
+
 # PORT_ADDITIONS — Java-only public symbols with no Python equivalent
 
 Symbols here exist in the Java SDK but have no matching entry in the Python
@@ -28,7 +75,6 @@ signalwire.agent.agent_base_builder.AgentBaseBuilder.trust_proxy_for_signature: 
 signalwire.agent.agent_base_builder.AgentBaseBuilder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.agent.agent_base_dynamic_config_callback.AgentBaseDynamicConfigCallback.configure: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.agent.agent_base_dynamic_config_callback.AgentBaseDynamicConfigCallback: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.agent_server.AgentServer.agents: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.agent_server.AgentServer.close: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.agent_server.AgentServer.enable_tls: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.agent_server.AgentServer.get_routes: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -60,12 +106,9 @@ signalwire.core.agent.prompt.manager.PromptManager.pom: idiomatic Java surface e
 signalwire.core.agent_base.AgentBase.build_mcp_tool_list: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.builder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.clone: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.create_tool_token: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.detect_serverless_base_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.extract_sip_username: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_auth_password: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_auth_user: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.get_contexts: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_dynamic_config_callback: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_global_data: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_host: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -73,11 +116,9 @@ signalwire.core.agent_base.AgentBase.get_mcp_servers: idiomatic Java surface ext
 signalwire.core.agent_base.AgentBase.get_normalised_route: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_on_summary_callback: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_port: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.get_raw_prompt: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_route: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_signing_key: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_sip_usernames: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.get_skill_manager: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.get_tools: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.handle_mcp_request: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.has_tool: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -85,7 +126,6 @@ signalwire.core.agent_base.AgentBase.is_mcp_server_enabled: idiomatic Java surfa
 signalwire.core.agent_base.AgentBase.is_sip_routing_enabled: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.is_trust_proxy_for_signature: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.pom: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.agent_base.AgentBase.render_swml: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.render_swml_json: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.set_internal_fillers_map: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.agent_base.AgentBase.validate_webhook: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -146,7 +186,6 @@ signalwire.core.skill_manager.SkillManager.list_skills: idiomatic Java surface e
 signalwire.core.skill_manager.SkillManager.loaded_skills: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.skill_manager.SkillManager.remove_skill: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swaig_function.SWAIGFunction.builder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.swaig_function.SWAIGFunction.call: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.core.swaig_function.SWAIGFunction.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swaig_function.SWAIGFunction.get_extra_swaig_fields: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swaig_function.SWAIGFunction.get_fillers: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -176,7 +215,6 @@ signalwire.core.swaig_function.ToolHandler.handle: idiomatic Java surface extens
 signalwire.core.swaig_function.ToolHandler: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_builder.SWMLBuilder.get_service: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_builder.SWMLBuilder.sleep_verb: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.swml_builder.SWMLBuilder.verb: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.core.swml_handler.VerbHandlerRegistry.handler_names: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.ai: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.amazon_bedrock: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -220,7 +258,6 @@ signalwire.core.swml_service.SWMLService.request: idiomatic Java surface extensi
 signalwire.core.swml_service.SWMLService.return_verb: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.routing_callback_paths: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.schema_utils: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.core.swml_service.SWMLService.security: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.core.swml_service.SWMLService.send_digits: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.send_fax: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.core.swml_service.SWMLService.send_sms: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -239,22 +276,13 @@ signalwire.core.swml_service.SWMLService.validate_basic_auth: idiomatic Java sur
 signalwire.core.swml_service.SWMLService.verb_registry: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.logging.logger_level.LoggerLevel.get_value: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.logging.logger_level.LoggerLevel: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.logging.logging_level.LoggingLevel.debug: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.error: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.info: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.off: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.value_of: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.values: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.logging.logging_level.LoggingLevel.warn: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.pom.pom.PromptObjectModel.from_json_map: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.PromptObjectModel.from_yaml_map: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.pom.pom.PromptObjectModel.get_sections: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.PromptObjectModel.is_debug: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.PromptObjectModel.sections: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.pom.pom.Section.get_body: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.Section.get_bullets: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.Section.get_numbered: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.pom.pom.Section.get_subsections: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.Section.get_title: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.Section.is_numbered_bullets: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.pom.pom.Section.subsections: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
@@ -275,7 +303,6 @@ signalwire.prefabs.info_gatherer.InfoGathererAgent.run: idiomatic Java surface e
 signalwire.prefabs.info_gatherer.InfoGathererAgent.serve: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.prefabs.info_gatherer_agent_question_callback.InfoGathererAgentQuestionCallback.apply: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.prefabs.info_gatherer_agent_question_callback.InfoGathererAgentQuestionCallback: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.prefabs.question_callback.QuestionCallback.apply: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.prefabs.receptionist.ReceptionistAgent.get_agent: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.prefabs.receptionist.ReceptionistAgent.get_summary_handler: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.prefabs.receptionist.ReceptionistAgent.phone_department: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -297,7 +324,6 @@ signalwire.relay.action_send_fax_action.ActionSendFaxAction: idiomatic Java surf
 signalwire.relay.call.Action.__repr__: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.get_call: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.get_control_id: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.relay.call.Action.get_result: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.get_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.resolve: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Action.set_on_completed: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -327,7 +353,6 @@ signalwire.relay.call.Call.set_end_reason: idiomatic Java surface extension (bui
 signalwire.relay.call.Call.set_node_id: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Call.set_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call.Call.set_tag: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.relay.call_send_fax_action.CallSendFaxAction.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.relay.call_state.CallState.from_wire: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call_state.CallState.get_value: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.call_state.CallState.is_terminal: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -509,7 +534,6 @@ signalwire.relay.message.Message.get_media: idiomatic Java surface extension (bu
 signalwire.relay.message.Message.get_message_id: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.message.Message.get_message_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.message.Message.get_reason: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.relay.message.Message.get_result: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.message.Message.get_segments: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.message.Message.get_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.message.Message.get_tags: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -539,11 +563,6 @@ signalwire.relay.relay_client_builder.RelayClientBuilder.project: idiomatic Java
 signalwire.relay.relay_client_builder.RelayClientBuilder.space: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder.token: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_client_builder.RelayClientBuilder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.relay.relay_constants.RelayConstants.is_call_gone_code: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.relay_constants.RelayConstants.is_success_code: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.relay_constants.RelayConstants.is_terminal_action_state: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.relay_constants.RelayConstants.is_terminal_call_state: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.relay.relay_constants.RelayConstants.is_terminal_message_state: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.relay.relay_event_authorization_state_event.RelayEventAuthorizationStateEvent.__init__: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_event_authorization_state_event.RelayEventAuthorizationStateEvent.get_authorization_state: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.relay.relay_event_authorization_state_event.RelayEventAuthorizationStateEvent: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -579,19 +598,6 @@ signalwire.rest._request_options.RequestOptions.retries: idiomatic Java surface 
 signalwire.rest._request_options.RequestOptions.retry_backoff: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._request_options.RequestOptions.retry_on_status: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest._request_options.RequestOptions.timeout: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.rest.call_handler.PhoneCallHandler.ai_agent: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.call_flow: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.dialogflow: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.laml_application: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.laml_webhooks: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.relay_application: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.relay_connector: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.relay_context: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.relay_script: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.relay_topic: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.value_of: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.values: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.rest.call_handler.PhoneCallHandler.video_room: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.rest.client.RestClient.builder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest.client.RestClient.get_http_client: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.rest.client.RestClient.get_project: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -632,7 +638,6 @@ signalwire.runtime.serverless_adapter.ServerlessAdapter.handle_cgi: idiomatic Ja
 signalwire.runtime.serverless_adapter.ServerlessAdapter.handle_gcf: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.runtime.serverless_adapter.ServerlessAdapter: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.runtime.serverless_adapter_response.ServerlessAdapterResponse: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.security.cached_body_http_servlet_request.CachedBodyHttpServletRequest.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.security.security_utils.SecurityUtils.filter_sensitive_headers: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.security.security_utils.SecurityUtils.is_valid_hostname: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.security.security_utils.SecurityUtils.redact_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -705,8 +710,6 @@ signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.get_descrip
 signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.get_swaig_functions: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.supports_multiple_instances: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.skills.registry.CustomSkillsSkill.register_tools: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.skills.registry.CustomSkillsSkill.setup: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.skills.registry.SkillRegistry.get: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.registry.SkillRegistry.get_external_paths: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.registry.SkillRegistry.has: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -747,12 +750,6 @@ signalwire.swaig.parameter_schema_builder.ParameterSchemaBuilder.object: idiomat
 signalwire.swaig.parameter_schema_builder.ParameterSchemaBuilder.required: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.swaig.parameter_schema_builder.ParameterSchemaBuilder.string: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.swaig.parameter_schema_builder.ParameterSchemaBuilder: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.swaig.tool_definition.ToolDefinition.__init__: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.swaig.tool_definition.ToolDefinition.get_handler: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.swaig.tool_definition.ToolDefinition.set_extra_fields: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.swaig.tool_definition.ToolDefinition.set_secure: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.swaig.tool_definition.ToolDefinition.to_swaig_function: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
-signalwire.swaig.tool_handler.ToolHandler.handle: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.swml.codec.Codec.from_wire: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.swml.codec.Codec.get_value: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.swml.codec.Codec: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -789,11 +786,9 @@ signalwire.utils.schema_utils.SchemaValidationError.get_errors: idiomatic Java s
 signalwire.utils.schema_utils.SchemaValidationError.get_verb_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.utils.url_validator.UrlValidator.validate_url: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.utils.url_validator.UrlValidator: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.web.web_service.WebService.app: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 signalwire.web.web_service.WebService.file_allowed: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.web.web_service.WebService.get_directories: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.web.web_service.WebService.get_port: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.web.web_service.WebService.get_security: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.web.web_service.WebService.security: idiomatic Java surface extension (port-only class/enum/getter/overload, or a method renamed at the surface layer) with no Python-reference signature counterpart
 
 # --- client-tree namespace/resource accessors (Java idiom for Python `client.X` instance attributes) ---
@@ -852,3 +847,36 @@ signalwire.rest.namespaces._client_tree_generated.VideoNamespace.room_sessions: 
 signalwire.rest.namespaces._client_tree_generated.VideoNamespace.room_tokens: Java lazy-accessor idiom for a Python client-tree INSTANCE ATTRIBUTE (Python wires `self.{name} = <Resource>(http)` in the namespace's `__init__` / `_wire_resources`; Java, lacking `__getattr__`, exposes each as a public zero-arg accessor method). The Python surface enumerator records only classes/methods, never instance attributes, so the reference has no method-surface counterpart — a real shipped Java accessor, port-only relative to the compared method surface.
 signalwire.rest.namespaces._client_tree_generated.VideoNamespace.rooms: Java lazy-accessor idiom for a Python client-tree INSTANCE ATTRIBUTE (Python wires `self.{name} = <Resource>(http)` in the namespace's `__init__` / `_wire_resources`; Java, lacking `__getattr__`, exposes each as a public zero-arg accessor method). The Python surface enumerator records only classes/methods, never instance attributes, so the reference has no method-surface counterpart — a real shipped Java accessor, port-only relative to the compared method surface.
 signalwire.rest.namespaces._client_tree_generated.VideoNamespace.streams: Java lazy-accessor idiom for a Python client-tree INSTANCE ATTRIBUTE (Python wires `self.{name} = <Resource>(http)` in the namespace's `__init__` / `_wire_resources`; Java, lacking `__getattr__`, exposes each as a public zero-arg accessor method). The Python surface enumerator records only classes/methods, never instance attributes, so the reference has no method-surface counterpart — a real shipped Java accessor, port-only relative to the compared method surface.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FOLDED (agentbase-family) keys for the diff_port_surface AgentBase-mixin fold.
+# The SURFACE-DIFF gate re-keys AgentBase + its mixin methods to a shared
+# `agentbase-family.<method>` token; these are the folded keys for the genuine
+# port-only AgentBase extensions. Their UNFOLDED `signalwire.core.agent_base.
+# AgentBase.<method>` twins remain above because the DRIFT/SIGNATURE gate reads
+# this file with UNFOLDED per-class keys (both key forms are load-bearing).
+agentbase-family.build_mcp_tool_list: port-only: builds the MCP tool list for an outgoing MCP request — an internal helper Java exposes publicly for its statically-typed MCP client; no reference twin.
+agentbase-family.builder: port-only: static factory AgentBase.builder() returning the AgentBaseBuilder — the Java named-param construction idiom (Python uses a kwargs __init__); no reference twin.
+agentbase-family.clone: port-only: returns a per-request isolated copy of the agent (Java exposes on AgentBase what Python keeps as the internal clone_for_request request-scoped copy); no reference twin.
+agentbase-family.detect_serverless_base_url: port-only: computes the serverless platform base URL for URL composition (Java's explicit replacement for Python's FastAPI request-context URL assembly); no reference twin.
+agentbase-family.get_auth_password: port-only: returns the basic-auth password (Java accessor; Python exposes credentials via get_basic_auth_credentials on the mixin, not a per-field getter); no reference twin.
+agentbase-family.get_auth_user: port-only: returns the basic-auth username (Java accessor; Python exposes credentials via get_basic_auth_credentials on the mixin, not a per-field getter); no reference twin.
+agentbase-family.get_dynamic_config_callback: port-only: returns the registered dynamic-config callback (Java accessor over the callback slot set via set_dynamic_config_callback); no reference twin.
+agentbase-family.get_global_data: port-only: returns the accumulated global-data map (Java accessor; Python mutates via set/update_global_data on the mixin, no getter); no reference twin.
+agentbase-family.get_host: port-only: returns the bind host (Java accessor over plain-state; Python exposes host as a constructor attribute the surface oracle does not enumerate); no reference twin.
+agentbase-family.get_mcp_servers: port-only: returns the configured MCP server list (Java accessor over internal state Python does not surface as a public attribute); no reference twin.
+agentbase-family.get_normalised_route: port-only: returns the normalised HTTP route path (Java accessor over computed routing state); no reference twin.
+agentbase-family.get_on_summary_callback: port-only: returns the registered on-summary callback (Java accessor over the callback slot set via on_summary); no reference twin.
+agentbase-family.get_port: port-only: returns the bind port (Java accessor over plain-state; Python exposes port as a constructor attribute the surface oracle does not enumerate); no reference twin.
+agentbase-family.get_route: port-only: returns the agent's HTTP route (Java accessor; Python sets route via constructor/attribute, no getter member); no reference twin.
+agentbase-family.get_signing_key: port-only: returns the webhook-signing key (Java accessor over internal security state); no reference twin.
+agentbase-family.get_sip_usernames: port-only: returns the registered SIP usernames (Java accessor over internal state); no reference twin.
+agentbase-family.get_tools: port-only: returns the registered ToolDefinition map (Java accessor over the tool registry Python does not surface as a public attribute); no reference twin.
+agentbase-family.handle_mcp_request: port-only: dispatches an inbound MCP gateway request via Java's typed MCP handler surface (Python routes MCP through the dynamic web layer); no reference twin.
+agentbase-family.has_tool: port-only: boolean query for a registered tool by name (Java query-method idiom over the tool registry); no reference twin.
+agentbase-family.is_mcp_server_enabled: port-only: boolean query over the agent's MCP-server enablement flag (Java query-method idiom); no reference twin.
+agentbase-family.is_sip_routing_enabled: port-only: boolean query over SIP-routing enablement (Java query-method idiom); no reference twin.
+agentbase-family.is_trust_proxy_for_signature: port-only: boolean query for the trust-proxy-for-signature setting (Java query-method idiom); no reference twin.
+agentbase-family.render_swml_json: port-only: renders the SWML document to a JSON string (Java convenience over render_swml returning the serialized form directly; Python callers serialize separately); no reference twin.
+agentbase-family.set_internal_fillers_map: port-only: bulk-sets the internal filler map (Java typed setter; Python configures fillers via add_internal_filler on the mixin); no reference twin.
+agentbase-family.validate_webhook: port-only: instance convenience delegating to the WebhookValidator core (Java's typed webhook-validation entry on the agent; Python validates via framework middleware); no reference twin.

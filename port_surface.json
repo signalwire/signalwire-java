@@ -1,5 +1,222 @@
 {
-  "generated_from": "signalwire-java @ 6c7f22c88f7d7a2aefbffcf70bfecedd637bf012",
+  "crud_bases": {
+    "signalwire.rest.namespaces.datasphere_resources_generated.DatasphereDocuments": {
+      "base": "CrudResource",
+      "bind": [
+        "class:DocumentListResponse",
+        "class:Document",
+        "class:DocumentCreateRequest",
+        "class:DocumentUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.AiAgents": {
+      "base": "FabricResource",
+      "bind": [
+        "class:AIAgentListResponse",
+        "class:AIAgentResponse",
+        "class:AIAgentCreateRequest",
+        "class:AIAgentUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.CallFlows": {
+      "base": "FabricResource",
+      "bind": [
+        "class:CallFlowListResponse",
+        "class:CallFlowResponse",
+        "class:CallFlowCreateRequest",
+        "class:CallFlowUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.ConferenceRooms": {
+      "base": "FabricResource",
+      "bind": [
+        "class:ConferenceRoomListResponse",
+        "class:ConferenceRoomResponse",
+        "class:ConferenceRoomCreateRequest",
+        "class:ConferenceRoomUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.CxmlScripts": {
+      "base": "FabricResource",
+      "bind": [
+        "class:CXMLScriptListResponse",
+        "class:CXMLScriptResponse",
+        "class:CXMLScriptCreateRequest",
+        "class:CXMLScriptUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.CxmlWebhooks": {
+      "base": "FabricResource",
+      "bind": [
+        "class:CXMLWebhookListResponse",
+        "class:CXMLWebhookResponse",
+        "class:CXMLWebhookCreateRequest",
+        "class:CXMLWebhookUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.FabricAddresses": {
+      "base": "ReadResource",
+      "bind": [
+        "class:FabricAddressesResponse",
+        "class:FabricAddress"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.FreeswitchConnectors": {
+      "base": "FabricResource",
+      "bind": [
+        "class:FreeswitchConnectorListResponse",
+        "class:FreeswitchConnectorResponse",
+        "class:FreeswitchConnectorCreateRequest",
+        "class:FreeswitchConnectorUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.RelayApplications": {
+      "base": "FabricResource",
+      "bind": [
+        "class:RelayApplicationListResponse",
+        "class:RelayApplicationResponse",
+        "class:RelayApplicationCreateRequest",
+        "class:RelayApplicationUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.SipEndpoints": {
+      "base": "FabricResource",
+      "bind": [
+        "class:SipEndpointListResponse",
+        "class:SipEndpointResponse",
+        "class:SipEndpointCreateRequest",
+        "class:SipEndpointUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.SipGateways": {
+      "base": "FabricResource",
+      "bind": [
+        "class:SipGatewayListResponse",
+        "class:SipGatewayResponse",
+        "class:SipGatewayRequest",
+        "class:SipGatewayRequestUpdate"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.Subscribers": {
+      "base": "FabricResource",
+      "bind": [
+        "class:SubscriberListResponse",
+        "class:SubscriberResponse",
+        "class:SubscriberRequest",
+        "class:SubscriberRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.SwmlScripts": {
+      "base": "FabricResource",
+      "bind": [
+        "class:SwmlScriptListResponse",
+        "class:SwmlScriptResponse",
+        "class:SwmlScriptCreateRequest",
+        "class:SwmlScriptUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fabric_resources_generated.SwmlWebhooks": {
+      "base": "FabricResource",
+      "bind": [
+        "class:SWMLWebhookListResponse",
+        "class:SWMLWebhookResponse",
+        "class:SWMLWebhookCreateRequest",
+        "class:SWMLWebhookUpdateRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.fax_resources_generated.FaxLogs": {
+      "base": "ReadResource",
+      "bind": [
+        "class:LogListResponse",
+        "class:LogResponse"
+      ]
+    },
+    "signalwire.rest.namespaces.message_resources_generated.MessageLogs": {
+      "base": "ReadResource",
+      "bind": [
+        "class:LogListResponse",
+        "class:LogRetrieveResponse"
+      ]
+    },
+    "signalwire.rest.namespaces.projects_resources_generated.Projects": {
+      "base": "CrudResource",
+      "bind": [
+        "class:ProjectList",
+        "class:Project",
+        "class:ProjectCreate",
+        "class:ProjectUpdate"
+      ]
+    },
+    "signalwire.rest.namespaces.relay_rest_resources_generated.NumberGroups": {
+      "base": "CrudResource",
+      "bind": [
+        "class:NumberGroupListResponse",
+        "class:NumberGroupResponse",
+        "class:CreateNumberGroupRequest",
+        "class:UpdateNumberGroupRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.relay_rest_resources_generated.PhoneNumbers": {
+      "base": "CrudResource",
+      "bind": [
+        "class:PhoneNumberListResponse",
+        "class:PhoneNumberResponse",
+        "class:PurchasePhoneNumberRequest",
+        "class:UpdatePhoneNumberRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.relay_rest_resources_generated.Queues": {
+      "base": "CrudResource",
+      "bind": [
+        "class:QueueListResponse",
+        "class:QueueResponse",
+        "class:CreateQueueRequest",
+        "class:UpdateQueueRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.relay_rest_resources_generated.VerifiedCallers": {
+      "base": "CrudResource",
+      "bind": [
+        "class:VerifiedCallerIDListResponse",
+        "class:VerifiedCallerIDResponse",
+        "class:CreateVerifiedCallerIDRequest",
+        "class:UpdateVerifiedCallerIDRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.video_resources_generated.VideoConferences": {
+      "base": "CrudResource",
+      "bind": [
+        "class:ListConferencesResponse",
+        "class:Conference",
+        "class:CreateConferenceRequest",
+        "class:UpdateConferenceRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.video_resources_generated.VideoRoomSessions": {
+      "base": "ReadResource",
+      "bind": [
+        "class:ListRoomSessionsResponse",
+        "class:RoomSessionSummary"
+      ]
+    },
+    "signalwire.rest.namespaces.video_resources_generated.VideoRooms": {
+      "base": "CrudResource",
+      "bind": [
+        "class:ListRoomsResponse",
+        "class:RoomResponse",
+        "class:CreateRoomRequest",
+        "class:UpdateRoomRequest"
+      ]
+    },
+    "signalwire.rest.namespaces.voice_resources_generated.VoiceLogs": {
+      "base": "ReadResource",
+      "bind": [
+        "class:LogListResponse",
+        "class:VoiceLog"
+      ]
+    }
+  },
+  "generated_from": "signalwire-java @ 70e13af5f1dd4031b2a68a2d13798c1d04f0744d",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -204,13 +421,10 @@
           "clear_pre_answer_verbs",
           "clear_swaig_query_params",
           "clone",
-          "create_tool_token",
           "detect_serverless_base_url",
           "enable_sip_routing",
-          "extract_sip_username",
           "get_auth_password",
           "get_auth_user",
-          "get_contexts",
           "get_dynamic_config_callback",
           "get_global_data",
           "get_host",
@@ -219,11 +433,9 @@
           "get_normalised_route",
           "get_on_summary_callback",
           "get_port",
-          "get_raw_prompt",
           "get_route",
           "get_signing_key",
           "get_sip_usernames",
-          "get_skill_manager",
           "get_tools",
           "handle_mcp_request",
           "handle_request",
@@ -235,11 +447,11 @@
           "on_summary",
           "pom",
           "register_sip_username",
-          "render_swml",
           "render_swml_json",
           "set_internal_fillers_map",
           "set_post_prompt_url",
           "set_web_hook_url",
+          "skill_manager",
           "validate_webhook"
         ]
       },
@@ -1094,10 +1306,10 @@
           "from_json_map",
           "from_yaml",
           "from_yaml_map",
-          "get_sections",
           "is_debug",
           "render_markdown",
           "render_xml",
+          "sections",
           "to_dict",
           "to_json",
           "to_yaml"
@@ -1110,11 +1322,11 @@
           "get_body",
           "get_bullets",
           "get_numbered",
-          "get_subsections",
           "get_title",
           "is_numbered_bullets",
           "render_markdown",
           "render_xml",
+          "subsections",
           "to_dict"
         ]
       },
@@ -1231,10 +1443,10 @@
           "__repr__",
           "get_call",
           "get_control_id",
-          "get_result",
           "get_state",
           "is_done",
           "resolve",
+          "result",
           "set_on_completed",
           "stop",
           "update_state",
@@ -1678,7 +1890,6 @@
           "get_message_id",
           "get_message_state",
           "get_reason",
-          "get_result",
           "get_segments",
           "get_state",
           "get_tags",
@@ -3902,8 +4113,8 @@
           "file_allowed",
           "get_directories",
           "get_port",
-          "get_security",
           "remove_directory",
+          "security",
           "start",
           "stop"
         ]
