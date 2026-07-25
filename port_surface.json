@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ efaf2b5b214a780f18caaad4f72a32f5fee40ed9",
+  "generated_from": "signalwire-java @ 14d2d4f2491b73f59e99c230503c7d9200ccab51",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1129,6 +1129,7 @@
           "return_verb",
           "routing_callback_paths",
           "schema_utils",
+          "security",
           "send_digits",
           "send_fax",
           "send_sms",

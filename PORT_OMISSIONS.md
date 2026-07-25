@@ -104,5 +104,4 @@ agentbase-family.tool: impossible: Python @tool class/instance decorator relies 
 # B1 composition-attribute omissions (class-typed / per-instance attrs surfaced by the
 # porting-sdk composition-attr enrichment; Java exposes no corresponding member).
 signalwire.agent_server.AgentServer.agents: impossible: the reference records AgentServer with BOTH a bare `agents` dict attribute AND a `get_agents()` accessor (B1 enrichment surfaces the attribute); Java ships the single AgentServer.getAgents() accessor (→ the reference `get_agents` member) and holds no separate bare `agents` field member — wire-neutral (TS/PHP hit the same accessor idiom).
-signalwire.core.swml_service.SWMLService.security: impossible: Python surfaces `security` as a SecurityConfig composition attribute on SWMLService (B1 enrichment); Java's SWML Service keeps its auth/security settings as internal builder-configured state with no public SecurityConfig accessor member on the service (wire-neutral; the WebService.security accessor folds via the getter idiom, but the SWML service exposes none — TS/PHP omit the same).
 

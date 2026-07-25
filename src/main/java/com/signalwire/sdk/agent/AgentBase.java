@@ -61,6 +61,21 @@ public class AgentBase extends Service {
   private String recordFormat;
   private boolean recordStereo;
 
+  // Unique id for this agent. Reference: ``self.agent_id = agent_id or str(uuid.uuid4())``.
+  private String agentId;
+  // Reference: ``self._suppress_logs`` — gates the per-request structured logging
+  // the reference guards at web_mixin.py:884/978.
+  private boolean suppressLogs;
+  // Reference: ``enable_post_prompt_override`` / ``check_for_input_override`` —
+  // accepted at construction and carried on the agent.
+  private boolean enablePostPromptOverride;
+  private boolean checkForInputOverride;
+  // Reference: ``self._default_webhook_url`` — the default SWAIG web_hook_url,
+  // used in place of the derived one when set.
+  private String defaultWebhookUrl;
+  // Reference: ``SessionManager(token_expiry_secs=…)``.
+  private int tokenExpirySecs = 3600;
+
   // --- Prompt ---
   private String promptText;
   private String postPrompt;
@@ -123,7 +138,10 @@ public class AgentBase extends Service {
   private Consumer<Map<String, Object>> onDebugEventCallback;
 
   // --- Security ---
-  private final SessionManager sessionManager = new SessionManager();
+  // Non-final: the builder's tokenExpirySecs is forwarded here by replacing the
+  // default manager, mirroring the reference's
+  // ``self._session_manager = SessionManager(token_expiry_secs=…)``.
+  private SessionManager sessionManager = new SessionManager();
 
   // Webhook signature validation (porting-sdk/webhooks.md). When non-null,
   // signed-webhook routes (POST /, /swaig, /post_prompt) reject any request
@@ -144,12 +162,42 @@ public class AgentBase extends Service {
    */
   protected AgentBase(
       String name, String route, String host, int port, String authUser, String authPassword) {
-    super(name, route, host, port, authUser, authPassword);
+    this(name, route, host, port, authUser, authPassword, null, null, true);
+  }
+
+  /**
+   * Full construction contract. Forwards {@code schemaPath} / {@code configFile} / {@code
+   * schemaValidation} to {@link Service} exactly as the reference's {@code AgentBase.__init__}
+   * forwards them to {@code super().__init__} (agent_base.py:205-207).
+   *
+   * @param name agent name/identifier.
+   * @param route HTTP route path for this agent.
+   * @param host host to bind the web server to.
+   * @param port port to bind the web server to.
+   * @param authUser basic-auth username.
+   * @param authPassword basic-auth password.
+   * @param schemaPath explicit SWML schema file path, or null to auto-discover.
+   * @param configFile explicit config file path, or null to search the default locations.
+   * @param schemaValidation whether SWML schema validation is enabled.
+   */
+  protected AgentBase(
+      String name,
+      String route,
+      String host,
+      int port,
+      String authUser,
+      String authPassword,
+      String schemaPath,
+      String configFile,
+      boolean schemaValidation) {
+    super(
+        name, route, host, port, authUser, authPassword, schemaPath, configFile, schemaValidation);
     this.autoAnswer = true;
     this.maxDuration = 3600;
     this.recordCall = false;
     this.recordFormat = "mp4";
     this.recordStereo = true;
+    this.agentId = UUID.randomUUID().toString();
   }
 
   // ============================================================
@@ -176,6 +224,22 @@ public class AgentBase extends Service {
     private String recordFormat = "mp4";
     private boolean recordStereo = true;
     private EnvProvider envProvider;
+
+    // Forwarded to Service (the reference forwards these to super().__init__).
+    private String schemaPath;
+    private String configFile;
+    private boolean schemaValidation = true;
+
+    // Agent-own construction state (the reference stores these on self).
+    private String agentId;
+    private boolean usePom = true;
+    private List<String> nativeFunctions;
+    private String defaultWebhookUrl;
+    private boolean suppressLogs = false;
+    private boolean enablePostPromptOverride = false;
+    private boolean checkForInputOverride = false;
+    // Forwarded to SessionManager (agent_base.py:247).
+    private int tokenExpirySecs = 3600;
 
     public Builder name(String name) {
       this.name = name;
@@ -300,8 +364,162 @@ public class AgentBase extends Service {
       return this;
     }
 
+    // -- Params the reference FORWARDS to SWMLService (agent_base.py:205-207) --
+
+    /**
+     * Explicit path to the SWML schema file. When unset the SDK auto-discovers the bundled schema
+     * (the reference's {@code _find_schema_path}). Forwarded to {@link Service} / {@link
+     * SchemaUtils}.
+     *
+     * @param path schema file path, or null to auto-discover.
+     * @return this builder.
+     */
+    public Builder schemaPath(String path) {
+      this.schemaPath = path;
+      return this;
+    }
+
+    /**
+     * Explicit path to a JSON configuration file. Its {@code service} section supplies {@code
+     * name}/{@code route}/{@code host}/{@code port} defaults (explicit builder values win), and its
+     * {@code security} section configures the service's {@link
+     * com.signalwire.sdk.core.SecurityConfig}. When unset, the default search paths are used.
+     *
+     * @param path config file path, or null to search the defaults.
+     * @return this builder.
+     */
+    public Builder configFile(String path) {
+      this.configFile = path;
+      return this;
+    }
+
+    /**
+     * Enable or disable SWML schema validation. Default {@code true}. Forwarded to {@link Service}
+     * / {@link SchemaUtils}, mirroring the reference's {@code schema_validation}.
+     *
+     * @param enabled whether validation is on.
+     * @return this builder.
+     */
+    public Builder schemaValidation(boolean enabled) {
+      this.schemaValidation = enabled;
+      return this;
+    }
+
+    // -- Agent-own construction params --
+
+    /**
+     * Unique id for this agent. When unset a random UUID is generated, mirroring the reference's
+     * {@code agent_id or str(uuid.uuid4())}.
+     *
+     * @param id agent id, or null to generate one.
+     * @return this builder.
+     */
+    public Builder agentId(String id) {
+      this.agentId = id;
+      return this;
+    }
+
+    /**
+     * Whether to build prompts through the Prompt Object Model. Default {@code true}; {@code false}
+     * puts the agent in raw-text prompt mode and makes {@link AgentBase#getPom()} return null.
+     *
+     * @param usePom whether POM mode is on.
+     * @return this builder.
+     */
+    public Builder usePom(boolean usePom) {
+      this.usePom = usePom;
+      return this;
+    }
+
+    /**
+     * Native (server-side) SWAIG functions to include in the emitted {@code ai.SWAIG
+     * .native_functions} array.
+     *
+     * @param functions native function names, or null for none.
+     * @return this builder.
+     */
+    public Builder nativeFunctions(List<String> functions) {
+      this.nativeFunctions = functions == null ? null : new ArrayList<>(functions);
+      return this;
+    }
+
+    /**
+     * Default webhook URL applied to every SWAIG function, in place of the URL derived from the
+     * agent's host/route. Mirrors the reference's {@code default_webhook_url}.
+     *
+     * @param url the default SWAIG webhook URL, or null to derive it.
+     * @return this builder.
+     */
+    public Builder defaultWebhookUrl(String url) {
+      this.defaultWebhookUrl = url;
+      return this;
+    }
+
+    /**
+     * Suppress the SDK's structured per-request logs. Default {@code false}.
+     *
+     * @param suppress whether to suppress logs.
+     * @return this builder.
+     */
+    public Builder suppressLogs(boolean suppress) {
+      this.suppressLogs = suppress;
+      return this;
+    }
+
+    /**
+     * Enable the post-prompt override path. Default {@code false}. Mirrors the reference's {@code
+     * enable_post_prompt_override}.
+     *
+     * @param enabled whether the override is enabled.
+     * @return this builder.
+     */
+    public Builder enablePostPromptOverride(boolean enabled) {
+      this.enablePostPromptOverride = enabled;
+      return this;
+    }
+
+    /**
+     * Enable the check-for-input override path. Default {@code false}. Mirrors the reference's
+     * {@code check_for_input_override}.
+     *
+     * @param enabled whether the override is enabled.
+     * @return this builder.
+     */
+    public Builder checkForInputOverride(boolean enabled) {
+      this.checkForInputOverride = enabled;
+      return this;
+    }
+
+    /**
+     * Lifetime, in seconds, of the per-call SWAIG function tokens this agent mints. Default {@code
+     * 3600}. Forwarded to the agent's {@link SessionManager}, mirroring the reference's {@code
+     * SessionManager(token_expiry_secs=…)}.
+     *
+     * @param secs token lifetime in seconds.
+     * @return this builder.
+     */
+    public Builder tokenExpirySecs(int secs) {
+      this.tokenExpirySecs = secs;
+      return this;
+    }
+
     public AgentBase build() {
       EnvProvider env = this.envProvider != null ? this.envProvider : EnvProvider.SYSTEM;
+
+      // Load the config file's `service` section BEFORE constructing, so its
+      // name/route/host/port can seed the service. Explicit builder values win
+      // — mirrors the reference's precedence in agent_base.py:192-197.
+      Map<String, Object> serviceConfig = loadServiceConfig(this.configFile, this.name);
+      String cfgName = strOrNull(serviceConfig.get("name"));
+      String cfgRoute = strOrNull(serviceConfig.get("route"));
+      String cfgHost = strOrNull(serviceConfig.get("host"));
+      Integer cfgPort = intOrNull(serviceConfig.get("port"));
+
+      String finalName = cfgName != null ? cfgName : this.name;
+      String finalRoute =
+          !"/".equals(this.route) ? this.route : (cfgRoute != null ? cfgRoute : this.route);
+      String finalHost =
+          !"0.0.0.0".equals(this.host) ? this.host : (cfgHost != null ? cfgHost : this.host);
 
       // Resolve auth before constructing the agent; Service's constructor
       // does its own env-fallback if both are null, but we want builder
@@ -323,15 +541,47 @@ public class AgentBase extends Service {
         }
       }
 
-      int resolvedPort = this.port != null ? this.port : Service.resolvePort();
+      // Port precedence: explicit builder value → config file → PORT env / 3000.
+      int resolvedPort =
+          this.port != null ? this.port : (cfgPort != null ? cfgPort : Service.resolvePort());
 
       AgentBase agent =
-          new AgentBase(this.name, this.route, this.host, resolvedPort, resolvedUser, resolvedPass);
+          new AgentBase(
+              finalName,
+              finalRoute,
+              finalHost,
+              resolvedPort,
+              resolvedUser,
+              resolvedPass,
+              this.schemaPath,
+              this.configFile,
+              this.schemaValidation);
       agent.autoAnswer = this.autoAnswer;
       agent.maxDuration = this.maxDuration;
       agent.recordCall = this.recordCall;
       agent.recordFormat = this.recordFormat;
       agent.recordStereo = this.recordStereo;
+
+      // Agent-own construction state.
+      if (this.agentId != null && !this.agentId.isEmpty()) {
+        agent.agentId = this.agentId;
+      }
+      agent.usePom = this.usePom;
+      if (this.nativeFunctions != null) {
+        agent.nativeFunctions = new ArrayList<>(this.nativeFunctions);
+      }
+      agent.defaultWebhookUrl = this.defaultWebhookUrl;
+      if (this.defaultWebhookUrl != null && !this.defaultWebhookUrl.isEmpty()) {
+        agent.webhookUrl = this.defaultWebhookUrl;
+      }
+      agent.suppressLogs = this.suppressLogs;
+      agent.enablePostPromptOverride = this.enablePostPromptOverride;
+      agent.checkForInputOverride = this.checkForInputOverride;
+
+      // token_expiry_secs is forwarded to the SessionManager, exactly as the
+      // reference does at agent_base.py:247.
+      agent.tokenExpirySecs = this.tokenExpirySecs;
+      agent.sessionManager = new SessionManager(this.tokenExpirySecs);
 
       // Resolve proxy URL base
       String envProxy = env.get(ENV_PROXY_URL_BASE);
@@ -386,6 +636,131 @@ public class AgentBase extends Service {
 
       return agent;
     }
+  }
+
+  /**
+   * Load the {@code service} section of a config file, mirroring the reference's {@code
+   * AgentBase._load_service_config}. Returns an empty map when there is no config file, it is
+   * unreadable, or it carries no {@code service} section.
+   *
+   * @param configFile explicit config path, or null to search the default locations.
+   * @param serviceName service name seeding the default search paths.
+   * @return the {@code service} section, never null.
+   */
+  static Map<String, Object> loadServiceConfig(String configFile, String serviceName) {
+    String path = configFile;
+    if (path == null || path.isEmpty()) {
+      path = com.signalwire.sdk.core.ConfigLoader.findConfigFile(serviceName);
+    }
+    if (path == null || path.isEmpty()) {
+      return Map.of();
+    }
+    var loader = new com.signalwire.sdk.core.ConfigLoader(List.of(path));
+    if (!loader.hasConfig()) {
+      return Map.of();
+    }
+    Map<String, Object> section = loader.getSection("service");
+    return section != null ? section : Map.of();
+  }
+
+  private static String strOrNull(Object v) {
+    if (v == null) {
+      return null;
+    }
+    String s = String.valueOf(v);
+    return s.isEmpty() ? null : s;
+  }
+
+  private static Integer intOrNull(Object v) {
+    if (v instanceof Number n) {
+      return n.intValue();
+    }
+    if (v instanceof String s && !s.isEmpty()) {
+      try {
+        return Integer.valueOf(s.trim());
+      } catch (NumberFormatException ignored) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // ============================================================
+  // Construction-param accessors
+  // ============================================================
+
+  /**
+   * This agent's unique id — the builder-supplied {@code agentId} or a generated UUID. Mirrors the
+   * reference's public {@code agent_id} attribute.
+   *
+   * @return the agent id, never null.
+   */
+  public String getAgentId() {
+    return agentId;
+  }
+
+  /**
+   * Whether this agent builds prompts through the Prompt Object Model.
+   *
+   * @return true when POM mode is on.
+   */
+  public boolean isUsePom() {
+    return usePom;
+  }
+
+  /**
+   * Native (server-side) SWAIG function names emitted into {@code ai.SWAIG.native_functions}.
+   *
+   * @return the configured native functions; empty when none are set.
+   */
+  public List<String> getNativeFunctions() {
+    return nativeFunctions == null ? List.of() : List.copyOf(nativeFunctions);
+  }
+
+  /**
+   * The default SWAIG webhook URL, or {@code null} when the URL is derived from the agent's
+   * host/route.
+   *
+   * @return the configured default webhook URL, or null.
+   */
+  public String getDefaultWebhookUrl() {
+    return defaultWebhookUrl;
+  }
+
+  /**
+   * Whether the SDK's structured per-request logs are suppressed.
+   *
+   * @return true when logs are suppressed.
+   */
+  public boolean isSuppressLogs() {
+    return suppressLogs;
+  }
+
+  /**
+   * Whether the post-prompt override path is enabled.
+   *
+   * @return true when enabled.
+   */
+  public boolean isEnablePostPromptOverride() {
+    return enablePostPromptOverride;
+  }
+
+  /**
+   * Whether the check-for-input override path is enabled.
+   *
+   * @return true when enabled.
+   */
+  public boolean isCheckForInputOverride() {
+    return checkForInputOverride;
+  }
+
+  /**
+   * Lifetime, in seconds, of the per-call SWAIG tokens this agent mints.
+   *
+   * @return the configured token lifetime.
+   */
+  public int getTokenExpirySecs() {
+    return tokenExpirySecs;
   }
 
   // generatePassword() is provided by Service — use Service.generatePassword()
@@ -1980,7 +2355,22 @@ public class AgentBase extends Service {
     // state field-by-field below.
     AgentBase copy =
         new AgentBase(
-            this.name, this.route, this.host, this.port, this.authUser, this.authPassword);
+            this.name,
+            this.route,
+            this.host,
+            this.port,
+            this.authUser,
+            this.authPassword,
+            this.schemaPath,
+            this.configFile,
+            this.schemaValidation);
+    copy.agentId = this.agentId;
+    copy.suppressLogs = this.suppressLogs;
+    copy.enablePostPromptOverride = this.enablePostPromptOverride;
+    copy.checkForInputOverride = this.checkForInputOverride;
+    copy.defaultWebhookUrl = this.defaultWebhookUrl;
+    copy.tokenExpirySecs = this.tokenExpirySecs;
+    copy.sessionManager = this.sessionManager;
     copy.autoAnswer = this.autoAnswer;
     copy.maxDuration = this.maxDuration;
     copy.recordCall = this.recordCall;

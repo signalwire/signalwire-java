@@ -528,6 +528,15 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # so griffe loads it); the fewest-arg no-arg form would collapse __init__ to (self)
     # and hide every param.
     ("BedrockAgent", "__init__"),
+    # Service (canonical SWMLService) exposes Python's full
+    # __init__(name, route, host, port, basic_auth, schema_path, config_file,
+    # schema_validation) via the 9-arg constructor — authUser/authPassword being
+    # the §7 typed split of basic_auth — alongside the (name) / (name, route) /
+    # 6-arg convenience constructors. The full overload is the parity surface;
+    # the 1-arg form would collapse __init__ to (name) and hide every forwarded
+    # construction param (schema_path/config_file/schema_validation reach
+    # SchemaUtils + SecurityConfig, exactly as the reference forwards them).
+    ("SWMLService", "__init__"),
 }
 
 # Java skill class renames to match Python casing
@@ -1624,6 +1633,28 @@ _BUILDER_CONSTRUCTS: dict[str, str] = {
 # Builder members that are the builder MECHANISM, not construction parameters.
 _BUILDER_NON_PARAMS = frozenset({"build", "builder", "__init__", "__repr__"})
 
+# Construction params a class exposes as OPTIONAL through shorter convenience
+# constructor overloads. Java has no default arguments, so "this param has a
+# default" is expressed as an overload that omits it and supplies the default —
+# ``Service(name)`` / ``Service(name, route)`` alongside the full 9-arg form. The
+# Java overload collapse (PREFER_FULL_OVERLOAD) keeps only the full signature, on
+# which every positional param reads ``required: true``; without this table each
+# defaulted reference param reads as a spurious ``construction-required-flip``.
+#
+# Keyed by canonical ``module.Class`` → the param names a shorter public overload
+# omits. Each name MUST correspond to a real convenience overload in the source —
+# this records Java's optionality idiom, it does not invent it.
+_CONSTRUCTION_OPTIONAL_PARAMS: dict[str, frozenset[str]] = {
+    # Service.java ships Service(name), Service(name, route), the 6-arg
+    # (name, route, host, port, authUser, authPassword) and the full 9-arg
+    # constructor — so everything after ``name`` is optional by construction,
+    # matching the reference's defaulted SWMLService.__init__ params.
+    "signalwire.core.swml_service.SWMLService": frozenset({
+        "route", "host", "port", "auth_user", "auth_password",
+        "schema_path", "config_file", "schema_validation",
+    }),
+}
+
 
 def build_construction(modules: dict) -> dict:
     """Return ``{"module.Class": {"params": {name: {type, required}}}}``.
@@ -1666,7 +1697,13 @@ def build_construction(modules: dict) -> dict:
             if isinstance(init, dict):
                 params = _params_from(init)
                 if params:
-                    out[f"{mod}.{cls}"] = {"params": dict(sorted(params.items()))}
+                    key = f"{mod}.{cls}"
+                    # Java expresses "defaulted param" as a shorter convenience
+                    # overload; the overload collapse hides that, so re-apply it.
+                    for pname in _CONSTRUCTION_OPTIONAL_PARAMS.get(key, ()):
+                        if pname in params:
+                            params[pname]["required"] = False
+                    out[key] = {"params": dict(sorted(params.items()))}
 
     # Builder setters: each zero-or-one-arg setter names one construction param.
     for mod, entry in modules.items():

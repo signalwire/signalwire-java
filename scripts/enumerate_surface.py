@@ -789,7 +789,91 @@ _SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
     ("signalwire.relay.call", "Action"): {"get_result": "result"},
     ("signalwire.relay.message", "Message"): {"get_result": "result"},
     ("signalwire.web.web_service", "WebService"): {"get_security": "security"},
+    # SWMLService now builds its unified SecurityConfig from the construction
+    # ``config_file`` (as the reference does at swml_service.py:139) and exposes
+    # it via ``getSecurity()`` — the Java accessor idiom for the reference's
+    # ``security`` composition attribute, identical to the WebService row above.
+    # This retires the old "Java's SWML Service exposes no SecurityConfig member"
+    # PORT_OMISSIONS line: the capability is now present, so the fold applies.
+    ("signalwire.core.swml_service", "SWMLService"): {"get_security": "security"},
 }
+
+
+# Construction-parameter READ accessors. Java expresses a wide many-optional-arg
+# constructor as a builder + per-param getters; the param SET is already the
+# compared contract (the ``construction`` node in port_signatures.json, bound via
+# ``_BUILDER_CONSTRUCTS`` in enumerate_signatures.py). The getter is the read side
+# of that same construction param — the Java idiom for reading a value the
+# reference stores as plain scalar ``self.<name>`` state, which the surface oracle
+# deliberately does NOT enumerate (it records only class-TYPED composition
+# attributes; see enumerate_python.py::_enrich_composition_attributes). So there is
+# no reference member to fold ONTO and the accessor is not independent surface
+# either — it is construction idiom, and idiom is folded at the emitter (RULES.md
+# §2 / ALLOWLIST_DISCIPLINE.md §0), never filed as an addition.
+#
+# Keyed by (reference module, class) → the accessor names to drop from the compared
+# surface. Every name here MUST be a param in that class's construction contract,
+# so the capability stays compared — just at the construction node rather than as a
+# duplicate method member.
+_CONSTRUCTION_PARAM_ACCESSORS: dict[tuple[str, str], frozenset[str]] = {
+    ("signalwire.core.agent_base", "AgentBase"): frozenset({
+        "get_agent_id",                    # agent_id
+        "get_default_webhook_url",         # default_webhook_url
+        "get_native_functions",            # native_functions
+        "get_token_expiry_secs",           # token_expiry_secs
+        "is_check_for_input_override",     # check_for_input_override
+        "is_enable_post_prompt_override",  # enable_post_prompt_override
+        "is_suppress_logs",                # suppress_logs
+        "is_use_pom",                      # use_pom
+    }),
+    ("signalwire.core.swml_service", "SWMLService"): frozenset({
+        "get_config_file",                 # config_file
+        "get_schema_path",                 # schema_path
+        "is_schema_validation",            # schema_validation
+    }),
+    # SchemaUtils.__init__(schema_path, schema_validation) — ``getSchemaPath()`` is
+    # the read side of its own ``schema_path`` construction param (the reference
+    # reads it as ``self.schema_utils.schema_path`` at agent_base.py:210).
+    ("signalwire.utils.schema_utils", "SchemaUtils"): frozenset({
+        "get_schema_path",                 # schema_path
+    }),
+    # The WRITE side of the same contract. AgentBaseBuilder's setters ARE
+    # AgentBase's construction parameter set — ``_BUILDER_CONSTRUCTS`` in
+    # enumerate_signatures.py binds them to the ``construction`` node for
+    # ``signalwire.core.agent_base.AgentBase``, where each is compared by NAME
+    # against the reference's ``__init__`` param of the same name. Emitting them a
+    # SECOND time as builder methods would double-count construction idiom as
+    # independent surface. (The pre-existing builder setters are still carried in
+    # PORT_ADDITIONS.md as self-declared idiom; that whole block is slated for the
+    # fold-to-zero campaign — this table is where they land when it runs.)
+    ("signalwire.agent.agent_base_builder", "AgentBaseBuilder"): frozenset({
+        "agent_id",
+        "check_for_input_override",
+        "config_file",
+        "default_webhook_url",
+        "enable_post_prompt_override",
+        "native_functions",
+        "schema_path",
+        "schema_validation",
+        "suppress_logs",
+        "token_expiry_secs",
+        "use_pom",
+    }),
+}
+
+
+def strip_construction_param_accessors(modules: dict[str, dict]) -> None:
+    """In-place: drop the construction-param READ accessors listed in
+    ``_CONSTRUCTION_PARAM_ACCESSORS``. See that table's rationale — the capability
+    is compared via the ``construction`` contract, not as a duplicate method."""
+    for (mod, cls), names in _CONSTRUCTION_PARAM_ACCESSORS.items():
+        entry = modules.get(mod)
+        if not entry:
+            continue
+        methods = entry.get("classes", {}).get(cls)
+        if methods is None:
+            continue
+        entry["classes"][cls] = [m for m in methods if m not in names]
 
 
 # Idiom-scaffolding classes to DROP from the compared surface. These are the
@@ -1613,6 +1697,13 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
     if not native and oracle_class_members:
         fold_accessors_to_members(merged, oracle_class_members)
         exclude_ctor_dunder(merged, oracle_class_members)
+
+    # Construction-param accessor strip (RULES.md §2 / ALLOWLIST_DISCIPLINE.md §0):
+    # the read+write accessors for params already compared by the ``construction``
+    # contract are construction idiom, not independent surface. Reference-keyed →
+    # python-reference mode only.
+    if not native:
+        strip_construction_param_accessors(merged)
 
     # Mixin projection (skipped in native mode — Java docs reference the
     # AgentBase home of these methods, not the Python mixin path).
