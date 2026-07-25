@@ -1596,7 +1596,104 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         "version": "2",
         "generated_from": "signalwire-java JAR via SignatureDump (java.lang.reflect)",
         "modules": sorted_modules,
+        "construction": build_construction(sorted_modules),
     }, failures
+
+
+# ---------------------------------------------------------------------------
+# Construction contract (porting-sdk ALLOWLIST_DISCIPLINE.md §10)
+# ---------------------------------------------------------------------------
+
+# Java expresses a wide many-optional-arg constructor as a BUILDER: the reference's
+# ``AgentBase.__init__(name, route, host, port, …)`` becomes
+# ``AgentBase.builder().name(…).route(…).build()``. The builder's setters ARE the
+# construction parameter set — same capability, different spelling — so they satisfy
+# the construction contract rather than being 22 port-only additions plus one blanket
+# ``__init__`` signature omission.
+#
+# Builder class -> the class it constructs. The setters are already emitted in
+# canonical snake_case by translate_method_name, so no name mapping is needed here;
+# only the BINDING was missing.
+_BUILDER_CONSTRUCTS: dict[str, str] = {
+    "signalwire.agent.agent_base_builder.AgentBaseBuilder":
+        "signalwire.core.agent_base.AgentBase",
+    "signalwire.relay.relay_client_builder.RelayClientBuilder":
+        "signalwire.relay.client.RelayClient",
+}
+
+# Builder members that are the builder MECHANISM, not construction parameters.
+_BUILDER_NON_PARAMS = frozenset({"build", "builder", "__init__", "__repr__"})
+
+
+def build_construction(modules: dict) -> dict:
+    """Return ``{"module.Class": {"params": {name: {type, required}}}}``.
+
+    A NAME-KEYED set (order/arity/mechanism are idiom; the named set is the
+    capability) — see porting-sdk ALLOWLIST_DISCIPLINE.md §10. Two sources, in
+    precedence order:
+
+      1. the class's own ``__init__`` params, when it has a public constructor;
+      2. its BUILDER's setters, when construction goes through a builder.
+
+    ``required`` mirrors the source signature. Java's builder setters are all
+    optional by construction (you may call any subset before ``build()``), which is
+    itself worth surfacing: where the reference marks a param required and the
+    builder does not, that is a real ``construction-required-flip`` for review, not
+    something to paper over here.
+    """
+    out: dict = {}
+
+    def _params_from(sig: dict) -> dict:
+        params: dict = {}
+        for p in sig.get("params", []):
+            if not isinstance(p, dict):
+                continue
+            if (p.get("kind") or "positional") in ("self", "cls", "var_keyword",
+                                                   "var_positional"):
+                continue
+            name = p.get("name")
+            if not name or name.startswith("_"):
+                continue
+            params[name] = {
+                "type": p.get("type", "any"),
+                "required": bool(p.get("required", True)),
+            }
+        return params
+
+    for mod, entry in modules.items():
+        for cls, cinfo in entry.get("classes", {}).items():
+            init = cinfo.get("methods", {}).get("__init__")
+            if isinstance(init, dict):
+                params = _params_from(init)
+                if params:
+                    out[f"{mod}.{cls}"] = {"params": dict(sorted(params.items()))}
+
+    # Builder setters: each zero-or-one-arg setter names one construction param.
+    for mod, entry in modules.items():
+        for cls, cinfo in entry.get("classes", {}).items():
+            target = _BUILDER_CONSTRUCTS.get(f"{mod}.{cls}")
+            if not target:
+                continue
+            params = out.setdefault(target, {"params": {}})["params"]
+            for mname, msig in (cinfo.get("methods") or {}).items():
+                if mname in _BUILDER_NON_PARAMS or mname.startswith("_"):
+                    continue
+                if not isinstance(msig, dict):
+                    continue
+                args = [p for p in msig.get("params", [])
+                        if (p.get("kind") or "positional") not in ("self", "cls")]
+                if len(args) != 1:
+                    continue
+                # A builder setter is optional by construction; only fill in what the
+                # class's own __init__ did not already declare, so a real ctor param's
+                # required flag wins over the builder's implicit optionality.
+                params.setdefault(mname, {
+                    "type": args[0].get("type", "any"),
+                    "required": False,
+                })
+            out[target]["params"] = dict(sorted(params.items()))
+
+    return dict(sorted(out.items()))
 
 
 def _typed_param_count(sig: dict) -> int:
