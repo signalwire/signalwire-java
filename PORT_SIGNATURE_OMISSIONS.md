@@ -383,3 +383,84 @@ signalwire.relay.event.CallingErrorEvent.__init__: Java-idiom: the event constru
 signalwire.relay.event.DenoiseEvent.__init__: Java-idiom: the event constructor takes (eventType, timestamp, params) and reads denoised/call_id out of the params map; Python spreads them as explicit __init__ args. Param count differs; wire payload identical.
 signalwire.relay.event.EchoEvent.__init__: Java-idiom: the event constructor takes (eventType, timestamp, params) and reads state/call_id out of the params map; Python spreads them as explicit __init__ args. Param count differs; wire payload identical.
 signalwire.relay.event.HoldEvent.__init__: Java-idiom: the event constructor takes (eventType, timestamp, params) and reads state/call_id out of the params map; Python spreads them as explicit __init__ args. Param count differs; wire payload identical.
+
+# ── SIGNATURE ADDITIONS surviving the accessor-fold / dunder-exclude / DTO-emit
+# passes: genuine port-only signatures with NO same-class reference twin (typed
+# enum/handler/functional-interface, or a convenience the reference hosts on a
+# DIFFERENT class). These are NOT idiom the emitter can fold (there is no
+# same-class reference member of this name to fold onto) and NOT a dunder.
+
+# LoggingLevel — Java's typed Logger.Level enum; Python has no LoggingLevel enum
+# (uses stdlib logging ints). Enum constants + compiler-synthesized enum statics.
+signalwire.logging.logging_level.LoggingLevel.debug: ADDITION — enum constant of Java's typed Logger.Level; Python has no LoggingLevel enum (stdlib logging ints). No reference twin.
+signalwire.logging.logging_level.LoggingLevel.info: ADDITION — enum constant of Java's typed Logger.Level; Python has no LoggingLevel enum (stdlib logging ints). No reference twin.
+signalwire.logging.logging_level.LoggingLevel.warn: ADDITION — enum constant of Java's typed Logger.Level; Python has no LoggingLevel enum (stdlib logging ints). No reference twin.
+signalwire.logging.logging_level.LoggingLevel.error: ADDITION — enum constant of Java's typed Logger.Level; Python has no LoggingLevel enum (stdlib logging ints). No reference twin.
+signalwire.logging.logging_level.LoggingLevel.off: ADDITION — enum constant of Java's typed Logger.Level; Python has no LoggingLevel enum (stdlib logging ints). No reference twin.
+signalwire.logging.logging_level.LoggingLevel.value_of: ADDITION — Java's compiler-synthesized enum static valueOf(String) on Logger.Level; no reference twin.
+signalwire.logging.logging_level.LoggingLevel.values: ADDITION — Java's compiler-synthesized enum static values() on Logger.Level; no reference twin.
+
+# PhoneCallHandler — Java's typed enum of accepted call_handler values for
+# phoneNumbers().update; Python passes the raw string. 11 constants + enum statics.
+signalwire.rest.call_handler.PhoneCallHandler.relay_script: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.laml_webhooks: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.laml_application: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.ai_agent: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.call_flow: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.relay_application: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.relay_topic: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.relay_context: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.relay_connector: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.video_room: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.dialogflow: ADDITION — enum constant of Java's typed PhoneCallHandler; Python passes the raw call_handler string. No reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.value_of: ADDITION — Java's compiler-synthesized enum static valueOf(String) on PhoneCallHandler; no reference twin.
+signalwire.rest.call_handler.PhoneCallHandler.values: ADDITION — Java's compiler-synthesized enum static values() on PhoneCallHandler; no reference twin.
+
+# RelayConstants — Java hosts the RELAY state/code predicates as static helpers;
+# Python inlines the checks (no such class). Port-only static predicates.
+signalwire.relay.relay_constants.RelayConstants.is_call_gone_code: ADDITION — static predicate on Java's port-only RelayConstants; Python inlines the check. No reference twin.
+signalwire.relay.relay_constants.RelayConstants.is_success_code: ADDITION — static predicate on Java's port-only RelayConstants; Python inlines the check. No reference twin.
+signalwire.relay.relay_constants.RelayConstants.is_terminal_action_state: ADDITION — static predicate on Java's port-only RelayConstants; Python inlines the check. No reference twin.
+signalwire.relay.relay_constants.RelayConstants.is_terminal_call_state: ADDITION — static predicate on Java's port-only RelayConstants; Python inlines the check. No reference twin.
+signalwire.relay.relay_constants.RelayConstants.is_terminal_message_state: ADDITION — static predicate on Java's port-only RelayConstants; Python inlines the check. No reference twin.
+
+# ToolDefinition — Java's typed materialization of a registered SWAIG tool;
+# Python has no such class (registry stores SWAIGFunction|dict). Typed accessors.
+signalwire.swaig.tool_definition.ToolDefinition.get_handler: ADDITION — typed accessor on Java's port-only ToolDefinition; no reference twin.
+signalwire.swaig.tool_definition.ToolDefinition.set_secure: ADDITION — typed setter on Java's port-only ToolDefinition; no reference twin.
+signalwire.swaig.tool_definition.ToolDefinition.set_extra_fields: ADDITION — typed setter on Java's port-only ToolDefinition; no reference twin.
+signalwire.swaig.tool_definition.ToolDefinition.to_swaig_function: ADDITION — converts Java's typed ToolDefinition to the SWAIG-function map; no reference twin.
+
+# ToolHandler — Java's typed functional interface for a tool callback (Python
+# uses a bare Callable). Its single-abstract-method is port-only.
+signalwire.swaig.tool_handler.ToolHandler.handle: ADDITION — the single-abstract-method of Java's typed ToolHandler functional interface; Python uses a bare Callable. No reference twin.
+
+# QuestionCallback — Java's typed callback functional interface for the
+# survey/info-gatherer prefabs; Python passes a bare Callable. Port-only.
+signalwire.prefabs.question_callback.QuestionCallback.apply: ADDITION — the single-abstract-method of Java's typed QuestionCallback functional interface; Python uses a bare Callable. No reference twin.
+
+# CustomSkillsSkill — Java's typed skill class registering user-supplied custom
+# tools; the reference registry has no per-skill CustomSkillsSkill class.
+signalwire.skills.registry.CustomSkillsSkill.setup: ADDITION — lifecycle method of Java's port-only CustomSkillsSkill; the reference registry has no such class. No reference twin.
+signalwire.skills.registry.CustomSkillsSkill.register_tools: ADDITION — lifecycle method of Java's port-only CustomSkillsSkill; the reference registry has no such class. No reference twin.
+
+# Convenience methods the reference hosts on a DIFFERENT class (class-scoped
+# ADDITION: no member of this name on the SAME reference class; the sig oracle
+# records no attribute the accessor could fold onto).
+signalwire.core.agent_base.AgentBase.create_tool_token: ADDITION — convenience on Java AgentBase; the reference hosts create_tool_token on SessionManager, not AgentBase. No same-class reference twin.
+signalwire.core.agent_base.AgentBase.extract_sip_username: ADDITION — convenience on Java AgentBase; the reference hosts extract_sip_username on SWMLService, not AgentBase. No same-class reference twin.
+signalwire.core.agent_base.AgentBase.render_swml: ADDITION — convenience on Java AgentBase; the reference hosts render_swml on SwmlRenderer/SWMLService, not AgentBase. No same-class reference twin.
+signalwire.core.swaig_function.SWAIGFunction.call: ADDITION — Java's call(...) invoker on SWAIGFunction; the reference invoker is named `execute` (matched separately). No same-name reference twin.
+signalwire.core.swml_builder.SWMLBuilder.verb: ADDITION — Java's generic verb(name,args) dispatcher on SWMLBuilder; the reference exposes only per-verb named methods, no generic `verb`. No same-name reference twin.
+signalwire.relay.client.RelayClient.set_relay_protocol: ADDITION — Java's setRelayProtocol write-accessor for the relay_protocol attribute; the SIGNATURE oracle records no relay_protocol member on RelayClient to fold onto (the surface oracle does, where it folds), so on the signature surface it is a port-only write accessor. No same-name reference twin.
+
+# WebService.app — OMISSION. Python's WebService.app returns optional<FastAPI>,
+# the ASGI application for embedding in test rigs. Java's WebService uses the JDK
+# built-in com.sun.net.httpserver.HttpServer (private field `server`), a
+# fundamentally different framework object, and exposes NO public app/server
+# accessor. Same disposition as the AgentServer.app entry (Java wraps a
+# non-ASGI server and does not expose the framework instance). impossible: the
+# member cannot exist without a public ASGI-app handle the JDK-HttpServer idiom
+# does not have (TS/php that also wrap a framework object omit the analog).
+signalwire.web.web_service.WebService.app: impossible: Python's WebService.app returns the underlying FastAPI ASGI app for embedding; Java's WebService wraps the JDK com.sun.net.httpserver.HttpServer and exposes no public framework-instance accessor (private `server` field), so there is no ASGI-app handle to surface. Same idiom as AgentServer.app.
+

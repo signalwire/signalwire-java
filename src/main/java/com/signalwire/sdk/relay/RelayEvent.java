@@ -49,6 +49,11 @@ public class RelayEvent {
     return params;
   }
 
+  /** Top-level {@code call_id} for the event, when present in {@code params}. */
+  public String getCallId() {
+    return getStringParam("call_id");
+  }
+
   public String getStringParam(String key) {
     Object val = params.get(key);
     return val != null ? val.toString() : null;
@@ -57,6 +62,16 @@ public class RelayEvent {
   public String getStringParam(String key, String defaultValue) {
     String val = getStringParam(key);
     return val != null ? val : defaultValue;
+  }
+
+  /** Read a numeric param as {@code double} (0.0 when absent/non-numeric). */
+  public double getDoubleParam(String key) {
+    return getDouble(params, key, 0.0);
+  }
+
+  /** Read a numeric param as {@code long} (0 when absent/non-numeric). */
+  public long getLongParam(String key) {
+    return getInt(params, key, 0);
   }
 
   /**
@@ -287,6 +302,22 @@ public class RelayEvent {
     public Map<String, Object> getDevice() {
       return getMap(getParams(), "device");
     }
+
+    public String getDirection() {
+      return getStringParam("direction");
+    }
+
+    public String getProjectId() {
+      return getStringParam("project_id");
+    }
+
+    public String getSegmentId() {
+      return getStringParam("segment_id");
+    }
+
+    public String getTag() {
+      return getStringParam("tag");
+    }
   }
 
   /**
@@ -334,6 +365,10 @@ public class RelayEvent {
     }
 
     public Map<String, Object> getCallInfo() {
+      return getMap(getParams(), "call");
+    }
+
+    public Map<String, Object> getCall() {
       return getMap(getParams(), "call");
     }
 
@@ -418,6 +453,10 @@ public class RelayEvent {
       Map<String, Object> record = getMap(getParams(), "record");
       Object rs = record.get("size");
       return rs instanceof Number ? ((Number) rs).longValue() : 0L;
+    }
+
+    public Map<String, Object> getRecord() {
+      return getMap(getParams(), "record");
     }
   }
 
@@ -530,6 +569,10 @@ public class RelayEvent {
     public String getState() {
       return getStringParam("state");
     }
+
+    public Map<String, Object> getFax() {
+      return getMap(getParams(), "fax");
+    }
   }
 
   /** Tap event ({@code calling.call.tap}). */
@@ -557,6 +600,14 @@ public class RelayEvent {
 
     public String getState() {
       return getStringParam("state");
+    }
+
+    public Map<String, Object> getDevice() {
+      return getMap(getParams(), "device");
+    }
+
+    public Map<String, Object> getTap() {
+      return getMap(getParams(), "tap");
     }
   }
 
@@ -586,6 +637,14 @@ public class RelayEvent {
     public String getState() {
       return getStringParam("state");
     }
+
+    public String getName() {
+      return getStringParam("name");
+    }
+
+    public String getUrl() {
+      return getStringParam("url");
+    }
   }
 
   /** Transcribe event ({@code calling.call.transcribe}). */
@@ -614,6 +673,22 @@ public class RelayEvent {
     public String getState() {
       return getStringParam("state");
     }
+
+    public double getDuration() {
+      return getDoubleParam("duration");
+    }
+
+    public String getRecordingId() {
+      return getStringParam("recording_id");
+    }
+
+    public long getSize() {
+      return getLongParam("size");
+    }
+
+    public String getUrl() {
+      return getStringParam("url");
+    }
   }
 
   /** Connect event ({@code calling.call.connect}). */
@@ -637,6 +712,10 @@ public class RelayEvent {
 
     public String getConnectState() {
       return getStringParam("connect_state");
+    }
+
+    public Map<String, Object> getPeer() {
+      return getMap(getParams(), "peer");
     }
   }
 
@@ -662,6 +741,22 @@ public class RelayEvent {
     public String getReferState() {
       return getStringParam("refer_state");
     }
+
+    public String getState() {
+      return getStringParam("state");
+    }
+
+    public String getSipNotifyResponseCode() {
+      return getStringParam("sip_notify_response_code");
+    }
+
+    public String getSipReferResponseCode() {
+      return getStringParam("sip_refer_response_code");
+    }
+
+    public String getSipReferTo() {
+      return getStringParam("sip_refer_to");
+    }
   }
 
   /** Send digits event ({@code calling.call.send_digits}). */
@@ -681,6 +776,10 @@ public class RelayEvent {
 
     public String getCallId() {
       return getStringParam("call_id");
+    }
+
+    public String getControlId() {
+      return getStringParam("control_id");
     }
 
     public String getState() {
@@ -737,6 +836,14 @@ public class RelayEvent {
 
     public String getCallId() {
       return getStringParam("call_id");
+    }
+
+    public String getName() {
+      return getStringParam("name");
+    }
+
+    public String getStatus() {
+      return getStringParam("status");
     }
   }
 

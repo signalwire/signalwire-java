@@ -48,8 +48,8 @@ PSDK = next((c.resolve() for c in _psdk_candidates if c and c.is_dir()),
 
 sys.path.insert(0, str(HERE))
 from enumerate_surface import (  # type: ignore
-    _CLASS_RENAMES, _METHOD_RENAMES, _PY_KEYWORDS, build_class_to_module_map,
-    camel_to_snake, translate_method_name,
+    _CLASS_RENAMES, _EVENT_METHOD_RENAMES_BY_CLASS, _METHOD_RENAMES, _PY_KEYWORDS,
+    build_class_to_module_map, camel_to_snake, translate_method_name,
     _gen_type_module, _gen_type_unrename,
 )
 
@@ -1076,6 +1076,81 @@ KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
 }
 
 
+_ACCESSOR_PREFIX_RE_SIG = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
+
+# Constructor / dunder names that are never a surface CAPABILITY difference. When
+# a port-only class (no reference twin member of that name) exposes one, it is
+# construction/identity idiom, not a capability the reference lacks — exclude it
+# from emission rather than allow-list it (idiom_reaudit_brief cat3). Excluded
+# ONLY when the reference does NOT record the same dunder on that class (so a
+# class whose reference twin genuinely declares __init__ still matches).
+_CTOR_DUNDER_NAMES = frozenset({
+    "__init__", "__repr__", "__str__", "__eq__", "__hash__",
+    "__enter__", "__exit__",
+})
+
+
+def _exclude_ctor_dunder_sig(out_modules: dict,
+                             oracle_members: dict[tuple[str, str], set[str]]) -> None:
+    """In-place: drop ctor/dunder method keys that would be port-only ADDITIONS
+    (the reference records no such dunder on that class). Lockstep with the
+    surface enumerator's exclusion."""
+    for mod, entry in out_modules.items():
+        for cls, cls_entry in entry.get("classes", {}).items():
+            ref_members = oracle_members.get((mod, cls), set())
+            methods = cls_entry.get("methods", {})
+            for name in list(methods):
+                if name in _CTOR_DUNDER_NAMES and name not in ref_members:
+                    methods.pop(name, None)
+
+
+def _load_oracle_sig_members(reference_json: Path) -> dict[tuple[str, str], set[str]]:
+    """{(ref_module, ClassName): {method_name, ...}} from python_signatures.json,
+    for the accessor→member fold (signature side)."""
+    data = json.loads(reference_json.read_text(encoding="utf-8"))
+    out: dict[tuple[str, str], set[str]] = {}
+    for mod, entry in data.get("modules", {}).items():
+        for cls, cd in entry.get("classes", {}).items():
+            out[(mod, cls)] = set(cd.get("methods", {}).keys())
+    return out
+
+
+def _fold_accessors_sig(out_modules: dict,
+                        oracle_members: dict[tuple[str, str], set[str]]) -> None:
+    """In-place accessor→member fold on the signature dict, lockstep with the
+    surface enumerator's ``fold_accessors_to_members``. Renames a class's
+    ``getX``/``setX``/``isX``/``hasX``/``withX`` method KEY onto the reference
+    member ``X`` when the reference records ``X`` (and not the accessor name
+    itself) on the SAME (module, class). If both a getter and setter fold onto
+    the same field, the getter's signature (arity-0 reader, matching the
+    reference attribute read) wins deterministically."""
+    for mod, entry in out_modules.items():
+        for cls, cls_entry in entry.get("classes", {}).items():
+            ref_members = oracle_members.get((mod, cls))
+            if not ref_members:
+                continue
+            methods = cls_entry.get("methods", {})
+            renames: list[tuple[str, str]] = []
+            for name in list(methods):
+                m = _ACCESSOR_PREFIX_RE_SIG.match(name)
+                if (m and m.group("field") in ref_members
+                        and name not in ref_members):
+                    renames.append((name, m.group("field")))
+            for src_name, dst_name in renames:
+                sig = methods.pop(src_name, None)
+                if sig is None:
+                    continue
+                # Getter (0 non-receiver params) wins over setter on collision.
+                existing = methods.get(dst_name)
+                if existing is not None:
+                    def _arity(s: dict) -> int:
+                        return len([p for p in s.get("params", [])
+                                    if p.get("kind") not in ("self", "cls")])
+                    if _arity(existing) <= _arity(sig):
+                        continue
+                methods[dst_name] = sig
+
+
 def _mark_kwargs_tails_optional(out_modules: dict) -> None:
     """Flip the trailing var-keyword-door param of each KWARGS_TAIL_OPTIONAL
     method to ``required: false`` (see the set's docstring). Fail loud if a
@@ -1290,7 +1365,14 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 if native.startswith("$"):
                     continue
                 snake = camel_to_snake(native)
-                method_canonical = _METHOD_RENAMES.get(snake, snake)
+                # Class-scoped getter→field fold for the relay Event / AI-Chat DTO
+                # @dataclass surface (keyed by the raw Java simple class name), lockstep
+                # with the surface enumerator. Precedence over the global _METHOD_RENAMES.
+                scoped = _EVENT_METHOD_RENAMES_BY_CLASS.get(java_name)
+                if scoped and snake in scoped:
+                    method_canonical = scoped[snake]
+                else:
+                    method_canonical = _METHOD_RENAMES.get(snake, snake)
                 if method_canonical in _PY_KEYWORDS:
                     continue
             # Idiom-scaffolding method with no reference counterpart (e.g. a
@@ -1479,6 +1561,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             out_modules["signalwire.core.agent_base"]["classes"].pop("AgentBase", None)
             if not out_modules["signalwire.core.agent_base"].get("classes"):
                 out_modules.pop("signalwire.core.agent_base", None)
+
+    # Accessor→member fold (RULES.md §2), lockstep with the surface enumerator:
+    # collapse getX/setX/isX/hasX/withX onto the reference member X it
+    # re-expresses (signature-oracle-keyed).
+    _sig_ref = PSDK / "python_signatures.json"
+    if _sig_ref.is_file():
+        _sig_members = _load_oracle_sig_members(_sig_ref)
+        _fold_accessors_sig(out_modules, _sig_members)
+        _exclude_ctor_dunder_sig(out_modules, _sig_members)
 
     # Mark the trailing var-keyword-door param optional on collapsed-kwargs
     # methods (post-#58 the oracle strips the tail; keep the port's optional

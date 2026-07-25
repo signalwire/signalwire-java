@@ -65,6 +65,183 @@ def build_class_to_module_map(reference_json: Path) -> dict[str, str]:
     return mapping
 
 
+# Generated read-side payload modules whose classes expose the reference-recorded
+# typed FIELDS on the SURFACE. Mirrors ruby's ORACLE_FIELD_ACCESSOR_MODULES
+# (enumerate_surface.rb): the generate_rest/generate_swml emitters produce one
+# method-less DTO per schema OBJECT, but the reference records a per-class SET of
+# typed composition fields (class-typed / list<class> / union members — e.g.
+# AIObject: [SWAIG, hints, languages, params, post_prompt, prompt, pronounce]).
+# Java exposes each as a public snake-wire-key FIELD; emit exactly the ORACLE'S
+# recorded member subset on each such class (oracle-GATED so scalar wire fields
+# the reference does NOT record — ai_volume/global_data/post_prompt_url — are
+# never over-emitted). Classes the oracle records with zero members stay
+# method-less. Retires the swml_verbs_generated / post_prompt_generated surface
+# omissions by EMISSION (RULES.md §2 — the fields are real, present, and
+# reference-recorded; leaving them method-less was a blind enumerator, not a gap).
+_ORACLE_FIELD_ACCESSOR_MODULES = (
+    "signalwire.core.swml_verbs_generated",
+    "signalwire.core.post_prompt_generated",
+    "signalwire.core.swaig_request_generated",
+)
+
+
+def load_oracle_class_members(
+    reference_json: Path,
+) -> dict[tuple[str, str], set[str]]:
+    """Return {(ref_module, ClassName): {member, ...}} for EVERY reference class
+    in python_surface.json.
+
+    Used by the accessor→member fold: a Java ``getX``/``setX``/``isX``/``hasX``/
+    ``withX`` whose stripped snake form names a member the reference records on
+    the SAME (module, class) is idiom re-expressing that member's read/write
+    capability, so it folds onto the reference member NAME (RULES.md §2) instead
+    of sitting in the additions allow-list. Reference class members come from the
+    SURFACE oracle (the surface gate compares this set); the signature enumerator
+    loads the signature oracle for its own parallel fold.
+    """
+    data = json.loads(reference_json.read_text(encoding="utf-8"))
+    out: dict[tuple[str, str], set[str]] = {}
+    for mod, entry in data.get("modules", {}).items():
+        for cls, members in entry.get("classes", {}).items():
+            out[(mod, cls)] = set(members)
+    return out
+
+
+# Accessor prefixes that re-express a reference MEMBER's read/write capability.
+# ``get``/``is``/``has`` are readers, ``set``/``with`` are writers — a public
+# reference field/attribute is read+write, so both fold onto the field name.
+_ACCESSOR_PREFIX_RE = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
+
+# Ctor / dunder names — never a surface CAPABILITY difference. Excluded from
+# emission when they would be a port-only ADDITION (idiom_reaudit_brief cat3);
+# kept only where the reference records the same dunder on that class.
+_CTOR_DUNDER_NAMES = frozenset({
+    "__init__", "__repr__", "__str__", "__eq__", "__hash__",
+    "__enter__", "__exit__",
+})
+
+
+def exclude_ctor_dunder(
+    modules: dict[str, dict],
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> None:
+    """In-place: drop ctor/dunder members that would be port-only additions (the
+    reference records no such dunder on that class). Lockstep with the signature
+    enumerator's exclusion."""
+    for mod, entry in modules.items():
+        for cls, methods in entry.get("classes", {}).items():
+            ref_members = oracle_class_members.get((mod, cls), set())
+            entry["classes"][cls] = [
+                m for m in methods
+                if not (m in _CTOR_DUNDER_NAMES and m not in ref_members)
+            ]
+
+
+def fold_accessors_to_members(
+    modules: dict[str, dict],
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> None:
+    """In-place: fold each class's ``getX``/``setX``/``isX``/``hasX``/``withX``
+    accessor onto the reference member ``X`` when the reference records ``X`` on
+    the SAME (module, class). Getter+setter collapse onto the one field name
+    (deduped). Members with no matching reference field are left untouched (they
+    remain port-only additions for the cat1 review). Idiom, not omission
+    (RULES.md §2) — applied uniformly so it covers every current & future class.
+    """
+    for mod, entry in modules.items():
+        for cls, methods in entry.get("classes", {}).items():
+            ref_members = oracle_class_members.get((mod, cls))
+            if not ref_members:
+                continue
+            folded: set[str] = set()
+            for name in methods:
+                m = _ACCESSOR_PREFIX_RE.match(name)
+                # Do NOT fold when the accessor NAME is itself a reference member:
+                # the reference deliberately records both the attribute AND its
+                # accessor (e.g. AgentServer records both ``agents`` and
+                # ``get_agents``), so ``get_agents`` must stay to match its twin.
+                if (m and m.group("field") in ref_members
+                        and name not in ref_members):
+                    folded.add(m.group("field"))
+                else:
+                    folded.add(name)
+            entry["classes"][cls] = sorted(folded)
+
+
+def load_oracle_generated_members(
+    reference_json: Path,
+) -> dict[tuple[str, str], set[str]]:
+    """Return {(ref_module, ClassName): {member, ...}} for the generated
+    read-side payload modules that expose oracle-recorded field accessors.
+
+    Only classes with a NON-EMPTY recorded member set are included (empty-member
+    classes surface method-less either way). Mirrors ruby's
+    load_oracle_generated_members.
+    """
+    data = json.loads(reference_json.read_text(encoding="utf-8"))
+    out: dict[tuple[str, str], set[str]] = {}
+    for mod in _ORACLE_FIELD_ACCESSOR_MODULES:
+        entry = data.get("modules", {}).get(mod)
+        if not entry:
+            continue
+        for cls, members in entry.get("classes", {}).items():
+            if members:
+                out[(mod, cls)] = set(members)
+    return out
+
+
+# A public instance FIELD declaration in a generated DTO body:
+#   ``public <Type> <name>;`` (optionally ``final``, generic type, dotted type),
+# optionally preceded by a ``@SerializedName("<wire>")`` annotation. The generated
+# DTOs carry public snake-wire-key fields and no methods. The reference member
+# name is the WIRE key: when a field is a Java reserved word the generator escapes
+# it (``default`` → ``default_``, ``case`` → ``case_``) and records the true wire
+# key in ``@SerializedName`` — so prefer the annotation value when present and fall
+# back to the declared field name otherwise (no camelCase translation needed —
+# these are already snake wire keys).
+_PUBLIC_FIELD_RE = re.compile(
+    r"(?:@com\.google\.gson\.annotations\.SerializedName\(\s*\"(?P<wire>[^\"]*)\"\s*\)"
+    r"|@SerializedName\(\s*\"(?P<wire2>[^\"]*)\"\s*\)\s*)?"  # optional wire-key annotation
+    r"\s*\bpublic\s+(?:static\s+|final\s+)*"       # modifiers (not a method: no '(')
+    r"[\w.$]+(?:\s*<[^;{}()]*>)?(?:\s*\[\s*\])*"    # type (generics / arrays)
+    r"\s+(?P<name>[A-Za-z_$][\w$]*)\s*"            # field name
+    r"(?:=[^;{}()]*)?;",                            # optional initializer, ';'
+)
+
+
+def oracle_gated_field_accessors(
+    dto_body: str,
+    ref_module: str,
+    ref_class: str,
+    oracle_generated_members: dict[tuple[str, str], set[str]],
+) -> list[str]:
+    """Return the sorted oracle-recorded member subset a generated DTO exposes.
+
+    ``dto_body`` is the raw brace-body of the DTO class. Extract its declared
+    public field names, then keep exactly the members the oracle records for
+    ``(ref_module, ref_class)``. Abort loudly (like ruby) if the oracle wants a
+    member the DTO does not actually declare — the model must be regenerated or
+    the oracle fixed, never silently under-emitted.
+    """
+    wanted = oracle_generated_members.get((ref_module, ref_class))
+    if not wanted:
+        return []
+    declared: set[str] = set()
+    for m in _PUBLIC_FIELD_RE.finditer(dto_body):
+        # Prefer the @SerializedName wire key (reserved-word escapes record the
+        # true key there); fall back to the declared field name.
+        wire = m.group("wire") or m.group("wire2")
+        declared.add(wire if wire else m.group("name"))
+    missing = sorted(wanted - declared)
+    if missing:
+        raise SystemExit(
+            f"error: generated model {ref_module}.{ref_class} is missing "
+            f"oracle-recorded field(s) {missing}; regenerate the model or "
+            f"update the oracle (declared public fields: {sorted(declared)})"
+        )
+    return sorted(wanted)
+
+
 # ---------------------------------------------------------------------------
 # Name translation helpers.
 # ---------------------------------------------------------------------------
@@ -311,6 +488,51 @@ _METHOD_RENAMES: dict[str, str] = {
     "get_short_codes": "short_codes",
     "get_sip_profile": "sip_profile",
     "get_registry": "registry",
+}
+
+# CLASS-SCOPED getter→field renames for the relay Event @dataclass surface and the
+# AI-Chat response DTOs. The reference now records the Event/DTO @dataclass FIELDS as
+# (zero-arg) members (call_state/control_id/messages/…); Java exposes each field as a
+# public getter (getCallState()→get_call_state / getMessages()→get_messages). These
+# getters ARE the Java idiom for the reference's bare field reads, so we fold each onto
+# the reference field NAME here (rename-not-omission, RULES.md §2). Scoped per Java
+# SOURCE class name (the value passed to translate_method_name as class_name is the raw
+# Java nested-type name — CallDialEvent, MessagingReceiveEvent, RelayEvent) so the fold
+# only fires inside the event/DTO classes and a plain get_x elsewhere stays a getter.
+# Imported by enumerate_signatures.py so the SURFACE and SIGNATURE gates agree.
+# Getters with NO reference field (get_call_id on the subclasses, get_result_type,
+# get_detect_event, get_dial_state_enum, get_call_info, get_refer_state, get_string_param)
+# are deliberately absent here — they remain annotated PORT_ADDITIONS (extra Java
+# accessor surface the reference lacks).
+_EVENT_METHOD_RENAMES_BY_CLASS: dict[str, dict[str, str]] = {
+    "CallCollectEvent": {"get_control_id": "control_id", "get_final": "final", "get_result": "result", "get_state": "state"},
+    "CallConnectEvent": {"get_connect_state": "connect_state", "get_peer": "peer"},
+    "CallDetectEvent": {"get_control_id": "control_id", "get_detect": "detect"},
+    "CallDialEvent": {"get_call": "call", "get_dial_state": "dial_state", "get_tag": "tag"},
+    "CallFaxEvent": {"get_control_id": "control_id", "get_fax": "fax"},
+    "CallPayEvent": {"get_control_id": "control_id", "get_state": "state"},
+    "CallPlayEvent": {"get_control_id": "control_id", "get_state": "state"},
+    "CallReceiveEvent": {"get_call_state": "call_state", "get_context": "context", "get_device": "device", "get_direction": "direction", "get_node_id": "node_id", "get_project_id": "project_id", "get_segment_id": "segment_id", "get_tag": "tag"},
+    "CallRecordEvent": {"get_control_id": "control_id", "get_duration": "duration", "get_record": "record", "get_size": "size", "get_state": "state", "get_url": "url"},
+    "CallReferEvent": {"get_sip_notify_response_code": "sip_notify_response_code", "get_sip_refer_response_code": "sip_refer_response_code", "get_sip_refer_to": "sip_refer_to", "get_state": "state"},
+    "CallSendDigitsEvent": {"get_control_id": "control_id", "get_state": "state"},
+    "CallStateEvent": {"get_call_state": "call_state", "get_device": "device", "get_direction": "direction", "get_end_reason": "end_reason"},
+    "CallStreamEvent": {"get_control_id": "control_id", "get_name": "name", "get_state": "state", "get_url": "url"},
+    "CallTapEvent": {"get_control_id": "control_id", "get_device": "device", "get_state": "state", "get_tap": "tap"},
+    "CallTranscribeEvent": {"get_control_id": "control_id", "get_duration": "duration", "get_recording_id": "recording_id", "get_size": "size", "get_state": "state", "get_url": "url"},
+    "CallingErrorEvent": {"get_code": "code", "get_message": "message"},
+    "ConferenceEvent": {"get_conference_id": "conference_id", "get_name": "name", "get_status": "status"},
+    "DenoiseEvent": {"is_denoised": "denoised"},
+    "EchoEvent": {"get_state": "state"},
+    "HoldEvent": {"get_state": "state"},
+    "MessagingReceiveEvent": {"get_body": "body", "get_context": "context", "get_direction": "direction", "get_from_number": "from_number", "get_media": "media", "get_message_id": "message_id", "get_message_state": "message_state", "get_segments": "segments", "get_tags": "tags", "get_to_number": "to_number"},
+    "MessagingStateEvent": {"get_body": "body", "get_context": "context", "get_direction": "direction", "get_from_number": "from_number", "get_media": "media", "get_message_id": "message_id", "get_message_state": "message_state", "get_reason": "reason", "get_segments": "segments", "get_tags": "tags", "get_to_number": "to_number"},
+    "QueueEvent": {"get_control_id": "control_id", "get_position": "position", "get_queue_id": "queue_id", "get_queue_name": "queue_name", "get_size": "size", "get_status": "status"},
+    "RelayEvent": {"get_call_id": "call_id", "get_event_type": "event_type", "get_params": "params", "get_timestamp": "timestamp"},
+    # AI-Chat response @dataclass DTOs (java source class names == reference names).
+    "ChatLog": {"get_call_timeline": "call_timeline", "get_messages": "messages"},
+    "ChatResponse": {"get_conversation_id": "conversation_id", "get_text": "text", "get_user_event": "user_event"},
+    "ConversationInfo": {"get_id": "id", "get_initial_message": "initial_message", "get_status": "status"},
 }
 
 # Fully-qualified-class → Python module overrides (item H). MIRRORS
@@ -689,10 +911,12 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
 # target ZERO ai_chat omissions, exactly as .NET folds IDisposable/``using`` (its
 # SURFACE_METHOD_INJECTIONS injects the same names).
 _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
-    # Response @dataclasses — oracle records them method-less (fields are attributes).
-    "ConversationInfo": [],
-    "ChatResponse": [],
-    "ChatLog": [],
+    # Response @dataclasses — the oracle now records their @dataclass FIELDS as members;
+    # Java's getters fold onto those field names via _EVENT_METHOD_RENAMES_BY_CLASS, so
+    # keep exactly the reference field set here.
+    "ConversationInfo": ["id", "initial_message", "status"],
+    "ChatResponse": ["conversation_id", "text", "user_event"],
+    "ChatLog": ["call_timeline", "messages"],
     # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it);
     # the getters (get_code/get_server_message) fold onto attributes. Subclasses add
     # no members of their own (oracle records them empty; their Java ctor is the
@@ -764,6 +988,12 @@ def translate_method_name(java_name: str, class_name: str,
     snake = camel_to_snake(java_name)
     if snake in _PY_KEYWORDS:
         snake += "_"
+    # Class-scoped getter→field fold for the relay Event / AI-Chat DTO @dataclass
+    # surface (class_name is the raw Java source class name). Takes precedence over
+    # the global _METHOD_RENAMES so a getter maps to its per-class reference field.
+    scoped = _EVENT_METHOD_RENAMES_BY_CLASS.get(class_name)
+    if scoped and snake in scoped:
+        return scoped[snake]
     return _METHOD_RENAMES.get(snake, snake)
 
 
@@ -1129,8 +1359,12 @@ _PACKAGE_RE = re.compile(r"^\s*package\s+([\w.]+)\s*;", re.MULTILINE)
 
 
 def enumerate_file(path: Path, class_to_module: dict[str, str],
-                   native: bool = False) -> dict[str, dict]:
+                   native: bool = False,
+                   oracle_generated_members:
+                       dict[tuple[str, str], set[str]] | None = None,
+                   ) -> dict[str, dict]:
     """Return {module: {"classes": {Name: [methods]}, "functions": []}}."""
+    oracle_generated_members = oracle_generated_members or {}
     raw = path.read_text(encoding="utf-8", errors="replace")
     stripped = strip_comments_and_strings(raw)
 
@@ -1170,7 +1404,19 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     gen_type_mod = _gen_type_module(java_package)
     if gen_type_mod is not None:
         canonical = _gen_type_unrename(outer_name)
-        return {gen_type_mod: {"classes": {canonical: []}, "functions": []}}
+        # Read-side payload DTOs in the field-accessor modules
+        # (swml_verbs_generated / post_prompt_generated) expose the reference-
+        # recorded typed composition FIELDS on the surface — emit exactly the
+        # oracle-gated subset (RULES.md §2 fold-not-omit). All other generated
+        # type modules record their classes method-less, so emit [].
+        # Use the RAW body (not the comment/string-stripped one) so the
+        # ``@SerializedName("<wire>")`` reserved-word escapes survive — string
+        # literals are blanked in ``stripped``, indices are length-preserved.
+        raw_body = raw[body_open + 1 : body_close]
+        members = oracle_gated_field_accessors(
+            raw_body, gen_type_mod, canonical, oracle_generated_members,
+        )
+        return {gen_type_mod: {"classes": {canonical: members}, "functions": []}}
 
     # Generated REST layer projection (§8). The generated resource/container
     # classes live in ``...rest.namespaces.generated`` and carry two kinds of
@@ -1334,11 +1580,19 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
 
 
 def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
-                  native: bool = False) -> dict[str, dict]:
+                  native: bool = False,
+                  oracle_generated_members:
+                      dict[tuple[str, str], set[str]] | None = None,
+                  oracle_class_members:
+                      dict[tuple[str, str], set[str]] | None = None,
+                  ) -> dict[str, dict]:
     """Walk ``java_src_root/com/signalwire/sdk`` and collect all classes."""
     merged: dict[str, dict] = {}
     for path in sorted(java_src_root.rglob("*.java")):
-        per_file = enumerate_file(path, class_to_module, native=native)
+        per_file = enumerate_file(
+            path, class_to_module, native=native,
+            oracle_generated_members=oracle_generated_members,
+        )
         for mod, entry in per_file.items():
             dest = merged.setdefault(mod, {"classes": {}, "functions": []})
             for cls_name, methods in entry["classes"].items():
@@ -1351,6 +1605,14 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
             dest["functions"] = sorted(
                 set(dest["functions"]) | set(entry["functions"])
             )
+
+    # Accessor→member fold (RULES.md §2): collapse each class's getX/setX/isX/
+    # hasX/withX onto the reference member X it re-expresses. Reference-keyed, so
+    # python-reference mode only. Runs before the mixin projection so folded
+    # names project correctly.
+    if not native and oracle_class_members:
+        fold_accessors_to_members(merged, oracle_class_members)
+        exclude_ctor_dunder(merged, oracle_class_members)
 
     # Mixin projection (skipped in native mode — Java docs reference the
     # AgentBase home of these methods, not the Python mixin path).
@@ -1476,10 +1738,23 @@ def _collect_crud_bases(repo_root: Path,
 def build_snapshot(repo_root: Path, reference_json: Path,
                    native: bool = False) -> dict:
     class_to_module = build_class_to_module_map(reference_json)
+    # In native mode the class names stay Java-spelled and don't line up with the
+    # oracle's reference class keys, so the field-accessor emission (which is
+    # keyed by reference class name) applies only to python-reference mode.
+    oracle_generated_members = (
+        {} if native else load_oracle_generated_members(reference_json)
+    )
+    oracle_class_members = (
+        {} if native else load_oracle_class_members(reference_json)
+    )
     java_src = repo_root / "src" / "main" / "java"
     if not java_src.is_dir():
         raise SystemExit(f"error: java source not found at {java_src}")
-    modules = enumerate_sdk(java_src, class_to_module, native=native)
+    modules = enumerate_sdk(
+        java_src, class_to_module, native=native,
+        oracle_generated_members=oracle_generated_members,
+        oracle_class_members=oracle_class_members,
+    )
     snapshot = {
         "version": "1",
         "generated_from": f"signalwire-java @ {git_sha(repo_root)}",
