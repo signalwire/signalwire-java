@@ -148,11 +148,21 @@ def fold_accessors_to_members(
     remain port-only additions for the cat1 review). Idiom, not omission
     (RULES.md §2) — applied uniformly so it covers every current & future class.
     """
+    family = _agentbase_family_members(oracle_class_members)
     for mod, entry in modules.items():
         for cls, methods in entry.get("classes", {}).items():
             ref_members = oracle_class_members.get((mod, cls))
             if not ref_members:
                 continue
+            # An AgentBase-family class is compared as ONE flattened set (the diff's
+            # ``agentbase-family`` fold), so the "accessor is itself a reference
+            # member" guard below must consult the whole family, not just this class:
+            # the reference files ``native_functions`` on AgentBase but
+            # ``set_native_functions`` on AIConfigMixin. Gating on AgentBase alone
+            # folded the setter away and the mixin's copy went missing.
+            twin_names = ref_members
+            if (mod, cls) == ("signalwire.core.agent_base", "AgentBase"):
+                twin_names = ref_members | family
             folded: set[str] = set()
             for name in methods:
                 m = _ACCESSOR_PREFIX_RE.match(name)
@@ -161,11 +171,31 @@ def fold_accessors_to_members(
                 # accessor (e.g. AgentServer records both ``agents`` and
                 # ``get_agents``), so ``get_agents`` must stay to match its twin.
                 if (m and m.group("field") in ref_members
-                        and name not in ref_members):
+                        and name not in twin_names):
                     folded.add(m.group("field"))
                 else:
                     folded.add(name)
             entry["classes"][cls] = sorted(folded)
+
+
+def _agentbase_family_members(
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> set[str]:
+    """Union of every member the reference records on the AgentBase family.
+
+    The family is AgentBase plus the mixins the reference composes it from — the
+    same set ``_MIXIN_SURFACE_PROJECTIONS`` projects onto, which is exactly what
+    the surface diff folds together as ``agentbase-family``. Defined as a function
+    so it reads the projection table at CALL time (the table is declared further
+    down this module) and stays in sync if a mixin is added there.
+    """
+    keys = {("signalwire.core.agent_base", "AgentBase")} | set(
+        _MIXIN_SURFACE_PROJECTIONS
+    )
+    out: set[str] = set()
+    for key in keys:
+        out |= oracle_class_members.get(key, set())
+    return out
 
 
 def load_oracle_generated_members(
@@ -533,6 +563,20 @@ _EVENT_METHOD_RENAMES_BY_CLASS: dict[str, dict[str, str]] = {
     "ChatLog": {"get_call_timeline": "call_timeline", "get_messages": "messages"},
     "ChatResponse": {"get_conversation_id": "conversation_id", "get_text": "text", "get_user_event": "user_event"},
     "ConversationInfo": {"get_id": "id", "get_initial_message": "initial_message", "get_status": "status"},
+    # AI-Chat class-B2 attributes: the oracle records ``AIChatError.code``/``.message``
+    # and ``AIChatClient.url`` as members (public __init__ attributes that are also
+    # ctor params). Java's read side is getCode()/getServerMessage()/getUrl() — fold
+    # each onto its reference member name. ``getServerMessage`` is the Java spelling
+    # (``getMessage`` is final on java.lang.Throwable, so the port cannot use it); it
+    # is the same ``message`` attribute the reference exposes.
+    "AIChatError": {"get_code": "code", "get_server_message": "message"},
+    "AIChatClient": {"get_url": "url"},
+    # RelayError mirrors AIChatError: the reference keeps the RAW server message as
+    # ``self.message`` while the exception TEXT is decorated ("RELAY error {code}:
+    # {message}"). ``getMessage()`` on java.lang.Throwable returns the decorated form,
+    # so the port declares ``getServerMessage()`` for the undecorated value — fold it
+    # onto the reference's ``message`` attribute.
+    "RelayError": {"get_code": "code", "get_server_message": "message"},
 }
 
 # Fully-qualified-class → Python module overrides (item H). MIRRORS
@@ -785,7 +829,37 @@ _SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
     # reference's ``get_agents`` method, so the bare ``agents`` attribute is a
     # genuine B1 omission (no separate field member) rather than a rename target.
     ("signalwire.pom.pom", "PromptObjectModel"): {"get_sections": "sections"},
-    ("signalwire.pom.pom", "Section"): {"get_subsections": "subsections"},
+    ("signalwire.pom.pom", "Section"): {
+        "get_subsections": "subsections",
+        # The reference declares this attribute in camelCase VERBATIM
+        # (``self.numberedBullets``, pom.py:50) because it is also the wire key
+        # emitted into the POM dict (pom.py:125). So the generic camel→snake
+        # translation of Java's ``isNumberedBullets()`` (→ ``numbered_bullets``)
+        # under-shoots the reference member name; rename it to the camelCase
+        # spelling the oracle actually records. Wire-neutral — same field.
+        "is_numbered_bullets": "numberedBullets",
+    },
+    # RelayClient's ``getSpace()`` is the read side of the reference's ``host``
+    # construction param: both hold the space hostname sourced from
+    # ``SIGNALWIRE_SPACE`` (reference client.py:174 ``self.host = host or
+    # os.environ.get("SIGNALWIRE_SPACE", ...)``; Java's ``space`` field is
+    # populated from the same env var). A spelling difference for one value —
+    # rename, not omission (RULES.md §2).
+    ("signalwire.relay.client", "RelayClient"): {"get_space": "host"},
+    # DataMap's ``getName()`` returns the ``functionName`` field — the read side of
+    # the reference's ``function_name`` construction param (data_map.py:72). The
+    # oracle records ``function_name`` and NO ``get_name``/``name`` member, so the
+    # generic camel→snake fold (→ ``name``) under-shoots; rename it onto the field
+    # the reference actually exposes.
+    ("signalwire.core.data_map", "DataMap"): {"get_name": "function_name"},
+    # SkillBase is an INTERFACE in this port, and a Java interface cannot declare a
+    # constructor. The reference's construction contract — ``SkillBase(agent, params)``,
+    # which stores ``self.agent``/``self.params`` (skill_base.py:33-40) — is expressed
+    # here as ``bind(agent, params)``, called by SkillManager immediately before
+    # ``setup()`` (the same construct-then-setup ordering). It carries the identical
+    # param set, so it folds onto ``__init__`` rather than being filed as an addition:
+    # same capability, different shape, reconciled at the emitter (RULES.md §2).
+    ("signalwire.core.skill_base", "SkillBase"): {"bind": "__init__"},
     ("signalwire.relay.call", "Action"): {"get_result": "result"},
     ("signalwire.relay.message", "Message"): {"get_result": "result"},
     ("signalwire.web.web_service", "WebService"): {"get_security": "security"},
@@ -815,6 +889,15 @@ _SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
 # surface. Every name here MUST be a param in that class's construction contract,
 # so the capability stays compared — just at the construction node rather than as a
 # duplicate method member.
+#
+# ORACLE-GATED since class B2: the "oracle does not enumerate scalar state" premise
+# above is no longer true for a public ``__init__`` attribute that is ALSO a ctor
+# param — the oracle records those as real members. ``strip_construction_param_accessors``
+# therefore skips any entry whose underlying field the oracle records on that class;
+# the accessor folds onto the member instead (that is the READ-BACK capability
+# CONSTRUCTION-READBACK enforces). Entries below stay listed because the gate is
+# computed, not hand-maintained: if a later oracle revision starts recording one of
+# these fields, the strip stops applying to it automatically.
 _CONSTRUCTION_PARAM_ACCESSORS: dict[tuple[str, str], frozenset[str]] = {
     ("signalwire.core.agent_base", "AgentBase"): frozenset({
         "get_agent_id",                    # agent_id
@@ -862,10 +945,30 @@ _CONSTRUCTION_PARAM_ACCESSORS: dict[tuple[str, str], frozenset[str]] = {
 }
 
 
-def strip_construction_param_accessors(modules: dict[str, dict]) -> None:
+def strip_construction_param_accessors(
+    modules: dict[str, dict],
+    oracle_class_members: dict[tuple[str, str], set[str]] | None = None,
+) -> None:
     """In-place: drop the construction-param READ accessors listed in
-    ``_CONSTRUCTION_PARAM_ACCESSORS``. See that table's rationale — the capability
-    is compared via the ``construction`` contract, not as a duplicate method."""
+    ``_CONSTRUCTION_PARAM_ACCESSORS``.
+
+    ORACLE-GATED (class B2). The table's premise is that the surface oracle does
+    NOT enumerate plain scalar ``self.<name>`` state, so a construction-param
+    accessor has no reference member to fold ONTO. Oracle class B2 changed that
+    for a subset: the reference oracle now records a public ``__init__``
+    attribute that is also a ctor param as a real MEMBER of its class. For those,
+    the accessor must FOLD onto the member (``fold_accessors_to_members`` ran
+    just before this) — stripping it would delete a member the reference has,
+    which is CONSTRUCTION-READBACK's exact failure mode: the caller can set the
+    value but can no longer read it back.
+
+    So an entry only strips when the oracle does NOT record the underlying field
+    on that class. Entries whose field the oracle DOES record are inert here and
+    keep the folded member. The table stays keyed by accessor name; the field is
+    derived by removing the ``get_``/``is_``/``has_`` prefix (a bare name — the
+    builder WRITE side — is its own field name).
+    """
+    oracle_class_members = oracle_class_members or {}
     for (mod, cls), names in _CONSTRUCTION_PARAM_ACCESSORS.items():
         entry = modules.get(mod)
         if not entry:
@@ -873,7 +976,21 @@ def strip_construction_param_accessors(modules: dict[str, dict]) -> None:
         methods = entry.get("classes", {}).get(cls)
         if methods is None:
             continue
-        entry["classes"][cls] = [m for m in methods if m not in names]
+        ref_members = oracle_class_members.get((mod, cls), set())
+        drop = {
+            name for name in names
+            if _construction_accessor_field(name) not in ref_members
+        }
+        entry["classes"][cls] = [m for m in methods if m not in drop]
+
+
+def _construction_accessor_field(accessor: str) -> str:
+    """``get_agent_id`` → ``agent_id``; ``is_use_pom`` → ``use_pom``; a bare
+    builder-setter name (``schema_path``) is already the field name."""
+    for prefix in ("get_", "is_", "has_"):
+        if accessor.startswith(prefix):
+            return accessor[len(prefix):]
+    return accessor
 
 
 # Idiom-scaffolding classes to DROP from the compared surface. These are the
@@ -1001,11 +1118,15 @@ _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     "ConversationInfo": ["id", "initial_message", "status"],
     "ChatResponse": ["conversation_id", "text", "user_event"],
     "ChatLog": ["call_timeline", "messages"],
-    # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it);
-    # the getters (get_code/get_server_message) fold onto attributes. Subclasses add
-    # no members of their own (oracle records them empty; their Java ctor is the
-    # boilerplate super() delegator, not reference surface).
-    "AIChatError": ["__init__"],
+    # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it)
+    # PLUS the two class-B2 attributes the oracle now records (``code``/``message``
+    # are public __init__ attributes that are also ctor params). Java's getCode() /
+    # getServerMessage() are the read side; they fold onto those member names via
+    # _EVENT_METHOD_RENAMES_BY_CLASS (get_server_message → message), so both must be
+    # listed here or the fold's output is filtered straight back out and the caller
+    # loses the read-back. Subclasses add no members of their own (oracle records
+    # them empty; their Java ctor is the boilerplate super() delegator).
+    "AIChatError": ["__init__", "code", "message"],
     "AuthenticationError": [],
     "ConversationNotFoundError": [],
     "RateLimitError": [],
@@ -1014,11 +1135,13 @@ _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     # Client — keep the API verbs + __init__ + the AutoCloseable ``close``; INJECT the
     # ``__aenter__``/``__aexit__`` context-manager dunders (folded onto AutoCloseable /
     # try-with-resources, the Java analogue of Python's ``async with`` — see the inject
-    # note at the apply site). Drop the get_url getter (``url`` is a public attribute on
-    # the reference, not a method).
+    # note at the apply site). ``url`` is a class-B2 attribute the oracle now records
+    # (a public __init__ attribute that is also a ctor param); Java's getUrl() folds
+    # onto it, so the MEMBER name is kept here — dropping it would take the read-back
+    # away from Java callers that the reference gives Python callers.
     "AIChatClient": [
         "__aenter__", "__aexit__", "__init__", "chat", "close", "create_conversation",
-        "delete", "end", "log", "summarize",
+        "delete", "end", "log", "summarize", "url",
     ],
 }
 
@@ -1703,7 +1826,7 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
     # contract are construction idiom, not independent surface. Reference-keyed →
     # python-reference mode only.
     if not native:
-        strip_construction_param_accessors(merged)
+        strip_construction_param_accessors(merged, oracle_class_members)
 
     # Mixin projection (skipped in native mode — Java docs reference the
     # AgentBase home of these methods, not the Python mixin path).

@@ -8,9 +8,15 @@ import java.util.*;
 /** Pre-built agent for venue concierge with amenity info and availability checking. */
 public class ConciergeAgent {
 
+  /** Default operating hours when the caller supplies none — the reference's fallback. */
+  private static final Map<String, String> DEFAULT_HOURS = Map.of("default", "9 AM - 5 PM");
+
   private final AgentBase agent;
   private final String venueName;
   private final List<Map<String, Object>> amenities;
+  private final List<String> services;
+  private final Map<String, String> hoursOfOperation;
+  private final List<String> specialInstructions;
   private java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> summaryHandler;
 
   public ConciergeAgent(String name, String venueName, List<Map<String, Object>> amenities) {
@@ -19,8 +25,42 @@ public class ConciergeAgent {
 
   public ConciergeAgent(
       String name, String venueName, List<Map<String, Object>> amenities, String route, int port) {
+    this(name, venueName, amenities, route, port, null, null, null);
+  }
+
+  /**
+   * Full construction contract, mirroring the reference {@code ConciergeAgent(venue_name, services,
+   * amenities, hours_of_operation, special_instructions, ..., name, route)}.
+   *
+   * @param name agent name
+   * @param venueName name of the venue or business (the {@code venue_name} param)
+   * @param amenities amenities with details (the {@code amenities} param)
+   * @param route HTTP route for this agent
+   * @param port HTTP port for this agent
+   * @param services services offered (the {@code services} param); empty when {@code null}
+   * @param hoursOfOperation operating hours (the {@code hours_of_operation} param); defaults to
+   *     {@code {"default": "9 AM - 5 PM"}} when {@code null}, as the reference does
+   * @param specialInstructions extra instruction bullets appended to the Instructions section (the
+   *     {@code special_instructions} param); empty when {@code null}
+   */
+  public ConciergeAgent(
+      String name,
+      String venueName,
+      List<Map<String, Object>> amenities,
+      String route,
+      int port,
+      List<String> services,
+      Map<String, String> hoursOfOperation,
+      List<String> specialInstructions) {
     this.venueName = venueName;
     this.amenities = amenities;
+    this.services = services != null ? List.copyOf(services) : List.of();
+    this.hoursOfOperation =
+        hoursOfOperation != null && !hoursOfOperation.isEmpty()
+            ? Map.copyOf(hoursOfOperation)
+            : DEFAULT_HOURS;
+    this.specialInstructions =
+        specialInstructions != null ? List.copyOf(specialInstructions) : List.of();
     this.agent = AgentBase.builder().name(name).route(route).port(port).build();
 
     agent.promptAddSection(
@@ -38,15 +78,29 @@ public class ConciergeAgent {
     }
     agent.promptAddSection("Available Amenities", "", amenityBullets);
 
-    agent.promptAddSection(
-        "Instructions",
-        "",
-        List.of(
-            "Provide detailed information about amenities when asked",
-            "Check availability when guests want to use a service",
-            "Be warm, welcoming, and helpful",
-            "If something is unavailable, suggest alternatives",
-            "Provide hours of operation and location details when relevant"));
+    if (!this.services.isEmpty()) {
+      agent.promptAddSection(
+          "Available Services",
+          "The following services are available: " + String.join(", ", this.services));
+    }
+
+    List<String> instructionBullets =
+        new ArrayList<>(
+            List.of(
+                "Provide detailed information about amenities when asked",
+                "Check availability when guests want to use a service",
+                "Be warm, welcoming, and helpful",
+                "If something is unavailable, suggest alternatives",
+                "Provide hours of operation and location details when relevant"));
+    // Caller-supplied instructions extend the built-in list, as the reference does.
+    instructionBullets.addAll(this.specialInstructions);
+    agent.promptAddSection("Instructions", "", instructionBullets);
+
+    List<String> hourLines = new ArrayList<>();
+    for (Map.Entry<String, String> e : this.hoursOfOperation.entrySet()) {
+      hourLines.add(e.getKey() + ": " + e.getValue());
+    }
+    agent.promptAddSection("Hours of Operation", String.join("\n", hourLines));
 
     // Register amenity lookup tool
     List<String> amenityNames = new ArrayList<>();
@@ -223,6 +277,34 @@ public class ConciergeAgent {
 
   public AgentBase getAgent() {
     return agent;
+  }
+
+  // Read side of the construction params. The reference stores each as public state
+  // (concierge.py:75-79) so a caller can read back what it configured.
+
+  /** The venue or business name (the {@code venue_name} construction param). */
+  public String getVenueName() {
+    return venueName;
+  }
+
+  /** The configured amenities (the {@code amenities} construction param). */
+  public List<Map<String, Object>> getAmenities() {
+    return amenities;
+  }
+
+  /** The services offered (the {@code services} construction param). */
+  public List<String> getServices() {
+    return services;
+  }
+
+  /** The operating hours (the {@code hours_of_operation} construction param). */
+  public Map<String, String> getHoursOfOperation() {
+    return hoursOfOperation;
+  }
+
+  /** The extra instruction bullets (the {@code special_instructions} construction param). */
+  public List<String> getSpecialInstructions() {
+    return specialInstructions;
   }
 
   public void serve() throws Exception {

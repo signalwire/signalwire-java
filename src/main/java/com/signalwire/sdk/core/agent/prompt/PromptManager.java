@@ -51,6 +51,14 @@ public class PromptManager {
   }
 
   /**
+   * The agent this manager belongs to (the {@code agent} construction param), or {@code null} for
+   * standalone use. The reference keeps it as a public back reference ({@code self.agent}).
+   */
+  public Object getAgent() {
+    return agent;
+  }
+
+  /**
    * @return the backing POM.
    */
   public PromptObjectModel getPom() {

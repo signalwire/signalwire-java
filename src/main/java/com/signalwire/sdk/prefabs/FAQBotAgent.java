@@ -8,8 +8,14 @@ import java.util.*;
 /** Pre-built agent for keyword-based FAQ matching with optional related suggestions. */
 public class FAQBotAgent {
 
+  /** Default personality when the caller supplies none — the reference's fallback text. */
+  private static final String DEFAULT_PERSONA =
+      "You are a helpful FAQ bot that provides accurate answers to common questions.";
+
   private final AgentBase agent;
   private final List<Map<String, Object>> faqs;
+  private final boolean suggestRelated;
+  private final String persona;
   private java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> summaryHandler;
 
   public FAQBotAgent(String name, List<Map<String, Object>> faqs) {
@@ -17,8 +23,35 @@ public class FAQBotAgent {
   }
 
   public FAQBotAgent(String name, List<Map<String, Object>> faqs, String route, int port) {
+    this(name, faqs, route, port, true, null);
+  }
+
+  /**
+   * Full construction contract, mirroring the reference {@code FAQBotAgent(faqs, suggest_related,
+   * persona, name, route)}.
+   *
+   * @param name agent name
+   * @param faqs the FAQ entries (the {@code faqs} param)
+   * @param route HTTP route for this agent
+   * @param port HTTP port for this agent
+   * @param suggestRelated whether to suggest related questions (the {@code suggest_related} param);
+   *     when true an extra instruction bullet is added, as the reference does
+   * @param persona custom personality description (the {@code persona} param); defaults to the
+   *     reference's stock text when {@code null}
+   */
+  public FAQBotAgent(
+      String name,
+      List<Map<String, Object>> faqs,
+      String route,
+      int port,
+      boolean suggestRelated,
+      String persona) {
     this.faqs = faqs;
+    this.suggestRelated = suggestRelated;
+    this.persona = persona != null ? persona : DEFAULT_PERSONA;
     this.agent = AgentBase.builder().name(name).route(route).port(port).build();
+
+    agent.promptAddSection("Personality", this.persona);
 
     agent.promptAddSection(
         "Role",
@@ -32,14 +65,19 @@ public class FAQBotAgent {
     }
     agent.promptAddSection("Available Topics", "", faqBullets);
 
-    agent.promptAddSection(
-        "Instructions",
-        "",
-        List.of(
-            "Use the lookup_faq tool to find answers to user questions",
-            "If no exact match is found, suggest related topics",
-            "Be concise but thorough in your answers",
-            "If the question is not in the FAQ, let the user know"));
+    List<String> instructionBullets =
+        new ArrayList<>(
+            List.of(
+                "Use the lookup_faq tool to find answers to user questions",
+                "If no exact match is found, suggest related topics",
+                "Be concise but thorough in your answers",
+                "If the question is not in the FAQ, let the user know"));
+    if (this.suggestRelated) {
+      instructionBullets.add(
+          "When appropriate, suggest other related questions from the FAQ database that might be"
+              + " helpful.");
+    }
+    agent.promptAddSection("Instructions", "", instructionBullets);
 
     // Register FAQ lookup tool
     Map<String, Object> toolParams = new LinkedHashMap<>();
@@ -222,6 +260,24 @@ public class FAQBotAgent {
 
   public AgentBase getAgent() {
     return agent;
+  }
+
+  // Read side of the construction params (the reference's public self.faqs /
+  // self.suggest_related / self.persona, faq_bot.py:74-78).
+
+  /** The FAQ entries (the {@code faqs} construction param). */
+  public List<Map<String, Object>> getFaqs() {
+    return faqs;
+  }
+
+  /** Whether related questions are suggested (the {@code suggest_related} construction param). */
+  public boolean isSuggestRelated() {
+    return suggestRelated;
+  }
+
+  /** The personality description (the {@code persona} construction param). */
+  public String getPersona() {
+    return persona;
   }
 
   public void serve() throws Exception {

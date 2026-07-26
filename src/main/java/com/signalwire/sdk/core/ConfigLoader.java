@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -92,6 +93,15 @@ public class ConfigLoader {
   /** Get the path of the loaded config file, or {@code null}. */
   public String getConfigFile() {
     return configFile;
+  }
+
+  /**
+   * The config search paths (the {@code config_paths} construction param), resolved to the default
+   * search list when the caller passed {@code null}. The reference exposes this as a public
+   * attribute ({@code self.config_paths}, config_loader.py:37).
+   */
+  public List<String> getConfigPaths() {
+    return Collections.unmodifiableList(configPaths);
   }
 
   /** Get the raw configuration (before substitution) as a map. */

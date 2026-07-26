@@ -23,6 +23,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -127,6 +128,38 @@ public class WebService {
 
   public SecurityConfig getSecurity() {
     return security;
+  }
+
+  // Read side of the remaining construction params. The reference stores each as
+  // plain instance state a caller can read back (web_service.py:77-86); a Java
+  // caller that can pass the value at construction must be able to read it too.
+
+  /** Whether directory listings are served (the {@code enable_directory_browsing} param). */
+  public boolean isEnableDirectoryBrowsing() {
+    return enableDirectoryBrowsing;
+  }
+
+  /** Maximum served file size in bytes (the {@code max_file_size} param). */
+  public long getMaxFileSize() {
+    return maxFileSize;
+  }
+
+  /** Whether CORS headers are emitted (the {@code enable_cors} param). */
+  public boolean isEnableCors() {
+    return enableCors;
+  }
+
+  /**
+   * Extension allow-list (the {@code allowed_extensions} param), or {@code null} when every
+   * extension not blocked is permitted — the reference's {@code None} default.
+   */
+  public List<String> getAllowedExtensions() {
+    return allowedExtensions == null ? null : Collections.unmodifiableList(allowedExtensions);
+  }
+
+  /** Extension block-list (the {@code blocked_extensions} param). */
+  public List<String> getBlockedExtensions() {
+    return blockedExtensions == null ? null : Collections.unmodifiableList(blockedExtensions);
   }
 
   /**

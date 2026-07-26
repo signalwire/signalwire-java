@@ -505,6 +505,36 @@ public class Service implements AutoCloseable {
     return configFile;
   }
 
+  // Read side of the remaining construction params. The reference stores each as a
+  // public instance attribute (swml_service.py:129-133) that a caller can read back;
+  // the port had them only as PROTECTED fields, so a Java caller could set the value
+  // at construction but not read it.
+
+  /** The service name (the {@code name} construction param). */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * The HTTP route the service is served on, without a trailing slash (the {@code route} param).
+   */
+  public String getRoute() {
+    return route;
+  }
+
+  /** The host the service binds to (the {@code host} construction param). */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * The port the service binds to (the {@code port} construction param); defaults to the {@code
+   * PORT} env var, else 3000, exactly as the reference does.
+   */
+  public int getPort() {
+    return port;
+  }
+
   /**
    * Whether SWML schema validation is enabled for this service. Mirrors the reference's {@code
    * schema_validation} construction param.

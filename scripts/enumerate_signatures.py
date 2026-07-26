@@ -49,6 +49,7 @@ PSDK = next((c.resolve() for c in _psdk_candidates if c and c.is_dir()),
 sys.path.insert(0, str(HERE))
 from enumerate_surface import (  # type: ignore
     _CLASS_RENAMES, _EVENT_METHOD_RENAMES_BY_CLASS, _METHOD_RENAMES, _PY_KEYWORDS,
+    _SURFACE_METHOD_ALIASES,
     build_class_to_module_map, camel_to_snake, translate_method_name,
     _gen_type_module, _gen_type_unrename,
 )
@@ -556,6 +557,16 @@ JAVA_SKILL_RENAMES = {
 # Key: Java fully-qualified package.Class
 JAVA_MODULE_OVERRIDES = {
     "com.signalwire.sdk.swml.Service": "signalwire.core.swml_service",
+    # POM classes, mirroring _JAVA_SURFACE_MODULE_OVERRIDES. ``Section`` is a
+    # COLLIDING simple name — the generated SWML/REST DTO trees also declare a
+    # ``Section``, and the name-keyed CLASS_TO_MODULE map resolves the bare name to
+    # ``signalwire.core.swml_verbs_generated``. Without an FQN pin the real
+    # ``com.signalwire.sdk.pom.Section`` was filed under that generated module, so its
+    # members (``title``/``body``/``bullets``/``numbered``/``numberedBullets``) never
+    # appeared under ``signalwire.pom.pom`` and read as ``missing-port`` on the
+    # signature gate while the surface gate — which already had this pin — was green.
+    "com.signalwire.sdk.pom.Section": "signalwire.pom.pom",
+    "com.signalwire.sdk.pom.PromptObjectModel": "signalwire.pom.pom",
     # Java's SWML ``Document`` (the doc model) is port-only — the reference
     # ``swml_builder`` module records ``SWMLBuilder``, not ``Document``. Pin it
     # to the same port-only home the SURFACE enumerator uses
@@ -1160,6 +1171,42 @@ def _fold_accessors_sig(out_modules: dict,
                 methods[dst_name] = sig
 
 
+def _apply_method_aliases_sig(out_modules: dict,
+                              oracle_members: dict[tuple[str, str], set[str]]) -> None:
+    """In-place per-(module, class) method-key rename, lockstep with the surface
+    enumerator's ``_SURFACE_METHOD_ALIASES`` application.
+
+    The generic accessor fold is oracle-gated on the SAME name (``get_x`` → ``x``),
+    so it cannot reach a spelling difference: ``getSpace()`` → the reference's
+    ``host``, ``getName()`` → ``function_name``, ``isNumberedBullets()`` → the
+    reference's camelCase ``numberedBullets``. The surface enumerator resolves those
+    through the alias table; the SIGNATURE enumerator did not apply it at all, so the
+    same symbols read as ``missing-port`` on the signature gate while the surface gate
+    was green. Sharing the one table keeps the two in lockstep (friction warning #1:
+    a fold applied to surface alone looks done and is not).
+
+    ORACLE-GATED against the SIGNATURE oracle, which is NARROWER than the surface
+    oracle: some rows target a name only the surface records (``SWAIGFunction.call`` →
+    ``__call__``, ``SWMLBuilder.verb`` → ``__getattr__`` — Python callable/attribute
+    protocols the signature oracle does not enumerate). Renaming to a target the
+    signature oracle lacks would turn a correctly-excused method into a phantom
+    ``missing-reference``, so a row applies only when the signature oracle records the
+    destination on that class.
+    """
+    for (mod, cls), aliases in _SURFACE_METHOD_ALIASES.items():
+        cls_entry = out_modules.get(mod, {}).get("classes", {}).get(cls)
+        if not cls_entry:
+            continue
+        ref_members = oracle_members.get((mod, cls), set())
+        methods = cls_entry.get("methods", {})
+        for src_name, dst_name in aliases.items():
+            if src_name not in methods or dst_name in methods:
+                continue
+            if dst_name not in ref_members:
+                continue
+            methods[dst_name] = methods.pop(src_name)
+
+
 def _mark_kwargs_tails_optional(out_modules: dict) -> None:
     """Flip the trailing var-keyword-door param of each KWARGS_TAIL_OPTIONAL
     method to ``required: false`` (see the set's docstring). Fail loud if a
@@ -1577,6 +1624,10 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
     _sig_ref = PSDK / "python_signatures.json"
     if _sig_ref.is_file():
         _sig_members = _load_oracle_sig_members(_sig_ref)
+        # Per-class spelling aliases FIRST (a rename the generic same-name fold
+        # cannot reach), then the generic accessor fold — the same order the surface
+        # enumerator applies them in.
+        _apply_method_aliases_sig(out_modules, _sig_members)
         _fold_accessors_sig(out_modules, _sig_members)
         _exclude_ctor_dunder_sig(out_modules, _sig_members)
 

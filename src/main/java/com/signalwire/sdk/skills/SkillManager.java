@@ -18,6 +18,14 @@ public class SkillManager {
   }
 
   /**
+   * The agent this manager loads skills into (the {@code agent} construction param). The reference
+   * keeps it as a public back reference ({@code self.agent}, skill_manager.py).
+   */
+  public AgentBase getAgent() {
+    return agent;
+  }
+
+  /**
    * Add a skill to the agent. 1. Get skill factory from registry 2. Create instance 3. Check for
    * duplicates 4. Validate env vars 5. Call setup() 6. Register tools 7. Merge hints 8. Merge
    * global data 9. Add prompt sections
@@ -49,6 +57,11 @@ public class SkillManager {
         return;
       }
     }
+
+    // Bind the agent + params before setup, mirroring the reference's
+    // construction-then-setup ordering (SkillBase.__init__ stores self.agent /
+    // self.params, then setup() runs).
+    skill.bind(agent, params);
 
     // Setup
     if (!skill.setup(params)) {
