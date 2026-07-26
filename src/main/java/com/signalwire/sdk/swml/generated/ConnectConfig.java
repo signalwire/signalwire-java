@@ -18,7 +18,7 @@ public final class ConnectConfig {
   public String codecs;
   public java.util.Map<String, Object> webrtc_media;
   public java.util.Map<String, Object> session_timeout;
-  public java.util.List<Object> ringback;
+  public java.util.Map<String, Object> ringback;
   public java.util.Map<String, Object> result;
   public java.util.Map<String, Object> timeout;
   public java.util.Map<String, Object> max_duration;
