@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ 2b848d283a2d33e7b177be4e430b6af8c9c87a78",
+  "generated_from": "signalwire-java @ d9527a22b8410bbf2f5b93bb9013f5c03a7286ee",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1207,6 +1207,10 @@
         "AIPromptText": [
           "contexts"
         ],
+        "AiSidecar": [],
+        "AiSidecarConfig": [
+          "SWAIG"
+        ],
         "AllOfProperty": [
           "allOf"
         ],
@@ -1422,6 +1426,7 @@
         "Request": [],
         "RequestConfig": [],
         "Return": [],
+        "RingbackConfig": [],
         "SIPRefer": [],
         "SMSWithBody": [],
         "SMSWithMedia": [],
