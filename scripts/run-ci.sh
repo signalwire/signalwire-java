@@ -153,6 +153,15 @@ sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test)" \
 sched_gate SURFACE res=gradle desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM/ROUTE-COLLISION)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port java --repo "$PORT_ROOT"
 
+# TYPE-EROSION: a port may not erase a type the reference DECLARES. compare_param treats
+# `any` on EITHER side as matching anything, so a port emitting `any` silently satisfies
+# every reference declaration — an unlimited opt-out. ConciergeAgent.hours_of_operation is
+# declared optional<dict<string,string>> and go still shipped a bare string, with no gate
+# red. RATCHET, not a hard gate: dynamic languages cannot always express a type, so this
+# banks the current count and fails only on REGRESSION. Drive the number DOWN; never up.
+sched_gate TYPE-EROSION res=gradle desc="port did not erase a reference-declared param type (ratchet 13)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port java --repo "$PORT_ROOT" --max 13
+
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. Most are pure-python
 # (--check against the on-disk generated tree), but GEN-FRESH-TESTS's
 # generate_rest_tests.py shells to `./gradlew --no-daemon routeRegistry` /
@@ -171,9 +180,9 @@ sched_gate BEHAVIORAL res=gradle defer=1 desc="behavioral suite (BEHAVIORAL-*/EM
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
         --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI,SECURE-DEFAULT,CA-VAR,SECRET-SCRUB
 
-sched_gate BEHAVIORAL-NIGHTLY tier=nightly res=gradle defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS)" \
+sched_gate BEHAVIORAL-NIGHTLY tier=nightly res=gradle defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS/SECRET-SCRUB-LIVE)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
-        --rules WAIT-LIVENESS,RELAY-LIVENESS
+        --rules WAIT-LIVENESS,RELAY-LIVENESS,SECRET-SCRUB-LIVE
 
 # DOC-TRUTH (one markdown walk): DOC-AUDIT/DOC-LINKS/DOC-LANG-PURITY/DOC-ENV/
 # COUNT-CLAIM/ACCESSOR-TRUTH/STATUS-CLAIM/README-INCLUDE. res=gradle: DOC-AUDIT +

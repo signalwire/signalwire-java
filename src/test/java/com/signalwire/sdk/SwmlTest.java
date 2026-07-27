@@ -122,7 +122,8 @@ class SwmlTest {
   @Test
   void testSchemaLoadedSuccessfully() {
     var schema = Schema.getInstance();
-    assertEquals(38, schema.verbCount(), "Schema should have 38 verb definitions");
+    // Not a frozen headcount -- see SchemaUtilsTest#testSchemaVerbCount.
+    assertTrue(schema.verbCount() >= 38, "schema looks truncated: " + schema.verbCount());
   }
 
   @Test
@@ -173,7 +174,8 @@ class SwmlTest {
   void testSchemaVerbNames() {
     var schema = Schema.getInstance();
     var names = schema.getVerbNames();
-    assertEquals(38, names.size());
+    // Not a frozen headcount -- see SchemaUtilsTest#testSchemaVerbCount.
+    assertTrue(names.size() >= 38, "schema looks truncated: " + names.size());
     assertTrue(names.contains("answer"));
     assertTrue(names.contains("hangup"));
     assertTrue(names.contains("sleep"));

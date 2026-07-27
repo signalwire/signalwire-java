@@ -23,25 +23,38 @@ public class RelayError extends RuntimeException {
 
   private final int code;
 
+  /**
+   * The RAW server message (the {@code message} construction param). Kept separately from the
+   * {@link Throwable} detail message because the reference decorates the exception text ({@code
+   * "RELAY error {code}: {message}"}, relay/client.py:1333) while preserving the undecorated value
+   * as {@code self.message} (line 1332). Reading {@code getMessage()} would return the decorated
+   * form, so the bare one is stored explicitly.
+   */
+  private final String serverMessage;
+
   /** RELAY error with an explicit server code. */
   public RelayError(int code, String message) {
     super("RELAY error " + code + ": " + message);
     this.code = code;
+    this.serverMessage = message;
   }
 
   public RelayError(String message) {
     super(message);
     this.code = UNKNOWN_CODE;
+    this.serverMessage = message;
   }
 
   public RelayError(String message, Throwable cause) {
     super(message, cause);
     this.code = UNKNOWN_CODE;
+    this.serverMessage = message;
   }
 
   public RelayError(int code, String message, Throwable cause) {
     super("RELAY error " + code + ": " + message, cause);
     this.code = code;
+    this.serverMessage = message;
   }
 
   /**
@@ -50,5 +63,16 @@ public class RelayError extends RuntimeException {
    */
   public int getCode() {
     return code;
+  }
+
+  /**
+   * The raw server message (the {@code message} construction param), undecorated — the reference's
+   * public {@code self.message}. Named {@code getServerMessage} because {@link
+   * Throwable#getMessage()} is already taken by the decorated detail message (the same reason
+   * {@code AIChatError} uses this spelling); the surface enumerator folds it onto the reference's
+   * {@code message} attribute.
+   */
+  public String getServerMessage() {
+    return serverMessage;
   }
 }

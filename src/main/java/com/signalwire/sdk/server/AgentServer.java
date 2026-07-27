@@ -41,8 +41,11 @@ public class AgentServer implements AutoCloseable {
   private static final int MAX_REQUEST_BODY_SIZE = 1_048_576;
   private static final Gson gson = new Gson();
 
+  private static final String DEFAULT_LOG_LEVEL = "info";
+
   private final String host;
   private final int port;
+  private final String logLevel;
   private final Map<String, AgentBase> agents = new ConcurrentHashMap<>();
   private final Map<String, String> sipRoutes = new ConcurrentHashMap<>();
   private boolean sipRoutingEnabled;
@@ -69,8 +72,55 @@ public class AgentServer implements AutoCloseable {
   }
 
   public AgentServer(String host, int port) {
+    this(host, port, null);
+  }
+
+  /**
+   * Full construction contract, mirroring the reference {@code AgentServer(host, port, log_level)}.
+   * The level is lower-cased and applied to the global logger, exactly as the reference does
+   * ({@code self.log_level = log_level.lower()}, agent_server.py:63) before creating its logger.
+   *
+   * @param host host to bind the server to
+   * @param port port to bind the server to
+   * @param logLevel logging level (debug, info, warn, error, off); unknown names leave the current
+   *     global level unchanged. {@code null} means "the caller did not ask for a level": the
+   *     reported level falls back to the default, and the process-wide logger is left ALONE. Only
+   *     an EXPLICIT level reconfigures global logging — a default-constructed server must not
+   *     silently undo a level the embedding process already chose (the dump tools set {@code
+   *     Level.OFF} to keep stdout pure JSON, and stomping that corrupts their output).
+   */
+  public AgentServer(String host, int port, String logLevel) {
     this.host = host;
     this.port = port;
+    this.logLevel =
+        logLevel == null ? DEFAULT_LOG_LEVEL : logLevel.toLowerCase(java.util.Locale.ROOT);
+    if (logLevel != null) {
+      applyLogLevel(this.logLevel);
+    }
+  }
+
+  private static void applyLogLevel(String level) {
+    try {
+      Logger.setGlobalLevel(Logger.Level.valueOf(level.toUpperCase(java.util.Locale.ROOT)));
+    } catch (IllegalArgumentException ignored) {
+      // Unknown level name — keep the current global level (reference stores the
+      // string verbatim and lets the logging backend ignore an unknown level).
+    }
+  }
+
+  /** Host the server binds to (the {@code host} construction param). */
+  public String getHost() {
+    return host;
+  }
+
+  /** Port the server binds to (the {@code port} construction param). */
+  public int getPort() {
+    return port;
+  }
+
+  /** Logging level (the {@code log_level} construction param), lower-cased. */
+  public String getLogLevel() {
+    return logLevel;
   }
 
   private static int resolvePort() {

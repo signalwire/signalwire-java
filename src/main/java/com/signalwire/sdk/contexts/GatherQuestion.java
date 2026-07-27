@@ -55,6 +55,40 @@ public class GatherQuestion {
     return key;
   }
 
+  // Read side of the remaining construction params. The reference stores each as a
+  // public instance attribute (contexts.py GatherQuestion.__init__), so a caller that
+  // supplies the value at construction can read it back.
+
+  /** The question text (the {@code question} construction param). */
+  public String getQuestion() {
+    return question;
+  }
+
+  /** The answer type (the {@code type} construction param); defaults to {@code "string"}. */
+  public String getType() {
+    return type;
+  }
+
+  /** Whether the answer is confirmed back to the caller (the {@code confirm} param). */
+  public boolean isConfirm() {
+    return confirm;
+  }
+
+  /** Optional per-question prompt override (the {@code prompt} param). */
+  public String getPrompt() {
+    return prompt;
+  }
+
+  /** Functions callable while gathering this answer (the {@code functions} param). */
+  public List<String> getFunctions() {
+    return functions;
+  }
+
+  /** Whether the question runs in an isolated context (the {@code isolated} param). */
+  public Boolean getIsolated() {
+    return isolated;
+  }
+
   public Map<String, Object> toMap() {
     Map<String, Object> map = new LinkedHashMap<>();
     map.put("key", key);

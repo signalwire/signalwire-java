@@ -31,6 +31,15 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class SessionManager {
 
+  /**
+   * The signing secret as the reference models it: a STRING. The reference keys its HMAC with
+   * {@code self.secret_key.encode()} (session_manager.py:79,152) — the UTF-8 bytes of the string —
+   * and defaults it to {@code secrets.token_hex(32)}, a 64-character hex string. Keeping the string
+   * (rather than 32 raw bytes) is what makes a token minted by the Python reference validate here
+   * and vice versa: hex-string bytes and the raw bytes they decode to are DIFFERENT HMAC keys.
+   */
+  private final String secretKey;
+
   private final byte[] secret;
   private final int defaultExpiry;
   private final SecureRandom random = new SecureRandom();
@@ -47,23 +56,61 @@ public class SessionManager {
   }
 
   public SessionManager(int defaultExpiry) {
-    this.defaultExpiry = defaultExpiry;
-    this.secret = new byte[32];
-    this.random.nextBytes(this.secret);
+    this(defaultExpiry, null);
   }
 
   /**
-   * Construct a manager with an explicit signing secret. Mirrors Python's {@code
-   * SessionManager(secret_key=...)}: the secret is what the HMAC signature is keyed on, so callers
-   * that need cross-instance / cross-language interop (a token minted elsewhere with the SAME
-   * secret must validate here) supply it explicitly. Python's secret is a hex string; this port
-   * accepts the raw secret bytes. The Java constructor overloads collapse to the no-arg form in the
-   * signature audit (covered by the {@code SessionManager.__init__} omission — "secret is injected
-   * via a constructor/setter"), so this adds no drift.
+   * The reference construction contract: {@code SessionManager(token_expiry_secs, secret_key)}. A
+   * {@code null} secret is generated as a 64-character hex string, matching the reference's {@code
+   * secrets.token_hex(32)} default.
+   *
+   * @param defaultExpiry seconds until minted tokens expire (the {@code token_expiry_secs} param)
+   * @param secretKey the HMAC signing secret as a string (the {@code secret_key} param); generated
+   *     when {@code null}
+   */
+  public SessionManager(int defaultExpiry, String secretKey) {
+    this.defaultExpiry = defaultExpiry;
+    this.secretKey = secretKey != null ? secretKey : randomHexSecret();
+    this.secret = this.secretKey.getBytes(StandardCharsets.UTF_8);
+  }
+
+  /** 32 random bytes rendered as 64 hex characters — the reference's {@code token_hex(32)}. */
+  private static String randomHexSecret() {
+    byte[] raw = new byte[32];
+    new SecureRandom().nextBytes(raw);
+    StringBuilder sb = new StringBuilder(raw.length * 2);
+    for (byte b : raw) {
+      sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+      sb.append(Character.forDigit(b & 0xF, 16));
+    }
+    return sb.toString();
+  }
+
+  /**
+   * The HMAC signing secret (the {@code secret_key} construction param). The reference exposes this
+   * as a public attribute, so a caller that supplied it can read it back.
+   */
+  public String getSecretKey() {
+    return secretKey;
+  }
+
+  /** Seconds until minted tokens expire (the {@code token_expiry_secs} construction param). */
+  public int getTokenExpirySecs() {
+    return defaultExpiry;
+  }
+
+  /**
+   * Construct a manager with an explicit signing secret supplied as bytes.
+   *
+   * <p>The bytes are interpreted as the UTF-8 encoding of the reference's {@code secret_key}
+   * STRING, which is how the reference keys its HMAC ({@code self.secret_key.encode()},
+   * session_manager.py:79,152). Passing {@code "abc".getBytes(UTF_8)} here is therefore identical
+   * to passing {@code "abc"} to {@link #SessionManager(int, String)} — and both interoperate with a
+   * reference-minted token. Prefer the string overload; this one exists for callers already holding
+   * the encoded form.
    */
   public SessionManager(byte[] secretKey, int defaultExpiry) {
-    this.defaultExpiry = defaultExpiry;
-    this.secret = secretKey.clone();
+    this(defaultExpiry, new String(secretKey, StandardCharsets.UTF_8));
   }
 
   /**

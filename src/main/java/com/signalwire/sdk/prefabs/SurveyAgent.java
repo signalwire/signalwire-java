@@ -11,9 +11,19 @@ import java.util.*;
  */
 public class SurveyAgent {
 
+  /** Default brand name when the caller supplies none — the reference's fallback. */
+  private static final String DEFAULT_BRAND_NAME = "Our Company";
+
+  /** Default number of re-ask attempts for an invalid answer. */
+  private static final int DEFAULT_MAX_RETRIES = 2;
+
   private final AgentBase agent;
   private final List<Map<String, Object>> questions;
   private final String completionMessage;
+  private final String surveyName;
+  private final String brandName;
+  private final int maxRetries;
+  private final String introduction;
   private java.util.function.BiConsumer<Map<String, Object>, Map<String, Object>> summaryHandler;
 
   public SurveyAgent(String name, List<Map<String, Object>> questions) {
@@ -26,15 +36,58 @@ public class SurveyAgent {
       String completionMessage,
       String route,
       int port) {
+    this(name, questions, completionMessage, route, port, name, null, DEFAULT_MAX_RETRIES, null);
+  }
+
+  /**
+   * Full construction contract, mirroring the reference {@code SurveyAgent(survey_name, questions,
+   * brand_name, max_retries, introduction, conclusion, name, route)}.
+   *
+   * <p>The reference's {@code conclusion} is this port's {@code completionMessage} — the same
+   * closing text, spoken after the last question.
+   *
+   * @param name agent name
+   * @param questions the survey questions (the {@code questions} param)
+   * @param completionMessage closing message (the reference's {@code conclusion} param)
+   * @param route HTTP route for this agent
+   * @param port HTTP port for this agent
+   * @param surveyName human-readable survey title (the {@code survey_name} param)
+   * @param brandName brand conducting the survey (the {@code brand_name} param); defaults to {@code
+   *     "Our Company"} when {@code null}, as the reference does
+   * @param maxRetries re-ask attempts for an invalid answer (the {@code max_retries} param)
+   * @param introduction opening message (the {@code introduction} param); defaults to the
+   *     reference's stock welcome text built from {@code surveyName} when {@code null}
+   */
+  public SurveyAgent(
+      String name,
+      List<Map<String, Object>> questions,
+      String completionMessage,
+      String route,
+      int port,
+      String surveyName,
+      String brandName,
+      int maxRetries,
+      String introduction) {
     this.questions = questions;
     this.completionMessage = completionMessage;
+    this.surveyName = surveyName;
+    this.brandName = brandName != null ? brandName : DEFAULT_BRAND_NAME;
+    this.maxRetries = maxRetries;
+    this.introduction =
+        introduction != null
+            ? introduction
+            : "Welcome to our " + surveyName + ". We appreciate your participation.";
 
     this.agent = AgentBase.builder().name(name).route(route).port(port).build();
 
     agent.promptAddSection(
         "Role",
-        "You are a survey conductor. "
+        "You are a survey conductor for "
+            + this.brandName
+            + ". "
             + "Your job is to ask survey questions and record responses accurately.");
+
+    agent.promptAddSection("Introduction", "Begin with this introduction: " + this.introduction);
 
     List<String> bullets = new ArrayList<>();
     bullets.add("Ask one question at a time in order");
@@ -43,6 +96,10 @@ public class SurveyAgent {
     bullets.add("For multiple_choice, only accept listed options");
     bullets.add("For yes_no, only accept yes or no");
     bullets.add("Be encouraging and thank users for their responses");
+    bullets.add(
+        "If an answer is invalid, re-ask up to "
+            + this.maxRetries
+            + " time(s) before moving on to the next question");
     agent.promptAddSection("Instructions", "", bullets);
 
     // Register survey tools
@@ -324,6 +381,43 @@ public class SurveyAgent {
 
   public AgentBase getAgent() {
     return agent;
+  }
+
+  // Read side of the construction params (the reference's public self.survey_name /
+  // self.questions / self.brand_name / self.max_retries / self.introduction /
+  // self.conclusion, survey.py:91-103).
+
+  /** The survey questions (the {@code questions} construction param). */
+  public List<Map<String, Object>> getQuestions() {
+    return questions;
+  }
+
+  /** The survey title (the {@code survey_name} construction param). */
+  public String getSurveyName() {
+    return surveyName;
+  }
+
+  /** The brand conducting the survey (the {@code brand_name} construction param). */
+  public String getBrandName() {
+    return brandName;
+  }
+
+  /** Re-ask attempts for an invalid answer (the {@code max_retries} construction param). */
+  public int getMaxRetries() {
+    return maxRetries;
+  }
+
+  /** The opening message (the {@code introduction} construction param). */
+  public String getIntroduction() {
+    return introduction;
+  }
+
+  /**
+   * The closing message — the reference's {@code conclusion} construction param, named {@code
+   * completionMessage} in this port's constructor.
+   */
+  public String getConclusion() {
+    return completionMessage;
   }
 
   public void serve() throws Exception {

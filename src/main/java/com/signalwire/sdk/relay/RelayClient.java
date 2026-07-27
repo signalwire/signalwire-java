@@ -350,6 +350,25 @@ public class RelayClient implements AutoCloseable {
     return space;
   }
 
+  /**
+   * The API token (the {@code token} construction param), resolved from {@code
+   * SIGNALWIRE_API_TOKEN} when not passed explicitly. The reference stores this as a public
+   * attribute ({@code self.token}, relay/client.py:172) and a caller that supplied it must be able
+   * to read it back — the same value it just provided.
+   */
+  public String getToken() {
+    return token;
+  }
+
+  /**
+   * The JWT token (the {@code jwt_token} construction param), resolved from {@code
+   * SIGNALWIRE_JWT_TOKEN} when not passed explicitly; empty when JWT auth is not in use. Mirrors
+   * the reference's public {@code self.jwt_token} (relay/client.py:173).
+   */
+  public String getJwtToken() {
+    return jwtToken;
+  }
+
   public List<String> getContexts() {
     return Collections.unmodifiableList(contexts);
   }
@@ -1217,7 +1236,13 @@ public class RelayClient implements AutoCloseable {
 
       if (tag != null && pendingDials.containsKey(tag) && !calls.containsKey(callId)) {
         // Create the Call object so events route correctly
-        Call call = new Call(callId, stateEvent.getNodeId());
+        Call call =
+            new Call(
+                callId,
+                stateEvent.getNodeId(),
+                stateEvent.getStringParam("project_id"),
+                stateEvent.getStringParam("context"),
+                stateEvent.getStringParam("segment_id"));
         call.setTag(tag);
         call.setState(stateEvent.getCallState());
         call.setDirection(stateEvent.getDirection());
@@ -1248,7 +1273,13 @@ public class RelayClient implements AutoCloseable {
       log.error("Max active calls (" + maxActiveCalls + ") reached, dropping inbound call");
       return;
     }
-    Call call = new Call(event.getCallId(), event.getNodeId());
+    Call call =
+        new Call(
+            event.getCallId(),
+            event.getNodeId(),
+            event.getProjectId(),
+            event.getContext(),
+            event.getSegmentId());
     call.setState(event.getCallState());
     call.setDirection("inbound");
     call.setDevice(event.getDevice());
@@ -1282,7 +1313,13 @@ public class RelayClient implements AutoCloseable {
         Call call = calls.get(callId);
         if (call == null) {
           String nodeId = RelayEvent.getStr(callInfo, "node_id", null);
-          call = new Call(callId, nodeId);
+          call =
+              new Call(
+                  callId,
+                  nodeId,
+                  RelayEvent.getStr(callInfo, "project_id", null),
+                  RelayEvent.getStr(callInfo, "context", null),
+                  RelayEvent.getStr(callInfo, "segment_id", null));
           call.setTag(tag);
           call.setState(Constants.CALL_STATE_ANSWERED);
           call.setClient(this);

@@ -98,6 +98,17 @@ public class SchemaUtils {
     return "1".equals(s) || "true".equals(s) || "yes".equals(s);
   }
 
+  /**
+   * The explicit schema file path this instance was constructed with, or {@code null} when the
+   * embedded resource is used. Mirrors Python's {@code schema_utils.schema_path} attribute (read by
+   * {@code AgentBase.__init__} at agent_base.py:210).
+   *
+   * @return the configured schema path, or null.
+   */
+  public String getSchemaPath() {
+    return schemaPath;
+  }
+
   /** Read and parse the JSON Schema. Mirrors Python's {@code load_schema()}. */
   public JsonObject loadSchema() {
     try {

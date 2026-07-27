@@ -1,3 +1,50 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+BEFORE YOU ADD AN ENTRY TO THIS FILE — READ THIS.
+
+Every entry here is a place the parity checker STOPS comparing. That is a real cost:
+a divergence you list is a divergence no gate will ever catch again. So entries must
+be RARE, and each one must earn its place. Default to skepticism: assume the entry is
+NOT needed and make the case that it is.
+
+The order of preference, always:
+  1. FIX THE PORT so it matches the reference (add the missing member; make the
+     signature match).
+  2. FIX THE EMISSION so idiom folds onto the reference shape — the enumerator/emitter
+     canonicalizes your language's spelling onto the oracle's (builder → __init__,
+     getters → attributes, Result<T,E> → the plain return, CamelCase → the reference
+     name, options-object/kwargs → the expanded param list, RAII/dispose → close).
+     MOST divergences are idiom and belong here, not in this file.
+  3. FIX THE REFERENCE if the oracle itself is wrong or stale (a Python-only symbol
+     that leaked into the contract, a param the reference added and the oracle never
+     re-enumerated). Fix Python / the oracle, then re-drift — do not paper over a
+     broken reference with a per-port entry.
+  4. Only when 1–3 genuinely cannot apply does an entry here become justified.
+
+An entry is JUSTIFIED ONLY IF it is irreducible after correct emission — i.e. the
+divergence survives because the two languages genuinely cannot express the same thing,
+not because the emitter hasn't folded the idiom yet. If emission COULD fold it, the
+entry is a bug in this file; go fix the emitter.
+
+Each entry MUST state WHY, concretely, in one of these forms:
+  • ADDITION — this symbol exists in the port but not the reference. Answer: is it
+    genuine port-only surface with NO reference twin (say what it is and why the
+    reference has no equivalent), or is it IDIOM the emitter should have folded (then
+    it does not belong here — fold it)? A convenience/alias/back-compat wrapper is NOT
+    a justification.
+  • OMISSION — this reference symbol has no port member. Answer: WHY can it not exist
+    here — what specific language feature is absent (e.g. no async-context-manager
+    protocol, no __init__ method protocol)? "impossible:" means the construct cannot
+    be expressed at all; if it merely LOOKS different, that's idiom → fold it, don't
+    omit it. Cite a precedent when one exists (e.g. RelayClient omits the same dunder).
+  • SIGNATURE — the symbol matches by name but its parameters differ. Answer: is the
+    difference a foldable idiom collapse (options-object, leading context/self,
+    builder) — then EXPAND it in the signature emitter so names+count match, don't list
+    it — or a genuine reference-only parameter with no cross-language analogue?
+
+If you cannot write a crisp, specific WHY that survives the "could emission fold this?"
+test, the entry is not ready. Prove it's needed before you add it.
+═══════════════════════════════════════════════════════════════════════════════ -->
+
 # PORT_OMISSIONS — Python symbols the Java SDK does not implement
 
 Every symbol listed here is a public class, method or function present in the
@@ -30,65 +77,6 @@ signalwire.core.security.webhook_middleware.make_webhook_validation_dependency: 
 signalwire.core.skill_base.SkillBase.__init__: impossible: SkillBase is a Java interface — interfaces cannot declare a constructor; skills are constructed via a no-arg implementation constructor + setup(params), so there is no __init__ member to enumerate (TS/PHP interfaces omit identically)
 signalwire.core.swaig_function.SWAIGFunction.__init__: impossible: Java constructs SWAIGFunction via a builder (SWAIGFunctionBuilder) for its many optional args; the public entry is the builder, not a wide public constructor (TS/PHP use the same named-arg idiom)
 signalwire.core.swml_service.SWMLService.__getattr__: impossible: Python runtime __getattr__ verb dispatch; Java's SWMLService expands every schema verb as an explicit statically-typed method, so there is no single catch-all member to enumerate (TS/PHP expand identically)
-signalwire.livewire.Agent: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.llm_node: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.on_enter: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.on_exit: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.on_user_turn_completed: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.session: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.stt_node: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.tts_node: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.update_instructions: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Agent.update_tools: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentHandoff: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentHandoff.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentServer: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentServer.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentServer.rtc_session: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.generate_reply: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.history: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.interrupt: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.say: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.start: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.update_agent: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.AgentSession.userdata: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.ChatContext: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.ChatContext.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.ChatContext.append: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceLLM: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceLLM.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceSTT: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceSTT.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceTTS: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.InferenceTTS.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobContext: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobContext.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobContext.connect: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobContext.wait_for_participant: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobProcess: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.JobProcess.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.Room: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.RunContext: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.RunContext.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.RunContext.userdata: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.StopResponse: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.ToolError: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.function_tool: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.CartesiaTTS: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.CartesiaTTS.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.DeepgramSTT: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.DeepgramSTT.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.ElevenLabsTTS: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.ElevenLabsTTS.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.OpenAILLM: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.OpenAILLM.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.SileroVAD: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.SileroVAD.__init__: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.plugins.SileroVAD.load: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
-signalwire.livewire.run_app: approved: LiveKit-agents compatibility shim — ported ONLY to languages LiveKit ships an agents SDK for (Python + Node/TS); invented surface elsewhere, so not ported to Java (user, 2026-07 pass, §I.1/L21)
 signalwire.relay.client.RelayClient.__aenter__: impossible: Python async-context-manager protocol dunder; Java uses explicit connect()/disconnect() — no __aenter__ equivalent (TS/PHP omit identically)
 signalwire.relay.client.RelayClient.__aexit__: impossible: Python async-context-manager protocol dunder; Java uses explicit connect()/disconnect() (TS/PHP omit identically)
 signalwire.relay.client.RelayClient.__del__: impossible: Python finalizer dunder; Java has no deterministic __del__ finalizer protocol (TS/PHP omit identically)
@@ -103,3 +91,17 @@ signalwire.skills.api_ninjas_trivia.skill.ApiNinjasTriviaSkill.__init__: impossi
 signalwire.skills.play_background_file.skill.PlayBackgroundFileSkill.__init__: impossible: Java skills use a no-arg constructor + setup(params) (registry factories require it); the Python __init__(agent, params) wide constructor has no static-Java equivalent (TS/PHP likewise)
 signalwire.skills.spider.skill.SpiderSkill.__init__: impossible: Java skills use a no-arg constructor + setup(params) (registry factories require it); the Python __init__(agent, params) wide constructor has no static-Java equivalent (TS/PHP likewise)
 signalwire.skills.weather_api.skill.WeatherApiSkill.__init__: impossible: Java skills use a no-arg constructor + setup(params) (registry factories require it); the Python __init__(agent, params) wide constructor has no static-Java equivalent (TS/PHP likewise)
+
+# FOLDED (agentbase-family) omission keys for the SURFACE-DIFF AgentBase-mixin fold.
+# The unfolded `signalwire.core.agent_base.AgentBase.*` / mixin twins above stay for
+# the DRIFT/SIGNATURE gate (both key forms are load-bearing).
+agentbase-family.__init__: impossible: Java constructs AgentBase via the builder pattern (AgentBase.builder()...build()); the public entry point is AgentBaseBuilder (a PORT_ADDITION) and the raw constructor is protected — a many-optional-arg public __init__ has no static-Java form (TS/other OO ports use the same builder idiom).
+agentbase-family.auto_map_sip_usernames: impossible: Python decorator-driven auto-mapping that inspects registered handler names at runtime; Java registers SIP usernames explicitly via AgentServer.registerSipUsername / route config — the reflection-driven auto-map FORM has no static-Java analog (TS/PHP map explicitly).
+agentbase-family.get_full_url: impossible: Python assembles the full callback URL from FastAPI request context (scheme/host/root_path); Java has no framework request-context object — the proxy base is set explicitly via manualSetProxyUrl and the URL composed at emit time (TS/PHP compose from their own framework context).
+agentbase-family.handle_serverless_request: impossible: dispatches a serverless request by runtime-detecting the platform event shape; Java's Lambda runtime adapter (signalwire.runtime.*, a PORT_ADDITION) handles this per-platform — the single polymorphic-by-duck-typing entry has no static-Java form (TS/PHP use per-platform adapters).
+agentbase-family.tool: impossible: Python @tool class/instance decorator relies on the decorator protocol; Java has no method-decorator feature — tools register via defineTool(...) directly (TS + PHP omit as impossible).
+
+# B1 composition-attribute omissions (class-typed / per-instance attrs surfaced by the
+# porting-sdk composition-attr enrichment; Java exposes no corresponding member).
+signalwire.agent_server.AgentServer.agents: impossible: the reference records AgentServer with BOTH a bare `agents` dict attribute AND a `get_agents()` accessor (B1 enrichment surfaces the attribute); Java ships the single AgentServer.getAgents() accessor (→ the reference `get_agents` member) and holds no separate bare `agents` field member — wire-neutral (TS/PHP hit the same accessor idiom).
+

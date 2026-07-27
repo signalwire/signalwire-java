@@ -66,6 +66,18 @@ public class Call {
   private volatile String tag;
   private volatile Map<String, Object> device;
 
+  /**
+   * Call identity carried on every RELAY call event and stored by the reference as public state
+   * ({@code self.project_id} / {@code self.context} / {@code self.segment_id},
+   * relay/call.py:357-363). The event frames already carry all three ({@link
+   * RelayEvent.CallReceiveEvent#getProjectId()} et al.); the port previously discarded them, so a
+   * Java caller could not read the project, context, or segment the call belongs to.
+   */
+  private volatile String projectId;
+
+  private volatile String context;
+  private volatile String segmentId;
+
   /** Actions map: control_id -> Action */
   private final ConcurrentHashMap<String, Action> actions = new ConcurrentHashMap<>();
 
@@ -83,12 +95,59 @@ public class Call {
   private volatile RelayClient client;
 
   public Call(String callId, String nodeId) {
+    this(callId, nodeId, null, null, null);
+  }
+
+  /**
+   * Full call identity, mirroring the reference's {@code Call(client, call_id, node_id, project_id,
+   * context, ..., segment_id)}.
+   *
+   * @param callId the RELAY call id
+   * @param nodeId the RELAY node id
+   * @param projectId the project this call belongs to (the {@code project_id} param)
+   * @param context the RELAY context the call arrived on (the {@code context} param)
+   * @param segmentId the call segment id (the {@code segment_id} param)
+   */
+  public Call(String callId, String nodeId, String projectId, String context, String segmentId) {
     this.callId = callId;
     this.nodeId = nodeId;
+    this.projectId = projectId;
+    this.context = context;
+    this.segmentId = segmentId;
     this.state = Constants.CALL_STATE_CREATED;
   }
 
   // ── Getters ──────────────────────────────────────────────────────
+
+  /** The project this call belongs to (the {@code project_id} construction param). */
+  public String getProjectId() {
+    return projectId;
+  }
+
+  /** The RELAY context the call arrived on (the {@code context} construction param). */
+  public String getContext() {
+    return context;
+  }
+
+  /** The call segment id (the {@code segment_id} construction param). */
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  /** Update the project id from a later event frame. */
+  public void setProjectId(String projectId) {
+    this.projectId = projectId;
+  }
+
+  /** Update the context from a later event frame. */
+  public void setContext(String context) {
+    this.context = context;
+  }
+
+  /** Update the segment id from a later event frame. */
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
+  }
 
   public String getCallId() {
     return callId;

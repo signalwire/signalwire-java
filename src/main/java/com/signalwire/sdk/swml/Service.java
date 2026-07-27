@@ -90,6 +90,15 @@ public class Service implements AutoCloseable {
               java.util.Map<String, Object>, java.util.Map<String, String>, String>>
       routingCallbacks = new java.util.LinkedHashMap<>();
   protected boolean schemaValidation = true;
+  // Explicit schema file path (SWMLService.__init__ schema_path). Null means
+  // "let SchemaUtils find it" — the reference's _find_schema_path fallback.
+  protected String schemaPath;
+  // Config file backing this service's SecurityConfig (SWMLService.__init__
+  // config_file). Null means "search the default locations".
+  protected String configFile;
+  // Unified security configuration, built from configFile + env. Mirrors the
+  // reference's `self.security = SecurityConfig(config_file=…, service_name=…)`.
+  protected com.signalwire.sdk.core.SecurityConfig security;
   // Proxy URL base for webhook callbacks (SWMLService.manual_set_proxy_url).
   protected String proxyUrlBase;
 
@@ -103,12 +112,51 @@ public class Service implements AutoCloseable {
 
   public Service(
       String name, String route, String host, int port, String authUser, String authPassword) {
+    this(name, route, host, port, authUser, authPassword, null, null, true);
+  }
+
+  /**
+   * Full construction contract, matching the Python reference's {@code SWMLService.__init__(name,
+   * route, host, port, basic_auth, schema_path, config_file, schema_validation)}.
+   *
+   * <p>{@code authUser}/{@code authPassword} are the Java spelling of the reference's {@code
+   * basic_auth} 2-tuple. {@code schemaPath} and {@code schemaValidation} are forwarded to {@link
+   * SchemaUtils}; {@code configFile} is forwarded to {@link com.signalwire.sdk.core.SecurityConfig}
+   * — the same collaborators the reference forwards them to.
+   *
+   * @param name service name/identifier.
+   * @param route HTTP route path for this service.
+   * @param host host to bind the web server to.
+   * @param port port to bind the web server to.
+   * @param authUser basic-auth username; null falls back to env then the service name.
+   * @param authPassword basic-auth password; null falls back to env then a generated secret.
+   * @param schemaPath explicit SWML schema file path, or null to auto-discover.
+   * @param configFile explicit config file path, or null to search the default locations.
+   * @param schemaValidation whether SWML schema validation is enabled.
+   */
+  public Service(
+      String name,
+      String route,
+      String host,
+      int port,
+      String authUser,
+      String authPassword,
+      String schemaPath,
+      String configFile,
+      boolean schemaValidation) {
     this.name = name;
     this.route =
         route.endsWith("/") && route.length() > 1 ? route.substring(0, route.length() - 1) : route;
     this.host = host;
     this.port = port;
     this.document = new Document();
+    this.schemaPath = schemaPath;
+    this.configFile = configFile;
+    this.schemaValidation = schemaValidation;
+
+    // Unified security configuration — the reference builds this from the
+    // config file in SWMLService.__init__ (swml_service.py:139).
+    this.security = new com.signalwire.sdk.core.SecurityConfig(configFile, name);
 
     // Auth setup
     if (authUser != null && authPassword != null) {
@@ -432,9 +480,83 @@ public class Service implements AutoCloseable {
    */
   public SchemaUtils getSchemaUtils() {
     if (schemaUtilsInstance == null) {
-      schemaUtilsInstance = new SchemaUtils(null, schemaValidation);
+      schemaUtilsInstance = new SchemaUtils(schemaPath, schemaValidation);
     }
     return schemaUtilsInstance;
+  }
+
+  /**
+   * The explicit SWML schema file path this service was constructed with, or {@code null} when the
+   * schema is auto-discovered. Mirrors the reference's {@code schema_path} construction param.
+   *
+   * @return configured schema path, or null.
+   */
+  public String getSchemaPath() {
+    return schemaPath;
+  }
+
+  /**
+   * The config file this service was constructed with, or {@code null} when the default search
+   * paths are used. Mirrors the reference's {@code config_file} construction param.
+   *
+   * @return configured config file path, or null.
+   */
+  public String getConfigFile() {
+    return configFile;
+  }
+
+  // Read side of the remaining construction params. The reference stores each as a
+  // public instance attribute (swml_service.py:129-133) that a caller can read back;
+  // the port had them only as PROTECTED fields, so a Java caller could set the value
+  // at construction but not read it.
+
+  /** The service name (the {@code name} construction param). */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * The HTTP route the service is served on, without a trailing slash (the {@code route} param).
+   */
+  public String getRoute() {
+    return route;
+  }
+
+  /** The host the service binds to (the {@code host} construction param). */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * The port the service binds to (the {@code port} construction param); defaults to the {@code
+   * PORT} env var, else 3000, exactly as the reference does.
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Whether SWML schema validation is enabled for this service. Mirrors the reference's {@code
+   * schema_validation} construction param.
+   *
+   * @return true when schema validation is on.
+   */
+  public boolean isSchemaValidation() {
+    return schemaValidation;
+  }
+
+  /**
+   * Unified security configuration for this service, built from the construction {@code
+   * config_file} plus environment. Mirrors the reference's {@code self.security} attribute on
+   * {@code SWMLService} (swml_service.py:139).
+   *
+   * @return the service's SecurityConfig.
+   */
+  public com.signalwire.sdk.core.SecurityConfig getSecurity() {
+    if (security == null) {
+      security = new com.signalwire.sdk.core.SecurityConfig(configFile, name);
+    }
+    return security;
   }
 
   // -------- SWMLService reference-API delegators --------

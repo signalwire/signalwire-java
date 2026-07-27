@@ -54,6 +54,14 @@ public class ToolRegistry {
   }
 
   /**
+   * The agent this registry belongs to (the {@code agent} construction param), or {@code null} for
+   * standalone use. The reference keeps it as a public back reference ({@code self.agent}).
+   */
+  public Object getAgent() {
+    return agent;
+  }
+
+  /**
    * Define a SWAIG function that the AI can call.
    *
    * <p>Python parity: {@code define_tool(name, description, parameters, handler, secure=True,

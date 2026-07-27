@@ -45,6 +45,39 @@ public interface SkillBase {
   boolean setup(Map<String, Object> params);
 
   /**
+   * Bind the owning agent and the configuration params to this skill.
+   *
+   * <p>The reference passes both to the skill CONSTRUCTOR ({@code SkillBase(agent, params)},
+   * skill_base.py:33) and keeps them as public {@code self.agent} / {@code self.params}. A Java
+   * interface cannot mandate a constructor, so {@link SkillManager} calls this immediately before
+   * {@link #setup(Map)} — the same ordering the reference gets from construction-then-setup. The
+   * default is a no-op so existing implementors keep compiling; a skill that needs the back
+   * reference overrides this together with {@link #getAgent()} / {@link #getParams()}.
+   *
+   * @param agent the agent loading this skill
+   * @param params the configuration parameters (never {@code null})
+   */
+  default void bind(com.signalwire.sdk.agent.AgentBase agent, Map<String, Object> params) {
+    // No-op by default; see getAgent()/getParams().
+  }
+
+  /**
+   * The agent this skill was loaded into (the reference's public {@code self.agent}), or {@code
+   * null} when the skill has not been bound / does not retain it.
+   */
+  default com.signalwire.sdk.agent.AgentBase getAgent() {
+    return null;
+  }
+
+  /**
+   * The configuration params this skill was loaded with (the reference's public {@code
+   * self.params}), or an empty map when the skill has not been bound / does not retain them.
+   */
+  default Map<String, Object> getParams() {
+    return Collections.emptyMap();
+  }
+
+  /**
    * Register tools with the agent.
    *
    * @return List of tool definitions to register
