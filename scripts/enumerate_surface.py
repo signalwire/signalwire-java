@@ -28,9 +28,19 @@ Two emission modes:
   ``audit_docs.py``, which extracts method-call patterns from
   ``docs/`` and ``examples/*.java`` in their natural Java form.
 
+An output destination is MANDATORY — ``--output PATH`` (write the file) or
+``--stdout`` (pipe it). A bare run FAILS LOUD with a usage error. It used to
+default to stdout, and that default was a silent wrong-green: a bare run printed
+the snapshot to a stdout the caller discarded, wrote NOTHING, and exited 0 — so a
+clean ``git status`` afterwards read as "no change was needed" when it actually
+meant "nothing was written" (it cost a 7-port surface-audit red). php / rust /
+cpp / dotnet / perl / ts / go all write the file rather than defaulting to a pipe;
+this makes Java's enumerator stop being the fleet's one exception.
+
 Usage::
 
-    python3 scripts/enumerate_surface.py                      # stdout
+    python3 scripts/enumerate_surface.py                      # ERROR: names no destination
+    python3 scripts/enumerate_surface.py --stdout             # explicit pipe
     python3 scripts/enumerate_surface.py --output port_surface.json
     python3 scripts/enumerate_surface.py --check --output port_surface.json
     python3 scripts/enumerate_surface.py --native --output port_surface_native.json
@@ -2021,7 +2031,12 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument(
         "--output", type=Path, default=None,
-        help="Write JSON to this path (default: stdout)",
+        help="Write JSON to this path. Required unless --stdout is given.",
+    )
+    parser.add_argument(
+        "--stdout", action="store_true",
+        help="Print JSON to stdout instead of writing --output. Explicit opt-in: "
+             "there is no stdout DEFAULT (see the fail-loud check below).",
     )
     parser.add_argument(
         "--check", action="store_true",
@@ -2037,6 +2052,23 @@ def main(argv: list[str]) -> int:
 
     if args.check and not args.output:
         parser.error("--check requires --output")
+    if args.stdout and args.output:
+        parser.error("--stdout and --output are mutually exclusive")
+    if args.check and args.stdout:
+        parser.error("--check compares against --output; it cannot be used with --stdout")
+    # FAIL LOUD on a bare run. This used to default to stdout, which made a bare
+    # invocation a silent WRONG-GREEN: it printed the snapshot to a stdout the caller
+    # discarded, wrote NOTHING, and exited 0 — so a clean `git status` afterwards read
+    # as "no change was needed" when it actually meant "nothing was written". That cost
+    # a 7-port surface-audit red. Writing the file is now never implicit and neither is
+    # piping: state one.
+    if not args.output and not args.stdout:
+        parser.error(
+            "no output destination: pass --output PATH to write the surface JSON, or "
+            "--stdout to pipe it. There is deliberately no default — a bare run used "
+            "to print to stdout and write nothing while exiting 0, which reads as "
+            "'no change was needed' when it means 'nothing was written'."
+        )
     if not args.reference.is_file():
         print(f"error: reference {args.reference} not found", file=sys.stderr)
         return 1
@@ -2066,10 +2098,11 @@ def main(argv: list[str]) -> int:
             return 1
         return 0
 
-    if args.output:
-        args.output.write_text(rendered, encoding="utf-8")
-    else:
+    if args.stdout:
         sys.stdout.write(rendered)
+    else:
+        args.output.write_text(rendered, encoding="utf-8")
+        print(f"wrote {args.output}", file=sys.stderr)
     return 0
 
 
