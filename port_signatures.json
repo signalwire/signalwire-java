@@ -31067,9 +31067,63 @@
       "classes": {
         "RestClient": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
+            "addresses": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.Addresses"
+            },
             "builder": {
               "params": [],
               "returns": "class:signalwire.rest.client.RestClient"
+            },
+            "calling": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.calling_resources_generated.Calling"
+            },
+            "chat": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.chat_resources_generated.Chat"
+            },
+            "datasphere": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.DatasphereNamespace"
+            },
+            "fabric": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.FabricNamespace"
             },
             "get_http_client": {
               "params": [
@@ -31088,6 +31142,159 @@
                 }
               ],
               "returns": "string"
+            },
+            "imported_numbers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.ImportedNumbers"
+            },
+            "logs": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.LogsNamespace"
+            },
+            "lookup": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.Lookup"
+            },
+            "messages": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.messages_resources_generated.Messages"
+            },
+            "mfa": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.Mfa"
+            },
+            "number_groups": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.NumberGroups"
+            },
+            "phone_numbers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.PhoneNumbers"
+            },
+            "project": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.ProjectNamespace"
+            },
+            "projects": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.projects_resources_generated.Projects"
+            },
+            "pubsub": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.pubsub_resources_generated.PubSub"
+            },
+            "queues": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.Queues"
+            },
+            "recordings": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.Recordings"
+            },
+            "registry": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.RegistryNamespace"
+            },
+            "short_codes": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.ShortCodes"
+            },
+            "sip_profile": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.SipProfile"
+            },
+            "verified_callers": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces.relay_rest_resources_generated.VerifiedCallers"
+            },
+            "video": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "class:signalwire.rest.namespaces._client_tree_generated.VideoNamespace"
             },
             "with_base_url": {
               "params": [
@@ -31108,15 +31315,6 @@
                 }
               ],
               "returns": "class:signalwire.rest.client.RestClient"
-            },
-            "project": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         }
@@ -75388,6 +75586,20 @@
       "classes": {
         "RestClientBuilder": {
           "methods": {
+            "abort_signal": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "abort_signal",
+                  "type": "class:signalwire.rest.AbortSignal",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
+            },
             "build": {
               "params": [
                 {
@@ -75425,6 +75637,48 @@
               ],
               "returns": "class:signalwire.rest.client.RestClient"
             },
+            "retries": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "retries",
+                  "type": "int",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
+            },
+            "retry_backoff": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "retry_backoff",
+                  "type": "float",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
+            },
+            "retry_on_status": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "retry_on_status",
+                  "type": "list<int>",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
+            },
             "space": {
               "params": [
                 {
@@ -75438,6 +75692,20 @@
                 }
               ],
               "returns": "class:signalwire.rest.client.RestClient"
+            },
+            "timeout": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.rest._request_options.RequestOptions"
             },
             "token": {
               "params": [
@@ -77801,6 +78069,73 @@
       "classes": {
         "ParameterSchemaBuilder": {
           "methods": {
+            "array": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "item_type",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "array_of_objects": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "item_schema",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "bool": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
             "build": {
               "params": [
                 {
@@ -77809,6 +78144,20 @@
                 }
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "default_value": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "value",
+                  "type": "any",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
             },
             "description": {
               "params": [
@@ -77823,6 +78172,30 @@
                 }
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "enum_of": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "values",
+                  "type": "list<class:signalwire.swml.WireEnum>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
             },
             "extra_swaig_fields": {
               "params": [
@@ -77852,6 +78225,20 @@
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
             },
+            "format": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "format",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
             "handler": {
               "params": [
                 {
@@ -77865,6 +78252,25 @@
                 }
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "integer": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
             },
             "is_typed_handler": {
               "params": [
@@ -77893,6 +78299,49 @@
                 }
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "number": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
+            },
+            "object": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "object_schema",
+                  "type": "dict<string,any>",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
             },
             "parameters": {
               "params": [
@@ -77935,6 +78384,25 @@
                 }
               ],
               "returns": "class:signalwire.core.swaig_function.SWAIGFunction"
+            },
+            "string": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "class:signalwire.swaig.ParameterSchema"
             },
             "wait_file": {
               "params": [

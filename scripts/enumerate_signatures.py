@@ -1339,15 +1339,43 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         # ``Builder`` (the Java NAMED idiom for keyword params, L13) — is
         # implementation detail of the typed input, not a route/resource, so
         # the oracle has no counterpart. Drop these here exactly as the
-        # surface enumerator drops all nested classes in the package. Also
-        # drop the ``ResourceTree`` plumbing base entirely (the oracle has no
-        # ResourceTree; the RestClient's namespace accessors map to Python
-        # instance attributes and are covered by PORT_ADDITIONS). The resource
-        # classes (Mfa, Calling, …) and the namespace CONTAINERS
+        # surface enumerator drops all nested classes in the package. The
+        # resource classes (Mfa, Calling, …) and the namespace CONTAINERS
         # (RegistryNamespace, …) are kept.
         if pkg == _GENERATED_PKG:
-            if java_name == "ResourceTree" or java_name.endswith("Request") or java_name == "Builder":
+            if java_name.endswith("Request") or java_name == "Builder":
                 continue
+
+        # ``ResourceTree`` plumbing base → RETARGET onto RestClient.
+        #
+        # ``RestClient extends ResourceTree`` (rest/RestClient.java), so every
+        # client-tree accessor — ``calling()``, ``fabric()``, ``video()``, the
+        # other 19 — is DECLARED on ResourceTree and merely INHERITED by
+        # RestClient. SignatureDump walks ``getDeclaredMethods()``, so it sees
+        # those accessors only on ResourceTree; and RestClient's sole
+        # constructor is private, so it dumps no ``<init>`` either. Dropping
+        # ResourceTree therefore left ``RestClient`` with ZERO recorded members
+        # while the oracle records 22 accessors + ``__init__`` on
+        # ``signalwire.rest.client.RestClient`` — a pure ENUMERATOR blind spot,
+        # not a missing capability (ResourceTreeReachabilityMockTest proves all
+        # 22 reach the wire).
+        #
+        # The oracle has no ``ResourceTree`` class of its own: Python wires the
+        # same accessors as instance attributes on RestClient via
+        # ``_GeneratedResourceTree``. So route ResourceTree's members onto the
+        # reference's ``signalwire.rest.client.RestClient``, exactly as
+        # enumerate_surface.py already does for the surface axis. Members MERGE
+        # (RestClient's own declared methods are recorded from its own type
+        # entry) — see the merge at the out_modules write below.
+        if pkg == _GENERATED_PKG and java_name == "ResourceTree":
+            # Re-labelling pkg+name is enough: ``full_pkg``, ``canonical_name``
+            # and ``mod`` are all derived from them further down, so the entry
+            # resolves to signalwire.rest.client.RestClient by the normal path.
+            pkg = "com.signalwire.sdk.rest"
+            java_name = "RestClient"
+            retargeted_from_base = True
+        else:
+            retargeted_from_base = False
 
         # AI Chat options-builders: SignatureDump emits each nested Options.Builder
         # with the bare simple name ``Builder``; they all live in the aichat package
@@ -1604,6 +1632,29 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         cb = crud_bases.get(java_name)
         if cb and pkg == _GENERATED_PKG:
             cls_entry["crud_base"] = cb
+        # MERGE, don't clobber: one canonical class can be fed by more than one
+        # Java type entry. ``RestClient`` is the live case — its own declared
+        # methods come from com.signalwire.sdk.rest.RestClient while the 22
+        # inherited client-tree accessors arrive via the retargeted
+        # ``ResourceTree`` entry (see the retarget above). Whichever arrives
+        # second must ADD to the first, not replace it.
+        #
+        # Precedence is by ROLE, not arrival order (reflection's type order is
+        # not specified): on a name collision the SUBCLASS's own declaration
+        # wins, because an override is the real resolved signature — so the
+        # base-retargeted entry only fills names the subclass does not declare.
+        prior = out_modules[mod]["classes"].get(canonical_name)
+        if prior is not None:
+            if retargeted_from_base:
+                # This entry is the BASE: it may only fill gaps.
+                merged = dict(cls_entry["methods"])
+                merged.update(prior.get("methods", {}))
+                cls_entry = {**cls_entry, **prior, "methods": dict(sorted(merged.items()))}
+            else:
+                # This entry is the SUBCLASS: its declarations win.
+                merged = dict(prior.get("methods", {}))
+                merged.update(cls_entry["methods"])
+                cls_entry = {**prior, **cls_entry, "methods": dict(sorted(merged.items()))}
         out_modules[mod]["classes"][canonical_name] = cls_entry
 
     # Mixin projection — methods may live on AgentBase OR on SWMLService

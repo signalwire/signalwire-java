@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ c485c73e7ba5bbaaec4ec411d2bd52307c7714b0",
+  "generated_from": "signalwire-java @ 1c6c80ec04736ce92309a494b61ceea68675202a",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1109,6 +1109,7 @@
           "define_tools",
           "denoise",
           "detect_machine",
+          "domain",
           "enter_queue",
           "execute",
           "extract_sip_username",
@@ -1119,18 +1120,14 @@
           "get_basic_auth_credentials",
           "get_basic_auth_credentials_with_source",
           "get_document",
-          "get_domain",
           "get_function",
           "get_registered_swaig_functions",
           "get_registered_tools",
-          "get_ssl_cert_path",
-          "get_ssl_key_path",
           "goto_label",
           "handle_request",
           "hangup",
           "has_function",
           "host",
-          "is_ssl_enabled",
           "join_conference",
           "join_room",
           "label",
@@ -1168,6 +1165,9 @@
           "set",
           "sip_refer",
           "sleep",
+          "ssl_cert_path",
+          "ssl_enabled",
+          "ssl_key_path",
           "stop",
           "stop_denoise",
           "stop_record_call",
@@ -1690,8 +1690,8 @@
         "Action": [
           "__init__",
           "call",
+          "completed",
           "control_id",
-          "get_completed",
           "get_state",
           "is_done",
           "resolve",
@@ -2351,7 +2351,6 @@
           "__init__",
           "body",
           "get_path",
-          "get_request_id",
           "get_response_body",
           "headers",
           "is_client_error",
@@ -2359,6 +2358,7 @@
           "is_server_error",
           "is_unauthorized",
           "method",
+          "request_id",
           "status_code",
           "url"
         ],
@@ -4115,9 +4115,8 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_remove_xpaths",
           "register_tools",
-          "set_remove_xpaths",
+          "remove_xpaths",
           "setup",
           "supports_multiple_instances"
         ]
