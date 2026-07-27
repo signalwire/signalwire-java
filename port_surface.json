@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ d9527a22b8410bbf2f5b93bb9013f5c03a7286ee",
+  "generated_from": "signalwire-java @ c485c73e7ba5bbaaec4ec411d2bd52307c7714b0",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1119,14 +1119,18 @@
           "get_basic_auth_credentials",
           "get_basic_auth_credentials_with_source",
           "get_document",
+          "get_domain",
           "get_function",
           "get_registered_swaig_functions",
           "get_registered_tools",
+          "get_ssl_cert_path",
+          "get_ssl_key_path",
           "goto_label",
           "handle_request",
           "hangup",
           "has_function",
           "host",
+          "is_ssl_enabled",
           "join_conference",
           "join_room",
           "label",
@@ -1687,6 +1691,7 @@
           "__init__",
           "call",
           "control_id",
+          "get_completed",
           "get_state",
           "is_done",
           "resolve",
@@ -2401,7 +2406,6 @@
           "datasphere",
           "fabric",
           "get_http_client",
-          "get_project",
           "get_space",
           "imported_numbers",
           "logs",
@@ -4111,7 +4115,9 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
+          "get_remove_xpaths",
           "register_tools",
+          "set_remove_xpaths",
           "setup",
           "supports_multiple_instances"
         ]

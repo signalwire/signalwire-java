@@ -64,6 +64,19 @@ public class Action {
     return done;
   }
 
+  /**
+   * Whether the action has reached its terminal state — the reference's {@code completed} flag,
+   * which starts false and is set true exactly once by the terminal-state resolve (call.py:90, then
+   * :102 inside {@code _complete}). The reference exposes BOTH this attribute and an {@code
+   * is_done()} method over the same state, so this port does too; {@link #isDone()} is the method
+   * form and reads the identical field.
+   *
+   * @return true once the action has completed.
+   */
+  public boolean getCompleted() {
+    return done;
+  }
+
   public void setOnCompleted(Consumer<Action> onCompleted) {
     // If the action has ALREADY resolved (the terminal event landed on the RELAY
     // reader thread before this registration — a genuine race for a caller that

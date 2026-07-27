@@ -21,6 +21,56 @@ public class SpiderSkill implements SkillBase {
   // Python parity: get_instance_key defaults tool_name to SKILL_NAME (spider/skill.py).
   private String toolName = "spider";
 
+  /**
+   * XPath expressions for elements dropped before text extraction — the reference's PREFILLED
+   * {@code self.remove_xpaths} default (spider/skill.py:191-199), same expressions in the same
+   * order. The reference drops each matching element via lxml; this port has no XPath engine on the
+   * scrape path, so {@link #removeXpathTagPattern()} compiles the tag names out of these
+   * expressions into the element-stripping regex — one source for what gets removed.
+   */
+  private List<String> removeXpaths =
+      new ArrayList<>(
+          List.of("//script", "//style", "//nav", "//header", "//footer", "//aside", "//noscript"));
+
+  /**
+   * The XPath expressions for elements removed before text extraction.
+   *
+   * @return the removal expressions, prefilled with the reference's defaults.
+   */
+  public List<String> getRemoveXpaths() {
+    return removeXpaths;
+  }
+
+  /**
+   * Replaces the element-removal expressions.
+   *
+   * @param removeXpaths the XPath expressions to strip before extraction.
+   */
+  public void setRemoveXpaths(List<String> removeXpaths) {
+    this.removeXpaths = removeXpaths == null ? new ArrayList<>() : new ArrayList<>(removeXpaths);
+  }
+
+  /**
+   * Builds an alternation of the bare tag names named by {@link #removeXpaths} (a leading {@code
+   * //} stripped), so a simple {@code //tag} expression drives the regex strip below. An expression
+   * that is not a plain tag step is skipped — it cannot be honored without an XPath engine.
+   *
+   * @return the tag alternation, or null when no expression yields a usable tag.
+   */
+  private String removeXpathTagPattern() {
+    List<String> tags = new ArrayList<>();
+    for (String xpath : removeXpaths) {
+      if (xpath == null) {
+        continue;
+      }
+      String tag = xpath.startsWith("//") ? xpath.substring(2) : xpath;
+      if (tag.matches("[A-Za-z][A-Za-z0-9]*")) {
+        tags.add(tag);
+      }
+    }
+    return tags.isEmpty() ? null : String.join("|", tags);
+  }
+
   @Override
   public String getName() {
     return "spider";
@@ -43,6 +93,13 @@ public class SpiderSkill implements SkillBase {
       this.maxTextLength = ((Number) params.get("max_text_length")).intValue();
     if (params.containsKey("user_agent")) this.userAgent = (String) params.get("user_agent");
     if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
+    if (params.get("remove_xpaths") instanceof List<?> xpaths) {
+      List<String> parsed = new ArrayList<>();
+      for (Object x : xpaths) {
+        if (x != null) parsed.add(String.valueOf(x));
+      }
+      this.removeXpaths = parsed;
+    }
     return true;
   }
 
@@ -100,13 +157,16 @@ public class SpiderSkill implements SkillBase {
                 HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
                 String body = response.body();
-                // Basic HTML stripping
-                String text =
-                    body.replaceAll("<script[^>]*>[\\s\\S]*?</script>", "")
-                        .replaceAll("<style[^>]*>[\\s\\S]*?</style>", "")
-                        .replaceAll("<[^>]+>", " ")
-                        .replaceAll("\\s+", " ")
-                        .trim();
+                // Drop the removeXpaths elements (content included), then strip the
+                // remaining tags — the reference drops the same elements via lxml
+                // before calling text_content() (spider/skill.py:313-319).
+                String tagPattern = removeXpathTagPattern();
+                if (tagPattern != null) {
+                  body = body.replaceAll("(?is)<(" + tagPattern + ")\\b[^>]*>.*?</\\1\\s*>", "");
+                  // Void/unclosed occurrences of the same elements.
+                  body = body.replaceAll("(?is)<(" + tagPattern + ")\\b[^>]*/?>", "");
+                }
+                String text = body.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
                 if (text.length() > maxTextLength) {
                   text = text.substring(0, maxTextLength) + "...";
                 }

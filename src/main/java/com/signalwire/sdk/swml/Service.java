@@ -559,6 +559,55 @@ public class Service implements AutoCloseable {
     return security;
   }
 
+  // -------- TLS/serving values mirrored off the SecurityConfig --------
+  // The reference reads these four values off `self.security` in __init__ and
+  // holds them directly on the service (swml_service.py:143-146), so a caller
+  // reaches them as `service.ssl_enabled` / `.domain` / `.ssl_cert_path` /
+  // `.ssl_key_path`. Java exposes the same values as accessors delegating to the
+  // one SecurityConfig — reading through rather than copying at construction, so
+  // a later `loadFromEnv()` or config reload stays reflected (the reference's
+  // own `start()` re-reads them the same way at swml_service.py:1240).
+
+  /**
+   * Whether TLS is enabled for this service. Mirrors the reference's {@code
+   * SWMLService.ssl_enabled} (swml_service.py:143).
+   *
+   * @return true when TLS is on.
+   */
+  public boolean isSslEnabled() {
+    return getSecurity().isSslEnabled();
+  }
+
+  /**
+   * The serving domain used for the TLS certificate. Mirrors the reference's {@code
+   * SWMLService.domain} (swml_service.py:144).
+   *
+   * @return the configured domain, or null when unset.
+   */
+  public String getDomain() {
+    return getSecurity().getDomain();
+  }
+
+  /**
+   * Filesystem path to the TLS certificate. Mirrors the reference's {@code
+   * SWMLService.ssl_cert_path} (swml_service.py:145).
+   *
+   * @return the certificate path, or null when unset.
+   */
+  public String getSslCertPath() {
+    return getSecurity().getSslCertPath();
+  }
+
+  /**
+   * Filesystem path to the TLS private key. Mirrors the reference's {@code
+   * SWMLService.ssl_key_path} (swml_service.py:146).
+   *
+   * @return the key path, or null when unset.
+   */
+  public String getSslKeyPath() {
+    return getSecurity().getSslKeyPath();
+  }
+
   // -------- SWMLService reference-API delegators --------
   // The Python reference SWMLService exposes document-manipulation and routing
   // helpers directly on the service; Java folds the document model into a
