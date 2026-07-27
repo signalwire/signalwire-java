@@ -4881,16 +4881,6 @@
               "params": [],
               "returns": "class:signalwire.logging.Logger"
             },
-            "get_logger": {
-              "params": [
-                {
-                  "name": "clazz",
-                  "type": "any",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.logging.Logger"
-            },
             "info": {
               "params": [
                 {
@@ -4954,6 +4944,16 @@
         "get_execution_mode": {
           "params": [],
           "returns": "string"
+        },
+        "get_logger": {
+          "params": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "returns": "any"
         },
         "reset_logging_configuration": {
           "params": [],
