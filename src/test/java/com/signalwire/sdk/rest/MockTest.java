@@ -46,6 +46,13 @@ public final class MockTest {
   private static volatile Harness sharedHarness;
   private static volatile Throwable startupFailure;
 
+  /**
+   * Body of the most recent {@code /__mock__/health} response that returned HTTP 200, so a startup
+   * failure can quote what the server actually said (e.g. {@code specs_loaded:0}) instead of a bare
+   * timeout.
+   */
+  private static volatile String lastHealthBody;
+
   private MockTest() {
     // static helper
   }
@@ -489,15 +496,7 @@ public final class MockTest {
           }
         }
         p.destroy();
-        startupFailure =
-            new IllegalStateException(
-                "MockTest: `python -m mock_signalwire` did not become ready within "
-                    + STARTUP_TIMEOUT
-                    + " on port "
-                    + port
-                    + " (clone porting-sdk next to signalwire-java so tests can find "
-                    + "porting-sdk/test_harness/mock_signalwire/, or pip install the "
-                    + "mock_signalwire package)");
+        startupFailure = new IllegalStateException(notReadyMessage(port));
         throw (IllegalStateException) startupFailure;
       } catch (IOException e) {
         startupFailure =
@@ -558,10 +557,15 @@ public final class MockTest {
     // PYTHONPATH so `python -m mock_signalwire` resolves without a
     // prior `pip install -e ...`. Adjacency contract: porting-sdk
     // next to signalwire-java in ~/src/. When the walk fails (e.g.
-    // porting-sdk is not adjacent), we still spawn — the child falls
-    // back to whatever is on the system Python's sys.path, and the
-    // readiness probe surfaces a clear timeout error if neither mode
-    // is available.
+    // porting-sdk is not adjacent, as in a git worktree checked out
+    // outside ~/src/), we still spawn — a `pip install -e` setup is a
+    // legitimate second mode. But the fallback is exactly how a FOREIGN
+    // mock_signalwire gets used: a stale copy in an unrelated venv
+    // resolves, loads 0 specs because its `rest-apis/` tree is missing,
+    // reports status:"ok", and 404s every route. That is why the
+    // readiness contract is `specs_loaded > 0 && total_routes > 0`
+    // (see healthIsUsable) rather than "the health key exists" — an
+    // empty mock must be refused here, not diagnosed 547 failures later.
     String pkgDir = discoverPortingSdkPackage("mock_signalwire");
     if (pkgDir != null) {
       Map<String, String> env = pb.environment();
@@ -599,13 +603,93 @@ public final class MockTest {
       }
       byte[] body = resp.body().readAllBytes();
       String text = new String(body, StandardCharsets.UTF_8);
-      // The health endpoint always emits a JSON object containing
-      // "specs_loaded"; treat any other shape as a probe failure.
-      return text.contains("\"specs_loaded\"");
+      // A mock that answers is NOT necessarily a mock that can serve this
+      // suite. mock_signalwire reports status:"ok" even when it loaded ZERO
+      // OpenAPI specs (e.g. a stale copy installed in some unrelated venv,
+      // whose `rest-apis/` tree is absent) — every route then 404s with
+      // "no route for ...", which is indistinguishable from a real routing
+      // bug and, historically, from a port collision. So the readiness
+      // contract is `specs_loaded > 0 AND total_routes > 0`, not merely
+      // "the key is present". A server failing that is not ours; refuse it.
+      lastHealthBody = text;
+      return healthIsUsable(text);
     } catch (IOException e) {
       return false;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+      return false;
+    }
+  }
+
+  /**
+   * Build the "mock never became ready" diagnostic.
+   *
+   * <p>When the mock answered but was unusable, the raw health body is quoted verbatim — {@code
+   * specs_loaded:0} names the cause outright (a mock_signalwire resolved from somewhere without the
+   * {@code rest-apis/} spec tree) instead of leaving a bare timeout to be mistaken for a slow
+   * machine or a port collision. The resolved PYTHONPATH dir is included so it is visible whether
+   * adjacency discovery found porting-sdk at all.
+   *
+   * @param port the port the mock was expected on
+   * @return the message for the thrown {@link IllegalStateException}
+   */
+  private static String notReadyMessage(int port) {
+    String pkgDir = discoverPortingSdkPackage("mock_signalwire");
+    StringBuilder sb = new StringBuilder();
+    sb.append("MockTest: `python -m mock_signalwire` did not become ready within ")
+        .append(STARTUP_TIMEOUT)
+        .append(" on port ")
+        .append(port)
+        .append(". adjacency discovery: ")
+        .append(
+            pkgDir == null ? "NO adjacent porting-sdk found (PYTHONPATH not injected)" : pkgDir);
+    String body = lastHealthBody;
+    if (body != null) {
+      sb.append(". The server DID answer /__mock__/health but is unusable")
+          .append(" (readiness requires specs_loaded>0 and total_routes>0); it said: ")
+          .append(body.length() > 800 ? body.substring(0, 800) + "..." : body);
+      sb.append(". A mock reporting specs_loaded:0 is a DIFFERENT mock_signalwire than this repo's")
+          .append(" — typically a stale copy installed in an unrelated venv, whose rest-apis/ spec")
+          .append(" tree is absent. Every route 404s.");
+    }
+    sb.append(" Fix: clone porting-sdk next to signalwire-java so tests can find")
+        .append(" porting-sdk/test_harness/mock_signalwire/, or pip install THIS repo's")
+        .append(" mock_signalwire package.");
+    return sb.toString();
+  }
+
+  /**
+   * Decide whether a {@code /__mock__/health} payload describes a mock this suite can actually run
+   * against.
+   *
+   * <p>Usable means BOTH counters are strictly positive: {@code specs_loaded} (the OpenAPI specs
+   * the mock parsed) and {@code total_routes} (the routes it registered from them). A mock that
+   * loaded no specs still answers {@code {"status":"ok","specs_loaded":0,...,"total_routes":0}}
+   * with HTTP 200 — and then 404s every request. Treating that as ready turns a broken environment
+   * into hundreds of bogus assertion failures pointing at the SDK. Package-private so {@link
+   * MockHealthContractTest} can pin the contract without standing a server up.
+   *
+   * @param healthJson the raw body of {@code GET /__mock__/health}
+   * @return true only when the payload declares at least one loaded spec and one registered route
+   */
+  static boolean healthIsUsable(String healthJson) {
+    if (healthJson == null) {
+      return false;
+    }
+    return positiveIntField(healthJson, "specs_loaded")
+        && positiveIntField(healthJson, "total_routes");
+  }
+
+  /** True when {@code "<field>": <n>} is present in {@code json} with {@code n > 0}. */
+  private static boolean positiveIntField(String json, String field) {
+    java.util.regex.Matcher m =
+        java.util.regex.Pattern.compile("\"" + field + "\"\\s*:\\s*(-?\\d+)").matcher(json);
+    if (!m.find()) {
+      return false;
+    }
+    try {
+      return Long.parseLong(m.group(1)) > 0;
+    } catch (NumberFormatException e) {
       return false;
     }
   }
