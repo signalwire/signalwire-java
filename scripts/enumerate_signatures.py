@@ -634,6 +634,15 @@ FREE_FUNCTION_PROJECTIONS = {
         ("signalwire.core.logging_config", "get_execution_mode"),
     # logging_config module-level free functions grouped on Logger's static
     # helpers (mirrors _FREE_FUNCTION_SURFACE_PROJECTIONS in enumerate_surface.py).
+    # ``getLogger`` is overloaded (String name / Class<?> clazz); the generic
+    # overload-collapse tie-break (equal arity) would pick the Class<?> one and
+    # emit ``get_logger(clazz: any)``, so its canonical shape is pinned via
+    # FREE_FUNCTION_SIGNATURE_OVERRIDES below to the reference's
+    # ``get_logger(name: string) -> any`` (the String overload). Keeping this
+    # line here restores lockstep with enumerate_surface.py, which has always
+    # projected ("Logger", "getLogger").
+    ("com.signalwire.sdk.logging.Logger", "getLogger"):
+        ("signalwire.core.logging_config", "get_logger"),
     ("com.signalwire.sdk.logging.Logger", "configureLogging"):
         ("signalwire.core.logging_config", "configure_logging"),
     ("com.signalwire.sdk.logging.Logger", "resetLoggingConfiguration"):
@@ -727,6 +736,20 @@ FREE_FUNCTION_PROJECTIONS = {
 # param is keyword-only in the Python reference (``*, signing_key``); recording
 # it as ``kind: keyword`` keeps the drift compare exact.
 FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    # get_logger(name) -> logger. Java's Logger.getLogger is overloaded
+    # (String name / Class<?> clazz) and both overloads have arity 1, so the
+    # generic fewer-param collapse cannot separate them and the Class<?> one
+    # wins the tie — emitting ``get_logger(clazz: any)``. Pin the String
+    # overload, which is the reference's shape. The Class<?> overload stays a
+    # Java-idiom convenience the overload-collapse drops (same model as every
+    # other Java overload); the returned Logger is the port's logger handle,
+    # recorded as the oracle's ``any``.
+    ("com.signalwire.sdk.logging.Logger", "getLogger"): {
+        "params": [
+            {"name": "name", "type": "string", "required": True},
+        ],
+        "returns": "any",
+    },
     ("com.signalwire.sdk.security.WebhookValidator", "validate"): {
         "params": [
             {"name": "method", "type": "string", "required": True},

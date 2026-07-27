@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 2b848d283a2d33e7b177be4e430b6af8c9c87a78",
+  "generated_from": "signalwire-java @ 4dd76a798edaad244264869da21026ab58ae680d",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -1282,6 +1282,8 @@
         "AIPostPromptText": [],
         "AIPromptPom": [],
         "AIPromptText": [],
+        "AiSidecar": [],
+        "AiSidecarConfig": [],
         "AllOfProperty": [],
         "AmazonBedrock": [],
         "AmazonBedrockObject": [],
@@ -1381,6 +1383,7 @@
         "Request": [],
         "RequestConfig": [],
         "Return": [],
+        "RingbackConfig": [],
         "SIPRefer": [],
         "SMSWithBody": [],
         "SMSWithMedia": [],
