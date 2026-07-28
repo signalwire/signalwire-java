@@ -327,9 +327,36 @@ public class Call {
     return waitFor(Constants.CALL_STATE_ANSWERED);
   }
 
+  /**
+   * Block until the call is answered, or until {@code timeout} SECONDS elapse.
+   *
+   * <p>Matches the reference's {@code wait_for_answered(timeout: float | None = None)}: the unit is
+   * SECONDS and {@code null} means "wait indefinitely". {@code Double} (boxed) is the port's
+   * established spelling for the reference's optional {@code float} — see {@code
+   * RequestOptions.timeout}. The underlying {@link #waitFor(String, long)} takes milliseconds, so
+   * this converts.
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForAnswered(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ANSWERED, timeoutToMillis(timeout));
+  }
+
   /** Block until the call is ringing (immediate if already ringing or past it). */
   public RelayEvent waitForRinging() {
     return waitFor(Constants.CALL_STATE_RINGING);
+  }
+
+  /**
+   * Block until the call is ringing, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForRinging(Double timeout) {
+    return waitFor(Constants.CALL_STATE_RINGING, timeoutToMillis(timeout));
   }
 
   /** Block until the call is ending (immediate if already ending or past it). */
@@ -337,9 +364,43 @@ public class Call {
     return waitFor(Constants.CALL_STATE_ENDING);
   }
 
+  /**
+   * Block until the call is ending, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForEnding(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ENDING, timeoutToMillis(timeout));
+  }
+
   /** Block until the call has ended. */
   public RelayEvent waitForEnded() {
     return waitFor(Constants.CALL_STATE_ENDED);
+  }
+
+  /**
+   * Block until the call has ended, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForEnded(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ENDED, timeoutToMillis(timeout));
+  }
+
+  /**
+   * Convert the reference's optional {@code timeout} in SECONDS to the millisecond deadline {@link
+   * #waitFor(String, long)} takes. {@code null} (the reference default) and any non-positive value
+   * mean "wait indefinitely", which that method spells as {@code 0}.
+   */
+  private static long timeoutToMillis(Double timeout) {
+    if (timeout == null || timeout <= 0.0) {
+      return 0L;
+    }
+    return (long) (timeout * 1000.0);
   }
 
   // ── Event dispatch ───────────────────────────────────────────────

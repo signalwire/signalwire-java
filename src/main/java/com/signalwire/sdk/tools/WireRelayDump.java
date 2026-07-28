@@ -268,8 +268,19 @@ final class WireRelayDump {
     runner.start();
 
     // Wait for the handshake, then push the inbound call.
+    //
+    // Both barriers are required, in this order. `waitConn` only observes the mock's `onOpen`,
+    // i.e. the TCP/WS socket being ACCEPTED — at that instant the client has not necessarily sent
+    // `signalwire.connect`, let alone processed its reply. `RelayClient.execute` routes a request
+    // to `executeQueue` (instead of the socket) whenever `connected` is false, and that queue is
+    // drained only by a RECONNECT, which never happens here — so a `calling.play` issued in that
+    // window is buffered forever and fails 30s later with "Request timeout for calling.play".
+    // Waiting on `isConnected()` closes the window.
     if (!waitConn(mock)) {
       throw new IllegalStateException("client did not connect");
+    }
+    if (!waitReady(client)) {
+      throw new IllegalStateException("client did not complete the signalwire.connect handshake");
     }
     mock.pushInboundCall();
 
@@ -443,6 +454,23 @@ final class WireRelayDump {
     long deadline = System.currentTimeMillis() + 3_000;
     while (System.currentTimeMillis() < deadline) {
       if (mock.conn != null) {
+        return true;
+      }
+      sleep(10);
+    }
+    return false;
+  }
+
+  /**
+   * Wait until the client has PROCESSED the {@code signalwire.connect} reply, not merely opened the
+   * socket. Until {@code isConnected()} is true, {@link
+   * com.signalwire.sdk.relay.RelayClient#execute} buffers requests on its disconnected-queue, which
+   * only a reconnect drains — so anything sent early hangs until the 30s execute timeout.
+   */
+  private static boolean waitReady(RelayClient client) {
+    long deadline = System.currentTimeMillis() + 3_000;
+    while (System.currentTimeMillis() < deadline) {
+      if (client.isConnected()) {
         return true;
       }
       sleep(10);

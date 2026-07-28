@@ -537,6 +537,23 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("Call", "live_translate"),                 # +status_url=None (options bag)
     ("Call", "refer"),                          # +status_url=None (options bag)
     ("Call", "user_event"),                     # +event=None
+    # The typed call-state waits expose the reference's optional ``timeout``
+    # (``wait_for_answered(timeout: float | None = None)``) via a trailing-param
+    # overload alongside the no-arg convenience form. The underlying
+    # ``waitFor(targetState, timeout)`` already carried the timeout; only the
+    # four typed wrappers hid it. Their PORT_SIGNATURE_OMISSIONS entries claimed
+    # "no relay Call state-wait primitive in the Java port" — false: waitFor /
+    # waitForAnswered / waitForRinging / waitForEnding / waitForEnded all exist.
+    ("Call", "wait_for_answered"),              # +timeout=None
+    ("Call", "wait_for_ringing"),               # +timeout=None
+    ("Call", "wait_for_ending"),                # +timeout=None
+    ("Call", "wait_for_ended"),                 # +timeout=None
+    # Action/Message `await(Double timeout)` — canonical name `wait` via the
+    # `await_` → `wait` rename (java.lang.Object.wait is final, so `await` is the
+    # reserved-name escape). The no-arg `await()` convenience would otherwise win
+    # the collapse and hide the reference's optional `timeout`.
+    ("Action", "wait"),                         # +timeout=None
+    ("Message", "wait"),                        # +timeout=None
     # HttpClient verbs + constructor expose the optional request_options envelope
     # (plan 4.2) via a trailing-param overload alongside the convenience overloads.
     # The full overload is the parity surface (matches the oracle's request_options
@@ -1554,6 +1571,23 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 if native.startswith("$"):
                     continue
                 snake = camel_to_snake(native)
+                # Python-keyword escape, lockstep with the surface enumerator
+                # (enumerate_surface.py `if snake in _PY_KEYWORDS: snake += "_"`).
+                # Python renames a keyword-colliding method by appending "_"
+                # (`Call.pass_`), so the Java spelling `pass()` canonicalizes to
+                # `pass_` — a RENAME, per RULES.md §2, and it is the documented
+                # pre-rename form `_METHOD_RENAMES` keys on (`await_` → `wait`).
+                # Dropping it here instead made three reference members look
+                # unimplemented and cost three omission entries that hid
+                # fully-working methods.
+                #
+                # ENUMS ARE EXCLUDED: an enum CONSTANT is not a method, so a
+                # constant named `LAMBDA` must not become `lambda_` — the
+                # reference has no such member either way, and escaping it only
+                # renames pre-existing drift (`ExecutionMode.lambda` is a
+                # sibling of the already-drifting `cgi`/`server`/`detect`).
+                if snake in _PY_KEYWORDS and type_entry.get("kind") != "enum":
+                    snake += "_"
                 # Class-scoped getter→field fold for the relay Event / AI-Chat DTO
                 # @dataclass surface (keyed by the raw Java simple class name), lockstep
                 # with the surface enumerator. Precedence over the global _METHOD_RENAMES.
@@ -1562,8 +1596,6 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                     method_canonical = scoped[snake]
                 else:
                     method_canonical = _METHOD_RENAMES.get(snake, snake)
-                if method_canonical in _PY_KEYWORDS:
-                    continue
             # Idiom-scaffolding method with no reference counterpart (e.g. a
             # builder-factory on a builder-pattern value object). Drop it.
             if (canonical_name, method_canonical) in _METHOD_DROP:

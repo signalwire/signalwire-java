@@ -1433,6 +1433,10 @@
               "params": [],
               "returns": "class:signalwire.cli.simulation.ServerlessSimulator"
             },
+            "lambda": {
+              "params": [],
+              "returns": "class:signalwire.cli.simulation.ServerlessSimulator"
+            },
             "value_of": {
               "params": [
                 {
@@ -19641,6 +19645,20 @@
               ],
               "returns": "void"
             },
+            "wait": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
+            },
             "wait_for_completion": {
               "params": [
                 {
@@ -20165,6 +20183,15 @@
               ],
               "returns": "void"
             },
+            "pass_": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "dict<string,any>"
+            },
             "pay": {
               "params": [
                 {
@@ -20636,6 +20663,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.relay.event.RelayEvent"
@@ -20645,6 +20677,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.relay.event.RelayEvent"
@@ -20654,6 +20691,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.relay.event.RelayEvent"
@@ -20663,6 +20705,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.relay.event.RelayEvent"
@@ -23979,6 +24026,20 @@
                 }
               ],
               "returns": "void"
+            },
+            "wait": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "timeout",
+                  "type": "float",
+                  "required": false
+                }
+              ],
+              "returns": "class:signalwire.relay.event.RelayEvent"
             },
             "wait_for_completion": {
               "params": [
@@ -75782,6 +75843,10 @@
               "returns": "class:signalwire.runtime.ExecutionMode"
             },
             "google_cloud_function": {
+              "params": [],
+              "returns": "class:signalwire.runtime.ExecutionMode"
+            },
+            "lambda": {
               "params": [],
               "returns": "class:signalwire.runtime.ExecutionMode"
             },

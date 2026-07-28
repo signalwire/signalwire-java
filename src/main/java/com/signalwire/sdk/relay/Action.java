@@ -144,11 +144,18 @@ public class Action {
    * Wait for the action to complete with a timeout. Java-idiom name for the reference's {@code
    * Action.wait(timeout)} (see {@link #await()} for why the name differs).
    *
-   * @param timeoutMs timeout in milliseconds
+   * <p>The unit is SECONDS and the type is boxed {@code Double}, matching the reference's {@code
+   * timeout: float | None = None} and the port's {@code RequestOptions.timeout} spelling; {@code
+   * null} means "wait indefinitely". {@link #waitForCompletion(long)} takes milliseconds.
+   *
+   * @param timeout timeout in seconds ({@code null} = no timeout)
    * @return the terminal event, or null on timeout
    */
-  public RelayEvent await(long timeoutMs) {
-    return waitForCompletion(timeoutMs);
+  public RelayEvent await(Double timeout) {
+    if (timeout == null || timeout <= 0.0) {
+      return waitForCompletion();
+    }
+    return waitForCompletion((long) (timeout * 1000.0));
   }
 
   /** Stop the action. */
