@@ -40,8 +40,16 @@ public class AuthHandler {
   /** Basic-auth credential carrier: a decoded username/password pair. */
   public record BasicCredentials(String username, String password) {}
 
-  /** Bearer-token credential carrier: the raw token string. */
-  public record BearerCredentials(String credentials) {}
+  /**
+   * Bearer-token credential carrier: the authorization scheme as sent on the wire plus the raw
+   * credential following it.
+   *
+   * <p>Both fields are contract. The reference re-exports FastAPI's {@code
+   * HTTPAuthorizationCredentials} under this name and records {@code scheme} and {@code
+   * credentials}; carrying only the token dropped half of it, so a caller could not tell {@code
+   * Bearer} from any other scheme the client had accepted.
+   */
+  public record BearerCredentials(String scheme, String credentials) {}
 
   /** Result of the {@link #getFastapiDependency(boolean)} callable. */
   public record AuthResult(boolean authenticated, String method) {}
@@ -241,10 +249,18 @@ public class AuthHandler {
       return false;
     }
     String header = str(header(headers, "Authorization"));
-    if (!header.startsWith("Bearer ")) {
+    // RFC 7235: the scheme token is case-INSENSITIVE. FastAPI's HTTPBearer, which the
+    // reference delegates to, lowercases the scheme before comparing; a case-sensitive
+    // startsWith("Bearer ") rejected a conforming `bearer <tok>` / `BEARER <tok>`.
+    int sp = header.indexOf(' ');
+    if (sp < 0) {
       return false;
     }
-    return verifyBearerToken(new BearerCredentials(header.substring(7)));
+    String scheme = header.substring(0, sp);
+    if (!"Bearer".equalsIgnoreCase(scheme)) {
+      return false;
+    }
+    return verifyBearerToken(new BearerCredentials(scheme, header.substring(sp + 1)));
   }
 
   private boolean apiKeyOk(Map<String, String> headers) {

@@ -94,14 +94,41 @@ class AuthHandlerTest {
   @Test
   void verifyBearerToken() {
     AuthHandler h = handler("signalwire", "pw", "tok123", null, null);
-    assertTrue(h.verifyBearerToken(new BearerCredentials("tok123")));
-    assertFalse(h.verifyBearerToken(new BearerCredentials("wrong")));
+    assertTrue(h.verifyBearerToken(new BearerCredentials("Bearer", "tok123")));
+    assertFalse(h.verifyBearerToken(new BearerCredentials("Bearer", "wrong")));
   }
 
   @Test
   void verifyBearerDisabledWithoutToken() {
     AuthHandler h = handler("signalwire", "pw", null, null, null);
-    assertFalse(h.verifyBearerToken(new BearerCredentials("anything")));
+    assertFalse(h.verifyBearerToken(new BearerCredentials("Bearer", "anything")));
+  }
+
+  /**
+   * RFC 7235 makes the auth-scheme token case-INSENSITIVE, and FastAPI's HTTPBearer — which the
+   * reference delegates to — lowercases before comparing. A conforming client sending `bearer` or
+   * `BEARER` must authenticate exactly as `Bearer` does.
+   */
+  @Test
+  void bearerSchemeIsCaseInsensitiveOnTheWire() {
+    AuthHandler h = handler("signalwire", "pw", "tok123", null, null);
+    var auth = h.getFastapiDependency(true);
+    for (String scheme : new String[] {"Bearer", "bearer", "BEARER", "BeArEr"}) {
+      assertTrue(
+          auth.apply(Map.of("Authorization", scheme + " tok123")).authenticated(),
+          "scheme '" + scheme + "' must be accepted (RFC 7235: case-insensitive)");
+    }
+    // Still rejects a wrong token and a scheme that is genuinely something else.
+    assertFalse(auth.apply(Map.of("Authorization", "Bearer wrong")).authenticated());
+    assertFalse(auth.apply(Map.of("Authorization", "Bearerx tok123")).authenticated());
+  }
+
+  /** The carrier keeps BOTH contract fields: the scheme as sent, and the raw credential. */
+  @Test
+  void bearerCredentialsCarriesSchemeAndCredentials() {
+    BearerCredentials c = new BearerCredentials("Bearer", "tok123");
+    assertEquals("Bearer", c.scheme());
+    assertEquals("tok123", c.credentials());
   }
 
   @Test
