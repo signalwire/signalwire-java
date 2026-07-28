@@ -76155,6 +76155,15 @@
       "classes": {
         "ApiNinjasTriviaSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_description": {
               "params": [
                 {
@@ -77216,6 +77225,15 @@
       "classes": {
         "PlayBackgroundFileSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_description": {
               "params": [
                 {
@@ -77844,6 +77862,15 @@
       "classes": {
         "WeatherApiSkill": {
           "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "void"
+            },
             "get_description": {
               "params": [
                 {
