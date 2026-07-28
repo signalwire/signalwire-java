@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ 37d3929c205360d861dcd1cb2a800200a3bf8abb",
+  "generated_from": "signalwire-java @ c67ea3efe456437a5a1585dd04b21efae38a1918",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -331,15 +331,18 @@
         "AuthenticationError": [],
         "ChatInProgressError": [],
         "ChatLog": [
+          "__init__",
           "call_timeline",
           "messages"
         ],
         "ChatResponse": [
+          "__init__",
           "conversation_id",
           "text",
           "user_event"
         ],
         "ConversationInfo": [
+          "__init__",
           "id",
           "initial_message",
           "status"
@@ -489,8 +492,16 @@
           "verify_basic_auth",
           "verify_bearer_token"
         ],
-        "BasicCredentials": [],
-        "BearerCredentials": []
+        "BasicCredentials": [
+          "__init__",
+          "password",
+          "username"
+        ],
+        "BearerCredentials": [
+          "__init__",
+          "credentials",
+          "scheme"
+        ]
       },
       "functions": []
     },
@@ -2408,6 +2419,7 @@
     "signalwire.rest._request_options": {
       "classes": {
         "RequestOptions": [
+          "__init__",
           "abort_signal",
           "builder",
           "merge",

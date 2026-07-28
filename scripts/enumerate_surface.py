@@ -1121,13 +1121,65 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
 # are INJECTED into the surface (see the injection at the override apply site below) —
 # target ZERO ai_chat omissions, exactly as .NET folds IDisposable/``using`` (its
 # SURFACE_METHOD_INJECTIONS injects the same names).
+# Java RECORDS whose components are reference-recorded surface. A record declares
+# its state in the HEADER — `record BasicCredentials(String username, String password)`
+# — and javac generates the canonical constructor plus one public accessor per
+# component. This enumerator reads the class BODY (empty for these), so it saw nothing
+# and the members read as missing-port once porting-sdk 8828dd2 made `__init__`
+# mandatory. The reference counterparts are @dataclasses whose `__init__` is likewise
+# decorator-generated, so both sides synthesize construction the same way.
+# {simple_class_name: [reference member names]} — every non-`__init__` name is checked
+# against the PARSED record header before emission, so a stale entry emits nothing
+# rather than inventing surface.
+_RECORD_SURFACE_MEMBERS: dict[str, list[str]] = {
+    "BasicCredentials": ["__init__", "username", "password"],
+    "BearerCredentials": ["__init__", "scheme", "credentials"],
+}
+
+# Java classes whose only constructor is PRIVATE but which are still constructible
+# through a public factory — the capability is real, the ctor is simply not the entry
+# point. RequestOptions has `private RequestOptions(Builder)` plus a public
+# `builder()`; the reference records a plain `__init__`, so emit it. Same doctrine the
+# .NET port applies to its private-ctor singletons (SkillRegistry / SchemaUtils).
+# Gated on the factory actually being present, so a class that loses its builder stops
+# emitting `__init__` instead of silently claiming construction it no longer offers.
+_PRIVATE_CTOR_PUBLIC_FACTORY: dict[str, str] = {
+    "RequestOptions": "builder",
+}
+
+# A named record's parenthesised component list: `record X(A a, B b)`.
+_RECORD_HEADER_RE = re.compile(
+    r"\brecord\s+(?P<name>[A-Za-z_$][\w$]*)\s*\((?P<components>[^)]*)\)"
+)
+_RECORD_COMPONENT_RE = re.compile(
+    r"[\w.$<>\[\], ]*?\s+(?P<name>[A-Za-z_$][\w$]*)\s*$"
+)
+
+
+def _record_components(source: str, cls: str) -> set[str]:
+    """Component names of `record <cls>(...)`, snake_cased; empty if not a record."""
+    for m in _RECORD_HEADER_RE.finditer(source):
+        if m.group("name") != cls:
+            continue
+        out: set[str] = set()
+        for part in m.group("components").split(","):
+            part = part.strip()
+            if not part:
+                continue
+            cm = _RECORD_COMPONENT_RE.match(part)
+            if cm:
+                out.add(camel_to_snake(cm.group("name")))
+        return out
+    return set()
+
+
 _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     # Response @dataclasses — the oracle now records their @dataclass FIELDS as members;
     # Java's getters fold onto those field names via _EVENT_METHOD_RENAMES_BY_CLASS, so
     # keep exactly the reference field set here.
-    "ConversationInfo": ["id", "initial_message", "status"],
-    "ChatResponse": ["conversation_id", "text", "user_event"],
-    "ChatLog": ["call_timeline", "messages"],
+    "ConversationInfo": ["__init__", "id", "initial_message", "status"],
+    "ChatResponse": ["__init__", "conversation_id", "text", "user_event"],
+    "ChatLog": ["__init__", "call_timeline", "messages"],
     # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it)
     # PLUS the two class-B2 attributes the oracle now records (``code``/``message``
     # are public __init__ attributes that are also ctor params). Java's getCode() /
@@ -1776,6 +1828,29 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
             for injected in ("__aenter__", "__aexit__"):
                 if injected in keep and "close" in methods:
                     methods.append(injected)
+        # RECORD components + canonical ctor. A Java `record X(A a, B b)` declares its
+        # state in the HEADER and javac generates the canonical constructor plus one
+        # public accessor per component — none of which this text-based enumerator can
+        # see, because it reads the class BODY (empty for these records). The reference
+        # counterparts are Python @dataclasses, so porting-sdk 8828dd2's mandatory
+        # `__init__` plus the recorded fields both went missing at once.
+        #
+        # EMISSION of a real capability, not an omission (RULES.md §2): the components
+        # ARE public API. Gated on _RECORD_SURFACE_MEMBERS, whose keys are checked
+        # against the parsed record header below — a class that is not actually a
+        # record with those components emits nothing, so this cannot invent surface.
+        if (
+            not native
+            and cls_name in _PRIVATE_CTOR_PUBLIC_FACTORY
+            and _PRIVATE_CTOR_PUBLIC_FACTORY[cls_name] in methods
+        ):
+            methods.append("__init__")
+        if not native and cls_name in _RECORD_SURFACE_MEMBERS:
+            components = _record_components(raw, cls_name)
+            if components:
+                for member in _RECORD_SURFACE_MEMBERS[cls_name]:
+                    if member == "__init__" or member in components:
+                        methods.append(member)
         # Deduplicate overloaded methods; stable ordering.
         unique_sorted = sorted(set(methods))
         entry = out.setdefault(mod, {"classes": {}, "functions": []})
