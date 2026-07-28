@@ -2492,15 +2492,6 @@
                 }
               ],
               "returns": "class:signalwire.agents.bedrock.BedrockAgent"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         }
@@ -4096,6 +4087,88 @@
                 }
               ],
               "returns": "bool"
+            }
+          }
+        },
+        "BasicCredentials": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                },
+                {
+                  "name": "username",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "password",
+                  "required": true,
+                  "type": "string"
+                }
+              ],
+              "returns": "void"
+            },
+            "password": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "username": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        },
+        "BearerCredentials": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                },
+                {
+                  "name": "scheme",
+                  "required": true,
+                  "type": "string"
+                },
+                {
+                  "name": "credentials",
+                  "required": true,
+                  "type": "string"
+                }
+              ],
+              "returns": "void"
+            },
+            "credentials": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "scheme": {
+              "params": [
+                {
+                  "kind": "self",
+                  "name": "self"
+                }
+              ],
+              "returns": "string"
             }
           }
         }
@@ -21220,15 +21293,6 @@
               ],
               "returns": "void"
             },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
-            },
             "update_state": {
               "params": [
                 {
@@ -22232,15 +22296,6 @@
               ],
               "returns": "class:signalwire.relay.call.Action"
             },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
-            },
             "transcribe": {
               "params": [
                 {
@@ -23213,20 +23268,6 @@
       "classes": {
         "Device": {
           "methods": {
-            "equals": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                },
-                {
-                  "name": "o",
-                  "required": true,
-                  "type": "any"
-                }
-              ],
-              "returns": "bool"
-            },
             "get_params": {
               "params": [
                 {
@@ -23244,15 +23285,6 @@
                 }
               ],
               "returns": "string"
-            },
-            "hash_code": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "int"
             },
             "of": {
               "params": [
@@ -23307,15 +23339,6 @@
                 }
               ],
               "returns": "dict<string,any>"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         }
@@ -25130,15 +25153,6 @@
                 }
               ],
               "returns": "float"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         },
@@ -25669,15 +25683,6 @@
                 }
               ],
               "returns": "optional<string>"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
             },
             "update_from_event": {
               "params": [
@@ -32650,15 +32655,6 @@
             "relay_topic": {
               "params": [],
               "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneCallHandler"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "kind": "self",
-                  "name": "self"
-                }
-              ],
-              "returns": "string"
             },
             "value_of": {
               "params": [

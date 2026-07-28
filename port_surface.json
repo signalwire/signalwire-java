@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ 1c6c80ec04736ce92309a494b61ceea68675202a",
+  "generated_from": "signalwire-java @ 37d3929c205360d861dcd1cb2a800200a3bf8abb",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -488,7 +488,9 @@
           "verify_api_key",
           "verify_basic_auth",
           "verify_bearer_token"
-        ]
+        ],
+        "BasicCredentials": [],
+        "BearerCredentials": []
       },
       "functions": []
     },
@@ -1919,6 +1921,7 @@
     "signalwire.relay.event": {
       "classes": {
         "CallReceiveEvent": [
+          "__init__",
           "call_state",
           "context",
           "device",
@@ -1931,6 +1934,7 @@
           "tag"
         ],
         "CallStateEvent": [
+          "__init__",
           "call_state",
           "device",
           "direction",
@@ -1941,12 +1945,14 @@
           "get_tag"
         ],
         "CallingErrorEvent": [
+          "__init__",
           "code",
           "from_payload",
           "get_call_id",
           "message"
         ],
         "CollectEvent": [
+          "__init__",
           "control_id",
           "final",
           "from_payload",
@@ -1956,6 +1962,7 @@
           "state"
         ],
         "ConferenceEvent": [
+          "__init__",
           "conference_id",
           "from_payload",
           "get_call_id",
@@ -1963,17 +1970,20 @@
           "status"
         ],
         "ConnectEvent": [
+          "__init__",
           "connect_state",
           "from_payload",
           "get_call_id",
           "peer"
         ],
         "DenoiseEvent": [
+          "__init__",
           "denoised",
           "from_payload",
           "get_call_id"
         ],
         "DetectEvent": [
+          "__init__",
           "control_id",
           "detect",
           "from_payload",
@@ -1981,6 +1991,7 @@
           "get_detect_event"
         ],
         "DialEvent": [
+          "__init__",
           "call",
           "dial_state",
           "from_payload",
@@ -1991,11 +2002,13 @@
           "tag"
         ],
         "EchoEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "FaxEvent": [
+          "__init__",
           "control_id",
           "fax",
           "from_payload",
@@ -2003,11 +2016,13 @@
           "get_state"
         ],
         "HoldEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "MessageReceiveEvent": [
+          "__init__",
           "body",
           "context",
           "direction",
@@ -2021,6 +2036,7 @@
           "to_number"
         ],
         "MessageStateEvent": [
+          "__init__",
           "body",
           "context",
           "direction",
@@ -2035,18 +2051,21 @@
           "to_number"
         ],
         "PayEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "PlayEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "QueueEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
@@ -2057,6 +2076,7 @@
           "status"
         ],
         "RecordEvent": [
+          "__init__",
           "control_id",
           "duration",
           "from_payload",
@@ -2067,6 +2087,7 @@
           "url"
         ],
         "ReferEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "get_refer_state",
@@ -2076,6 +2097,7 @@
           "state"
         ],
         "RelayEvent": [
+          "__init__",
           "call_id",
           "event_type",
           "from_payload",
@@ -2088,12 +2110,14 @@
           "timestamp"
         ],
         "SendDigitsEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "StreamEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
@@ -2102,6 +2126,7 @@
           "url"
         ],
         "TapEvent": [
+          "__init__",
           "control_id",
           "device",
           "from_payload",
@@ -2110,6 +2135,7 @@
           "tap"
         ],
         "TranscribeEvent": [
+          "__init__",
           "control_id",
           "duration",
           "from_payload",

@@ -925,15 +925,6 @@
                 }
               ],
               "returns": "class:signalwire.agents.bedrock.BedrockAgent"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         }
@@ -2529,6 +2520,88 @@
                 }
               ],
               "returns": "class:signalwire.core.security_config.SecurityConfig"
+            }
+          }
+        },
+        "BasicCredentials": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "username",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "password",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "password": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "username": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            }
+          }
+        },
+        "BearerCredentials": {
+          "methods": {
+            "__init__": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "scheme",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "credentials",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "void"
+            },
+            "credentials": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
+            },
+            "scheme": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                }
+              ],
+              "returns": "string"
             }
           }
         }
@@ -19617,15 +19690,6 @@
               ],
               "returns": "void"
             },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
-            },
             "update_state": {
               "params": [
                 {
@@ -20583,15 +20647,6 @@
                 }
               ],
               "returns": "class:signalwire.relay.call.Action"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             },
             "transcribe": {
               "params": [
@@ -21646,20 +21701,6 @@
       "classes": {
         "Device": {
           "methods": {
-            "equals": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "o",
-                  "type": "any",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
-            },
             "get_params": {
               "params": [
                 {
@@ -21677,15 +21718,6 @@
                 }
               ],
               "returns": "string"
-            },
-            "hash_code": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "int"
             },
             "of": {
               "params": [
@@ -21740,15 +21772,6 @@
                 }
               ],
               "returns": "dict<string,any>"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         }
@@ -23563,15 +23586,6 @@
                 }
               ],
               "returns": "float"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             }
           }
         },
@@ -24003,15 +24017,6 @@
                 }
               ],
               "returns": "void"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             },
             "update_from_event": {
               "params": [
@@ -31083,15 +31088,6 @@
             "relay_topic": {
               "params": [],
               "returns": "class:signalwire.rest.namespaces.relay_rest_types_generated.PhoneCallHandler"
-            },
-            "to_string": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "string"
             },
             "value_of": {
               "params": [
@@ -79690,6 +79686,30 @@
       "params": {
         "security_config": {
           "type": "class:signalwire.core.security_config.SecurityConfig",
+          "required": true
+        }
+      }
+    },
+    "signalwire.core.auth_handler.BasicCredentials": {
+      "params": {
+        "password": {
+          "type": "string",
+          "required": true
+        },
+        "username": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "signalwire.core.auth_handler.BearerCredentials": {
+      "params": {
+        "credentials": {
+          "type": "string",
+          "required": true
+        },
+        "scheme": {
+          "type": "string",
           "required": true
         }
       }

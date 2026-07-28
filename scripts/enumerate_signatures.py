@@ -341,6 +341,16 @@ JAVA_EXTRA_RENAMES = {
 # convention plus its ``java_to_python_module`` placement, so the two layers
 # end up at identical fully-qualified symbol paths.
 JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
+    # AuthHandler.BasicCredentials / .BearerCredentials (records nested in
+    # AuthHandler.java). They land in signalwire.core.auth_handler — NOT a per-class
+    # module — because that is where the reference records them (it re-exports
+    # FastAPI's HTTPBasicCredentials / HTTPAuthorizationCredentials under these
+    # names). Without this, SignatureDump's bare simple name would not match the
+    # reference's identity. See the note in _SIG_EXCLUDED_SIMPLE_NAMES.
+    ("com.signalwire.sdk.core", "BasicCredentials"):
+        ("BasicCredentials", "signalwire.core.auth_handler"),
+    ("com.signalwire.sdk.core", "BearerCredentials"):
+        ("BearerCredentials", "signalwire.core.auth_handler"),
     # AgentBase.Builder, AgentBase.DynamicConfigCallback (nested in AgentBase.java)
     ("com.signalwire.sdk.agent", "Builder"):
         ("AgentBaseBuilder", "signalwire.agent.agent_base_builder"),
@@ -1229,6 +1239,15 @@ _ACCESSOR_PREFIX_RE_SIG = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
 _CTOR_DUNDER_NAMES = frozenset({
     "__init__", "__repr__", "__str__", "__eq__", "__hash__",
     "__enter__", "__exit__",
+    # Java's identity trio, under the names SignatureDump emits after snake_casing.
+    # These are the SAME construction/identity idiom as the Python dunders above,
+    # just spelled the JVM way: `equals` IS `__eq__`, `hash_code` IS `__hash__`,
+    # `to_string` IS `__str__`/`__repr__`. javac GENERATES all three for every
+    # `record`, so a port carrying a record gets them whether or not the author
+    # wrote them — they are not a capability the reference lacks.
+    # The guard below still applies: they are dropped ONLY when the reference
+    # records no member of that name on that class, so a genuine twin still matches.
+    "equals", "hash_code", "to_string",
 })
 
 
@@ -1366,8 +1385,16 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     "ValidationResult",         # (valid, errors) tuple record (swml/swaig/security)
     "AuthException",            # AuthHandler nested exception
     "AuthResult",               # AuthHandler nested result
-    "BasicCredentials",         # AuthHandler nested credential type
-    "BearerCredentials",        # AuthHandler nested credential type
+    # BasicCredentials / BearerCredentials are DELIBERATELY NOT excluded. They were
+    # listed here as "port-only value types with no reference counterpart", which was
+    # true only while griffe could not resolve FastAPI's HTTPBasicCredentials /
+    # HTTPAuthorizationCredentials into the `signalwire.` tree — the oracle emitted
+    # dangling class refs a port could neither match nor miss. porting-sdk dcff742
+    # filled them in as the real two-field classes they always were on the wire
+    # (username/password, scheme/credentials), so the reference DOES record them and
+    # excluding them here made four members read as missing-port while the code
+    # implemented them correctly. Java carries them as records nested in AuthHandler;
+    # JAVA_NESTED_CLASS_RENAMES maps them into signalwire.core.auth_handler.
     "RequestHandler",           # AuthHandler framework-neutral middleware wrapper
     "Response",                 # AuthHandler nested response value
     "LoggingLevel",             # logging enum helper (Logger.Level is the surface)
