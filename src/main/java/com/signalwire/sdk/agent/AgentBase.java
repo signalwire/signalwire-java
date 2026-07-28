@@ -2260,6 +2260,24 @@ public class AgentBase extends Service {
     List<Map<String, Object>> functions = buildSwaigFunctions(baseUrl);
     if (!functions.isEmpty()) {
       swaig.put("functions", functions);
+      // The SHARED fallback webhook, emitted IFF there are functions — reference
+      // agent_base.py:1108-1113 (`if functions: ... swaig_obj["defaults"] =
+      // {"web_hook_url": default_webhook_url}`), whose value is
+      // `_build_webhook_url("swaig", swaig_query_params)` with the
+      // `_web_hook_url_override` applied (agent_base.py:972-979) — exactly what
+      // buildWebhookUrl already computes.
+      //
+      // This is load-bearing for the SECURE contract, not cosmetic: an INSECURE tool
+      // deliberately renders NO per-tool web_hook_url (buildSwaigFunctions), so
+      // SWAIG.defaults.web_hook_url is the ONLY thing that gives it a callback at all.
+      // Without this block an insecure tool would render with no reachable endpoint.
+      //
+      // buildWebhookUrl returns null when no baseUrl and no override was given; the key is
+      // still emitted (mirroring the reference, which always sets it) but Map.of would NPE on
+      // a null value, so the map is built explicitly.
+      Map<String, Object> swaigDefaults = new LinkedHashMap<>();
+      swaigDefaults.put("web_hook_url", buildWebhookUrl(baseUrl));
+      swaig.put("defaults", swaigDefaults);
     }
 
     // Function includes
@@ -2294,6 +2312,31 @@ public class AgentBase extends Service {
     return ai;
   }
 
+  /**
+   * Build the SWAIG {@code functions[]} array, mirroring the reference {@code
+   * AgentBase._render_swaig_functions} (agent_base.py:1027-1100).
+   *
+   * <p>The wire manifestation of a tool's {@code secure} flag is a per-tool {@code __token} QUERY
+   * PARAMETER on that function's OWN {@code web_hook_url} (reference agent_base.py:1096-1100, read
+   * back at :1414 / web_mixin.py:935). The engine treats the webhook URL as opaque and round-trips
+   * it verbatim, so only the SDK that minted the token ever interprets it — which is why {@code
+   * __token} appears nowhere in the engine source.
+   *
+   * <p>It is deliberately NOT {@code meta_data_token}: {@code schema.json} defines that as the
+   * "Scoping token for meta_data", the engine MD5-derives it from {@code
+   * web_hook_url+auth_user+auth_pass} when the SWML omits it ({@code
+   * mod_openai/app_config.c:1031-1042}) and uses it ONLY as a key into the per-function metadata
+   * store ({@code actions.c:2085-2093}) and to scope function-toggle actions ({@code
+   * actions.c:419-420}). Nothing validates it as a credential. Emitting the security token there
+   * left the callback unauthenticated AND mis-scoped the metadata store; it is the SECURE-DEFAULT
+   * divergence fixed 2026-07-27.
+   *
+   * <p>A per-tool {@code web_hook_url} is emitted only when the tool has an external webhook URL,
+   * OR carries a token, OR the agent has SWAIG query params — matching the reference's {@code elif
+   * token or ..._swaig_query_params} guard. An insecure locally-handled tool therefore has NO entry
+   * of its own and falls back to the shared {@code SWAIG.defaults.web_hook_url}; giving it a
+   * function-specific webhook would publish an unauthenticated per-function callback.
+   */
   private List<Map<String, Object>> buildSwaigFunctions(String baseUrl) {
     List<Map<String, Object>> functions = new ArrayList<>();
     String webhookBase = buildWebhookUrl(baseUrl);
@@ -2301,15 +2344,40 @@ public class AgentBase extends Service {
     // Tools with handlers
     for (Map.Entry<String, ToolDefinition> entry : tools.entrySet()) {
       ToolDefinition tool = entry.getValue();
-      String toolWebhook = tool.hasHandler() ? webhookBase : null;
       String token = tool.isSecure() ? sessionManager.createToken(tool.getName(), "") : null;
-      functions.add(tool.toSwaigFunction(toolWebhook, token));
+      String toolWebhook = null;
+      if (webhookUrl != null) {
+        // An EXTERNAL webhook URL: the reference passes such a URL through untouched and mints
+        // no token for it (agent_base.py:1085-1087 — the `if func.webhook_url` branch precedes
+        // the token branch), because the SDK does not serve that endpoint and so cannot
+        // validate a token on it.
+        toolWebhook = tool.hasHandler() ? webhookUrl : null;
+      } else if (tool.hasHandler() && (token != null || !swaigQueryParams.isEmpty())) {
+        toolWebhook = appendTokenParam(webhookBase, token);
+      }
+      // meta_data_token is NOT the security token (see the method javadoc) — pass null so it
+      // is only ever set by a caller's explicit extra SWAIG fields.
+      functions.add(tool.toSwaigFunction(toolWebhook, null));
     }
 
     // Registered SWAIG functions (DataMap tools)
     functions.addAll(registeredSwaigFunctions);
 
     return functions;
+  }
+
+  /**
+   * Append the per-tool SWAIG security token to a webhook URL as the {@code __token} query
+   * parameter — the reference's wire manifestation of {@code secure} (agent_base.py:1097, which
+   * notes "Use __token to avoid collision" with a caller's own {@code token} param). Returns the
+   * URL unchanged when there is no token, and picks {@code ?} vs {@code &} based on whether {@link
+   * #buildWebhookUrl} already emitted the agent's SWAIG query params.
+   */
+  private String appendTokenParam(String url, String token) {
+    if (url == null || token == null || token.isEmpty()) {
+      return url;
+    }
+    return url + (url.indexOf('?') >= 0 ? "&" : "?") + "__token=" + token;
   }
 
   private String buildWebhookUrl(String baseUrl) {

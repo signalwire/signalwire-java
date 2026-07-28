@@ -21,20 +21,25 @@ import java.util.Map;
  * differ (porting-sdk/scripts/diff_port_secure_default.py, A+ campaign A1 / PSDK-4a).
  *
  * <p>Defines a default (no explicit {@code secure=}) tool + an explicit {@code secure=false} tool,
- * renders the agent's SWML with the fixed corpus {@code CALL_ID}, and for each tool emits the
- * deterministic classification the differ compares against the Python golden:
+ * renders the agent's SWML with the fixed corpus {@code CALL_ID}, and emits per fixture the
+ * RENDERED WIRE PAYLOAD for the differ to classify:
  *
  * <pre>
- *   {secure_default_true: bool, wire_reflects_secure: bool}
+ *   {"&lt;fixture id&gt;": {"secure_default_true": bool, "rendered": {&lt;functions[] entry&gt;}}}
  * </pre>
  *
  * <ul>
  *   <li>{@code secure_default_true} — the tool built WITHOUT an explicit {@code secure=} is secure
  *       (the SDK-recorded flag); false by construction for the explicit-{@code secure=false} case.
- *   <li>{@code wire_reflects_secure} — the rendered SWML webhook reflects the tool's secure state:
- *       a per-tool token ({@code meta_data_token}, the java surfacing of the reference {@code
- *       __token}) is present IFF the tool is secure.
+ *   <li>{@code rendered} — that tool's own {@code SWAIG.functions[]} entry, VERBATIM, with every
+ *       token VALUE replaced by the corpus placeholder {@code <TOKEN>} (the values are HMACs and
+ *       vary per run; the KEY PATH is the whole contract and is preserved exactly).
  * </ul>
+ *
+ * <p>This program deliberately makes NO judgement about whether the render is correct. The previous
+ * version emitted a self-computed {@code wire_reflects_secure} boolean, which made the gate
+ * vacuous: java classified on {@code meta_data_token} (the SWML metadata SCOPING key) and passed
+ * green while emitting a tokenless {@code web_hook_url}. The differ now sees the keys and decides.
  *
  * <p>Only stdout carries JSON; the SDK Logger is silenced. Run via the {@code secureDefaultDump}
  * Gradle task.
@@ -48,60 +53,114 @@ final class SecureDefaultDump {
   // Mirror secure_default_corpus.py EXACTLY.
   private static final String DEFAULT_TOOL = "sd_default_secure";
   private static final String INSECURE_TOOL = "sd_explicit_insecure";
+  private static final String TOKEN_PLACEHOLDER = "<TOKEN>";
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
 
     AgentBase agent =
-        AgentBase.builder().name("secure-default-fixture").authUser("u").authPassword("p").build();
+        AgentBase.builder()
+            .name("secure-default-fixture")
+            .route("/sd")
+            .authUser("u")
+            .authPassword("p")
+            .build();
     agent.setPromptText("secure default fixture");
 
     // Default tool: NO explicit secure= → must default secure=true (A1).
     agent.defineTool(
         new ToolDefinition(
-            DEFAULT_TOOL, "default secure tool", Map.of(), (a, r) -> new FunctionResult("ok")));
+            DEFAULT_TOOL,
+            "secure-default fixture tool",
+            Map.of(),
+            (a, r) -> new FunctionResult("ok")));
     // Explicit secure=false tool.
     agent.defineTool(
         new ToolDefinition(
                 INSECURE_TOOL,
-                "explicit insecure tool",
+                "secure-default fixture tool",
                 Map.of(),
                 (a, r) -> new FunctionResult("ok"))
             .setSecure(false));
 
-    // Render SWML: a secure tool's rendered SWAIG function carries a per-tool token
-    // (meta_data_token,
-    // minted in buildSwaigFunctions when the tool isSecure), an insecure one does not. The fixed
-    // corpus CALL_ID is referenced for parity with the oracle; java mints the token independent of
-    // a
-    // call_id (createToken(name, "")), so the single-arg render is sufficient.
-    Map<String, Object> swml = agent.renderSwml("http://mock.test");
+    // Render SWML. A secure tool's rendered entry carries its own web_hook_url with a __token
+    // query param; an insecure one has no per-tool web_hook_url at all and falls back to
+    // SWAIG.defaults. The fixed corpus CALL_ID is referenced for parity with the oracle; java
+    // mints the token independent of a call_id (createToken(name, "")), so the single-arg render
+    // is sufficient.
+    Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     Map<String, Object> functions = swaigFunctionsByName(swml);
 
     Map<String, Object> out = new LinkedHashMap<>();
     out.put(
         "define_tool_default_is_secure",
-        classify((Map<String, Object>) functions.get(DEFAULT_TOOL), true));
+        emit((Map<String, Object>) functions.get(DEFAULT_TOOL), true));
     out.put(
         "define_tool_explicit_insecure",
-        classify((Map<String, Object>) functions.get(INSECURE_TOOL), false));
+        emit((Map<String, Object>) functions.get(INSECURE_TOOL), false));
     System.out.println(GSON.toJson(out));
   }
 
   /**
-   * Classify one rendered function. {@code expectedSecure} is the tool's declared secure state; the
-   * wire "reflects" it when a per-tool token is present iff the tool is secure.
+   * Emit one fixture: the SDK-recorded secure flag plus the rendered entry with token values
+   * redacted. NO classification — the differ does that.
    */
-  private static Map<String, Object> classify(Map<String, Object> fn, boolean expectedSecure) {
-    boolean tokenPresent =
-        fn != null
-            && fn.get("meta_data_token") != null
-            && !String.valueOf(fn.get("meta_data_token")).isEmpty();
+  private static Map<String, Object> emit(Map<String, Object> fn, boolean secureDefaultTrue) {
     Map<String, Object> m = new LinkedHashMap<>();
-    m.put("secure_default_true", expectedSecure);
-    m.put("wire_reflects_secure", tokenPresent == expectedSecure);
+    m.put("secure_default_true", secureDefaultTrue);
+    m.put("rendered", redact(fn == null ? new LinkedHashMap<>() : fn));
     return m;
+  }
+
+  /**
+   * Replace every nondeterministic token VALUE (an HMAC) with the corpus placeholder while
+   * preserving every KEY and key path exactly — both a token-suffixed field and a token-suffixed
+   * query parameter on a URL value. Mirrors diff_port_secure_default.redact_entry so the differ's
+   * re-application is a no-op.
+   */
+  private static Map<String, Object> redact(Map<String, Object> fn) {
+    Map<String, Object> out = new LinkedHashMap<>();
+    for (Map.Entry<String, Object> e : fn.entrySet()) {
+      String k = e.getKey();
+      Object v = e.getValue();
+      if (v instanceof String s) {
+        if (k.toLowerCase(java.util.Locale.ROOT).endsWith("token")) {
+          out.put(k, TOKEN_PLACEHOLDER);
+          continue;
+        }
+        if (s.contains("://") || s.startsWith("/")) {
+          out.put(k, redactUrlTokens(s));
+          continue;
+        }
+      }
+      out.put(k, v);
+    }
+    return out;
+  }
+
+  /** Replace the VALUE of every token-suffixed query parameter in a URL with the placeholder. */
+  private static String redactUrlTokens(String url) {
+    int q = url.indexOf('?');
+    if (q < 0) {
+      return url;
+    }
+    StringBuilder sb = new StringBuilder(url.substring(0, q + 1));
+    String[] pairs = url.substring(q + 1).split("&", -1);
+    for (int i = 0; i < pairs.length; i++) {
+      if (i > 0) {
+        sb.append('&');
+      }
+      String pair = pairs[i];
+      int eq = pair.indexOf('=');
+      String key = eq < 0 ? pair : pair.substring(0, eq);
+      if (eq >= 0 && key.toLowerCase(java.util.Locale.ROOT).endsWith("token")) {
+        sb.append(key).append('=').append(TOKEN_PLACEHOLDER);
+      } else {
+        sb.append(pair);
+      }
+    }
+    return sb.toString();
   }
 
   @SuppressWarnings("unchecked")
