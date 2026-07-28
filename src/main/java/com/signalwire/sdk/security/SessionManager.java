@@ -32,6 +32,12 @@ import javax.crypto.spec.SecretKeySpec;
 public class SessionManager {
 
   /**
+   * Seconds until a minted token expires when none is specified — the reference's {@code
+   * token_expiry_secs: int = 900} default (session_manager.py:30), i.e. 15 minutes.
+   */
+  private static final int DEFAULT_TOKEN_EXPIRY_SECS = 900;
+
+  /**
    * The signing secret as the reference models it: a STRING. The reference keys its HMAC with
    * {@code self.secret_key.encode()} (session_manager.py:79,152) — the UTF-8 bytes of the string —
    * and defaults it to {@code secrets.token_hex(32)}, a 64-character hex string. Keeping the string
@@ -51,8 +57,15 @@ public class SessionManager {
   /** When true, {@link #debugToken(String)} decodes token internals; off by default. */
   private volatile boolean debugMode;
 
+  /**
+   * The reference's no-argument default: {@code token_expiry_secs = 900} — 15 minutes
+   * (session_manager.py:30). Note this is DELIBERATELY different from {@code
+   * AgentBase(token_expiry_secs=3600)} (agent_base.py:130), which passes its own 3600 through
+   * explicitly; the two defaults diverge in the reference and so must diverge here. Only the
+   * DEFAULT changed — {@code new SessionManager(n)} is unaffected.
+   */
   public SessionManager() {
-    this(3600);
+    this(DEFAULT_TOKEN_EXPIRY_SECS);
   }
 
   public SessionManager(int defaultExpiry) {
