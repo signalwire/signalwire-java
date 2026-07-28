@@ -159,10 +159,15 @@ public class SessionManager {
     // Decoded token: call_id.function_name.expiry.nonce.signature (5 dot-fields).
     String token = callId + "." + functionName + "." + expiry + "." + nonce + "." + signature;
 
-    // Base64url-encode the whole token for URL safety.
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(token.getBytes(StandardCharsets.UTF_8));
+    // Base64url-encode the whole token for URL safety, PADDING INTACT. The reference mints with
+    // `base64.urlsafe_b64encode`, which KEEPS the '=' padding, and validates with
+    // `base64.urlsafe_b64decode`, which RAISES on a stripped '='. `.withoutPadding()` therefore
+    // made every token this port minted unusable to the reference and to any port that decodes
+    // strictly, even though the message and the HMAC were correct. Our own validateToken still
+    // accepted them because `Base64.getUrlDecoder()` tolerates missing padding — that asymmetry
+    // is why round-tripping against ourselves could not catch it, and why the TOKEN-INTEROP gate
+    // validates against the REFERENCE decoder instead.
+    return Base64.getUrlEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
   }
 
   /** Validate a signed token. */

@@ -423,14 +423,29 @@ tasks.register('relayLivenessDump', JavaExec) {
 }
 
 // secureDefaultDump — SECURE-DEFAULT differ (porting-sdk/scripts/diff_port_secure_default.py).
-// Renders SWML for a default (secure) tool + a secure=false tool with the fixed corpus call_id and
-// emits, per tool, whether it is secure and whether the rendered webhook reflects that (a __token /
-// meta_data_token present iff secure).
+// Renders SWML for a default (secure) tool + a secure=false tool and emits, per tool, the
+// SDK-recorded secure flag plus that tool's SWAIG functions[] entry VERBATIM (token values
+// redacted to <TOKEN>). The DIFFER classifies the payload; this task reports no verdict of its own.
 tasks.register('secureDefaultDump', JavaExec) {
     group = 'verification'
-    description = 'Dump the secure-default SWML render classifications as JSON (cross-port secure-default differ).'
+    description = 'Dump the secure-default SWML rendered payloads as JSON (cross-port secure-default differ).'
     mainClass = 'com.signalwire.sdk.tools.SecureDefaultDump'
     classpath = sourceSets.main.runtimeClasspath
+}
+
+// tokenInteropMint — TOKEN-INTEROP checker (porting-sdk/scripts/diff_port_token_interop.py).
+// Mints ONE token with the FIXED inputs the checker supplies in the environment and prints just
+// that token, so the checker can validate it under the reference's own decoder — property 3 of the
+// SWAIG tool-token contract (a correct key and a correct HMAC still leave the ENVELOPE encoding
+// able to be wrong, and an unpadded token is unusable to every other implementation).
+tasks.register('tokenInteropMint', JavaExec) {
+    group = 'verification'
+    description = 'Mint one SWAIG tool token with the checker-supplied fixed inputs (cross-port token-interop checker).'
+    mainClass = 'com.signalwire.sdk.tools.TokenInteropMint'
+    classpath = sourceSets.main.runtimeClasspath
+    // Inherit the invoking process env — the checker exports SW_TOKEN_INTEROP_* into it, and
+    // the fixture fails loud if they are missing (same convention as runExample above).
+    environment System.getenv()
 }
 
 // secretScrubDump — SECRET-SCRUB-LIVE differ (porting-sdk/scripts/diff_port_secret_scrub.py).
