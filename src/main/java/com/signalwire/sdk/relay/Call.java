@@ -528,6 +528,14 @@ public class Call {
     return executeOnCall(Constants.METHOD_CLEAR_DIGIT_BINDINGS, params);
   }
 
+  /**
+   * Send a user event with {@code event} at its reference default of {@code None}. Mirrors {@code
+   * Call.user_event(*, event: str | None = None, **kwargs)} — signalwire/relay/call.py:1567.
+   */
+  public Map<String, Object> userEvent() {
+    return userEvent(null);
+  }
+
   /** Send a user event. */
   public Map<String, Object> userEvent(String event) {
     Map<String, Object> params = callParams();
@@ -544,6 +552,15 @@ public class Call {
     return executeOnCall(Constants.METHOD_LIVE_TRANSCRIBE, params);
   }
 
+  /**
+   * Start live translation with no options — the reference's optional keyword params ({@code
+   * status_url=None} plus {@code **kwargs}) all default to absent. Mirrors {@code
+   * Call.live_translate(action, *, status_url=None, **kwargs)} — signalwire/relay/call.py:1394.
+   */
+  public Map<String, Object> liveTranslate(Map<String, Object> action) {
+    return liveTranslate(action, null);
+  }
+
   /** Start live translation. */
   public Map<String, Object> liveTranslate(
       Map<String, Object> action, Map<String, Object> options) {
@@ -553,6 +570,15 @@ public class Call {
       params.putAll(options);
     }
     return executeOnCall(Constants.METHOD_LIVE_TRANSLATE, params);
+  }
+
+  /**
+   * SIP REFER transfer with no options — the reference's optional keyword params ({@code
+   * status_url=None} plus {@code **kwargs}) all default to absent. Mirrors {@code
+   * Call.refer(device, *, status_url=None, **kwargs)} — signalwire/relay/call.py:974.
+   */
+  public Map<String, Object> refer(Map<String, Object> deviceSpec) {
+    return refer(deviceSpec, null);
   }
 
   /** SIP REFER transfer. */
@@ -612,6 +638,15 @@ public class Call {
   }
 
   // ── Room methods ─────────────────────────────────────────────────
+
+  /**
+   * Join a room with no options — the reference's optional keyword params ({@code status_url=None}
+   * plus {@code **kwargs}) all default to absent. Mirrors {@code Call.join_room(name, *,
+   * status_url=None, **kwargs)} — signalwire/relay/call.py:1412.
+   */
+  public Map<String, Object> joinRoom(String name) {
+    return joinRoom(name, null);
+  }
 
   /** Join a room. */
   public Map<String, Object> joinRoom(String name, Map<String, Object> options) {
@@ -1355,6 +1390,15 @@ public class Call {
       params.putAll(options);
     }
     return executeOnCall(Constants.METHOD_AI_HOLD, params);
+  }
+
+  /**
+   * Resume AI from hold with no options — the reference's optional keyword params ({@code
+   * prompt=None} plus {@code **kwargs}) all default to absent. Mirrors {@code Call.ai_unhold(*,
+   * prompt: str | None = None, **kwargs)} — signalwire/relay/call.py:1550.
+   */
+  public Map<String, Object> aiUnhold() {
+    return aiUnhold(null);
   }
 
   /** Resume AI from hold. */

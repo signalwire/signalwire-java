@@ -224,6 +224,32 @@ public class Step {
   }
 
   /**
+   * Enable info gathering with every param at its reference default ({@code output_key=None},
+   * {@code completion_action=None}, {@code prompt=None}, {@code isolated=False}). Mirrors {@code
+   * Step.set_gather_info(output_key=None, completion_action=None, prompt=None, isolated=False)} —
+   * signalwire/core/contexts.py:407.
+   */
+  public Step setGatherInfo() {
+    return setGatherInfo(null, null, null, false);
+  }
+
+  /**
+   * Enable info gathering supplying {@code output_key}, with {@code completion_action=None}, {@code
+   * prompt=None}, {@code isolated=False} — signalwire/core/contexts.py:407.
+   */
+  public Step setGatherInfo(String outputKey) {
+    return setGatherInfo(outputKey, null, null, false);
+  }
+
+  /**
+   * Enable info gathering supplying {@code output_key} and {@code completion_action}, with {@code
+   * prompt=None}, {@code isolated=False} — signalwire/core/contexts.py:407.
+   */
+  public Step setGatherInfo(String outputKey, String completionAction) {
+    return setGatherInfo(outputKey, completionAction, null, false);
+  }
+
+  /**
    * Add a question to this step's gather_info configuration. {@link #setGatherInfo(String, String,
    * String)} must be called first.
    *

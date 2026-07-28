@@ -1011,6 +1011,18 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Dispatch a function call with {@code raw_data} at its reference default of {@code None}.
+   * Mirrors {@code ToolMixin.on_function_call(name, args, raw_data=None)} —
+   * signalwire/core/mixins/tool_mixin.py:235. Redeclared here (rather than inherited from {@link
+   * com.signalwire.sdk.swml.Service}) so the optional-{@code rawData} contract is visible on {@code
+   * AgentBase} itself; it delegates to the 3-arg override below.
+   */
+  @Override
+  public FunctionResult onFunctionCall(String name, Map<String, Object> args) {
+    return onFunctionCall(name, args, null);
+  }
+
   @Override
   public FunctionResult onFunctionCall(
       String name, Map<String, Object> args, Map<String, Object> rawData) {
@@ -1265,6 +1277,15 @@ public class AgentBase extends Service {
       this.multilingual = new LinkedHashMap<>(config);
     }
     return this;
+  }
+
+  /**
+   * Add a pronunciation rule with {@code ignore_case} at its reference default of {@code False}.
+   * Mirrors {@code AIConfigMixin.add_pronunciation(replace, with_text, ignore_case=False)} —
+   * signalwire/core/mixins/ai_config_mixin.py:249.
+   */
+  public AgentBase addPronunciation(String replace, String with) {
+    return addPronunciation(replace, with, false);
   }
 
   public AgentBase addPronunciation(String replace, String with, boolean ignoreCase) {

@@ -171,6 +171,31 @@ public class BedrockAgent extends AgentBase {
   }
 
   /**
+   * Update inference params leaving all three at the reference's default of {@code None} (i.e.
+   * unchanged). Mirrors {@code BedrockAgent.set_inference_params(temperature=None, top_p=None,
+   * max_tokens=None)} — signalwire/agents/bedrock.py:215.
+   */
+  public BedrockAgent setInferenceParams() {
+    return setInferenceParams(null, null, null);
+  }
+
+  /**
+   * Update only {@code temperature}, leaving {@code top_p} and {@code max_tokens} at their
+   * reference default of {@code None} — signalwire/agents/bedrock.py:215.
+   */
+  public BedrockAgent setInferenceParams(Double temperature) {
+    return setInferenceParams(temperature, null, null);
+  }
+
+  /**
+   * Update {@code temperature} and {@code top_p}, leaving {@code max_tokens} at its reference
+   * default of {@code None} — signalwire/agents/bedrock.py:215.
+   */
+  public BedrockAgent setInferenceParams(Double temperature, Double topP) {
+    return setInferenceParams(temperature, topP, null);
+  }
+
+  /**
    * Update Bedrock inference parameters ({@code temperature}, {@code topP}, {@code maxTokens}).
    * Only non-null values are applied.
    *

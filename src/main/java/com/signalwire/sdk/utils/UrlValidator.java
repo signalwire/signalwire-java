@@ -63,6 +63,18 @@ public final class UrlValidator {
   }
 
   /**
+   * Validate that a URL is safe to fetch, with {@code allow_private} at its reference default of
+   * {@code False}. Mirrors {@code validate_url(url, allow_private=False)} —
+   * signalwire/utils/url_validator.py:34.
+   *
+   * @param url URL string to validate.
+   * @return true when the URL is safe to fetch, false otherwise.
+   */
+  public static boolean validateUrl(String url) {
+    return validateUrl(url, false);
+  }
+
+  /**
    * Validate that a URL is safe to fetch.
    *
    * @param url URL string to validate.

@@ -239,6 +239,16 @@ public class AgentServer implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Serve static files at the reference's default route {@code "/"}. Mirrors {@code
+   * AgentServer.serve_static_files(directory, route="/")} — signalwire/agent_server.py:750.
+   *
+   * @param directory Filesystem path to the directory containing static files
+   */
+  public AgentServer serveStaticFiles(String directory) {
+    return serveStaticFiles(directory, "/");
+  }
+
   // ============================================================
   // HTTPS / TLS
   // ============================================================

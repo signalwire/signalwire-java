@@ -109,6 +109,32 @@ public class InfoGathererAgent {
   }
 
   /**
+   * Dynamic-configuration hook with every param at its reference default of {@code None}. Mirrors
+   * {@code InfoGathererAgent.on_swml_request(request_data=None, callback_path=None, request=None)}
+   * — signalwire/prefabs/info_gatherer.py:162.
+   */
+  public Map<String, Object> onSwmlRequest() {
+    return onSwmlRequest(null, null, null);
+  }
+
+  /**
+   * Dynamic-configuration hook supplying the request body, with the remaining params at their
+   * reference default of {@code None} — signalwire/prefabs/info_gatherer.py:162.
+   */
+  public Map<String, Object> onSwmlRequest(Map<String, Object> requestData) {
+    return onSwmlRequest(requestData, null, null);
+  }
+
+  /**
+   * Dynamic-configuration hook supplying the request body and query params, with the last param at
+   * its reference default of {@code None} — signalwire/prefabs/info_gatherer.py:162.
+   */
+  public Map<String, Object> onSwmlRequest(
+      Map<String, Object> requestData, Map<String, Object> queryParams) {
+    return onSwmlRequest(requestData, queryParams, null);
+  }
+
+  /**
    * Dynamic-configuration hook invoked when SWML is requested. Ported from Python
    * InfoGathererAgent.on_swml_request: in static mode returns {@code null} (no override); in
    * dynamic mode it calls the registered {@link QuestionCallback} (or a name/message fallback if

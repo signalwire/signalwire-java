@@ -506,6 +506,37 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # surface (matches the oracle's 4-param set_gather_info); the 3-arg form
     # would hide ``isolated``.
     ("Step", "set_gather_info"),
+    # ---- Overload-derived optionality (see optional_param_names) --------------
+    # Each of these gained a shorter delegating overload that supplies the
+    # reference's default, which is how Java says "this param is optional".
+    # optional_param_names() reads that overload set and marks the omitted params
+    # ``required: false`` ON THE FULL-ARITY SIGNATURE — so the full signature must
+    # stay the recorded surface. Without a PREFER_FULL entry the default
+    # fewest-param collapse would pick the NEW short overload instead, hiding the
+    # very params we just made optional and turning a ``required-flip`` into a
+    # ``param-count-mismatch`` (measured: exactly these 20 symbols).
+    ("FunctionResult", "swml_transfer"),        # +final=True
+    ("FunctionResult", "hold"),                 # +timeout=300
+    ("FunctionResult", "replace_in_history"),   # +text=True
+    ("FunctionResult", "enable_functions_on_timeout"),  # +enabled=True
+    ("FunctionResult", "enable_extensive_data"),        # +enabled=True
+    ("FunctionResult", "create_payment_prompt"),        # +card_type/error_type=None
+    ("AgentServer", "serve_static_files"),      # +route="/"
+    ("BedrockAgent", "set_inference_params"),   # +temperature/top_p/max_tokens=None
+    ("AgentBase", "add_pronunciation"),         # +ignore_case=False
+    ("AgentBase", "on_function_call"),          # +raw_data=None
+    # com.signalwire.sdk.swml.Service canonicalizes to SWMLService (see
+    # JAVA_MODULE_OVERRIDES / _CLASS_RENAMES) — key on the CANONICAL name.
+    ("SWMLService", "on_function_call"),        # +raw_data=None
+    ("SWMLService", "on_request"),              # +request_data/callback_path=None
+    ("PomBuilder", "add_to_section"),           # +body/bullet/bullets=None
+    ("SWAIGFunction", "execute"),               # +raw_data=None
+    ("InfoGathererAgent", "on_swml_request"),   # +callback_path/request=None
+    ("Call", "ai_unhold"),                      # +prompt=None (options bag)
+    ("Call", "join_room"),                      # +status_url=None (options bag)
+    ("Call", "live_translate"),                 # +status_url=None (options bag)
+    ("Call", "refer"),                          # +status_url=None (options bag)
+    ("Call", "user_event"),                     # +event=None
     # HttpClient verbs + constructor expose the optional request_options envelope
     # (plan 4.2) via a trailing-param overload alongside the convenience overloads.
     # The full overload is the parity surface (matches the oracle's request_options
@@ -538,6 +569,17 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # construction param (schema_path/config_file/schema_validation reach
     # SchemaUtils + SecurityConfig, exactly as the reference forwards them).
     ("SWMLService", "__init__"),
+}
+
+# PREFER_FULL_OVERLOAD's twin for FREE-FUNCTION projections (a static Java method
+# projected to a module-level Python function). Same reason: the shorter overload
+# exists only to supply the reference's default, so the FULL signature is the
+# parity surface. Keyed by the PROJECTED ``(module, function)``, since that is what
+# the free-function collapse sees.
+PREFER_FULL_OVERLOAD_FREE_FUNCTIONS: set[tuple[str, str]] = {
+    # UrlValidator.validateUrl(url) delegates to validateUrl(url, allowPrivate)
+    # with the reference's default False (signalwire/utils/url_validator.py:34).
+    ("signalwire.utils.url_validator", "validate_url"),
 }
 
 # Java skill class renames to match Python casing
@@ -1119,6 +1161,46 @@ KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
 }
 
 
+# The var-POSITIONAL twin of KWARGS_TAIL_OPTIONAL. Where the reference declares a
+# leading ``*args`` var-positional door, the oracle records it ``required: false``
+# (a caller may pass zero positional extras — its default is the empty tuple).
+# Java expresses the same door as a leading ``List<...> args`` param, which
+# reflection reports ``required: True`` (Java has no defaults), producing a
+# spurious ``required-flip``. Mark the LEADING param optional so the port states
+# the same contract the reference does. Keyed like KWARGS_TAIL_OPTIONAL; a
+# ``None`` class targets a module-level free function.
+VARARGS_HEAD_OPTIONAL: set[tuple[str, str | None, str]] = {
+    # signalwire/__init__.py:194 — ``def RestClient(*args, **kwargs)``. The
+    # trailing kwargs door is already handled by KWARGS_TAIL_OPTIONAL above; this
+    # covers the leading ``*args`` half of the same signature.
+    ("signalwire", None, "RestClient"),
+}
+
+
+def _mark_varargs_heads_optional(out_modules: dict) -> None:
+    """Flip the LEADING var-positional-door param of each VARARGS_HEAD_OPTIONAL
+    method to ``required: false``. Fail loud if a keyed symbol/param can't be
+    found, mirroring _mark_kwargs_tails_optional."""
+    for module, cls, method in VARARGS_HEAD_OPTIONAL:
+        mod_entry = out_modules.get(module)
+        if not mod_entry:
+            raise RuntimeError(f"VARARGS_HEAD_OPTIONAL: module {module!r} not found")
+        if cls is None:
+            sig = mod_entry.get("functions", {}).get(method)
+        else:
+            sig = mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+        if not sig:
+            raise RuntimeError(
+                f"VARARGS_HEAD_OPTIONAL: symbol {module}.{cls or ''}.{method} not found"
+            )
+        head = [p for p in sig.get("params", []) if p.get("kind") not in ("self", "cls")]
+        if not head:
+            raise RuntimeError(
+                f"VARARGS_HEAD_OPTIONAL: {module}.{cls or ''}.{method} has no value param to mark"
+            )
+        head[0]["required"] = False
+
+
 _ACCESSOR_PREFIX_RE_SIG = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
 
 # Constructor / dunder names that are never a surface CAPABILITY difference. When
@@ -1514,6 +1596,12 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 params = sig.get("params", [])
                 if params and params[0].get("kind") == "self":
                     sig["params"] = params[1:]
+                # Overload-derived optionality applies to projected free functions too.
+                _optf = optional_param_names(type_entry, native)
+                if _optf:
+                    for _p in sig.get("params", []):
+                        if _p.get("name") in _optf:
+                            _p["required"] = False
                 free_functions_out.append((target_mod, target_fn, sig))
                 continue
             ctx = f"{mod}.{canonical_name}.{method_canonical}"
@@ -1522,6 +1610,15 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             except TypeTranslationError as e:
                 failures.append(str(e))
                 continue
+            # Java expresses "this param has a default" as a shorter overload that
+            # omits it and supplies the default. Reflection flattens that away, so
+            # recover the optionality from the overload set (see
+            # optional_param_names) before any override/unfold replaces the params.
+            _opt = optional_param_names(type_entry, native)
+            if _opt:
+                for _p in sig.get("params", []):
+                    if _p.get("name") in _opt and _p.get("kind") not in ("self", "cls"):
+                        _p["required"] = False
             # Method-level signature override (regular methods whose native Java
             # shape — e.g. a value-tuple stand-in record return — doesn't
             # translate via reflection alone). Replace the reflected signature
@@ -1603,9 +1700,18 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             out_modules.setdefault(target_mod, {"classes": {}})
             out_modules[target_mod].setdefault("functions", {})
             # Java overloads collapse — prefer the fewer-param overload so
-            # the projection lines up with Python's single signature.
+            # the projection lines up with Python's single signature. Exception
+            # (PREFER_FULL_OVERLOAD_FREE_FUNCTIONS): where the shorter overload only
+            # exists to supply the reference's default, the FULL signature is the
+            # parity surface — optional_param_names has already marked the omitted
+            # params optional on it, and the short form would hide them.
             existing = out_modules[target_mod]["functions"].get(target_fn)
-            if existing is not None and len(sig.get("params", [])) >= len(existing.get("params", [])):
+            if (target_mod, target_fn) in PREFER_FULL_OVERLOAD_FREE_FUNCTIONS:
+                if existing is not None and \
+                        len(sig.get("params", [])) <= len(existing.get("params", [])):
+                    continue
+            elif existing is not None and \
+                    len(sig.get("params", [])) >= len(existing.get("params", [])):
                 continue
             out_modules[target_mod]["functions"][target_fn] = sig
 
@@ -1709,6 +1815,7 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
     # methods (post-#58 the oracle strips the tail; keep the port's optional
     # kwargs door excused as an optional extra, not an omission).
     _mark_kwargs_tails_optional(out_modules)
+    _mark_varargs_heads_optional(out_modules)
 
     sorted_modules = {}
     for k in sorted(out_modules):
@@ -1869,6 +1976,56 @@ def _typed_param_count(sig: dict) -> int:
         if "class:" in t:
             n += 1
     return n
+
+
+def optional_param_names(type_entry: dict, native_method: str) -> set[str]:
+    """CANONICAL names of the params some SHORTER public overload of
+    ``native_method`` omits — i.e. the params this method treats as OPTIONAL.
+
+    Java has no default arguments; its idiomatic substitute is METHOD
+    OVERLOADING — ``pause()`` delegating to ``pause(behavior)`` with the
+    reference's default is exactly how ``behavior: str | None = None`` is
+    expressed here. Reflection reports every parameter of every overload
+    positionally, so ``build_signature`` alone can only mark them all
+    ``required: True``; that erases the optionality the source really has and
+    reads downstream as a spurious ``required-flip`` against the reference.
+
+    We recover it structurally: take the FULL-arity overload (the one the Java
+    overload collapse keeps as the parity surface) and mark a param optional
+    when at least one shorter overload of the same name omits it. Only trailing
+    prefix-overloads count — the shorter overload's parameter names must be a
+    PREFIX of the full one's — because that is the shape a delegating
+    convenience overload takes; a same-arity type-swap overload (``tap`` with
+    enum vs String) is not an optionality statement and must not be read as one.
+
+    We deliberately do NOT synthesize a ``default`` value: reflection cannot see
+    what constant the short overload forwards, and the diff checker treats
+    "port marks it optional but records no default" as UNRECORDED, not drift
+    (``Coverage.default_unrecorded``). Recording ``required: false`` is the
+    honest, verifiable half; inventing the value would not be.
+    """
+    overloads = [m for m in type_entry.get("methods", [])
+                 if m.get("name") == native_method]
+    if len(overloads) < 2:
+        return set()
+
+    def canon_names(m: dict) -> list[str]:
+        return [camel_to_snake(p.get("name", "")) for p in m.get("parameters", [])]
+
+    full = max(overloads, key=lambda m: len(m.get("parameters", [])))
+    full_names = canon_names(full)
+    optional: set[str] = set()
+    for m in overloads:
+        if m is full:
+            continue
+        names = canon_names(m)
+        if len(names) >= len(full_names):
+            continue
+        # Trailing-omission (prefix) overload only — see docstring.
+        if names != full_names[:len(names)]:
+            continue
+        optional.update(full_names[len(names):])
+    return optional
 
 
 def build_signature(method: dict, aliases: dict, context: str, mod: str, class_name: str) -> dict:

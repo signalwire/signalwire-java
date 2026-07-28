@@ -100,6 +100,31 @@ public class PomBuilder {
   }
 
   /**
+   * Add content to a section with every optional param at its reference default ({@code body=None},
+   * {@code bullet=None}, {@code bullets=None}). Mirrors {@code PomBuilder.add_to_section(title,
+   * body=None, bullet=None, bullets=None)} — signalwire/core/pom_builder.py:84.
+   */
+  public PomBuilder addToSection(String title) {
+    return addToSection(title, null, null, null);
+  }
+
+  /**
+   * Add content to a section supplying {@code body}, with {@code bullet=None} and {@code
+   * bullets=None} — signalwire/core/pom_builder.py:84.
+   */
+  public PomBuilder addToSection(String title, String body) {
+    return addToSection(title, body, null, null);
+  }
+
+  /**
+   * Add content to a section supplying {@code body} and {@code bullet}, with {@code bullets=None} —
+   * signalwire/core/pom_builder.py:84.
+   */
+  public PomBuilder addToSection(String title, String body, String bullet) {
+    return addToSection(title, body, bullet, null);
+  }
+
+  /**
    * Add content to an existing section, creating it if it doesn't exist (auto-vivification).
    *
    * @param body appended to any existing body (separated by a blank line)

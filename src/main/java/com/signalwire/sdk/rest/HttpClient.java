@@ -192,6 +192,14 @@ public class HttpClient {
     return execute("POST", path, url, json, requestOptions);
   }
 
+  /**
+   * PUT request with {@code body} at its reference default of {@code None}. Mirrors {@code
+   * HttpClient.put(path, body=None, request_options=None)} — signalwire/rest/_base.py:306.
+   */
+  public Map<String, Object> put(String path) {
+    return put(path, null, null);
+  }
+
   /** PUT request with JSON body. */
   public Map<String, Object> put(String path, Map<String, Object> body) {
     return put(path, body, null);
@@ -211,6 +219,14 @@ public class HttpClient {
    */
   public Map<String, Object> patch(String path, Map<String, Object> body) {
     return patch(path, body, null);
+  }
+
+  /**
+   * PATCH request with {@code body} at its reference default of {@code None}. Mirrors {@code
+   * HttpClient.patch(path, body=None, request_options=None)} — signalwire/rest/_base.py:314.
+   */
+  public Map<String, Object> patch(String path) {
+    return patch(path, null, null);
   }
 
   /** PATCH request with JSON body and a per-request {@link RequestOptions} override. */

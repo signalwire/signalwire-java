@@ -327,6 +327,16 @@ public class Service implements AutoCloseable {
     return tool.getHandler().handle(args, rawData);
   }
 
+  /**
+   * Dispatch a function call with {@code raw_data} at its reference default of {@code None}.
+   * Mirrors {@code ToolMixin.on_function_call(name, args, raw_data=None)} —
+   * signalwire/core/mixins/tool_mixin.py:235.
+   */
+  public com.signalwire.sdk.swaig.FunctionResult onFunctionCall(
+      String funcName, java.util.Map<String, Object> args) {
+    return onFunctionCall(funcName, args, null);
+  }
+
   /** List registered SWAIG tool names in insertion order. */
   public java.util.List<String> listToolNames() {
     return new java.util.ArrayList<>(tools.keySet());
@@ -422,6 +432,23 @@ public class Service implements AutoCloseable {
   public java.util.Map<String, Object> onRequest(
       java.util.Map<String, Object> requestData, String callbackPath) {
     return onSwmlRequest(requestData, callbackPath);
+  }
+
+  /**
+   * Request hook with both params at their reference default of {@code None}. Mirrors {@code
+   * SWMLService.on_request(request_data=None, callback_path=None)} —
+   * signalwire/core/mixins/web_mixin.py:1212.
+   */
+  public java.util.Map<String, Object> onRequest() {
+    return onRequest(null, null);
+  }
+
+  /**
+   * Request hook supplying {@code request_data}, with {@code callback_path} at its reference
+   * default of {@code None} — signalwire/core/mixins/web_mixin.py:1212.
+   */
+  public java.util.Map<String, Object> onRequest(java.util.Map<String, Object> requestData) {
+    return onRequest(requestData, null);
   }
 
   /**

@@ -102,6 +102,15 @@ public class FunctionResult {
     return connect(destination, isFinal, null);
   }
 
+  /**
+   * SWML transfer with AI response setup, using the reference's default {@code final=True} (a
+   * permanent transfer). Mirrors {@code FunctionResult.swml_transfer(dest, ai_response,
+   * final=True)} — signalwire/core/function_result.py:190.
+   */
+  public FunctionResult swmlTransfer(String dest, String aiResponse) {
+    return swmlTransfer(dest, aiResponse, true);
+  }
+
   /** SWML transfer with AI response setup. */
   public FunctionResult swmlTransfer(String dest, String aiResponse, boolean isFinal) {
     Map<String, Object> swmlAction = new LinkedHashMap<>();
@@ -124,6 +133,14 @@ public class FunctionResult {
   /** Hangup the call. */
   public FunctionResult hangup() {
     return addAction("hangup", true);
+  }
+
+  /**
+   * Put the call on hold with the reference's default 300s timeout. Mirrors {@code
+   * FunctionResult.hold(timeout: int = 300)} — signalwire/core/function_result.py:440.
+   */
+  public FunctionResult hold() {
+    return hold(300);
   }
 
   /** Put the call on hold (timeout clamped 0-900). */
@@ -220,6 +237,16 @@ public class FunctionResult {
 
   public FunctionResult switchContext(String systemPrompt) {
     return switchContext(systemPrompt, null, false, false);
+  }
+
+  /**
+   * Replace the tool_call+result pair in conversation history using the reference's default {@code
+   * text=True} — i.e. REMOVE the pair entirely. Mirrors {@code
+   * FunctionResult.replace_in_history(text: str | bool = True)} —
+   * signalwire/core/function_result.py:672.
+   */
+  public FunctionResult replaceInHistory() {
+    return replaceInHistory(true);
   }
 
   /** Replace tool_call+result pair in conversation history. */
@@ -461,8 +488,26 @@ public class FunctionResult {
     return addAction("toggle_functions", toggles);
   }
 
+  /**
+   * Enable function calls on speaker timeout, using the reference's default {@code enabled=True}.
+   * Mirrors {@code FunctionResult.enable_functions_on_timeout(enabled: bool = True)} —
+   * signalwire/core/function_result.py:647.
+   */
+  public FunctionResult enableFunctionsOnTimeout() {
+    return enableFunctionsOnTimeout(true);
+  }
+
   public FunctionResult enableFunctionsOnTimeout(boolean enabled) {
     return addAction("functions_on_speaker_timeout", enabled);
+  }
+
+  /**
+   * Send full data to the LLM for this turn only, using the reference's default {@code
+   * enabled=True}. Mirrors {@code FunctionResult.enable_extensive_data(enabled: bool = True)} —
+   * signalwire/core/function_result.py:659.
+   */
+  public FunctionResult enableExtensiveData() {
+    return enableExtensiveData(true);
   }
 
   public FunctionResult enableExtensiveData(boolean enabled) {
@@ -786,6 +831,32 @@ public class FunctionResult {
   }
 
   /**
+   * Start a call tap with every optional param at its reference default. Mirrors {@code
+   * FunctionResult.tap(uri, control_id=None, direction="both", codec="PCMU", rtp_ptime=20,
+   * status_url=None)} — signalwire/core/function_result.py:1224.
+   */
+  public FunctionResult tap(String uri) {
+    return tap(uri, null, "both", "PCMU", 20, null);
+  }
+
+  /**
+   * Start a call tap, supplying {@code control_id} and defaulting the rest to the reference's
+   * values ({@code direction="both"}, {@code codec="PCMU"}, {@code rtp_ptime=20}, {@code
+   * status_url=None}) — signalwire/core/function_result.py:1224.
+   */
+  public FunctionResult tap(String uri, String controlId) {
+    return tap(uri, controlId, "both", "PCMU", 20, null);
+  }
+
+  /**
+   * Start a call tap, supplying {@code direction} and defaulting {@code codec="PCMU"}, {@code
+   * rtp_ptime=20}, {@code status_url=None} — signalwire/core/function_result.py:1224.
+   */
+  public FunctionResult tap(String uri, String controlId, String direction) {
+    return tap(uri, controlId, direction, "PCMU", 20, null);
+  }
+
+  /**
    * Start a call tap (convenience form). Delegates to the full-arity {@link #tap(String, String,
    * String, String, int, String)} with {@code rtp_ptime} at its reference default (20) and no
    * {@code status_url}.
@@ -892,6 +963,34 @@ public class FunctionResult {
   public FunctionResult sendSms(
       String toNumber, String fromNumber, String body, List<String> media, List<String> tags) {
     return sendSms(toNumber, fromNumber, body, media, tags, null);
+  }
+
+  /**
+   * Send SMS with every optional param at its reference default ({@code body=None}, {@code
+   * media=None}, {@code tags=None}, {@code region=None}). Mirrors {@code
+   * FunctionResult.send_sms(to_number, from_number, body=None, media=None, tags=None, region=None)}
+   * — signalwire/core/function_result.py:752. Like the reference this raises unless {@code body} or
+   * {@code media} is supplied; it exists so the optional params are visible in the surface.
+   */
+  public FunctionResult sendSms(String toNumber, String fromNumber) {
+    return sendSms(toNumber, fromNumber, null, null, null, null);
+  }
+
+  /**
+   * Send SMS supplying {@code body}, defaulting {@code media=None}, {@code tags=None}, {@code
+   * region=None} — signalwire/core/function_result.py:752.
+   */
+  public FunctionResult sendSms(String toNumber, String fromNumber, String body) {
+    return sendSms(toNumber, fromNumber, body, null, null, null);
+  }
+
+  /**
+   * Send SMS supplying {@code body} and {@code media}, defaulting {@code tags=None}, {@code
+   * region=None} — signalwire/core/function_result.py:752.
+   */
+  public FunctionResult sendSms(
+      String toNumber, String fromNumber, String body, List<String> media) {
+    return sendSms(toNumber, fromNumber, body, media, null, null);
   }
 
   /**
@@ -1002,6 +1101,37 @@ public class FunctionResult {
                 Collections.singletonMap("set", Collections.singletonMap("ai_response", aiResp)),
                 Collections.singletonMap("pay", payParams))));
     return executeSwml(swmlDoc, false);
+  }
+
+  /**
+   * Process payment with every optional param at its reference default. Mirrors {@code
+   * FunctionResult.pay(payment_connector_url, input_method="dtmf", status_url=None,
+   * payment_method="credit-card", timeout=5, max_attempts=1, security_code=True, postal_code=True,
+   * min_postal_code_length=0, token_type="reusable", charge_amount=None, currency="usd",
+   * language="en-US", voice="woman", description=None, valid_card_types="visa mastercard amex",
+   * parameters=None, prompts=None, ai_response=DEFAULT)} — signalwire/core/function_result.py:810.
+   */
+  public FunctionResult pay(String connectorUrl) {
+    return pay(
+        connectorUrl,
+        "dtmf",
+        null,
+        "credit-card",
+        5,
+        1,
+        true,
+        Boolean.TRUE,
+        0,
+        "reusable",
+        null,
+        "usd",
+        "en-US",
+        "woman",
+        null,
+        "visa mastercard amex",
+        null,
+        null,
+        DEFAULT_PAY_AI_RESPONSE);
   }
 
   /**
@@ -1126,6 +1256,25 @@ public class FunctionResult {
   }
 
   // ======== Payment Helpers (static) ========
+
+  /**
+   * Create a payment prompt with {@code card_type} and {@code error_type} at their reference
+   * default of {@code None}. Mirrors {@code FunctionResult.create_payment_prompt(for_situation,
+   * actions, card_type=None, error_type=None)} — signalwire/core/function_result.py:1471.
+   */
+  public static Map<String, Object> createPaymentPrompt(
+      String forSituation, List<Map<String, String>> payActions) {
+    return createPaymentPrompt(forSituation, payActions, null, null);
+  }
+
+  /**
+   * Create a payment prompt supplying {@code card_type}, with {@code error_type} at its reference
+   * default of {@code None} — signalwire/core/function_result.py:1471.
+   */
+  public static Map<String, Object> createPaymentPrompt(
+      String forSituation, List<Map<String, String>> payActions, String cardType) {
+    return createPaymentPrompt(forSituation, payActions, cardType, null);
+  }
 
   public static Map<String, Object> createPaymentPrompt(
       String forSituation,

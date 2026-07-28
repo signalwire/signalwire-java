@@ -141,6 +141,17 @@ public class SWAIGFunction {
   }
 
   /**
+   * Execute the function with {@code raw_data} at its reference default of {@code None}. Mirrors
+   * {@code SWAIGFunction.execute(args, raw_data=None)} — signalwire/core/swaig_function.py:142.
+   *
+   * @param args parsed arguments for the function
+   * @return function result as a Map (from {@link FunctionResult#toMap()})
+   */
+  public Map<String, Object> execute(Map<String, Object> args) {
+    return execute(args, null);
+  }
+
+  /**
    * Execute the function with the given arguments.
    *
    * <p>Everything must end up as a {@link FunctionResult} Map. On any error a generic error message
