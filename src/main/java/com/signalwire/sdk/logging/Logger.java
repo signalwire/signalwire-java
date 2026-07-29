@@ -6,6 +6,9 @@
  */
 package com.signalwire.sdk.logging;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Simple logging system with level control via environment variables.
  *
@@ -126,13 +129,16 @@ public final class Logger {
   }
 
   /**
-   * Remove ASCII control characters (except tab/newline/carriage-return) from a log string. Mirrors
-   * logging_config.strip_control_chars (a structlog processor in Python).
+   * Remove ASCII control characters (except tab/newline/carriage-return) from a single string.
+   *
+   * <p>INTERNAL: the reference's public contract is the event-map form ({@link
+   * #stripControlChars(Map)}); this is the per-value scrub that form is built out of, and the unit
+   * the emitter needs. Package-private, so it is not port surface.
    *
    * @param value the raw log string (null-safe → returns null)
    * @return the sanitized string
    */
-  public static String stripControlChars(String value) {
+  static String stripControlCharsValue(String value) {
     if (value == null) {
       return null;
     }
@@ -144,6 +150,33 @@ public final class Logger {
       }
     }
     return out.toString();
+  }
+
+  /**
+   * Strip control characters from log event values to prevent log injection.
+   *
+   * <p>Mirrors {@code signalwire.core.logging_config.strip_control_chars}: takes the log event map,
+   * scrubs every STRING value, and returns the map. Non-string values pass through untouched,
+   * exactly as the reference's {@code isinstance(value, str)} guard does.
+   *
+   * <p>The reference registers this in BOTH of its structlog processor chains, so the scrub sits on
+   * the real emission path rather than merely being available; this port does the same from {@link
+   * #log}.
+   *
+   * @param eventDict the log event map (null-safe → returns null)
+   * @return a map with every string value sanitized
+   */
+  public static Map<String, Object> stripControlChars(Map<String, Object> eventDict) {
+    if (eventDict == null) {
+      return null;
+    }
+    Map<String, Object> out = new LinkedHashMap<>(eventDict);
+    for (Map.Entry<String, Object> e : out.entrySet()) {
+      if (e.getValue() instanceof String s) {
+        e.setValue(stripControlCharsValue(s));
+      }
+    }
+    return out;
   }
 
   public static Level getGlobalLevel() {
@@ -188,7 +221,7 @@ public final class Logger {
 
   public void error(String message, Throwable t) {
     if (isEnabled(Level.ERROR)) {
-      System.err.printf("[%s] [%s] %s%n", Level.ERROR, name, message);
+      System.err.printf("[%s] [%s] %s%n", Level.ERROR, name, stripControlCharsValue(message));
       t.printStackTrace(System.err);
     }
   }
@@ -196,14 +229,15 @@ public final class Logger {
   private void log(Level level, String message) {
     if (isEnabled(level)) {
       var stream = (level == Level.ERROR || level == Level.WARN) ? System.err : System.out;
-      stream.printf("[%s] [%s] %s%n", level, name, message);
+      stream.printf("[%s] [%s] %s%n", level, name, stripControlCharsValue(message));
     }
   }
 
   private void log(Level level, String format, Object... args) {
     if (isEnabled(level)) {
       var stream = (level == Level.ERROR || level == Level.WARN) ? System.err : System.out;
-      stream.printf("[%s] [%s] %s%n", level, name, String.format(format, args));
+      stream.printf(
+          "[%s] [%s] %s%n", level, name, stripControlCharsValue(String.format(format, args)));
     }
   }
 }
