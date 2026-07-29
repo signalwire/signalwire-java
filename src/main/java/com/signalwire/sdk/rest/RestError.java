@@ -80,6 +80,12 @@ public class RestError extends RuntimeException {
     this.requestId = extractRequestId(headers);
   }
 
+  /**
+   * HTTP status of the failing response, or {@code 0} when the request never got one (a transport
+   * error).
+   *
+   * @return the status code.
+   */
   public int getStatusCode() {
     return statusCode;
   }
@@ -94,10 +100,20 @@ public class RestError extends RuntimeException {
     return responseBody;
   }
 
+  /**
+   * HTTP method of the failing request.
+   *
+   * @return the method.
+   */
   public String getMethod() {
     return method;
   }
 
+  /**
+   * Path of the failing request, without the space host or query string.
+   *
+   * @return the path.
+   */
   public String getPath() {
     return path;
   }
@@ -107,6 +123,12 @@ public class RestError extends RuntimeException {
     return url;
   }
 
+  /**
+   * Raw body of the failing response. It is server-supplied content that may echo request data, so
+   * treat it as untrusted when surfacing it to a user.
+   *
+   * @return the response body, or {@code null} for a transport error.
+   */
   public String getResponseBody() {
     return responseBody;
   }

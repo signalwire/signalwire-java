@@ -496,6 +496,11 @@ final class EmitCorpus {
     return m;
   }
 
+  /**
+   * Entry point: emits the EMISSION-DUMP corpus this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     // disableHtmlEscaping mirrors Go's enc.SetEscapeHTML(false): keep '+'/'&'/
     // '<' etc. literal so the JSON matches Python's json.dumps output.

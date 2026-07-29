@@ -6,26 +6,54 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Starts and stops background audio playback during a call.
+ *
+ * <p>Registered under the name {@code play_background_file}; load it with {@code
+ * agent.addSkill("play_background_file", params)}.
+ */
 public class PlayBackgroundFileSkill implements SkillBase {
 
   private String toolName = "play_background_file";
   private List<Map<String, Object>> files = new ArrayList<>();
 
+  /**
+   * The registry name this skill is loaded by: {@code play_background_file}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "play_background_file";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Control background file playback";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code files} list; {@code false}
+   *     otherwise, which leaves the skill unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -36,6 +64,11 @@ public class PlayBackgroundFileSkill implements SkillBase {
     return !files.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return Collections.emptyList();

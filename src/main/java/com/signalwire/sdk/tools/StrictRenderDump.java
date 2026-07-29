@@ -220,6 +220,11 @@ final class StrictRenderDump {
     return c;
   }
 
+  /**
+   * Entry point: emits the SWML STRICT-RENDER dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
     Gson gson = new GsonBuilder().disableHtmlEscaping().create();

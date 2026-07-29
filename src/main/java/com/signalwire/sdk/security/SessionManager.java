@@ -148,6 +148,19 @@ public class SessionManager {
     return createToken(functionName, callId, defaultExpiry);
   }
 
+  /**
+   * Mint a signed SWAIG-function token scoped to one function and one call.
+   *
+   * <p>The token is HMAC-SHA256 over {@code call_id:function_name:expiry:nonce}, assembled as five
+   * dot-separated fields and base64url-encoded WITH its padding intact — the reference decodes with
+   * {@code urlsafe_b64decode}, which rejects a stripped {@code =}, so dropping the padding makes
+   * the token unusable to the reference and to every other port.
+   *
+   * @param functionName the tool the token authorizes.
+   * @param callId the call the token is scoped to.
+   * @param expirySeconds lifetime from now, in seconds.
+   * @return the encoded token.
+   */
   public String createToken(String functionName, String callId, int expirySeconds) {
     long expiry = System.currentTimeMillis() / 1000 + expirySeconds;
     String nonce = randomNonce();

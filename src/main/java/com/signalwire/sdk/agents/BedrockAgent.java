@@ -268,18 +268,38 @@ public class BedrockAgent extends AgentBase {
     return this;
   }
 
+  /**
+   * The Amazon Polly voice the Bedrock agent speaks with.
+   *
+   * @return the voice id.
+   */
   public String getVoiceId() {
     return voiceId;
   }
 
+  /**
+   * Sampling temperature for the Bedrock model — higher is more varied, lower more deterministic.
+   *
+   * @return the temperature.
+   */
   public double getTemperature() {
     return temperature;
   }
 
+  /**
+   * Nucleus-sampling cutoff for the Bedrock model.
+   *
+   * @return the top-p value.
+   */
   public double getTopP() {
     return topP;
   }
 
+  /**
+   * Ceiling on tokens the Bedrock model may generate per response.
+   *
+   * @return the token limit.
+   */
   public int getMaxTokens() {
     return maxTokens;
   }

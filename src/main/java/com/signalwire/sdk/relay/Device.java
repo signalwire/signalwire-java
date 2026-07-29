@@ -145,6 +145,12 @@ public final class Device {
     return m;
   }
 
+  /**
+   * Two devices are equal when they have the same type AND the same parameters.
+   *
+   * @param o the object to compare with.
+   * @return {@code true} when both fields match.
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -157,11 +163,22 @@ public final class Device {
     return type.equals(other.type) && params.equals(other.params);
   }
 
+  /**
+   * Hash over the type and parameters, consistent with {@link #equals(Object)}.
+   *
+   * @return the hash code.
+   */
   @Override
   public int hashCode() {
     return java.util.Objects.hash(type, params);
   }
 
+  /**
+   * A diagnostic rendering of the device type and its parameters. Note the parameters include
+   * dialing details such as the numbers involved.
+   *
+   * @return the diagnostic string.
+   */
   @Override
   public String toString() {
     return "Device{type=" + type + ", params=" + params + "}";

@@ -176,6 +176,11 @@ final class EmitSkills {
     return contracts;
   }
 
+  /**
+   * Entry point: emits the SKILL-DUMP contract corpus this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     try {
       List<CorpusEntry> corpus = loadCorpus();

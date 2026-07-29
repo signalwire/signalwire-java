@@ -24,21 +24,44 @@ public class ClaudeSkillsSkill implements SkillBase {
   private final List<Map<String, Object>> discoveredSections = new ArrayList<>();
   private final List<String> discoveredHints = new ArrayList<>();
 
+  /**
+   * The registry name this skill is loaded by: {@code claude_skills}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "claude_skills";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Load Claude SKILL.md files as agent tools";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a {@code skills_path} that exists, is a directory, and
+   *     yields at least one discovered skill; {@code false} otherwise, which leaves the skill
+   *     unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -207,11 +230,22 @@ public class ClaudeSkillsSkill implements SkillBase {
     }
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return discoveredTools;
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     return discoveredHints;

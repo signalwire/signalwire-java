@@ -6,6 +6,12 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Transfers calls to other agents by matching the caller's request against configured patterns.
+ *
+ * <p>Registered under the name {@code swml_transfer}; load it with {@code
+ * agent.addSkill("swml_transfer", params)}.
+ */
 public class SwmlTransferSkill implements SkillBase {
 
   private String toolName = "transfer_call";
@@ -15,21 +21,43 @@ public class SwmlTransferSkill implements SkillBase {
   private String defaultMessage = "Please hold while I transfer you.";
   private Map<String, Map<String, Object>> transfers = new LinkedHashMap<>();
 
+  /**
+   * The registry name this skill is loaded by: {@code swml_transfer}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "swml_transfer";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Transfer calls between agents based on pattern matching";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code transfers} map; {@code false}
+   *     otherwise, which leaves the skill unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -47,6 +75,11 @@ public class SwmlTransferSkill implements SkillBase {
     return !transfers.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return Collections.emptyList();
@@ -98,6 +131,12 @@ public class SwmlTransferSkill implements SkillBase {
     return List.of(dm.toSwaigFunction());
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     List<String> hints = new ArrayList<>(List.of("transfer", "connect", "speak to", "talk to"));

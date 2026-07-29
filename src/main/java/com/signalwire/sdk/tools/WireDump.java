@@ -146,6 +146,11 @@ final class WireDump {
         isHex);
   }
 
+  /**
+   * Entry point: emits the WIRE-CRYPTO dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     Map<String, Object> out = new LinkedHashMap<>();

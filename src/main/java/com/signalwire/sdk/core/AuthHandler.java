@@ -67,6 +67,11 @@ public class AuthHandler {
       this.response = response;
     }
 
+    /**
+     * The response this handler produced — the status and any headers to send back.
+     *
+     * @return the response.
+     */
     public Response getResponse() {
       return response;
     }
@@ -82,6 +87,11 @@ public class AuthHandler {
     setupAuthMethods();
   }
 
+  /**
+   * The security configuration this handler authenticates against.
+   *
+   * @return the security config.
+   */
   public SecurityConfig getSecurityConfig() {
     return securityConfig;
   }

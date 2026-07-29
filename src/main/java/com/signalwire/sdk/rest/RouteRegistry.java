@@ -533,6 +533,11 @@ final class RouteRegistry {
     return payload;
   }
 
+  /**
+   * Entry point: emits the REST route registry this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     RouteRegistry reg = new RouteRegistry();
     Map<String, Object> payload = reg.build();

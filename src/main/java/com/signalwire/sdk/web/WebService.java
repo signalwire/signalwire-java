@@ -118,6 +118,11 @@ public class WebService {
     this.server = null;
   }
 
+  /**
+   * The TCP port this static-file service binds.
+   *
+   * @return the port.
+   */
   public int getPort() {
     return port;
   }
@@ -126,6 +131,11 @@ public class WebService {
     return directories;
   }
 
+  /**
+   * The security configuration governing this service — TLS, allowed hosts, CORS, and basic auth.
+   *
+   * @return the security config.
+   */
   public SecurityConfig getSecurity() {
     return security;
   }

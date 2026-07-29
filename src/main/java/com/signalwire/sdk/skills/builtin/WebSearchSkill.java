@@ -19,6 +19,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Web search via the Google Custom Search API, optionally scraping the result pages for their full
+ * text.
+ *
+ * <p>Registered under the name {@code web_search}; load it with {@code agent.addSkill("web_search",
+ * params)}.
+ */
 public class WebSearchSkill implements SkillBase {
 
   private static final Logger log = Logger.getLogger(WebSearchSkill.class);
@@ -53,26 +60,53 @@ public class WebSearchSkill implements SkillBase {
   private boolean parallelScrape = true;
   private boolean snippetsOnly = false;
 
+  /**
+   * The registry name this skill is loaded by: {@code web_search}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "web_search";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Search the web for information using Google Custom Search API";
   }
 
+  /**
+   * This skill's semantic version.
+   *
+   * @return the version string.
+   */
   @Override
   public String getVersion() {
     return "2.0.0";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied non-empty values for both {@code api_key} and {@code
+   *     search_engine_id}; {@code false} otherwise, which leaves the skill unloaded.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     this.apiKey = (String) params.get("api_key");
@@ -119,6 +153,11 @@ public class WebSearchSkill implements SkillBase {
     return Boolean.parseBoolean(v.toString());
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> parameters = new LinkedHashMap<>();

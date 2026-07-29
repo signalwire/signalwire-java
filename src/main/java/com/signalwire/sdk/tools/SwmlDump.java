@@ -242,6 +242,11 @@ final class SwmlDump {
     return c;
   }
 
+  /**
+   * Entry point: emits the SWML dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     // Silence the SDK's INFO logging (which writes to stdout) so ONLY the JSON
     // artifact reaches stdout — the differ parses stdout as one JSON object.

@@ -25,6 +25,11 @@ public class AIVerbHandler extends SWMLVerbHandler {
   private static final Set<String> TOP_LEVEL_AI_KEYS =
       Set.of("languages", "hints", "pronounce", "global_data");
 
+  /**
+   * The SWML verb this handler validates and renders: {@code ai}.
+   *
+   * @return the verb name.
+   */
   @Override
   public String getVerbName() {
     return "ai";

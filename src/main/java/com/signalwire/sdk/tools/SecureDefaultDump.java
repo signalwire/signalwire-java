@@ -55,6 +55,11 @@ final class SecureDefaultDump {
   private static final String INSECURE_TOOL = "sd_explicit_insecure";
   private static final String TOKEN_PLACEHOLDER = "<TOKEN>";
 
+  /**
+   * Entry point: emits the SECURE-DEFAULT dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   @SuppressWarnings("unchecked")
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);

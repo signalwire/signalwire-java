@@ -65,10 +65,20 @@ public class PromptObjectModel {
     }
   }
 
+  /**
+   * The top-level sections of this prompt, in render order.
+   *
+   * @return the sections.
+   */
   public List<Section> getSections() {
     return sections;
   }
 
+  /**
+   * Whether debug rendering is on for this POM.
+   *
+   * @return the debug flag.
+   */
   public boolean isDebug() {
     return debug;
   }

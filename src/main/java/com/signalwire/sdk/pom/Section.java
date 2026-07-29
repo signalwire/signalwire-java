@@ -74,26 +74,58 @@ public class Section {
     this(title, body, bullets, null, false);
   }
 
+  /**
+   * The section heading.
+   *
+   * @return the title.
+   */
   public String getTitle() {
     return title;
   }
 
+  /**
+   * The section's prose. Empty for a bullets-only section, in which case it is dropped from the
+   * rendered output rather than emitted as an empty string.
+   *
+   * @return the body.
+   */
   public String getBody() {
     return body;
   }
 
+  /**
+   * The section's bullet points.
+   *
+   * @return the bullets, or {@code null} when the section has none.
+   */
   public List<String> getBullets() {
     return bullets;
   }
 
+  /**
+   * Sections nested under this one.
+   *
+   * @return the subsections, or {@code null} when there are none.
+   */
   public List<Section> getSubsections() {
     return subsections;
   }
 
+  /**
+   * Whether this section is numbered. Boxed so an unset value ({@code null}) stays distinct from an
+   * explicit {@code false} and is omitted from the rendered output.
+   *
+   * @return the numbering flag, or {@code null} when unset.
+   */
   public Boolean getNumbered() {
     return numbered;
   }
 
+  /**
+   * Whether this section's bullets are numbered rather than bulleted.
+   *
+   * @return the flag.
+   */
   public boolean isNumberedBullets() {
     return numberedBullets;
   }

@@ -60,21 +60,41 @@ public class McpGatewaySkill implements SkillBase {
   // Python reference's self.session_id = None at setup).
   private String sessionId;
 
+  /**
+   * The registry name this skill is loaded by: {@code mcp_gateway}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "mcp_gateway";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Bridge MCP servers with SWAIG functions";
   }
 
+  /**
+   * This skill's semantic version.
+   *
+   * @return the version string.
+   */
   @Override
   public String getVersion() {
     return "1.0.0";
   }
 
+  /**
+   * Packages this skill needs at runtime, reported for diagnostics rather than enforced.
+   *
+   * @return the required package names.
+   */
   @Override
   public List<String> getRequiredPackages() {
     // Java resolves HTTP/JSON deps at build time; informational only.
@@ -402,6 +422,12 @@ public class McpGatewaySkill implements SkillBase {
     return callId == null ? "unknown" : callId.toString();
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     List<String> hints = new ArrayList<>();
@@ -569,12 +595,32 @@ public class McpGatewaySkill implements SkillBase {
    * secure-default-gated site (the only legitimate allowlist reason per the TLS-VERIFY gate).
    */
   private static final class InsecureTrustManager implements X509TrustManager {
+    /**
+     * Accepts any client certificate without checking it. Deliberately empty — see the class
+     * comment: this trust manager exists only for the {@code verify_ssl=false} opt-out.
+     *
+     * @param chain the presented certificate chain (ignored).
+     * @param authType the authentication type (ignored).
+     */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
+    /**
+     * Accepts any server certificate without checking it, which means no verification that the
+     * gateway is who it claims to be and no protection against an interposed party. Deliberately
+     * empty — reachable only through the {@code verify_ssl=false} opt-out.
+     *
+     * @param chain the presented certificate chain (ignored).
+     * @param authType the authentication type (ignored).
+     */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) {}
 
+    /**
+     * Returns no issuers, since this trust manager accepts every certificate regardless of issuer.
+     *
+     * @return an empty array.
+     */
     @Override
     public X509Certificate[] getAcceptedIssuers() {
       return new X509Certificate[0];

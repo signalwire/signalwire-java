@@ -11,6 +11,12 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Web scraping and crawling: fetches pages and extracts their text for the model to read.
+ *
+ * <p>Registered under the name {@code spider}; load it with {@code agent.addSkill("spider",
+ * params)}.
+ */
 public class SpiderSkill implements SkillBase {
 
   private static final Logger log = Logger.getLogger(SpiderSkill.class);
@@ -71,21 +77,43 @@ public class SpiderSkill implements SkillBase {
     return tags.isEmpty() ? null : String.join("|", tags);
   }
 
+  /**
+   * The registry name this skill is loaded by: {@code spider}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "spider";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Fast web scraping and crawling capabilities";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters. This skill needs no configuration, so setup always
+   * succeeds.
+   *
+   * @param params the skill's configuration (unused).
+   * @return {@code true}.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     if (params.containsKey("timeout")) this.timeout = ((Number) params.get("timeout")).intValue();
@@ -103,6 +131,11 @@ public class SpiderSkill implements SkillBase {
     return true;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> urlParams = new LinkedHashMap<>();
@@ -205,6 +238,12 @@ public class SpiderSkill implements SkillBase {
     return List.of(scrape, crawl, extract);
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     return List.of("scrape", "crawl", "extract", "web page", "website", "spider");

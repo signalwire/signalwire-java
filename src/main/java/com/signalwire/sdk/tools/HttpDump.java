@@ -153,6 +153,11 @@ final class HttpDump {
     return map("decision", "reject", "status", rej.status());
   }
 
+  /**
+   * Entry point: emits the HTTP dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
     Map<String, Object> out = new LinkedHashMap<>();

@@ -88,27 +88,54 @@ final class WireRelayDump {
       return frames.get(method);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {
       // no-op
     }
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {
       // logged to stderr only; never stdout
       System.err.println("mock relay error: " + ex.getMessage());
     }
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {
       // no-op
     }
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     @SuppressWarnings("unchecked")
     public void onMessage(WebSocket socket, String raw) {
@@ -222,6 +249,12 @@ final class WireRelayDump {
     return map("method", method, "params", params);
   }
 
+  /**
+   * Entry point: emits the WIRE-RELAY dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   * @throws Exception if the run fails; the gate reads the non-zero exit.
+   */
   public static void main(String[] args) throws Exception {
     Logger.setGlobalLevel(Logger.Level.OFF);
 

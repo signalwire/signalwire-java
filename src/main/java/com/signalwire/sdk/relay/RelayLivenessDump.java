@@ -49,6 +49,11 @@ final class RelayLivenessDump {
   // BOUNDED_WINDOW_S = 5.0 in the differ. Keep drivers well inside it.
   private static final long WINDOW_MS = 5_000;
 
+  /**
+   * Entry point: emits the RELAY liveness dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
     Map<String, Object> out = new LinkedHashMap<>();
@@ -336,20 +341,47 @@ final class RelayLivenessDump {
       setReuseAddr(true);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {}
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {}
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {}
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     public void onMessage(WebSocket socket, String raw) {
       Map<String, Object> msg;

@@ -508,6 +508,11 @@ final class RouteTestPlan {
     return payload;
   }
 
+  /**
+   * Entry point: emits the REST route test plan this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     RouteTestPlan tp = new RouteTestPlan();
     Map<String, Object> payload = tp.build();

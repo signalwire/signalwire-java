@@ -72,6 +72,12 @@ public class SwaigTest {
   // {@link System#getenv()}).
   private EnvProvider realEnvOverride;
 
+  /**
+   * Command-line entry point for the {@code swaig-test} tool: lists an agent's tools, dumps its
+   * rendered SWML, or executes one tool against a running agent.
+   *
+   * @param args the command-line arguments (see {@code bin/swaig-test --help}).
+   */
   public static void main(String[] args) {
     int code = run(args);
     if (code != 0) System.exit(code);

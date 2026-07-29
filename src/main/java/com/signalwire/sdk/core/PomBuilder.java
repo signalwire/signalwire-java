@@ -31,6 +31,11 @@ public class PomBuilder {
     this.pom = new PromptObjectModel();
   }
 
+  /**
+   * The Prompt Object Model built so far.
+   *
+   * @return the POM.
+   */
   public PromptObjectModel getPom() {
     return pom;
   }

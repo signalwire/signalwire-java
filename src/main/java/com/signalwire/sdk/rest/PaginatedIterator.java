@@ -83,11 +83,23 @@ public final class PaginatedIterator
     this.requestOptions = requestOptions;
   }
 
+  /**
+   * Returns this same object, so the iterator can be used directly in a for-each. Consequently it
+   * is SINGLE-USE — iterating twice does not restart from the first page.
+   *
+   * @return this iterator.
+   */
   @Override
   public PaginatedIterator iterator() {
     return this;
   }
 
+  /**
+   * Whether another item is available, fetching the next page from the API when the current one is
+   * exhausted. This means the call can block on network I/O and can raise a {@link RestError}.
+   *
+   * @return {@code true} when another item is available.
+   */
   @Override
   public boolean hasNext() {
     while (index >= items.size()) {

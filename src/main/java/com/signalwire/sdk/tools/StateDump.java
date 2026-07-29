@@ -53,11 +53,22 @@ final class StateDump {
 
   /** A minimal custom verb handler — the Java analog of the corpus's throwaway "greet" handler. */
   private static final class GreetVerbHandler extends SWMLVerbHandler {
+    /**
+     * The SWML verb this test handler registers under.
+     *
+     * @return the verb name.
+     */
     @Override
     public String getVerbName() {
       return "greet";
     }
 
+    /**
+     * Validate the verb's configuration.
+     *
+     * @param cfg the verb arguments.
+     * @return the validation result.
+     */
     @Override
     public SWMLVerbHandler.ValidationResult validateConfig(Map<String, Object> cfg) {
       return new SWMLVerbHandler.ValidationResult(true, new ArrayList<>());
@@ -87,6 +98,11 @@ final class StateDump {
     return new ArrayList<>(Arrays.asList(items));
   }
 
+  /**
+   * Entry point: emits the STATE dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
     // serializeNulls: keep explicit null values (e.g. lookup_missing) in the

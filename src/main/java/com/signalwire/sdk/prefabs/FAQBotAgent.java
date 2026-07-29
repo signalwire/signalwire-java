@@ -258,6 +258,12 @@ public class FAQBotAgent {
     return summaryHandler;
   }
 
+  /**
+   * The underlying agent this prefab configured. Use it to add tools, prompt sections, or skills
+   * beyond what the prefab sets up.
+   *
+   * @return the wrapped agent.
+   */
   public AgentBase getAgent() {
     return agent;
   }
@@ -280,10 +286,20 @@ public class FAQBotAgent {
     return persona;
   }
 
+  /**
+   * Start the agent's HTTP server and serve until stopped.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void serve() throws Exception {
     agent.serve();
   }
 
+  /**
+   * Start the agent's HTTP server. Equivalent to {@link #serve()}.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void run() throws Exception {
     agent.run();
   }

@@ -37,6 +37,11 @@ final class DocWireRunner {
 
   private DocWireRunner() {}
 
+  /**
+   * Entry point: runs the DOC-WIRE fixtures this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     String port = System.getenv("MOCK_SIGNALWIRE_PORT");
     if (port == null || port.isEmpty()) {

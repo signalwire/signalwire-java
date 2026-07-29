@@ -85,16 +85,42 @@ public class WebhookFilter implements Filter {
     this.trustProxy = trustProxy;
   }
 
+  /**
+   * No-op: every setting is supplied to the constructor rather than through filter config.
+   *
+   * @param filterConfig the servlet container's filter config (unused).
+   */
   @Override
   public void init(FilterConfig filterConfig) {
     // No init-time configuration — all state passed to the constructor.
   }
 
+  /** No-op: the filter holds no resources to release. */
   @Override
   public void destroy() {
     // No resources to release.
   }
 
+  /**
+   * Validate the request's SignalWire webhook signature and reject it if it does not check out.
+   *
+   * <p>Caches the body first so downstream handlers can still read it, then takes the signature
+   * from {@code X-SignalWire-Signature} (falling back to {@code X-Twilio-Signature}) and validates
+   * it against the reconstructed URL. A MISSING signature header is rejected exactly like an
+   * invalid one: HTTP 403 with no body detail, and the chain is not invoked. A non-HTTP request is
+   * passed through untouched, since it cannot carry a signed webhook.
+   *
+   * <p>Nothing about the failure is logged — not the signing key, not the presented signature, not
+   * which branch rejected it — because that detail is what an attacker would use to probe the
+   * comparison.
+   *
+   * @param request the incoming request.
+   * @param response the response to write a 403 to on rejection.
+   * @param chain the filter chain, invoked only on a valid signature, with the body-caching
+   *     wrapper.
+   * @throws IOException if reading the body or writing the response fails.
+   * @throws ServletException if the downstream chain raises one.
+   */
   @Override
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
@@ -206,30 +232,65 @@ public class WebhookFilter implements Filter {
       return new String(cachedBody, cs);
     }
 
+    /**
+     * A stream over the cached body, so the body can be read again after the filter consumed it.
+     *
+     * @return a stream over the cached bytes.
+     */
     @Override
     public ServletInputStream getInputStream() {
       ByteArrayInputStream bais = new ByteArrayInputStream(cachedBody);
       return new ServletInputStream() {
+        /**
+         * Read one byte from the cached body.
+         *
+         * @return the byte, or {@code -1} at the end.
+         */
         @Override
         public int read() {
           return bais.read();
         }
 
+        /**
+         * Read a block from the cached body.
+         *
+         * @param b the destination buffer.
+         * @param off offset into the buffer.
+         * @param len maximum bytes to read.
+         * @return the number of bytes read, or {@code -1} at the end.
+         */
         @Override
         public int read(byte[] b, int off, int len) {
           return bais.read(b, off, len);
         }
 
+        /**
+         * Whether the cached body has been fully consumed.
+         *
+         * @return {@code true} when nothing remains.
+         */
         @Override
         public boolean isFinished() {
           return bais.available() == 0;
         }
 
+        /**
+         * Always ready: the body is already in memory, so a read never blocks.
+         *
+         * @return {@code true}.
+         */
         @Override
         public boolean isReady() {
           return true;
         }
 
+        /**
+         * Not supported — the signed-webhook flow is synchronous request/response, so the cached
+         * stream offers no async path.
+         *
+         * @param readListener the listener (ignored).
+         * @throws UnsupportedOperationException always.
+         */
         @Override
         public void setReadListener(ReadListener readListener) {
           // Async I/O not supported on the cached stream; the
@@ -241,6 +302,11 @@ public class WebhookFilter implements Filter {
       };
     }
 
+    /**
+     * A reader over the cached body, decoded with the request's declared charset or UTF-8.
+     *
+     * @return a reader over the cached bytes.
+     */
     @Override
     public BufferedReader getReader() {
       String enc = getCharacterEncoding();

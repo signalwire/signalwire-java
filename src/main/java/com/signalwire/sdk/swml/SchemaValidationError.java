@@ -34,10 +34,20 @@ public class SchemaValidationError extends RuntimeException {
     this.errors = errors == null ? Collections.emptyList() : Collections.unmodifiableList(errors);
   }
 
+  /**
+   * The SWML verb whose arguments failed validation.
+   *
+   * @return the verb name.
+   */
   public String getVerbName() {
     return verbName;
   }
 
+  /**
+   * Every validation failure found, not just the first.
+   *
+   * @return the error messages.
+   */
   public List<String> getErrors() {
     return errors;
   }
