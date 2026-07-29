@@ -2197,8 +2197,12 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Accepted for parity with the reference's debug-route toggle. This port serves no separate debug
-   * routes, so the call changes nothing.
+   * Enable debug routes for testing and development.
+   *
+   * <p>Intentionally a no-op that returns {@code this}, matching the reference exactly: debug
+   * routes are registered automatically during route registration, and the reference's {@code
+   * enable_debug_routes} (web_mixin.py) likewise only does {@code return self}, existing for
+   * backward compatibility. The empty body is the correct behaviour, not an unimplemented stub.
    *
    * @return this agent, for chaining.
    */

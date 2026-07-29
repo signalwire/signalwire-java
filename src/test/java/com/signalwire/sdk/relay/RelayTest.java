@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -1003,6 +1004,54 @@ class RelayTest {
       assertTrue(fired.get());
       assertEquals("failed", msg.getState());
       assertEquals("Invalid", msg.getReason().orElseThrow());
+    }
+
+    @Test
+    @DisplayName("Message onCompleted fires when registered AFTER the terminal event")
+    void messageOnCompletedLateRegistration() {
+      Message msg = new Message("msg-1");
+
+      // Drive the race deterministically by ORDERING, not timing: resolve the
+      // message FIRST (the terminal event landing on the RELAY reader thread
+      // before the caller registers), then register. No threads, no sleeps —
+      // the interleaving under test is expressed directly as program order.
+      Map<String, Object> params = new HashMap<>();
+      params.put("message_id", "msg-1");
+      params.put("message_state", "delivered");
+
+      msg.updateFromEvent(
+          new RelayEvent.MessagingStateEvent(Constants.EVENT_MESSAGING_STATE, 0.0, params));
+      assertTrue(msg.isDone(), "precondition: the message must already be resolved");
+
+      AtomicBoolean fired = new AtomicBoolean(false);
+      msg.setOnCompleted(m -> fired.set(true));
+
+      assertTrue(
+          fired.get(),
+          "a callback registered after the terminal event must still fire, not be dropped");
+    }
+
+    @Test
+    @DisplayName("Message onCompleted fires exactly once when resolve races registration")
+    void messageOnCompletedFiresExactlyOnce() {
+      Message msg = new Message("msg-1");
+
+      AtomicInteger fireCount = new AtomicInteger(0);
+      msg.setOnCompleted(m -> fireCount.incrementAndGet());
+
+      Map<String, Object> params = new HashMap<>();
+      params.put("message_id", "msg-1");
+      params.put("message_state", "delivered");
+      RelayEvent.MessagingStateEvent event =
+          new RelayEvent.MessagingStateEvent(Constants.EVENT_MESSAGING_STATE, 0.0, params);
+
+      // resolve() fires it; a second resolve must not re-fire, and the
+      // one-shot handoff must not let a late registration double-fire either.
+      msg.updateFromEvent(event);
+      msg.updateFromEvent(event);
+      msg.setOnCompleted(m -> fireCount.incrementAndGet());
+
+      assertEquals(2, fireCount.get(), "one fire per registered callback, never a double-fire");
     }
 
     @Test

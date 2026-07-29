@@ -267,15 +267,27 @@ public class Message {
   /**
    * Register a callback to fire when the message reaches a terminal state.
    *
-   * <p>Register it BEFORE the message can settle. Unlike {@link
-   * com.signalwire.sdk.relay.Action#setOnCompleted(java.util.function.Consumer)}, this does not
-   * fire immediately for an already-completed message, so a callback registered after the terminal
-   * event has landed never runs.
+   * <p>Safe against the genuine race where the terminal event lands on the RELAY reader thread
+   * before this registration: if the message has ALREADY resolved, the callback fires immediately
+   * rather than being silently dropped. It fires exactly once either way. Matches {@link
+   * com.signalwire.sdk.relay.Action#setOnCompleted(java.util.function.Consumer)}.
    *
    * @param onCompleted the callback, invoked with this message.
    */
   public void setOnCompleted(Consumer<Message> onCompleted) {
-    this.onCompleted = onCompleted;
+    // If the message has ALREADY resolved (the terminal event landed on the RELAY
+    // reader thread before this registration — a genuine race for a caller that
+    // sets the callback after dispatching the message), fire immediately so a late
+    // registration is never silently dropped. Otherwise store it for resolve() to
+    // fire. Guarded on `done` (set inside resolve()) so exactly one fire happens.
+    synchronized (this) {
+      this.onCompleted = onCompleted;
+      if (done && onCompleted != null) {
+        Consumer<Message> cb = this.onCompleted;
+        this.onCompleted = null; // prevent a double-fire if resolve() also races
+        cb.accept(this);
+      }
+    }
   }
 
   /** Register a state change listener. */
@@ -365,22 +377,33 @@ public class Message {
 
   /** Resolve the message completion. */
   void resolve(RelayEvent event) {
-    if (!done) {
+    // Set `done` + fire the callback atomically vs setOnCompleted(): the terminal
+    // event arrives on the RELAY reader thread and can race a caller registering
+    // its callback on another thread. The lock guarantees exactly one of the two
+    // fires the callback (resolve() here, or setOnCompleted() when it observes
+    // done==true), never zero and never twice.
+    synchronized (this) {
+      if (done) {
+        return;
+      }
       this.done = true;
       this.result = event;
-      this.completionFuture.complete(event);
-      fireOnCompleted();
-    }
-  }
-
-  private void fireOnCompleted() {
-    if (onCompleted != null) {
-      try {
-        onCompleted.accept(this);
-      } catch (Exception e) {
-        log.error("Error in onCompleted callback for message " + messageId, e);
+      // Fire onCompleted BEFORE completing the future. The Python reference is
+      // async single-threaded, so its `_done.set_result()` then `_on_completed()`
+      // ordering guarantees any `await`-er resumes only after the callback has run.
+      // Firing first preserves that guarantee (callback observed no later than
+      // completion) race-free.
+      Consumer<Message> cb = this.onCompleted;
+      this.onCompleted = null; // one-shot: a later setOnCompleted sees done and fires itself
+      if (cb != null) {
+        try {
+          cb.accept(this);
+        } catch (Exception e) {
+          log.error("Error in onCompleted callback for message " + messageId, e);
+        }
       }
     }
+    this.completionFuture.complete(event);
   }
 
   /** Create a Message from an inbound receive event. */
