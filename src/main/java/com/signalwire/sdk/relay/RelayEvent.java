@@ -37,10 +37,23 @@ public class RelayEvent {
     this.params = params != null ? params : Collections.emptyMap();
   }
 
+  /**
+   * The {@code event_type} discriminator from the outer {@code signalwire.event} envelope (for
+   * example {@code calling.call.play}) — the value {@link #fromRawParams(Map)} dispatches on to
+   * choose the typed subclass.
+   *
+   * @return the wire event type, or the empty string when the payload omitted it.
+   */
   public String getEventType() {
     return eventType;
   }
 
+  /**
+   * Server-assigned event time as a Unix epoch value with fractional seconds, taken from the
+   * envelope's {@code timestamp}.
+   *
+   * @return the epoch timestamp, or {@code 0.0} when the payload carried no numeric timestamp.
+   */
   public double getTimestamp() {
     return timestamp;
   }
@@ -54,11 +67,25 @@ public class RelayEvent {
     return getStringParam("call_id");
   }
 
+  /**
+   * Read an inner-{@code params} value coerced to its string form.
+   *
+   * @param key the wire key inside the event's inner {@code params} object.
+   * @return the value's {@code toString()}, or {@code null} when the key is absent.
+   */
   public String getStringParam(String key) {
     Object val = params.get(key);
     return val != null ? val.toString() : null;
   }
 
+  /**
+   * Read an inner-{@code params} value coerced to its string form, substituting a caller-supplied
+   * value when the key is absent.
+   *
+   * @param key the wire key inside the event's inner {@code params} object.
+   * @param defaultValue returned when the key is absent (a present-but-null value also yields it).
+   * @return the value's string form, or {@code defaultValue}.
+   */
   public String getStringParam(String key, String defaultValue) {
     String val = getStringParam(key);
     return val != null ? val : defaultValue;
@@ -153,6 +180,13 @@ public class RelayEvent {
     return new RelayEvent(eventType, timestamp, innerParams);
   }
 
+  /**
+   * A short diagnostic rendering carrying only the event type — deliberately excludes {@code
+   * params}, which routinely holds call/message identifiers and inbound message bodies that must
+   * not leak into logs.
+   *
+   * @return {@code RelayEvent{type=<event_type>}}.
+   */
   @Override
   public String toString() {
     return String.format("RelayEvent{type=%s}", eventType);
@@ -239,26 +273,51 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * UUID of the call leg whose state changed. Every {@code calling.*} method echoes this back, so
+     * it is the key events are routed on to the owning {@code Call}.
+     */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * UUID of the RELAY node currently hosting this call leg. Must be sent back on every subsequent
+     * calling method for the leg; it can change across the call's lifetime.
+     */
     public String getNodeId() {
       return getStringParam("node_id");
     }
 
+    /**
+     * Lifecycle state of the call leg: {@code created}, {@code ringing}, {@code answered} or {@code
+     * ended}. See {@link CallState} for the typed form.
+     */
     public String getCallState() {
       return getStringParam("call_state");
     }
 
+    /**
+     * Why the leg terminated (for example {@code hangup}, {@code busy}, {@code noAnswer}, {@code
+     * error}). Only populated once {@link #getCallState()} reaches {@code ended}.
+     */
     public String getEndReason() {
       return getStringParam("end_reason");
     }
 
+    /**
+     * Client-supplied correlation tag echoed from the originating {@code calling.dial}. Because the
+     * dial RPC response carries no {@code call_id}, this is how an outbound leg is matched to the
+     * request that created it.
+     */
     public String getTag() {
       return getStringParam("tag");
     }
 
+    /**
+     * Whether this leg was placed by the client ({@code outbound}) or arrived from the network
+     * ({@code inbound}).
+     */
     public String getDirection() {
       return getStringParam("direction");
     }
@@ -283,18 +342,31 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * UUID the platform assigned the inbound leg. Use it for every subsequent calling method — the
+     * call does not exist to the client under any other identifier.
+     */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** UUID of the RELAY node hosting the inbound leg; required on every calling method for it. */
     public String getNodeId() {
       return getStringParam("node_id");
     }
 
+    /**
+     * Lifecycle state at the moment the leg was offered — normally {@code created} for an
+     * unanswered inbound call.
+     */
     public String getCallState() {
       return getStringParam("call_state");
     }
 
+    /**
+     * The subscribed context this call was delivered on. A client only receives inbound calls for
+     * contexts it explicitly subscribed to at connect time.
+     */
     public String getContext() {
       return getStringParam("context");
     }
@@ -303,18 +375,27 @@ public class RelayEvent {
       return getMap(getParams(), "device");
     }
 
+    /**
+     * Always {@code inbound} for a received call; present for symmetry with {@link CallStateEvent}.
+     */
     public String getDirection() {
       return getStringParam("direction");
     }
 
+    /** UUID of the SignalWire project the inbound call was billed and routed to. */
     public String getProjectId() {
       return getStringParam("project_id");
     }
 
+    /**
+     * Platform identifier for this billing/routing segment of the call, distinct from the {@code
+     * call_id} of the leg.
+     */
     public String getSegmentId() {
       return getStringParam("segment_id");
     }
 
+    /** Correlation tag carried on the inbound leg, when the originator supplied one. */
     public String getTag() {
       return getStringParam("tag");
     }
@@ -339,14 +420,26 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * The client-generated tag passed to {@code calling.dial}. This event carries no top-level
+     * {@code call_id}, so the tag is the ONLY way to match the outcome to the dial request that
+     * produced it.
+     */
     public String getTag() {
       return getStringParam("tag");
     }
 
+    /** UUID of the RELAY node hosting the winning leg, needed for subsequent calling methods. */
     public String getNodeId() {
       return getStringParam("node_id");
     }
 
+    /**
+     * Raw dial outcome as sent on the wire: {@code dialing} (still in progress), {@code answered}
+     * (a leg was answered) or {@code failed} (every leg failed). Kept as a string so a server-side
+     * addition to the set does not break dispatch; {@link #getDialStateEnum()} gives the typed
+     * view.
+     */
     public String getDialState() {
       return getStringParam("dial_state");
     }
@@ -372,6 +465,13 @@ public class RelayEvent {
       return getMap(getParams(), "call");
     }
 
+    /**
+     * UUID of the answered leg, read from the nested {@code params.call} object rather than the top
+     * level — this event has no top-level {@code call_id}. With parallel dialing only the winning
+     * leg appears here.
+     *
+     * @return the winning leg's call id, or {@code null} while no leg has answered.
+     */
     public String getCallId() {
       return getStr(getCallInfo(), "call_id", null);
     }
@@ -392,14 +492,24 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call the playback is running on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * Client-generated identifier for this specific playback, echoed by the server. Multiple
+     * actions can run concurrently on one call, so this is what disambiguates their events.
+     */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /**
+     * Playback state: {@code playing}, {@code paused}, {@code error} or {@code finished}. Note that
+     * a {@code finished} play on a {@code play_and_collect} shares its control id with the collect
+     * phase and does NOT mean input was collected.
+     */
     public String getState() {
       return getStringParam("state");
     }
@@ -420,18 +530,30 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call being recorded. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * Client-generated identifier for this recording, echoed by the server so concurrent actions on
+     * the same call can be told apart.
+     */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Recording state: {@code recording}, {@code no_input}, {@code finished} or an error state. */
     public String getState() {
       return getStringParam("state");
     }
 
+    /**
+     * Where the finished recording can be fetched. Accepts the field at the top level or nested
+     * under {@code record}, since the platform reports it in both shapes depending on event stage.
+     *
+     * @return the recording URL, or {@code null} before the recording completes.
+     */
     public String getUrl() {
       String url = getStringParam("url");
       if (url != null) return url;
@@ -440,6 +562,12 @@ public class RelayEvent {
       return getStr(record, "url", null);
     }
 
+    /**
+     * Recording length in seconds, read from the top level or from the nested {@code record}
+     * object.
+     *
+     * @return the duration, or {@code 0.0} when not yet reported.
+     */
     public double getDuration() {
       Object d = getParams().get("duration");
       if (d instanceof Number) return ((Number) d).doubleValue();
@@ -447,6 +575,12 @@ public class RelayEvent {
       return getDouble(record, "duration", 0.0);
     }
 
+    /**
+     * Recorded media size in bytes, read from the top level or from the nested {@code record}
+     * object.
+     *
+     * @return the byte size, or {@code 0} when not yet reported.
+     */
     public long getSize() {
       Object s = getParams().get("size");
       if (s instanceof Number) return ((Number) s).longValue();
@@ -475,10 +609,12 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call detection is running on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this detect action, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
@@ -488,6 +624,13 @@ public class RelayEvent {
       return getMap(getParams(), "detect");
     }
 
+    /**
+     * The detection outcome, dug out of {@code detect.params.event} — for example {@code machine},
+     * {@code human}, {@code fax} or {@code finished}. Detect reports its result here rather than in
+     * a flat {@code state} field like the other actions.
+     *
+     * @return the detected event name, or {@code null} when the event carries no result yet.
+     */
     public String getDetectEvent() {
       Map<String, Object> detect = getDetect();
       Map<String, Object> detectParams = getMap(detect, "params");
@@ -510,18 +653,29 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call input is being collected on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * Client-generated identifier for this collect action. A {@code play_and_collect} shares one
+     * control id across both phases, so also filter on the event type before resolving.
+     */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Collect state, e.g. {@code collecting}, {@code finished} or {@code error}. */
     public String getState() {
       return getStringParam("state");
     }
 
+    /**
+     * Kind of input collected — {@code digit}, {@code speech}, or a no-input/error outcome. Reads
+     * the wire key {@code type}; renamed here because {@code getType()} would not say what it is
+     * the type OF.
+     */
     public String getResultType() {
       return getStringParam("type");
     }
@@ -558,14 +712,17 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call carrying the fax. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this fax action, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Fax state, e.g. {@code page}, {@code error} or {@code finished}. */
     public String getState() {
       return getStringParam("state");
     }
@@ -590,14 +747,19 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call whose media is being tapped. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this tap, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /**
+     * Tap state: {@code tapping} while media is being forwarded, {@code finished} once it stops.
+     */
     public String getState() {
       return getStringParam("state");
     }
@@ -626,22 +788,27 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call whose media is being streamed. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this stream, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Stream state: {@code streaming} while media is flowing, {@code finished} once it stops. */
     public String getState() {
       return getStringParam("state");
     }
 
+    /** Name the stream was started under, when one was supplied. */
     public String getName() {
       return getStringParam("name");
     }
 
+    /** Destination the audio is being streamed to. */
     public String getUrl() {
       return getStringParam("url");
     }
@@ -662,30 +829,48 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call being transcribed. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this transcription, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Transcription state, e.g. {@code transcribing} or {@code finished}. */
     public String getState() {
       return getStringParam("state");
     }
 
+    /**
+     * Length in seconds of the audio transcribed so far.
+     *
+     * @return the duration, or {@code 0.0} when the event reports none.
+     */
     public double getDuration() {
       return getDoubleParam("duration");
     }
 
+    /**
+     * Identifier of the recording the transcript was produced from, when the transcription was
+     * backed by one.
+     */
     public String getRecordingId() {
       return getStringParam("recording_id");
     }
 
+    /**
+     * Size in bytes of the associated media.
+     *
+     * @return the byte size, or {@code 0} when the event reports none.
+     */
     public long getSize() {
       return getLongParam("size");
     }
 
+    /** Where the transcript or its source media can be fetched. */
     public String getUrl() {
       return getStringParam("url");
     }
@@ -706,10 +891,15 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call that initiated the connect (the A leg). */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * Bridge state between the two legs: {@code connecting}, {@code connected}, {@code
+     * disconnected} or {@code failed}. Distinct from a leg's own {@code call_state}.
+     */
     public String getConnectState() {
       return getStringParam("connect_state");
     }
@@ -734,26 +924,43 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call the SIP REFER was issued on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /**
+     * Progress of the transfer itself, e.g. {@code referring}, {@code completed} or {@code failed}.
+     */
     public String getReferState() {
       return getStringParam("refer_state");
     }
 
+    /**
+     * Generic state field, present alongside {@link #getReferState()} for events that report the
+     * action state rather than the transfer outcome.
+     */
     public String getState() {
       return getStringParam("state");
     }
 
+    /**
+     * SIP status code from the NOTIFY the transferee sent back reporting how the transfer
+     * progressed — this, not the REFER response, tells you whether the transfer actually succeeded.
+     */
     public String getSipNotifyResponseCode() {
       return getStringParam("sip_notify_response_code");
     }
 
+    /**
+     * SIP status code the far end returned to the REFER request itself. A 2xx here means the REFER
+     * was accepted for processing, not that the transfer completed.
+     */
     public String getSipReferResponseCode() {
       return getStringParam("sip_refer_response_code");
     }
 
+    /** The {@code Refer-To} target URI the call was asked to transfer to. */
     public String getSipReferTo() {
       return getStringParam("sip_refer_to");
     }
@@ -774,14 +981,17 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call the digits were sent on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this send-digits action, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Send-digits state, e.g. {@code sending} or {@code finished}. */
     public String getState() {
       return getStringParam("state");
     }
@@ -802,14 +1012,17 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call the payment session is running on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for this pay action, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /** Payment-session state reported by the platform for this stage of the flow. */
     public String getState() {
       return getStringParam("state");
     }
@@ -830,18 +1043,22 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID the platform assigned the conference. */
     public String getConferenceId() {
       return getStringParam("conference_id");
     }
 
+    /** UUID of the participant leg this conference event concerns. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Human-readable conference name the participants joined under. */
     public String getName() {
       return getStringParam("name");
     }
 
+    /** What happened in the conference — for example a participant joining or leaving. */
     public String getStatus() {
       return getStringParam("status");
     }
@@ -862,33 +1079,48 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the queued call leg. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Client-generated identifier for the queueing action, echoed by the server. */
     public String getControlId() {
       return getStringParam("control_id");
     }
 
+    /**
+     * What happened to the call in the queue — for example it was enqueued, advanced, or dequeued.
+     */
     public String getStatus() {
       return getStringParam("status");
     }
 
-    /** Queue identifier. RENAMED from the wire {@code id} key (Python: queue_id <- p.id). */
+    /** Queue identifier. RENAMED from the wire {@code id} key (Python: {@code queue_id = p.id}). */
     public String getQueueId() {
       return getStringParam("id");
     }
 
-    /** Queue name. RENAMED from the wire {@code name} key (Python: queue_name <- p.name). */
+    /** Queue name. RENAMED from the wire {@code name} key (Python: {@code queue_name = p.name}). */
     public String getQueueName() {
       return getStringParam("name");
     }
 
+    /**
+     * This call's place in the queue, counting from the front.
+     *
+     * @return the position, or {@code 0} when the event reports none.
+     */
     public int getPosition() {
       Object v = getParams().get("position");
       return v instanceof Number ? ((Number) v).intValue() : 0;
     }
 
+    /**
+     * Total number of calls waiting in the queue at the time of this event.
+     *
+     * @return the queue depth, or {@code 0} when the event reports none.
+     */
     public int getSize() {
       Object v = getParams().get("size");
       return v instanceof Number ? ((Number) v).intValue() : 0;
@@ -901,6 +1133,12 @@ public class RelayEvent {
       super(eventType, timestamp, params);
     }
 
+    /**
+     * Opaque encrypted re-authentication token ({@code <encryptedBase64>:<tagBase64>}) the server
+     * issues so a reconnect can skip the full authentication round-trip. Store it and send it back
+     * in {@code signalwire.connect} params; the server silently falls back to normal authentication
+     * if it is stale. Treat it as a credential — it grants session re-entry.
+     */
     public String getAuthorizationState() {
       return getStringParam("authorization_state");
     }
@@ -921,42 +1159,73 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * UUID the platform assigned the inbound message; the key subsequent {@code messaging.state}
+     * events are routed on.
+     */
     public String getMessageId() {
       return getStringParam("message_id");
     }
 
+    /**
+     * The subscribed context the message was delivered on. Only messages for contexts the client
+     * subscribed to at connect time arrive here.
+     */
     public String getContext() {
       return getStringParam("context");
     }
 
+    /** Always {@code inbound} for a received message. */
     public String getDirection() {
       return getStringParam("direction");
     }
 
+    /** Sender's number in E.164 form. */
     public String getFromNumber() {
       return getStringParam("from_number");
     }
 
+    /** Recipient number in E.164 form — one of the project's own numbers. */
     public String getToNumber() {
       return getStringParam("to_number");
     }
 
+    /**
+     * The message text as sent. This is untrusted end-user input: never interpolate it into a
+     * prompt, a command, or a log line without treating it as such.
+     */
     public String getBody() {
       return getStringParam("body");
     }
 
+    /**
+     * URLs of any MMS attachments carried by the message.
+     *
+     * @return the media URLs, or an empty list when the message had none.
+     */
     public List<String> getMedia() {
       return getStringList(getParams(), "media");
     }
 
+    /**
+     * How many SMS segments the message occupied — the unit billing is charged in.
+     *
+     * @return the segment count, defaulting to {@code 1} when the wire omitted it.
+     */
     public int getSegments() {
       return getInt(getParams(), "segments", 1);
     }
 
+    /** Delivery state, always {@code received} for an inbound message. */
     public String getMessageState() {
       return getStringParam("message_state");
     }
 
+    /**
+     * Client-supplied correlation tags carried on the message.
+     *
+     * @return the tags, or an empty list when none were set.
+     */
     public List<String> getTags() {
       return getStringList(getParams(), "tags");
     }
@@ -977,46 +1246,79 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * UUID of the outbound message this state update belongs to, matching the id returned by {@code
+     * messaging.send}. Route the event to the tracked {@code Message} on this key.
+     */
     public String getMessageId() {
       return getStringParam("message_id");
     }
 
+    /** The context the message was sent under. */
     public String getContext() {
       return getStringParam("context");
     }
 
+    /** Always {@code outbound} for a message the client sent. */
     public String getDirection() {
       return getStringParam("direction");
     }
 
+    /** Sender number in E.164 form — the project number the message was sent from. */
     public String getFromNumber() {
       return getStringParam("from_number");
     }
 
+    /** Destination number in E.164 form. */
     public String getToNumber() {
       return getStringParam("to_number");
     }
 
+    /** The message text that was sent. */
     public String getBody() {
       return getStringParam("body");
     }
 
+    /**
+     * URLs of MMS attachments included in the outbound message.
+     *
+     * @return the media URLs, or an empty list when there were none.
+     */
     public List<String> getMedia() {
       return getStringList(getParams(), "media");
     }
 
+    /**
+     * How many SMS segments the message occupied — the unit billing is charged in.
+     *
+     * @return the segment count, defaulting to {@code 1} when the wire omitted it.
+     */
     public int getSegments() {
       return getInt(getParams(), "segments", 1);
     }
 
+    /**
+     * Current delivery state, progressing through values such as {@code queued}, {@code sent},
+     * {@code delivered} and {@code undelivered}/{@code failed}.
+     */
     public String getMessageState() {
       return getStringParam("message_state");
     }
 
+    /**
+     * Why delivery failed, populated only for a failure state.
+     *
+     * @return the failure reason, or {@code null} when delivery has not failed.
+     */
     public String getReason() {
       return getStringParam("reason");
     }
 
+    /**
+     * Client-supplied correlation tags echoed back on the state event.
+     *
+     * @return the tags, or an empty list when none were set.
+     */
     public List<String> getTags() {
       return getStringList(getParams(), "tags");
     }
@@ -1037,6 +1339,7 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call whose denoise state changed. */
     public String getCallId() {
       return getStringParam("call_id");
     }
@@ -1063,10 +1366,12 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call echo is running on. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Whether echo is currently active on the call. */
     public String getState() {
       return getStringParam("state");
     }
@@ -1087,10 +1392,12 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /** UUID of the call whose hold state changed. */
     public String getCallId() {
       return getStringParam("call_id");
     }
 
+    /** Whether the call is currently held or has been resumed. */
     public String getState() {
       return getStringParam("state");
     }
@@ -1111,6 +1418,11 @@ public class RelayEvent {
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
     }
 
+    /**
+     * UUID of the call the error relates to.
+     *
+     * @return the call id, or {@code null} for an error not scoped to a single call.
+     */
     public String getCallId() {
       return getStringParam("call_id");
     }
