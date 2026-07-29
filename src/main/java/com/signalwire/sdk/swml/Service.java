@@ -193,10 +193,22 @@ public class Service implements AutoCloseable {
 
   // -------- Auth --------
 
+  /**
+   * The basic-auth username the service's HTTP endpoints require.
+   *
+   * @return the username, or {@code null} when none was configured.
+   */
   public String getAuthUser() {
     return authUser;
   }
 
+  /**
+   * The basic-auth password the service's HTTP endpoints require — the plaintext credential, so
+   * keep it out of logs and out of anything rendered to a caller. Compare against it with {@link
+   * #validateBasicAuth(String, String)}, which is constant-time, not with {@code equals}.
+   *
+   * @return the password, or {@code null} when none was configured.
+   */
   public String getAuthPassword() {
     return authPassword;
   }
@@ -497,6 +509,12 @@ public class Service implements AutoCloseable {
 
   // -------- Document access --------
 
+  /**
+   * The SWML document the verb methods build into. Handed out live, not copied, so mutating it
+   * changes what this service renders.
+   *
+   * @return the service's document.
+   */
   public Document getDocument() {
     return document;
   }
@@ -866,6 +884,14 @@ public class Service implements AutoCloseable {
       return contexts;
     }
 
+    /**
+     * Delegates to the wrapped server and records the created context, which is how the collector
+     * enumerates the routes the service registered.
+     *
+     * @param path the context path.
+     * @param handler the handler for that path.
+     * @return the created context.
+     */
     @Override
     public com.sun.net.httpserver.HttpContext createContext(
         String path, com.sun.net.httpserver.HttpHandler handler) {
@@ -874,6 +900,12 @@ public class Service implements AutoCloseable {
       return ctx;
     }
 
+    /**
+     * Delegates to the wrapped server and records the created context.
+     *
+     * @param path the context path.
+     * @return the created context.
+     */
     @Override
     public com.sun.net.httpserver.HttpContext createContext(String path) {
       com.sun.net.httpserver.HttpContext ctx = delegate.createContext(path);
@@ -881,41 +913,79 @@ public class Service implements AutoCloseable {
       return ctx;
     }
 
+    /**
+     * Delegates to the wrapped server.
+     *
+     * @param addr the address to bind.
+     * @param backlog the socket backlog.
+     * @throws IOException if the bind fails.
+     */
     @Override
     public void bind(InetSocketAddress addr, int backlog) throws IOException {
       delegate.bind(addr, backlog);
     }
 
+    /** Delegates to the wrapped server. */
     @Override
     public void start() {
       delegate.start();
     }
 
+    /**
+     * Delegates to the wrapped server.
+     *
+     * @param executor the executor to serve requests on.
+     */
     @Override
     public void setExecutor(java.util.concurrent.Executor executor) {
       delegate.setExecutor(executor);
     }
 
+    /**
+     * Delegates to the wrapped server.
+     *
+     * @return the wrapped server's executor.
+     */
     @Override
     public java.util.concurrent.Executor getExecutor() {
       return delegate.getExecutor();
     }
 
+    /**
+     * Delegates to the wrapped server.
+     *
+     * @param delay seconds to wait for in-flight exchanges before closing.
+     */
     @Override
     public void stop(int delay) {
       delegate.stop(delay);
     }
 
+    /**
+     * Delegates to the wrapped server. The collector's own record is not pruned.
+     *
+     * @param path the context path to remove.
+     */
     @Override
     public void removeContext(String path) {
       delegate.removeContext(path);
     }
 
+    /**
+     * Delegates to the wrapped server. The collector's own record is not pruned.
+     *
+     * @param context the context to remove.
+     */
     @Override
     public void removeContext(com.sun.net.httpserver.HttpContext context) {
       delegate.removeContext(context);
     }
 
+    /**
+     * Delegates to the wrapped server.
+     *
+     * @return the wrapped server's bound address.
+     */
     @Override
     public InetSocketAddress getAddress() {
       return delegate.getAddress();
@@ -1149,26 +1219,66 @@ public class Service implements AutoCloseable {
   // Each method adds the verb to the document's main section.
   // Java has no method_missing, so all are explicit.
 
+  /**
+   * Append the SWML {@code answer} verb: answer the inbound call, optionally capping its duration.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service answer(Map<String, Object> params) {
     document.addVerb("answer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code ai} verb: hand the call to an AI agent that runs the ASR / LLM / TTS
+   * conversation loop. This is the verb everything an {@link com.signalwire.sdk.agent.AgentBase}
+   * configures ultimately renders into.
+   *
+   * <p>The {@code prompt} argument must be an OBJECT ({@code {"text": …}} or {@code {"pom": …}}); a
+   * bare string is a fatal call error, not a tolerated shorthand.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service ai(Map<String, Object> params) {
     document.addVerb("ai", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code amazon_bedrock} verb: run the conversation on an Amazon Bedrock agent. A
+   * distinct verb from {@link #ai(Map)}, not an engine option on it.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service amazonBedrock(Map<String, Object> params) {
     document.addVerb("amazon_bedrock", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code cond} verb: run a sequence of instructions selected by the value of a
+   * JavaScript condition.
+   *
+   * @param conditions the condition branches, in evaluation order.
+   * @return this service, for chaining.
+   */
   public Service cond(List<Map<String, Object>> conditions) {
     document.addVerb("cond", conditions);
     return this;
   }
 
+  /**
+   * Append the SWML {@code connect} verb: dial a SIP URI or phone number and bridge it to this
+   * call. Prefer the {@link com.signalwire.sdk.swml.generated.ConnectConfig} overload, which
+   * carries the wire keys as typed fields; this map form is the dynamic and forward-compatible
+   * path.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service connect(Map<String, Object> params) {
     document.addVerb("connect", params != null ? params : new LinkedHashMap<>());
     return this;
@@ -1190,126 +1300,303 @@ public class Service implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Append the SWML {@code denoise} verb: start background noise reduction, which runs until {@link
+   * #stopDenoise(Map)} ends it.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service denoise(Map<String, Object> params) {
     document.addVerb("denoise", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code detect_machine} verb: combined answering-machine and fax detection,
+   * deciding whether the far end is a human or a machine and reporting the result.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service detectMachine(Map<String, Object> params) {
     document.addVerb("detect_machine", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code enter_queue} verb: park the call in a named queue, playing music or
+   * custom audio, until an agent or resource connects to that queue.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service enterQueue(Map<String, Object> params) {
     document.addVerb("enter_queue", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code execute} verb: run a section or a remote URL as a SUBROUTINE and come
+   * back here when it finishes. Use {@link #returnVerb(Map)} inside it to pass a value back —
+   * unlike {@link #transfer(Map)}, which does not return.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service execute(Map<String, Object> params) {
     document.addVerb("execute", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code goto} verb: jump to a {@link #label(Map)} within the SAME section,
+   * optionally on a condition. It cannot cross section boundaries. Named {@code gotoLabel} because
+   * {@code goto} is a reserved word in Java; the wire key remains {@code goto}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service gotoLabel(Map<String, Object> params) {
     document.addVerb("goto", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code hangup} verb: end the call, optionally with a reason.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service hangup(Map<String, Object> params) {
     document.addVerb("hangup", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code hangup} verb with no arguments: end the call without a stated reason.
+   *
+   * @return this service, for chaining.
+   */
   public Service hangup() {
     document.addVerb("hangup", new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code join_conference} verb: connect this call into a named ad-hoc audio
+   * conference where several participants can talk at once.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service joinConference(Map<String, Object> params) {
     document.addVerb("join_conference", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code join_room} verb: join a RELAY room, creating it if it does not exist.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service joinRoom(Map<String, Object> params) {
     document.addVerb("join_room", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code label} verb: mark this point in the section so {@link #gotoLabel(Map)}
+   * can jump to it.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service label(Map<String, Object> params) {
     document.addVerb("label", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code live_transcribe} verb: transcribe the call as it happens and POST the
+   * transcript to the configured webhook. That endpoint receives what was said on the call — secure
+   * it accordingly.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service liveTranscribe(Map<String, Object> params) {
     document.addVerb("live_transcribe", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code live_translate} verb: translate the call as it happens and POST the
+   * result to the configured webhook, which likewise receives call content.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service liveTranslate(Map<String, Object> params) {
     document.addVerb("live_translate", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code pay} verb: run a payment flow on the call, collecting and validating
+   * card data and processing it through the configured gateway. The platform handles the card data
+   * so it never reaches this SDK — do not collect it yourself with {@link #prompt(Map)} and do not
+   * log what this verb returns.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service pay(Map<String, Object> params) {
     document.addVerb("pay", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code play} verb: play audio files, ring tones, TTS speech, or silence.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service play(Map<String, Object> params) {
     document.addVerb("play", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code prompt} verb: play a prompt and WAIT for input. Digit input is enabled
+   * by default; speech must be turned on explicitly in the arguments. Distinct from the {@code
+   * prompt} key inside {@link #ai(Map)}, which configures the AI agent rather than gathering input.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service prompt(Map<String, Object> params) {
     document.addVerb("prompt", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code receive_fax} verb: receive a fax being delivered to this call.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service receiveFax(Map<String, Object> params) {
     document.addVerb("receive_fax", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code record} verb: record in the FOREGROUND, blocking further SWML execution
+   * until the recording ends — the voicemail shape. Use {@link #recordCall(Map)} to record without
+   * blocking.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service record(Map<String, Object> params) {
     document.addVerb("record", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code record_call} verb: start recording in the BACKGROUND and keep executing
+   * SWML while it runs. Stop it with {@link #stopRecordCall(Map)}. Recording call audio carries
+   * consent and retention obligations in most jurisdictions.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service recordCall(Map<String, Object> params) {
     document.addVerb("record_call", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code request} verb: issue a GET, POST, PUT, or DELETE to a remote URL from
+   * the platform. The URL and any credentials in it are part of the rendered SWML.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service request(Map<String, Object> params) {
     document.addVerb("request", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code return} verb: return a value from an {@link #execute(Map)} subroutine,
+   * or exit the script when there is no caller to return to. Named {@code returnVerb} because
+   * {@code return} is a reserved word in Java; the wire key remains {@code return}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service returnVerb(Map<String, Object> params) {
     document.addVerb("return", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code sip_refer} verb: send a SIP REFER on a SIP call, asking the far end to
+   * transfer itself. Acceptance of the REFER is not completion of the transfer — the subsequent
+   * NOTIFY reports the outcome.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service sipRefer(Map<String, Object> params) {
     document.addVerb("sip_refer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code send_digits} verb: send digit presses as DTMF tones on the call.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service sendDigits(Map<String, Object> params) {
     document.addVerb("send_digits", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code send_fax} verb: send a fax.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service sendFax(Map<String, Object> params) {
     document.addVerb("send_fax", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code send_sms} verb: send an outbound SMS or MMS to a PSTN number. This sends
+   * a billable message every time the verb executes.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service sendSms(Map<String, Object> params) {
     document.addVerb("send_sms", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code set} verb: assign script variables from a name-to-value object. Remove
+   * them again with {@link #unset(Map)}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service set(Map<String, Object> params) {
     document.addVerb("set", params != null ? params : new LinkedHashMap<>());
     return this;
@@ -1321,41 +1608,99 @@ public class Service implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Append the SWML {@code stop_denoise} verb: stop the noise reduction started by {@link
+   * #denoise(Map)}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service stopDenoise(Map<String, Object> params) {
     document.addVerb("stop_denoise", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code stop_record_call} verb: stop an active background recording started by
+   * {@link #recordCall(Map)}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service stopRecordCall(Map<String, Object> params) {
     document.addVerb("stop_record_call", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code stop_tap} verb: stop an active media tap started by {@link #tap(Map)}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service stopTap(Map<String, Object> params) {
     document.addVerb("stop_tap", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code switch} verb: branch to different instructions on a variable's value.
+   * Named {@code switchVerb} because {@code switch} is a reserved word in Java; the wire key
+   * remains {@code switch}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service switchVerb(Map<String, Object> params) {
     document.addVerb("switch", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code tap} verb: stream the call's media to a customer-controlled WebSocket or
+   * RTP endpoint in the background. That endpoint receives live call audio, so it must be one you
+   * control and secure. Stop it with {@link #stopTap(Map)}.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service tap(Map<String, Object> params) {
     document.addVerb("tap", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code transfer} verb: hand execution to a different section, URL, or RELAY
+   * application and CONTINUE from there. Unlike {@link #execute(Map)}, control does not come back.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service transfer(Map<String, Object> params) {
     document.addVerb("transfer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code unset} verb: remove script variables, named individually or as a list.
+   * Works on variables set by {@link #set(Map)} and on those other verbs produce as a side effect.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service unset(Map<String, Object> params) {
     document.addVerb("unset", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
+  /**
+   * Append the SWML {@code user_event} verb: send an event to the client connected on the call,
+   * typically to trigger something in a browser SDK session. The payload reaches the client, so do
+   * not put anything in it the client should not see.
+   *
+   * @param params the verb's arguments; {@code null} renders an empty object.
+   * @return this service, for chaining.
+   */
   public Service userEvent(Map<String, Object> params) {
     document.addVerb("user_event", params != null ? params : new LinkedHashMap<>());
     return this;
