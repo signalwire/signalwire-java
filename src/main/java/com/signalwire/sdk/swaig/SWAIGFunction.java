@@ -73,14 +73,31 @@ public class SWAIGFunction {
 
   // ---- Accessors (parity with Ruby attr_reader) ----
 
+  /**
+   * The function name the model calls this tool by, and the key it is registered under.
+   *
+   * @return the function name.
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * The Java callable invoked when the model calls this tool.
+   *
+   * @return the handler.
+   */
   public Handler getHandler() {
     return handler;
   }
 
+  /**
+   * The LLM-facing description of when to call this tool. This is prompt text the model reasons
+   * over, not a developer comment — a vague one is the usual cause of a registered tool never being
+   * called.
+   *
+   * @return the description.
+   */
   public String getDescription() {
     return description;
   }
@@ -89,6 +106,13 @@ public class SWAIGFunction {
     return parameters;
   }
 
+  /**
+   * Whether this tool's rendered webhook URL carries a signed {@code __token} the SDK's HTTP {@code
+   * /swaig} handler validates on callback. Defaults to {@code true}; opting out publishes a webhook
+   * anyone who sees the SWML can invoke.
+   *
+   * @return whether the tool is secure.
+   */
   public boolean isSecure() {
     return secure;
   }
@@ -97,22 +121,49 @@ public class SWAIGFunction {
     return fillers;
   }
 
+  /**
+   * Audio played to the caller while this tool runs, so a slow handler is not dead air.
+   *
+   * @return the wait-file URL, or {@code null} when none is set.
+   */
   public String getWaitFile() {
     return waitFile;
   }
 
+  /**
+   * How many times the wait file repeats while the tool runs.
+   *
+   * @return the loop count, or {@code null} for the platform default.
+   */
   public Integer getWaitFileLoops() {
     return waitFileLoops;
   }
 
+  /**
+   * The endpoint the platform calls for this tool instead of this agent. Setting it is what makes
+   * the function EXTERNAL — see {@link #isExternal()}.
+   *
+   * @return the webhook URL, or {@code null} when the tool runs on this agent.
+   */
   public String getWebhookUrl() {
     return webhookUrl;
   }
 
+  /**
+   * Names of the parameters the model must supply. Rendered into the JSON-schema {@code required}
+   * array, and omitted from it entirely when empty.
+   *
+   * @return the required parameter names, never {@code null}.
+   */
   public List<String> getRequired() {
     return required;
   }
 
+  /**
+   * Whether the handler expects typed arguments rather than the raw argument map.
+   *
+   * @return whether the handler is typed.
+   */
   public boolean isTypedHandler() {
     return isTypedHandler;
   }
@@ -121,6 +172,13 @@ public class SWAIGFunction {
     return extraSwaigFields;
   }
 
+  /**
+   * Whether the platform calls someone else's endpoint for this tool rather than this agent.
+   * Derived, not configured: it is {@code true} exactly when a {@link #getWebhookUrl() webhook URL}
+   * was supplied.
+   *
+   * @return whether the function is external.
+   */
   public boolean isExternal() {
     return isExternal;
   }
@@ -334,6 +392,11 @@ public class SWAIGFunction {
 
   // ---- Builder (the single __init__) ----
 
+  /**
+   * Start defining a SWAIG function.
+   *
+   * @return a fresh {@link Builder}, with {@code secure} already defaulted to {@code true}.
+   */
   public static Builder builder() {
     return new Builder();
   }
@@ -355,56 +418,128 @@ public class SWAIGFunction {
     private boolean isTypedHandler = false;
     private Map<String, Object> extraSwaigFields;
 
+    /**
+     * The function name the model calls this tool by. Required.
+     *
+     * @param name the function name; a snake_case verb reads best to the model.
+     * @return this builder.
+     */
     public Builder name(String name) {
       this.name = name;
       return this;
     }
 
+    /**
+     * The Java callable invoked when the model calls this tool. Required.
+     *
+     * @param handler the handler.
+     * @return this builder.
+     */
     public Builder handler(Handler handler) {
       this.handler = handler;
       return this;
     }
 
+    /**
+     * The LLM-facing description of when to call this tool. Required, and load-bearing — the model
+     * reads it to decide whether this tool applies.
+     *
+     * @param description the description.
+     * @return this builder.
+     */
     public Builder description(String description) {
       this.description = description;
       return this;
     }
 
+    /**
+     * JSON-schema properties for the tool's arguments. Each property's own {@code description} is
+     * what the model uses to fill that argument from what the caller said, so write them for the
+     * model.
+     *
+     * @param parameters the properties map.
+     * @return this builder.
+     */
     public Builder parameters(Map<String, Object> parameters) {
       this.parameters = parameters;
       return this;
     }
 
+    /**
+     * Whether the rendered webhook URL carries a signed {@code __token}. Defaults to {@code true};
+     * passing {@code false} publishes a webhook anyone who can see the SWML can invoke.
+     *
+     * @param secure whether the tool is secure.
+     * @return this builder.
+     */
     public Builder secure(boolean secure) {
       this.secure = secure;
       return this;
     }
 
+    /**
+     * Per-language phrases the agent speaks while this tool runs, keyed by language code, so the
+     * caller hears something during a slow handler.
+     *
+     * @param fillers the filler phrases.
+     * @return this builder.
+     */
     public Builder fillers(Map<String, Object> fillers) {
       this.fillers = fillers;
       return this;
     }
 
+    /**
+     * Audio to play while this tool runs, as an alternative to spoken {@link #fillers(Map)}.
+     *
+     * @param waitFile the audio file URL.
+     * @return this builder.
+     */
     public Builder waitFile(String waitFile) {
       this.waitFile = waitFile;
       return this;
     }
 
+    /**
+     * How many times the wait file repeats.
+     *
+     * @param waitFileLoops the loop count, or {@code null} for the platform default.
+     * @return this builder.
+     */
     public Builder waitFileLoops(Integer waitFileLoops) {
       this.waitFileLoops = waitFileLoops;
       return this;
     }
 
+    /**
+     * Have the platform call this endpoint for the tool instead of this agent. Supplying it also
+     * makes the function {@linkplain SWAIGFunction#isExternal() external}.
+     *
+     * @param webhookUrl the external endpoint, or {@code null} to run on this agent.
+     * @return this builder.
+     */
     public Builder webhookUrl(String webhookUrl) {
       this.webhookUrl = webhookUrl;
       return this;
     }
 
+    /**
+     * Which parameters the model must supply. Rendered into the JSON-schema {@code required} array.
+     *
+     * @param required the required parameter names.
+     * @return this builder.
+     */
     public Builder required(List<String> required) {
       this.required = required;
       return this;
     }
 
+    /**
+     * Whether the handler expects typed arguments rather than the raw argument map.
+     *
+     * @param isTypedHandler whether the handler is typed.
+     * @return this builder.
+     */
     public Builder isTypedHandler(boolean isTypedHandler) {
       this.isTypedHandler = isTypedHandler;
       return this;
@@ -416,6 +551,13 @@ public class SWAIGFunction {
       return this;
     }
 
+    /**
+     * Construct the function, checking the three required fields.
+     *
+     * @return the constructed function.
+     * @throws IllegalArgumentException if {@code name}, {@code handler}, or {@code description} was
+     *     not set.
+     */
     public SWAIGFunction build() {
       if (name == null) {
         throw new IllegalArgumentException("SWAIGFunction requires a name");
@@ -440,10 +582,20 @@ public class SWAIGFunction {
       this.errors = errors;
     }
 
+    /**
+     * Whether the validated arguments satisfied the function's schema.
+     *
+     * @return {@code true} when there were no errors.
+     */
     public boolean isValid() {
       return valid;
     }
 
+    /**
+     * The validation failures, empty when {@link #isValid()} is {@code true}.
+     *
+     * @return the error messages.
+     */
     public List<String> getErrors() {
       return errors;
     }

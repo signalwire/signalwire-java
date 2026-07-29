@@ -51,11 +51,26 @@ public class FunctionResult {
 
   // -------- Core Setters --------
 
+  /**
+   * Set the text handed back to the model as this tool's result — what the LLM reads and speaks
+   * from. A {@code null} is stored as the empty string.
+   *
+   * @param response the response text.
+   * @return this result, for chaining.
+   */
   public FunctionResult setResponse(String response) {
     this.response = response != null ? response : "";
     return this;
   }
 
+  /**
+   * Whether the model gets another turn to speak AFTER this result's actions run, rather than the
+   * actions taking effect immediately. Only serialized when {@code true} AND at least one action
+   * was added.
+   *
+   * @param postProcess whether to post-process.
+   * @return this result, for chaining.
+   */
   public FunctionResult setPostProcess(boolean postProcess) {
     this.postProcess = postProcess;
     return this;
@@ -98,6 +113,15 @@ public class FunctionResult {
     return this;
   }
 
+  /**
+   * Bridge the call to another destination, with the caller ID left to the platform. Equivalent to
+   * {@link #connect(String, boolean, String)} with a {@code null} {@code from}.
+   *
+   * @param destination the SIP URI or phone number to dial.
+   * @param isFinal {@code true} for a permanent transfer that does not come back; {@code false} to
+   *     return to the agent when the far leg ends.
+   * @return this result, for chaining.
+   */
   public FunctionResult connect(String destination, boolean isFinal) {
     return connect(destination, isFinal, null);
   }
@@ -163,6 +187,13 @@ public class FunctionResult {
     return addAction("wait_for_user", waitValue);
   }
 
+  /**
+   * Make the agent wait for the caller to speak before it does. Equivalent to {@link
+   * #waitForUser(Boolean, Integer, boolean)} with no timeout and no answer-first, which emits
+   * {@code wait_for_user: true}.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult waitForUser() {
     return waitForUser(null, null, false);
   }
@@ -174,18 +205,44 @@ public class FunctionResult {
 
   // ======== State & Data Management ========
 
+  /**
+   * Merge keys into the call's {@code global_data}, visible to the model and to DataMap expressions
+   * for the rest of the call. Emits the {@code set_global_data} action.
+   *
+   * @param data the keys to set.
+   * @return this result, for chaining.
+   */
   public FunctionResult updateGlobalData(Map<String, Object> data) {
     return addAction("set_global_data", data);
   }
 
+  /**
+   * Delete keys from the call's {@code global_data}. Emits the {@code unset_global_data} action.
+   *
+   * @param keys a single key name or a list of them.
+   * @return this result, for chaining.
+   */
   public FunctionResult removeGlobalData(Object keys) {
     return addAction("unset_global_data", keys);
   }
 
+  /**
+   * Merge keys into the call's metadata — per-call scratch state the tools share, kept out of what
+   * the model sees. Emits the {@code set_meta_data} action.
+   *
+   * @param data the keys to set.
+   * @return this result, for chaining.
+   */
   public FunctionResult setMetadata(Map<String, Object> data) {
     return addAction("set_meta_data", data);
   }
 
+  /**
+   * Delete keys from the call's metadata. Emits the {@code unset_meta_data} action.
+   *
+   * @param keys a single key name or a list of them.
+   * @return this result, for chaining.
+   */
   public FunctionResult removeMetadata(Object keys) {
     return addAction("unset_meta_data", keys);
   }
@@ -235,6 +292,15 @@ public class FunctionResult {
     return addAction("context_switch", contextData);
   }
 
+  /**
+   * Replace the agent's system prompt for the rest of the call, keeping the conversation history.
+   * Shorthand for {@link #switchContext(String, String, boolean, boolean)} with no user prompt and
+   * neither reset flag, which emits {@code context_switch} carrying the prompt as a bare string
+   * rather than an object.
+   *
+   * @param systemPrompt the new system prompt.
+   * @return this result, for chaining.
+   */
   public FunctionResult switchContext(String systemPrompt) {
     return switchContext(systemPrompt, null, false, false);
   }
@@ -254,12 +320,28 @@ public class FunctionResult {
     return addAction("replace_in_history", text);
   }
 
+  /**
+   * Rewrite this tool call and its result in the conversation history, so the model's later turns
+   * do not re-read them. Pass {@code true} to remove the pair entirely; the {@link
+   * #replaceInHistory(String)} overload substitutes replacement text instead. Useful when a tool
+   * handled sensitive data that should not persist in the transcript the model sees.
+   *
+   * @param summary {@code true} to drop the pair from history.
+   * @return this result, for chaining.
+   */
   public FunctionResult replaceInHistory(boolean summary) {
     return addAction("replace_in_history", summary);
   }
 
   // ======== Media Control ========
 
+  /**
+   * Have the agent speak this text immediately, independently of the {@code response} the model
+   * will generate from.
+   *
+   * @param text the text to speak.
+   * @return this result, for chaining.
+   */
   public FunctionResult say(String text) {
     return addAction("say", text);
   }
@@ -275,10 +357,23 @@ public class FunctionResult {
     return addAction("playback_bg", filename);
   }
 
+  /**
+   * Start playing an audio file UNDER the conversation and return at once — the agent keeps talking
+   * over it. Equivalent to {@link #playBackgroundFile(String, boolean)} with {@code wait} off. Stop
+   * it with {@link #stopBackgroundFile()}.
+   *
+   * @param filename the audio file URL.
+   * @return this result, for chaining.
+   */
   public FunctionResult playBackgroundFile(String filename) {
     return playBackgroundFile(filename, false);
   }
 
+  /**
+   * Stop the background audio started by {@link #playBackgroundFile(String)}.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopBackgroundFile() {
     return addAction("stop_playback_bg", true);
   }
@@ -442,6 +537,13 @@ public class FunctionResult {
         direction != null ? direction.getValue() : null);
   }
 
+  /**
+   * Start background call recording with the reference defaults: mono, {@code wav}, both
+   * directions, and no control id (so {@link #stopRecordCall()} stops it). Recording call audio
+   * carries consent and retention obligations in most jurisdictions.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult recordCall() {
     return recordCall(null, false, "wav", "both");
   }
@@ -461,24 +563,56 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Stop the background recording, without naming a control id — the platform stops the recording
+   * running on the call. Use {@link #stopRecordCall(String)} to target one of several.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopRecordCall() {
     return stopRecordCall(null);
   }
 
   // ======== Speech & AI Configuration ========
 
+  /**
+   * Add speech-recognition hints mid-call, biasing the recognizer toward words that only became
+   * relevant now — a name or an account number the caller just supplied.
+   *
+   * @param hints the hint strings or structured hint objects.
+   * @return this result, for chaining.
+   */
   public FunctionResult addDynamicHints(List<Object> hints) {
     return addAction("add_dynamic_hints", hints);
   }
 
+  /**
+   * Drop every hint added by {@link #addDynamicHints(List)}, leaving the agent's statically
+   * configured hints untouched.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult clearDynamicHints() {
     return addAction("clear_dynamic_hints", new LinkedHashMap<>());
   }
 
+  /**
+   * How long the recognizer waits in silence before deciding the caller has finished speaking.
+   * Shorter is snappier but cuts off people who pause mid-sentence.
+   *
+   * @param milliseconds the silence threshold.
+   * @return this result, for chaining.
+   */
   public FunctionResult setEndOfSpeechTimeout(int milliseconds) {
     return addAction("end_of_speech_timeout", milliseconds);
   }
 
+  /**
+   * How long to wait between speech events before treating the utterance as over.
+   *
+   * @param milliseconds the timeout.
+   * @return this result, for chaining.
+   */
   public FunctionResult setSpeechEventTimeout(int milliseconds) {
     return addAction("speech_event_timeout", milliseconds);
   }
@@ -497,6 +631,13 @@ public class FunctionResult {
     return enableFunctionsOnTimeout(true);
   }
 
+  /**
+   * Whether the model may call tools on a speaker timeout — when the caller has gone quiet rather
+   * than said something.
+   *
+   * @param enabled whether to allow tool calls on timeout.
+   * @return this result, for chaining.
+   */
   public FunctionResult enableFunctionsOnTimeout(boolean enabled) {
     return addAction("functions_on_speaker_timeout", enabled);
   }
@@ -510,6 +651,13 @@ public class FunctionResult {
     return enableExtensiveData(true);
   }
 
+  /**
+   * Send the full data set to the LLM for THIS turn only, instead of the usual trimmed context.
+   * Costs tokens, so it is a per-turn opt-in rather than a mode.
+   *
+   * @param enabled whether to send extensive data this turn.
+   * @return this result, for chaining.
+   */
   public FunctionResult enableExtensiveData(boolean enabled) {
     return addAction("extensive_data", enabled);
   }
@@ -546,6 +694,17 @@ public class FunctionResult {
     return addAction("SWML", swmlData);
   }
 
+  /**
+   * Execute a SWML document from this tool result, WITHOUT transferring — control returns to the
+   * agent afterwards. Equivalent to {@link #executeSwml(Object, boolean)} with {@code transfer}
+   * off.
+   *
+   * @param swmlContent the SWML as a {@link Map}, or as a JSON {@link String} (which is parsed;
+   *     unparseable text is passed through under {@code raw_swml}).
+   * @return this result, for chaining.
+   * @throws IllegalArgumentException if {@code swmlContent} is neither a {@code String} nor a
+   *     {@code Map}.
+   */
   public FunctionResult executeSwml(Object swmlContent) {
     return executeSwml(swmlContent, false);
   }
@@ -915,6 +1074,12 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Stop the media tap without naming a control id — the platform stops the tap running on the
+   * call. Use {@link #stopTap(String)} to target one of several.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopTap() {
     return stopTap(null);
   }
@@ -1183,6 +1348,15 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Invoke a RELAY RPC method from this tool result, letting the platform infer the call and node
+   * from the current call. Use {@link #executeRpc(String, Map, String, String)} to target a
+   * different leg explicitly.
+   *
+   * @param method the RELAY method name, e.g. {@code calling.play}.
+   * @param params the method's parameters; omitted from the wire when null or empty.
+   * @return this result, for chaining.
+   */
   public FunctionResult executeRpc(String method, Map<String, Object> params) {
     return executeRpc(method, params, null, null);
   }
@@ -1324,6 +1498,11 @@ public class FunctionResult {
 
   // ======== Getters for testing ========
 
+  /**
+   * The text handed back to the model as this tool's result.
+   *
+   * @return the response text, never {@code null}.
+   */
   public String getResponse() {
     return response;
   }
@@ -1332,6 +1511,12 @@ public class FunctionResult {
     return Collections.unmodifiableList(actions);
   }
 
+  /**
+   * Whether the model gets another turn after this result's actions run. Note this only reaches the
+   * wire when it is {@code true} AND at least one action was added.
+   *
+   * @return the post-process flag.
+   */
   public boolean isPostProcess() {
     return postProcess;
   }
