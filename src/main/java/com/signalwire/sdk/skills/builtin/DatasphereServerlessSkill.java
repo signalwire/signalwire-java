@@ -66,12 +66,22 @@ public class DatasphereServerlessSkill implements SkillBase {
                 "POST",
                 url,
                 Map.of("Content-Type", "application/json", "Authorization", "Basic " + authEncoded))
-            .body(
+            .params(
                 Map.of(
                     "query_string", "${args.query}",
                     "document_id", documentId,
                     "count", count,
                     "distance", distance))
+            .foreach(
+                Map.of(
+                    "input_key",
+                    "chunks",
+                    "output_key",
+                    "formatted_results",
+                    "max",
+                    count,
+                    "append",
+                    "=== RESULT ===\n${this.text}\n" + "=".repeat(50) + "\n\n"))
             .output(
                 new FunctionResult(
                     "I found results for \"${args.query}\":\n\n${formatted_results}"));

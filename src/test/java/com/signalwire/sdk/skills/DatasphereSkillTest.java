@@ -108,6 +108,44 @@ class DatasphereSkillTest {
     assertTrue(fns.get(0).containsKey("data_map"));
   }
 
+  /**
+   * The engine reads ONLY "params" and "headers" off a webhook object (mod_openai/actions.c:735-739
+   * -- there is no read of "body" anywhere), and it expands ${formatted_results} from the "foreach"
+   * block. This asserts on the EMITTED PAYLOAD rather than on construction, because the
+   * construction assertions above passed happily while both fields were wrong.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testServerlessWebhookCarriesParamsAndForeach() {
+    DatasphereServerlessSkill skill = new DatasphereServerlessSkill();
+    skill.setup(dsParams());
+
+    Map<String, Object> dataMap =
+        (Map<String, Object>) skill.getSwaigFunctions().get(0).get("data_map");
+    List<Map<String, Object>> webhooks = (List<Map<String, Object>>) dataMap.get("webhooks");
+    assertEquals(1, webhooks.size());
+    Map<String, Object> webhook = webhooks.get(0);
+
+    // The search payload must ride on "params" -- a "body" key is silently dropped by the engine.
+    assertFalse(
+        webhook.containsKey("body"),
+        "webhook must not carry a body key; the engine never reads it");
+    Map<String, Object> params = (Map<String, Object>) webhook.get("params");
+    assertNotNull(params, "webhook must carry params");
+    assertEquals("${args.query}", params.get("query_string"));
+    assertEquals("doc-789", params.get("document_id"));
+    assertTrue(params.containsKey("count"));
+    assertTrue(params.containsKey("distance"));
+
+    // ${formatted_results} in the output is only populated by a foreach block.
+    Map<String, Object> foreach = (Map<String, Object>) webhook.get("foreach");
+    assertNotNull(foreach, "webhook must carry a foreach block to populate ${formatted_results}");
+    assertEquals("chunks", foreach.get("input_key"));
+    assertEquals("formatted_results", foreach.get("output_key"));
+    assertTrue(foreach.containsKey("max"));
+    assertTrue(((String) foreach.get("append")).contains("${this.text}"));
+  }
+
   @Test
   void testServerlessGlobalData() {
     DatasphereServerlessSkill skill = new DatasphereServerlessSkill();
