@@ -287,15 +287,15 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 sched_gate PUBLIC-JARGON res=dayone desc="no internal porting jargon in public doc comments" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port java --repo .
 
-# DOC-SURFACE (plan §6.3): javadoc /** coverage floor on the public API surface.
-# The floor is pinned in .doc_surface_floor (51.8% today) and ratchets up via
-# --write-floor; report-only at graduation, so a doc regression is visible without
-# failing the run yet (never-regress is enforced once the floor flips blocking).
-# GUARDED: doc_surface.py ships on the porting-sdk plan branch; until it merges to
-# porting-sdk main (which CI clones), skip-with-pass rather than red on a not-yet-
-# landed sibling script. Remove the guard once it's on porting-sdk main.
-sched_gate DOC-SURFACE res=dayone desc="javadoc coverage floor on the public API surface (report-only, ratchets via .doc_surface_floor)" \
-    -- bash -c 'if [ -f "$1/scripts/doc_surface.py" ]; then python3 "$1/scripts/doc_surface.py" --port java --repo "$2" --report-only; else echo "[doc-surface] doc_surface.py not on porting-sdk main yet — skip-pass (plan-branch dep)"; fi' _ "$PORTING_SDK_DIR" "$PORT_ROOT"
+# DOC-SURFACE (plan §6.3): javadoc coverage floor on the public API surface.
+# BLOCKING. The port is at 100.0% (1631/1631) as of the 2026-07-29 burn and the floor in
+# .doc_surface_floor is pinned there, so a newly-undocumented public symbol is a real
+# regression with a pinned number to prove it — it must red the run, not print a note.
+# Was report-only at graduation, and previously wrapped in a skip-with-pass guard for
+# when doc_surface.py still lived only on the porting-sdk plan branch. Both are gone: the
+# script is on the pinned PORTING_SDK_REF, and a MISSING gate script must fail, not pass.
+sched_gate DOC-SURFACE res=dayone desc="javadoc coverage floor on the public API surface (100% — blocking; ratchets via .doc_surface_floor)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_surface.py" --port java --repo "$PORT_ROOT"
 
 # WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
 # every load-bearing env/mode line declared in WIRED_MODES.md (the strict-mocks
