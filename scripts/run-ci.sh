@@ -159,8 +159,8 @@ sched_gate SURFACE res=gradle desc="surface parity suite (SIGNATURES/DRIFT/SURFA
 # declared optional<dict<string,string>> and go still shipped a bare string, with no gate
 # red. RATCHET, not a hard gate: dynamic languages cannot always express a type, so this
 # banks the current count and fails only on REGRESSION. Drive the number DOWN; never up.
-sched_gate TYPE-EROSION res=gradle desc="port did not erase a reference-declared param type (ratchet 13)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port java --repo "$PORT_ROOT" --max 13
+sched_gate TYPE-EROSION res=gradle desc="port did not erase a reference-declared param type (ratchet 12)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port java --repo "$PORT_ROOT" --max 12
 
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. Most are pure-python
 # (--check against the on-disk generated tree), but GEN-FRESH-TESTS's
