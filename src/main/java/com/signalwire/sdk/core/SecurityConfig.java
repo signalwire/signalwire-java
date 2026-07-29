@@ -225,58 +225,146 @@ public class SecurityConfig {
   // Accessors.
   // ------------------------------------------------------------------
 
+  /**
+   * Whether the service terminates TLS itself. Defaults to {@code false}; set by {@code
+   * SWML_SSL_ENABLED} (accepting {@code true}, {@code 1}, or {@code yes}) or the config file. Off
+   * means the service speaks plain HTTP and something in front of it must provide TLS.
+   *
+   * @return whether SSL is enabled.
+   */
   public boolean isSslEnabled() {
     return sslEnabled;
   }
 
+  /**
+   * Filesystem path to the TLS certificate ({@code SWML_SSL_CERT_PATH}). Required when SSL is
+   * enabled; {@code validateSslConfig()} reports its absence.
+   *
+   * @return the certificate path, or {@code null} when unset.
+   */
   public String getSslCertPath() {
     return sslCertPath;
   }
 
+  /**
+   * Filesystem path to the TLS private key ({@code SWML_SSL_KEY_PATH}). Required when SSL is
+   * enabled. Protect this file — it is the service's private key.
+   *
+   * @return the key path, or {@code null} when unset.
+   */
   public String getSslKeyPath() {
     return sslKeyPath;
   }
 
+  /**
+   * The domain the certificate is issued for ({@code SWML_DOMAIN}).
+   *
+   * @return the domain, or {@code null} when unset.
+   */
   public String getDomain() {
     return domain;
   }
 
+  /**
+   * Peer-certificate verification mode, defaulting to {@code CERT_REQUIRED} ({@code
+   * SWML_SSL_VERIFY_MODE}). Weakening it disables the check that the peer is who it claims to be.
+   *
+   * @return the verify mode.
+   */
   public String getSslVerifyMode() {
     return sslVerifyMode;
   }
 
+  /**
+   * Hostnames the service will answer for ({@code SWML_ALLOWED_HOSTS}, comma-separated).
+   *
+   * <p>Defaults to {@code ["*"]} — every host — which leaves the service open to Host-header abuse.
+   * Narrow it to the hostnames actually in use for anything reachable from the internet.
+   *
+   * @return the allowed hosts.
+   */
   public List<String> getAllowedHosts() {
     return allowedHosts;
   }
 
+  /**
+   * Origins permitted by CORS ({@code SWML_CORS_ORIGINS}, comma-separated).
+   *
+   * <p>Defaults to {@code ["*"]} — every origin — so any website may script requests to this
+   * service from a visitor's browser. Narrow it for anything serving authenticated endpoints.
+   *
+   * @return the allowed origins.
+   */
   public List<String> getCorsOrigins() {
     return corsOrigins;
   }
 
+  /**
+   * Largest request body accepted, in bytes ({@code SWML_MAX_REQUEST_SIZE}); defaults to 10 MiB.
+   * The cap is what keeps an oversized body from being buffered.
+   *
+   * @return the maximum request size in bytes.
+   */
   public long getMaxRequestSize() {
     return maxRequestSize;
   }
 
+  /**
+   * Requests permitted per minute ({@code SWML_RATE_LIMIT}); defaults to 60.
+   *
+   * @return the rate limit.
+   */
   public int getRateLimit() {
     return rateLimit;
   }
 
+  /**
+   * How long a request may take before it is abandoned, in seconds ({@code SWML_REQUEST_TIMEOUT});
+   * defaults to 30.
+   *
+   * @return the request timeout in seconds.
+   */
   public int getRequestTimeout() {
     return requestTimeout;
   }
 
+  /**
+   * Whether responses carry {@code Strict-Transport-Security} ({@code SWML_USE_HSTS}); defaults to
+   * {@code true}. Only meaningful once the service is genuinely reachable over HTTPS — a browser
+   * that honours the header will refuse plain HTTP to this host for {@link #getHstsMaxAge()}
+   * seconds.
+   *
+   * @return whether HSTS is sent.
+   */
   public boolean isUseHsts() {
     return useHsts;
   }
 
+  /**
+   * How long, in seconds, a browser should remember the HSTS policy ({@code SWML_HSTS_MAX_AGE});
+   * defaults to 31536000 (one year).
+   *
+   * @return the HSTS max-age in seconds.
+   */
   public long getHstsMaxAge() {
     return hstsMaxAge;
   }
 
+  /**
+   * Basic-auth username the service requires ({@code SWML_BASIC_AUTH_USER}).
+   *
+   * @return the username, or {@code null} when unset.
+   */
   public String getBasicAuthUser() {
     return basicAuthUser;
   }
 
+  /**
+   * Basic-auth password the service requires ({@code SWML_BASIC_AUTH_PASSWORD}) — the plaintext
+   * credential, so keep it out of logs and error responses.
+   *
+   * @return the password, or {@code null} when unset.
+   */
   public String getBasicAuthPassword() {
     return basicAuthPassword;
   }

@@ -59,26 +59,60 @@ public class Message {
 
   // ── Getters ──────────────────────────────────────────────────────
 
+  /**
+   * The platform's identifier for this message, returned by {@code messaging.send} and echoed on
+   * every {@code messaging.state} event — the key state updates are routed on.
+   *
+   * @return the message id.
+   */
   public String getMessageId() {
     return messageId;
   }
 
+  /**
+   * URLs of the MMS attachments carried by the message.
+   *
+   * @return the media URLs, never {@code null} (empty when there are none).
+   */
   public List<String> getMedia() {
     return media;
   }
 
+  /**
+   * How many SMS segments the message occupied — the unit billing is charged in.
+   *
+   * @return the segment count.
+   */
   public int getSegments() {
     return segments;
   }
 
+  /**
+   * The message's current delivery state as sent on the wire, progressing {@code queued} to {@code
+   * initiated} to {@code sent} to {@code delivered}, or ending at {@code failed} / {@code
+   * undelivered}. Kept as a string so a server-side addition to the set does not break dispatch.
+   *
+   * @return the raw state, or {@code null} before the first event.
+   */
   public String getState() {
     return state;
   }
 
+  /**
+   * Client-supplied correlation tags carried on the message.
+   *
+   * @return the tags, never {@code null} (empty when none were set).
+   */
   public List<String> getTags() {
     return tags;
   }
 
+  /**
+   * Whether the message has reached a terminal state ({@code delivered}, {@code undelivered}, or
+   * {@code failed}).
+   *
+   * @return {@code true} once the message has settled.
+   */
   public boolean isDone() {
     return done;
   }
@@ -147,42 +181,99 @@ public class Message {
 
   // ── Setters ──────────────────────────────────────────────────────
 
+  /**
+   * Update the context from a later event frame.
+   *
+   * @param context the messaging context.
+   */
   public void setContext(String context) {
     this.context = context;
   }
 
+  /**
+   * Update the direction ({@code inbound} or {@code outbound}) from a later event frame.
+   *
+   * @param direction the message direction.
+   */
   public void setDirection(String direction) {
     this.direction = direction;
   }
 
+  /**
+   * Update the sender number (E.164) from a later event frame.
+   *
+   * @param fromNumber the sender number.
+   */
   public void setFromNumber(String fromNumber) {
     this.fromNumber = fromNumber;
   }
 
+  /**
+   * Update the destination number (E.164) from a later event frame.
+   *
+   * @param toNumber the destination number.
+   */
   public void setToNumber(String toNumber) {
     this.toNumber = toNumber;
   }
 
+  /**
+   * Update the message text from a later event frame. For an inbound message this is untrusted
+   * end-user input.
+   *
+   * @param body the message text.
+   */
   public void setBody(String body) {
     this.body = body;
   }
 
+  /**
+   * Update the MMS attachment URLs from a later event frame.
+   *
+   * @param media the media URLs; {@code null} is stored as an empty list.
+   */
   public void setMedia(List<String> media) {
     this.media = media != null ? media : Collections.emptyList();
   }
 
+  /**
+   * Update the segment count from a later event frame.
+   *
+   * @param segments the segment count.
+   */
   public void setSegments(int segments) {
     this.segments = segments;
   }
 
+  /**
+   * Update the correlation tags from a later event frame.
+   *
+   * @param tags the tags; {@code null} is stored as an empty list.
+   */
   public void setTags(List<String> tags) {
     this.tags = tags != null ? tags : Collections.emptyList();
   }
 
+  /**
+   * Overwrite the delivery state directly. Note this does NOT evaluate terminality — it will not
+   * resolve the message or fire the completion callback the way an incoming state event does.
+   *
+   * @param state the raw wire state.
+   */
   public void setState(String state) {
     this.state = state;
   }
 
+  /**
+   * Register a callback to fire when the message reaches a terminal state.
+   *
+   * <p>Register it BEFORE the message can settle. Unlike {@link
+   * com.signalwire.sdk.relay.Action#setOnCompleted(java.util.function.Consumer)}, this does not
+   * fire immediately for an already-completed message, so a callback registered after the terminal
+   * event has landed never runs.
+   *
+   * @param onCompleted the callback, invoked with this message.
+   */
   public void setOnCompleted(Consumer<Message> onCompleted) {
     this.onCompleted = onCompleted;
   }
@@ -307,6 +398,12 @@ public class Message {
     return msg;
   }
 
+  /**
+   * A short diagnostic rendering carrying the message id, state, and the two numbers — deliberately
+   * excludes the body, which for an inbound message is end-user content.
+   *
+   * @return the diagnostic string.
+   */
   @Override
   public String toString() {
     return String.format(

@@ -220,10 +220,22 @@ public class RelayClient implements AutoCloseable {
 
   // ── Builder ──────────────────────────────────────────────────────
 
+  /**
+   * Start configuring a RELAY client.
+   *
+   * @return a fresh {@link Builder}.
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Fluent constructor for {@link RelayClient}.
+   *
+   * <p>Every credential falls back to an environment variable at {@link #build()} — {@code
+   * SIGNALWIRE_PROJECT_ID}, {@code SIGNALWIRE_API_TOKEN}, {@code SIGNALWIRE_JWT_TOKEN}, {@code
+   * SIGNALWIRE_SPACE} — so a deployed client need not hard-code any of them.
+   */
   public static class Builder {
     private String project;
     private String token;
@@ -233,31 +245,73 @@ public class RelayClient implements AutoCloseable {
     private Integer maxActiveCallsOverride;
     private int maxActiveCalls; // resolved in build(): override > env > default
 
+    /**
+     * The SignalWire project UUID to authenticate as. Falls back to {@code SIGNALWIRE_PROJECT_ID};
+     * not required on the JWT path, where the project is carried inside the token.
+     *
+     * @param project the project id.
+     * @return this builder.
+     */
     public Builder project(String project) {
       this.project = project;
       return this;
     }
 
+    /**
+     * The API token to authenticate with. Falls back to {@code SIGNALWIRE_API_TOKEN}. This is a
+     * long-lived credential for the whole project — keep it out of source and out of logs.
+     *
+     * @param token the API token.
+     * @return this builder.
+     */
     public Builder token(String token) {
       this.token = token;
       return this;
     }
 
+    /**
+     * A JWT to authenticate with instead of a project/token pair. Falls back to {@code
+     * SIGNALWIRE_JWT_TOKEN}. Supplying it makes {@link #project(String)} and {@link #token(String)}
+     * unnecessary, since the project is inside the token.
+     *
+     * @param jwtToken the JWT.
+     * @return this builder.
+     */
     public Builder jwtToken(String jwtToken) {
       this.jwtToken = jwtToken;
       return this;
     }
 
+    /**
+     * The RELAY host to connect to. Falls back to {@code SIGNALWIRE_SPACE}, then to {@code
+     * relay.signalwire.com}, so it never itself causes a build failure.
+     *
+     * @param space the space hostname.
+     * @return this builder.
+     */
     public Builder space(String space) {
       this.space = space;
       return this;
     }
 
+    /**
+     * Alias of {@link #space(String)} — sets the same RELAY host.
+     *
+     * @param host the space hostname.
+     * @return this builder.
+     */
     public Builder host(String host) {
       this.space = host;
       return this;
     }
 
+    /**
+     * Contexts to subscribe to at connect time. Inbound calls and messages are only delivered for
+     * contexts the client subscribed to, so an empty list means nothing inbound arrives.
+     *
+     * @param contexts the context names.
+     * @return this builder.
+     */
     public Builder contexts(List<String> contexts) {
       this.contexts = contexts;
       return this;
@@ -279,6 +333,18 @@ public class RelayClient implements AutoCloseable {
     /** Default RELAY host, matching Python's DEFAULT_RELAY_HOST (relay/constants.py). */
     private static final String DEFAULT_RELAY_HOST = "relay.signalwire.com";
 
+    /**
+     * Resolve credentials and construct the client.
+     *
+     * <p>Credentials fail PRE-CONNECT rather than at connect time, with a message naming the
+     * missing credential and its environment variable. An EMPTY value counts as missing — the
+     * client will not attempt to connect with one. On the JWT path neither project nor token is
+     * required.
+     *
+     * @return the constructed client.
+     * @throws IllegalArgumentException when no JWT was supplied and either the project or the API
+     *     token is missing or empty.
+     */
     public RelayClient build() {
       // Env-var fallback for any credential not set explicitly — parity with
       // Python's relay Client() (relay/client.py), which reads
@@ -342,10 +408,20 @@ public class RelayClient implements AutoCloseable {
 
   // ── Public API ───────────────────────────────────────────────────
 
+  /**
+   * The project UUID this client authenticates as.
+   *
+   * @return the project id, or {@code null} on the JWT-only path.
+   */
   public String getProject() {
     return project;
   }
 
+  /**
+   * The RELAY host this client connects to.
+   *
+   * @return the space hostname, defaulted to {@code relay.signalwire.com} when nothing set it.
+   */
   public String getSpace() {
     return space;
   }
@@ -369,10 +445,21 @@ public class RelayClient implements AutoCloseable {
     return jwtToken;
   }
 
+  /**
+   * The contexts this client subscribed to. Inbound traffic arrives only for these.
+   *
+   * @return an unmodifiable view of the subscribed context names.
+   */
   public List<String> getContexts() {
     return Collections.unmodifiableList(contexts);
   }
 
+  /**
+   * Whether the WebSocket is currently up AND the {@code signalwire.connect} handshake has
+   * completed.
+   *
+   * @return {@code true} when the client is connected.
+   */
   public boolean isConnected() {
     return connected;
   }
@@ -1410,12 +1497,25 @@ public class RelayClient implements AutoCloseable {
       super(serverUri);
     }
 
+    /**
+     * WebSocket opened: begins the RELAY authentication handshake. Being open is not yet being
+     * connected — {@link RelayClient#isConnected()} stays false until the handshake completes.
+     *
+     * @param handshakedata the server's handshake.
+     */
     @Override
     public void onOpen(ServerHandshake handshakedata) {
       log.info("WebSocket connected to %s", getURI());
       authenticate();
     }
 
+    /**
+     * A frame arrived: dispatched to the RELAY message handler. Any exception the handler raises is
+     * logged and swallowed, so one bad frame cannot kill the reader thread and take the session
+     * with it.
+     *
+     * @param message the raw frame text.
+     */
     @Override
     public void onMessage(String message) {
       try {
@@ -1425,12 +1525,25 @@ public class RelayClient implements AutoCloseable {
       }
     }
 
+    /**
+     * WebSocket closed: runs the disconnect path, which is what drives reconnection.
+     *
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the far end initiated the close.
+     */
     @Override
     public void onClose(int code, String reason, boolean remote) {
       log.info("WebSocket closed: code=%d reason=%s remote=%s", code, reason, remote);
       handleDisconnect();
     }
 
+    /**
+     * A transport-level error occurred. It is logged only — the close that follows is what actually
+     * drives the disconnect handling.
+     *
+     * @param ex the transport error.
+     */
     @Override
     public void onError(Exception ex) {
       log.error("WebSocket error", ex);

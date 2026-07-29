@@ -53,6 +53,11 @@ public class Step {
     this.sections = new ArrayList<>();
   }
 
+  /**
+   * The step's name — how {@code next_step} and {@link #setValidSteps(List)} refer to it.
+   *
+   * @return the step name.
+   */
   public String getName() {
     return name;
   }
@@ -93,6 +98,13 @@ public class Step {
     return this;
   }
 
+  /**
+   * The condition, in prose the model evaluates, for considering this step finished and moving on.
+   * Without it the model has no stated bar for advancing.
+   *
+   * @param criteria the completion criteria.
+   * @return this step, for chaining.
+   */
   public Step setStepCriteria(String criteria) {
     this.stepCriteria = criteria;
     return this;
@@ -135,11 +147,26 @@ public class Step {
     return this;
   }
 
+  /**
+   * Which steps the model may move to from here, which is what makes the native {@code next_step}
+   * tool available. Overrides the context-level default set by {@link
+   * com.signalwire.sdk.contexts.Context#setValidSteps(List)}.
+   *
+   * @param steps the reachable step names.
+   * @return this step, for chaining.
+   */
   public Step setValidSteps(List<String> steps) {
     this.validSteps = steps;
     return this;
   }
 
+  /**
+   * Which contexts the model may move to from this step, making the native {@code change_context}
+   * tool available. Overrides the context-level default.
+   *
+   * @param contexts the reachable context names.
+   * @return this step, for chaining.
+   */
   public Step setValidContexts(List<String> contexts) {
     this.validContexts = contexts;
     return this;
@@ -164,11 +191,26 @@ public class Step {
     return this;
   }
 
+  /**
+   * Have the agent go straight on without waiting for the caller to speak after this step's
+   * instructions. Use it for a step whose whole job is to say something before the next one asks a
+   * question.
+   *
+   * @param skip whether to skip the user's turn.
+   * @return this step, for chaining.
+   */
   public Step setSkipUserTurn(boolean skip) {
     this.skipUserTurn = skip;
     return this;
   }
 
+  /**
+   * Advance to the next step automatically once this one's work is done, without waiting for the
+   * model to call {@code next_step}.
+   *
+   * @param skip whether to advance automatically.
+   * @return this step, for chaining.
+   */
   public Step setSkipToNextStep(boolean skip) {
     this.skipToNextStep = skip;
     return this;
@@ -285,6 +327,18 @@ public class Step {
     return this;
   }
 
+  /**
+   * Add a question to this step's gather flow, without the isolated flag.
+   *
+   * @param key the field name the answer is stored under.
+   * @param question the question put to the caller.
+   * @param type the expected answer type, e.g. {@code "string"}.
+   * @param confirm whether to read the answer back for confirmation.
+   * @param prompt an optional prompt override for this question.
+   * @param functions tools callable while this question is being answered.
+   * @return this step, for chaining.
+   * @throws IllegalStateException if {@code setGatherInfo()} has not been called first.
+   */
   public Step addGatherQuestion(
       String key,
       String question,
@@ -295,31 +349,73 @@ public class Step {
     return addGatherQuestion(key, question, type, confirm, prompt, functions, null);
   }
 
+  /**
+   * Add a plain string question to this step's gather flow, with no confirmation, no prompt
+   * override, and no per-question tools.
+   *
+   * @param key the field name the answer is stored under.
+   * @param question the question put to the caller.
+   * @return this step, for chaining.
+   * @throws IllegalStateException if {@code setGatherInfo()} has not been called first.
+   */
   public Step addGatherQuestion(String key, String question) {
     return addGatherQuestion(key, question, "string", false, null, null, null);
   }
 
+  /**
+   * Drop this step's prompt entirely — both the POM sections and any raw text — returning it to a
+   * blank slate so either shape can then be used.
+   *
+   * @return this step, for chaining.
+   */
   public Step clearSections() {
     sections.clear();
     text = null;
     return this;
   }
 
+  /**
+   * System prompt to install when a context switch is triggered FROM this step, so a step can hand
+   * off to a different persona.
+   *
+   * @param systemPrompt the replacement system prompt.
+   * @return this step, for chaining.
+   */
   public Step setResetSystemPrompt(String systemPrompt) {
     this.resetSystemPrompt = systemPrompt;
     return this;
   }
 
+  /**
+   * User-role message to inject when a context switch is triggered from this step.
+   *
+   * @param userPrompt the user prompt.
+   * @return this step, for chaining.
+   */
   public Step setResetUserPrompt(String userPrompt) {
     this.resetUserPrompt = userPrompt;
     return this;
   }
 
+  /**
+   * On a context switch from this step, summarise the prior conversation into a single message
+   * rather than carrying it forward in full.
+   *
+   * @param consolidate whether to consolidate history.
+   * @return this step, for chaining.
+   */
   public Step setResetConsolidate(boolean consolidate) {
     this.resetConsolidate = consolidate;
     return this;
   }
 
+  /**
+   * On a context switch from this step, reset the conversation completely rather than continuing
+   * it.
+   *
+   * @param fullReset whether to fully reset.
+   * @return this step, for chaining.
+   */
   public Step setResetFullReset(boolean fullReset) {
     this.resetFullReset = fullReset;
     return this;

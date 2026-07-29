@@ -23,6 +23,10 @@ import java.util.Map;
  */
 public final class Logger {
 
+  /**
+   * Severity levels, ordered least to most severe. A message is emitted when its level is at least
+   * the global level, so {@link #OFF} — the highest — suppresses everything.
+   */
   public enum Level {
     DEBUG(0),
     INFO(1),
@@ -36,6 +40,11 @@ public final class Logger {
       this.value = value;
     }
 
+    /**
+     * The level's ordinal severity, which is what the threshold comparison uses.
+     *
+     * @return the severity value, {@code 0} for {@link #DEBUG} through {@code 4} for {@link #OFF}.
+     */
     public int getValue() {
       return value;
     }
@@ -78,14 +87,32 @@ public final class Logger {
     this.name = name;
   }
 
+  /**
+   * Obtain a logger tagged with this name. The name appears in every line the logger writes.
+   *
+   * @param name the logger name.
+   * @return a logger for that name.
+   */
   public static Logger getLogger(String name) {
     return new Logger(name);
   }
 
+  /**
+   * Obtain a logger tagged with the class's simple name.
+   *
+   * @param clazz the class to name the logger after.
+   * @return a logger for that class.
+   */
   public static Logger getLogger(Class<?> clazz) {
     return new Logger(clazz.getSimpleName());
   }
 
+  /**
+   * Set the severity threshold for every logger in the process, overriding whatever {@code
+   * SIGNALWIRE_LOG_LEVEL} / {@code SIGNALWIRE_LOG_MODE} resolved at class-load time.
+   *
+   * @param level the new threshold.
+   */
   public static void setGlobalLevel(Level level) {
     globalLevel = level;
   }
@@ -179,46 +206,112 @@ public final class Logger {
     return out;
   }
 
+  /**
+   * The current process-wide severity threshold, resolved at class-load time from {@code
+   * SIGNALWIRE_LOG_MODE} then {@code SIGNALWIRE_LOG_LEVEL}, defaulting to {@link Level#INFO}.
+   *
+   * @return the current threshold.
+   */
   public static Level getGlobalLevel() {
     return globalLevel;
   }
 
+  /**
+   * Whether a message at this level would be emitted. Worth checking before building an expensive
+   * message that would then be discarded.
+   *
+   * @param level the level to test.
+   * @return {@code true} when the level meets the global threshold.
+   */
   public boolean isEnabled(Level level) {
     return level.getValue() >= globalLevel.getValue();
   }
 
+  /**
+   * Log at {@link Level#DEBUG}. Control characters in the message are stripped before output, so a
+   * value carrying newlines or escape sequences cannot forge log lines.
+   *
+   * @param message the message.
+   */
   public void debug(String message) {
     log(Level.DEBUG, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#DEBUG}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void debug(String format, Object... args) {
     log(Level.DEBUG, format, args);
   }
 
+  /**
+   * Log at {@link Level#INFO}, the default threshold. Control characters are stripped before
+   * output.
+   *
+   * @param message the message.
+   */
   public void info(String message) {
     log(Level.INFO, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#INFO}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void info(String format, Object... args) {
     log(Level.INFO, format, args);
   }
 
+  /**
+   * Log at {@link Level#WARN}. Control characters are stripped before output.
+   *
+   * @param message the message.
+   */
   public void warn(String message) {
     log(Level.WARN, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#WARN}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void warn(String format, Object... args) {
     log(Level.WARN, format, args);
   }
 
+  /**
+   * Log at {@link Level#ERROR}. Control characters are stripped before output.
+   *
+   * @param message the message.
+   */
   public void error(String message) {
     log(Level.ERROR, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#ERROR}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void error(String format, Object... args) {
     log(Level.ERROR, format, args);
   }
 
+  /**
+   * Log at {@link Level#ERROR} with a stack trace. The message is written to standard error with
+   * control characters stripped, followed by the throwable's trace.
+   *
+   * @param message the message.
+   * @param t the throwable whose stack trace to print.
+   */
   public void error(String message, Throwable t) {
     if (isEnabled(Level.ERROR)) {
       System.err.printf("[%s] [%s] %s%n", Level.ERROR, name, stripControlCharsValue(message));

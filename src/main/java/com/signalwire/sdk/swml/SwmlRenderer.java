@@ -75,66 +75,149 @@ public final class SwmlRenderer {
       return o;
     }
 
+    /**
+     * The prompt run after the conversation ends, whose output becomes the call summary.
+     *
+     * @param v the post-prompt text.
+     * @return these options, for chaining.
+     */
     public RenderOptions postPrompt(String v) {
       this.postPrompt = v;
       return this;
     }
 
+    /**
+     * Where the platform POSTs the post-prompt summary. That endpoint receives conversation
+     * content.
+     *
+     * @param v the post-prompt URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions postPromptUrl(String v) {
       this.postPromptUrl = v;
       return this;
     }
 
+    /**
+     * The SWAIG function definitions to render into the AI verb — the tools the model may call.
+     *
+     * @param v the function objects as they should appear on the wire.
+     * @return these options, for chaining.
+     */
     public RenderOptions swaigFunctions(List<Map<String, Object>> v) {
       this.swaigFunctions = v;
       return this;
     }
 
+    /**
+     * Endpoint called when the AI session starts.
+     *
+     * @param v the startup hook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions startupHookUrl(String v) {
       this.startupHookUrl = v;
       return this;
     }
 
+    /**
+     * Endpoint called when the call hangs up.
+     *
+     * @param v the hangup hook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions hangupHookUrl(String v) {
       this.hangupHookUrl = v;
       return this;
     }
 
+    /**
+     * Whether the prompt passed to {@code of(...)} is a POM structure rather than a plain string.
+     * This governs how it is rendered, so it must match what was actually supplied.
+     *
+     * @param v {@code true} when the prompt is a POM.
+     * @return these options, for chaining.
+     */
     public RenderOptions promptIsPom(boolean v) {
       this.promptIsPom = v;
       return this;
     }
 
+    /**
+     * AI-verb parameters to render into {@code ai.params}.
+     *
+     * @param v the parameters.
+     * @return these options, for chaining.
+     */
     public RenderOptions params(Map<String, Object> v) {
       this.params = v;
       return this;
     }
 
+    /**
+     * Whether the rendered document answers the call before the AI verb runs.
+     *
+     * @param v whether to emit an answer verb.
+     * @return these options, for chaining.
+     */
     public RenderOptions addAnswer(boolean v) {
       this.addAnswer = v;
       return this;
     }
 
+    /**
+     * Whether the rendered document starts background call recording. Recording call audio carries
+     * consent and retention obligations in most jurisdictions.
+     *
+     * @param v whether to record.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordCall(boolean v) {
       this.recordCall = v;
       return this;
     }
 
+    /**
+     * Container format for the recording; defaults to {@code mp4}. Only meaningful when {@link
+     * #recordCall(boolean)} is on.
+     *
+     * @param v the container format.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordFormat(String v) {
       this.recordFormat = v;
       return this;
     }
 
+    /**
+     * Whether the recording keeps each leg on its own channel; defaults to {@code true}, which is
+     * what makes per-speaker transcription possible afterwards.
+     *
+     * @param v whether to record in stereo.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordStereo(boolean v) {
       this.recordStereo = v;
       return this;
     }
 
+    /**
+     * Output format for the rendered document; defaults to {@code json}.
+     *
+     * @param v the output format.
+     * @return these options, for chaining.
+     */
     public RenderOptions format(String v) {
       this.format = v;
       return this;
     }
 
+    /**
+     * Webhook URL applied to SWAIG functions that do not carry one of their own.
+     *
+     * @param v the default webhook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions defaultWebhookUrl(String v) {
       this.defaultWebhookUrl = v;
       return this;

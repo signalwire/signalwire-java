@@ -149,10 +149,23 @@ public class Call {
     this.segmentId = segmentId;
   }
 
+  /**
+   * The platform's identifier for this call leg. Supplied at construction and never absent, which
+   * is why it is not {@link java.util.Optional} like the other scalars here.
+   *
+   * @return the call id.
+   */
   public String getCallId() {
     return callId;
   }
 
+  /**
+   * The leg's current lifecycle state as sent on the wire — {@code created}, {@code ringing},
+   * {@code answered} or {@code ended}. Defaults to {@code created} so it is never absent; {@link
+   * #getCallState()} gives the typed view.
+   *
+   * @return the raw call state.
+   */
   public String getState() {
     return state;
   }
@@ -206,34 +219,78 @@ public class Call {
     return Optional.ofNullable(tag);
   }
 
+  /**
+   * Record the RELAY node hosting this leg, which every subsequent calling method must carry.
+   *
+   * @param nodeId the node id.
+   */
   public void setNodeId(String nodeId) {
     this.nodeId = nodeId;
   }
 
+  /**
+   * Overwrite the lifecycle state directly. Note this does NOT run the state-wait or listener
+   * machinery an incoming event does — {@code waitForAnswered()} and friends will not observe it.
+   *
+   * @param state the raw wire state.
+   */
   public void setState(String state) {
     this.state = state;
   }
 
+  /**
+   * Record why the leg terminated, e.g. {@code hangup}, {@code busy}, {@code noAnswer}.
+   *
+   * @param endReason the end reason.
+   */
   public void setEndReason(String endReason) {
     this.endReason = endReason;
   }
 
+  /**
+   * Record whether the leg is {@code inbound} or {@code outbound}.
+   *
+   * @param direction the call direction.
+   */
   public void setDirection(String direction) {
     this.direction = direction;
   }
 
+  /**
+   * Record the dial-correlation tag, which is how an outbound leg is matched back to the {@code
+   * calling.dial} that created it.
+   *
+   * @param tag the correlation tag.
+   */
   public void setTag(String tag) {
     this.tag = tag;
   }
 
+  /**
+   * Record the device object describing how this leg is reached ({@code phone}, {@code sip}, {@code
+   * webrtc}, {@code agora}) and its parameters.
+   *
+   * @param device the device object.
+   */
   public void setDevice(Map<String, Object> device) {
     this.device = device;
   }
 
+  /**
+   * Bind this call to the client that issues its RPCs. Without it the call has no transport to send
+   * calling methods on.
+   *
+   * @param client the owning RELAY client.
+   */
   public void setClient(RelayClient client) {
     this.client = client;
   }
 
+  /**
+   * Whether the leg has reached {@code ended}.
+   *
+   * @return {@code true} once the call has ended.
+   */
   public boolean isEnded() {
     return Constants.CALL_STATE_ENDED.equals(state);
   }
@@ -1521,6 +1578,11 @@ public class Call {
     }
   }
 
+  /**
+   * A short diagnostic rendering carrying the call id, state, and direction.
+   *
+   * @return the diagnostic string.
+   */
   @Override
   public String toString() {
     return String.format("Call{id=%s, state=%s, direction=%s}", callId, state, direction);
