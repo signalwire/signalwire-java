@@ -204,10 +204,25 @@ public class AgentBase extends Service {
   // Builder
   // ============================================================
 
+  /**
+   * Start configuring a new agent.
+   *
+   * @return a fresh {@link Builder} carrying the SDK defaults (route {@code /}, host {@code
+   *     0.0.0.0}, auto-answer on, 3600-second max duration, POM prompts, recording off).
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Fluent constructor for {@link AgentBase}.
+   *
+   * <p>Values are collected here and resolved once at {@link #build()}, because several of them
+   * compose with lower-precedence sources: a config file's {@code service} section and the {@code
+   * SWML_BASIC_AUTH_*} / {@code PORT} / {@code SWML_PROXY_URL_BASE} / {@code
+   * SIGNALWIRE_SIGNING_KEY} environment variables. In every such case the explicit builder value
+   * wins, the config file is next, and the environment is last.
+   */
   public static class Builder {
     // Collect Service-level args until build(), then call super(..) once.
     private String name = "agent";
@@ -241,11 +256,25 @@ public class AgentBase extends Service {
     // Forwarded to SessionManager (agent_base.py:247).
     private int tokenExpirySecs = 3600;
 
+    /**
+     * The agent's name. Also the default basic-auth username and the seed for the default config
+     * file search path.
+     *
+     * @param name the agent name.
+     * @return this builder.
+     */
     public Builder name(String name) {
       this.name = name;
       return this;
     }
 
+    /**
+     * HTTP path the agent is served on. A trailing slash is stripped (except on the bare root
+     * {@code "/"}) so the mounted path matches what the SWAIG/post-prompt URLs are built from.
+     *
+     * @param route the route, e.g. {@code "/"} or {@code "/agent"}.
+     * @return this builder.
+     */
     public Builder route(String route) {
       this.route =
           route.endsWith("/") && route.length() > 1
@@ -254,31 +283,73 @@ public class AgentBase extends Service {
       return this;
     }
 
+    /**
+     * Interface address to bind. Defaults to {@code 0.0.0.0} (all interfaces); use {@code
+     * 127.0.0.1} to keep the agent reachable only from the local host.
+     *
+     * @param host the bind address.
+     * @return this builder.
+     */
     public Builder host(String host) {
       this.host = host;
       return this;
     }
 
+    /**
+     * TCP port to bind. Highest precedence — when unset, {@link #build()} falls back to the config
+     * file's {@code service.port}, then the {@code PORT} environment variable, then 3000.
+     *
+     * @param port the TCP port.
+     * @return this builder.
+     */
     public Builder port(int port) {
       this.port = port;
       return this;
     }
 
+    /**
+     * Whether the rendered SWML answers the call before the AI verb runs. Default {@code true}.
+     *
+     * @param autoAnswer whether to auto-answer.
+     * @return this builder.
+     */
     public Builder autoAnswer(boolean autoAnswer) {
       this.autoAnswer = autoAnswer;
       return this;
     }
 
+    /**
+     * Hard ceiling in seconds on how long the answered call may run before the platform ends it.
+     * Default {@code 3600}.
+     *
+     * @param maxDuration the limit in seconds.
+     * @return this builder.
+     */
     public Builder maxDuration(int maxDuration) {
       this.maxDuration = maxDuration;
       return this;
     }
 
+    /**
+     * Whether the platform records the call. Default {@code false}. Recording call audio carries
+     * consent and retention obligations in most jurisdictions — enable it deliberately.
+     *
+     * @param recordCall whether to record.
+     * @return this builder.
+     */
     public Builder recordCall(boolean recordCall) {
       this.recordCall = recordCall;
       return this;
     }
 
+    /**
+     * Container format for the recording, e.g. {@code mp4} (the default) or {@code wav}. Only
+     * meaningful when {@link #recordCall(boolean)} is on. Prefer the {@link RecordFormat} overload,
+     * which rejects a misspelling at compile time.
+     *
+     * @param format the container format.
+     * @return this builder.
+     */
     public Builder recordFormat(String format) {
       this.recordFormat = format;
       return this;
@@ -294,16 +365,39 @@ public class AgentBase extends Service {
       return recordFormat(format.getValue());
     }
 
+    /**
+     * Whether the recording keeps each call leg on its own channel. Default {@code true}, which is
+     * what makes per-speaker transcription and diarization possible after the fact.
+     *
+     * @param stereo whether to record in stereo.
+     * @return this builder.
+     */
     public Builder recordStereo(boolean stereo) {
       this.recordStereo = stereo;
       return this;
     }
 
+    /**
+     * Basic-auth username protecting the agent's HTTP endpoints. When unset, {@link #build()} reads
+     * {@code SWML_BASIC_AUTH_USER} and finally falls back to the agent name.
+     *
+     * @param user the username.
+     * @return this builder.
+     */
     public Builder authUser(String user) {
       this.authUser = user;
       return this;
     }
 
+    /**
+     * Basic-auth password protecting the agent's HTTP endpoints. When unset, {@link #build()} reads
+     * {@code SWML_BASIC_AUTH_PASSWORD}; if that is also unset it generates a random password that
+     * exists only in this process and logs a warning — external callers then get HTTP 401 on every
+     * request, and the password changes on each restart. Set it explicitly for anything deployed.
+     *
+     * @param password the password.
+     * @return this builder.
+     */
     public Builder authPassword(String password) {
       this.authPassword = password;
       return this;
@@ -503,6 +597,26 @@ public class AgentBase extends Service {
       return this;
     }
 
+    /**
+     * Resolve every configuration source and construct the agent.
+     *
+     * <p>Precedence, applied per setting: explicit builder value, then the config file's {@code
+     * service} section ({@code name}/{@code route}/{@code host}/{@code port}), then the environment
+     * ({@code SWML_BASIC_AUTH_USER}, {@code SWML_BASIC_AUTH_PASSWORD}, {@code PORT}, {@code
+     * SWML_PROXY_URL_BASE}, {@code SIGNALWIRE_SIGNING_KEY}), then the SDK default.
+     *
+     * <p>Two security fallbacks warn loudly rather than failing:
+     *
+     * <ul>
+     *   <li>No password from any source generates a random one confined to this process — every
+     *       external caller then receives HTTP 401.
+     *   <li>No signing key from any source leaves webhook signature validation OFF, so the agent
+     *       accepts unsigned webhook requests.
+     * </ul>
+     *
+     * @return the constructed agent, with its {@link SessionManager} already wired to the
+     *     configured token lifetime.
+     */
     public AgentBase build() {
       EnvProvider env = this.envProvider != null ? this.envProvider : EnvProvider.SYSTEM;
 
@@ -770,17 +884,42 @@ public class AgentBase extends Service {
   // Prompt Methods
   // ============================================================
 
+  /**
+   * Set the system prompt as raw text, switching the agent OUT of Prompt Object Model mode. After
+   * this call {@link #getPrompt()} emits {@code {"text": …}} and any sections added through {@link
+   * #promptAddSection(String, String)} are no longer rendered.
+   *
+   * @param text the raw prompt text.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPromptText(String text) {
     this.promptText = text;
     this.usePom = false;
     return this;
   }
 
+  /**
+   * Set the prompt the platform runs AFTER the conversation ends, whose output is POSTed to the
+   * post-prompt URL — this is what produces the call summary.
+   *
+   * @param text the post-prompt text.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPostPrompt(String text) {
     this.postPrompt = text;
     return this;
   }
 
+  /**
+   * Append a Prompt Object Model section, switching the agent INTO POM mode (so any raw text set by
+   * {@link #setPromptText(String)} stops being rendered).
+   *
+   * @param title the section heading.
+   * @param body the section prose; {@code null} is stored as the empty string and dropped at render
+   *     time.
+   * @param bullets bullet points under the section; {@code null} or empty omits the key entirely.
+   * @return this agent, for chaining.
+   */
   public AgentBase promptAddSection(String title, String body, List<String> bullets) {
     this.usePom = true;
     Map<String, Object> section = new LinkedHashMap<>();
@@ -793,10 +932,27 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append a Prompt Object Model section with prose only. Equivalent to {@link
+   * #promptAddSection(String, String, List)} with no bullets.
+   *
+   * @param title the section heading.
+   * @param body the section prose.
+   * @return this agent, for chaining.
+   */
   public AgentBase promptAddSection(String title, String body) {
     return promptAddSection(title, body, null);
   }
 
+  /**
+   * Nest a subsection under an existing section, matched by its exact title. Silently does nothing
+   * when no section carries that title.
+   *
+   * @param parentTitle title of the section to nest under.
+   * @param title the subsection heading.
+   * @param body the subsection prose; {@code null} is stored as the empty string.
+   * @return this agent, for chaining.
+   */
   public AgentBase promptAddSubsection(String parentTitle, String title, String body) {
     for (Map<String, Object> section : pomSections) {
       if (parentTitle.equals(section.get("title"))) {
@@ -814,6 +970,14 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append bullets to an existing section, matched by its exact title. Silently does nothing when
+   * no section carries that title.
+   *
+   * @param title title of the section to extend.
+   * @param bullets bullets to append.
+   * @return this agent, for chaining.
+   */
   public AgentBase promptAddToSection(String title, List<String> bullets) {
     for (Map<String, Object> section : pomSections) {
       if (title.equals(section.get("title"))) {
@@ -827,6 +991,12 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Whether a Prompt Object Model section with this exact title has been added.
+   *
+   * @param title the section heading to look for.
+   * @return {@code true} if such a section exists.
+   */
   public boolean promptHasSection(String title) {
     for (Map<String, Object> section : pomSections) {
       if (title.equals(section.get("title"))) {
@@ -836,6 +1006,16 @@ public class AgentBase extends Service {
     return false;
   }
 
+  /**
+   * The prompt as it will be rendered into the SWML AI verb.
+   *
+   * <p>Normalises POM sections through {@link PromptObjectModel} rather than emitting the raw
+   * section maps, so an empty {@code body} is dropped and empty {@code bullets} omitted — emitting
+   * the raw maps would leak {@code "body": ""} for a bullets-only section, a wire divergence.
+   *
+   * @return {@code {"pom": […]}} in POM mode with at least one section, otherwise {@code {"text":
+   *     …}} carrying the raw prompt (or the empty string when none was set).
+   */
   public Object getPrompt() {
     if (usePom && !pomSections.isEmpty()) {
       // Normalize the raw section maps through the POM model so the emitted
@@ -922,7 +1102,10 @@ public class AgentBase extends Service {
   // ============================================================
 
   /**
-   * Register a SWAIG tool (function) that the AI can invoke during a call.
+   * Register a SWAIG tool the model can call during a call. Covariant override of {@link
+   * com.signalwire.sdk.swml.Service#defineTool(String, String, Map, ToolHandler)} that returns
+   * {@code AgentBase} so a fluent chain keeps the agent's own type; the registration logic itself
+   * lives on {@link com.signalwire.sdk.swml.Service}.
    *
    * <h3>How this becomes a tool the model sees</h3>
    *
@@ -980,12 +1163,8 @@ public class AgentBase extends Service {
    * @param description LLM-facing description of when to call this tool.
    * @param parameters JSON-schema properties map with LLM-facing descriptions for each parameter.
    * @param handler the Java handler invoked when the model calls this tool.
+   * @return this agent, for chaining.
    */
-  // defineTool / registerSwaigFunction / defineTools logic now lives on
-  // Service. AgentBase keeps thin covariant overrides that just return the
-  // AgentBase instance, so existing fluent-chain users keep an AgentBase
-  // reference (rather than the parent Service type).
-
   @Override
   public AgentBase defineTool(
       String name, String description, Map<String, Object> parameters, ToolHandler handler) {
@@ -993,18 +1172,38 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Register a pre-built {@link ToolDefinition}. Covariant override returning {@code AgentBase}.
+   *
+   * @param toolDef the tool definition.
+   * @return this agent, for chaining.
+   */
   @Override
   public AgentBase defineTool(ToolDefinition toolDef) {
     super.defineTool(toolDef);
     return this;
   }
 
+  /**
+   * Register a SWAIG function from its raw wire map — the escape hatch for definitions built
+   * elsewhere, such as a {@link com.signalwire.sdk.datamap.DataMap}'s {@code toSwaigFunction()}.
+   * Covariant override returning {@code AgentBase}.
+   *
+   * @param swaigFunc the SWAIG function object as it should appear on the wire.
+   * @return this agent, for chaining.
+   */
   @Override
   public AgentBase registerSwaigFunction(Map<String, Object> swaigFunc) {
     super.registerSwaigFunction(swaigFunc);
     return this;
   }
 
+  /**
+   * Register several tools at once. Covariant override returning {@code AgentBase}.
+   *
+   * @param toolDefs the tool definitions.
+   * @return this agent, for chaining.
+   */
   @Override
   public AgentBase defineTools(List<ToolDefinition> toolDefs) {
     super.defineTools(toolDefs);
@@ -1023,6 +1222,24 @@ public class AgentBase extends Service {
     return onFunctionCall(name, args, null);
   }
 
+  /**
+   * Dispatch a tool call to its registered handler, in process.
+   *
+   * <p>This path does NOT validate a SWAIG token, matching the reference's {@code
+   * on_function_call}. The per-tool token is a WIRE artifact: a {@code secure} tool's rendered
+   * webhook URL carries {@code ?__token=<hmac>}, and it is the HTTP {@code /swaig} handler that
+   * validates it when the platform calls back. Enforcing it here would make every secure tool (the
+   * default) unreachable from {@code swaig-test}, MCP {@code tools/call}, and the prefab agents'
+   * own tools.
+   *
+   * <p>Never throws: an unknown or handler-less name and any exception the handler raises both come
+   * back as a {@link FunctionResult} carrying the message, so one bad tool cannot kill the call.
+   *
+   * @param name the tool name the model called.
+   * @param args the parsed arguments.
+   * @param rawData the raw SWAIG request body, or {@code null}.
+   * @return the handler's result, or a message-carrying result on unknown-tool/error.
+   */
   @Override
   public FunctionResult onFunctionCall(
       String name, Map<String, Object> args, Map<String, Object> rawData) {
@@ -1053,6 +1270,12 @@ public class AgentBase extends Service {
     return Collections.unmodifiableMap(tools);
   }
 
+  /**
+   * Whether a tool is registered under this exact name.
+   *
+   * @param name the tool name.
+   * @return {@code true} if registered.
+   */
   public boolean hasTool(String name) {
     return tools.containsKey(name);
   }
@@ -1092,11 +1315,25 @@ public class AgentBase extends Service {
   // AI Config Methods
   // ============================================================
 
+  /**
+   * Append a plain-string speech-recognition hint, biasing the recognizer toward a word or phrase
+   * it would otherwise mishear (product names, place names, jargon). Renders into {@code ai.hints}.
+   *
+   * @param hint the word or phrase.
+   * @return this agent, for chaining.
+   */
   public AgentBase addHint(String hint) {
     hints.add(hint);
     return this;
   }
 
+  /**
+   * Append several plain-string recognition hints. Adds to what is already there rather than
+   * replacing it.
+   *
+   * @param newHints the words or phrases.
+   * @return this agent, for chaining.
+   */
   public AgentBase addHints(List<String> newHints) {
     hints.addAll(newHints);
     return this;
@@ -1136,6 +1373,14 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Add a language the agent can speak, with no fillers and the voice's default engine/model.
+   *
+   * @param name display name for the language, e.g. {@code "English"}.
+   * @param code BCP-47 language code, e.g. {@code "en-US"}.
+   * @param voice the TTS voice identifier.
+   * @return this agent, for chaining.
+   */
   public AgentBase addLanguage(String name, String code, String voice) {
     return addLanguage(name, code, voice, null, null, null, null, null);
   }
@@ -1255,6 +1500,13 @@ public class AgentBase extends Service {
     return null;
   }
 
+  /**
+   * Replace the whole language list with these raw language objects, discarding anything added by
+   * {@link #addLanguage(String, String, String)}.
+   *
+   * @param langs the language objects as they should appear in {@code ai.languages}.
+   * @return this agent, for chaining.
+   */
   public AgentBase setLanguages(List<Map<String, Object>> langs) {
     languages.clear();
     languages.addAll(langs);
@@ -1288,6 +1540,16 @@ public class AgentBase extends Service {
     return addPronunciation(replace, with, false);
   }
 
+  /**
+   * Add a TTS pronunciation rule, rewriting text before it reaches the synthesizer so an acronym or
+   * a brand name is spoken correctly. Renders as {@code {replace, with, ignore_case}} into {@code
+   * ai.pronounce}.
+   *
+   * @param replace the text to look for.
+   * @param with what to speak in its place.
+   * @param ignoreCase whether the match is case-insensitive.
+   * @return this agent, for chaining.
+   */
   public AgentBase addPronunciation(String replace, String with, boolean ignoreCase) {
     Map<String, Object> pron = new LinkedHashMap<>();
     pron.put("replace", replace);
@@ -1297,22 +1559,55 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Replace the whole pronunciation list with these raw rule objects, discarding anything added by
+   * {@link #addPronunciation(String, String, boolean)}.
+   *
+   * @param prons the rule objects as they should appear in {@code ai.pronounce}.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPronunciations(List<Map<String, Object>> prons) {
     pronunciations.clear();
     pronunciations.addAll(prons);
     return this;
   }
 
+  /**
+   * Set one AI-verb parameter, overwriting any previous value for that key. These land in the SWML
+   * {@code ai.params} object.
+   *
+   * @param key the parameter name.
+   * @param value the parameter value.
+   * @return this agent, for chaining.
+   */
   public AgentBase setParam(String key, Object value) {
     params.put(key, value);
     return this;
   }
 
+  /**
+   * Merge several AI-verb parameters in. Existing keys not mentioned here are preserved; keys
+   * present in both are overwritten.
+   *
+   * @param newParams the parameters to merge.
+   * @return this agent, for chaining.
+   */
   public AgentBase setParams(Map<String, Object> newParams) {
     params.putAll(newParams);
     return this;
   }
 
+  /**
+   * Merge key/value data into the AI verb's {@code global_data}, readable by the model and by
+   * DataMap expressions throughout the call.
+   *
+   * <p>Despite the {@code set} name this MERGES rather than replaces, matching the reference's
+   * {@code set_global_data}. That is deliberate: skills and application code each contribute keys,
+   * and a replace would silently drop what earlier callers added.
+   *
+   * @param data the keys to merge; {@code null} is a no-op.
+   * @return this agent, for chaining.
+   */
   public AgentBase setGlobalData(Map<String, Object> data) {
     // MERGE (not replace) — mirrors Python AIConfigMixin.set_global_data, which
     // does self._global_data.update(data) so skills and other callers can each
@@ -1324,6 +1619,13 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Merge key/value data into the AI verb's {@code global_data}. Identical in effect to {@link
+   * #setGlobalData(Map)}, which also merges.
+   *
+   * @param data the keys to merge.
+   * @return this agent, for chaining.
+   */
   public AgentBase updateGlobalData(Map<String, Object> data) {
     globalData.putAll(data);
     return this;
@@ -1333,6 +1635,13 @@ public class AgentBase extends Service {
     return globalData;
   }
 
+  /**
+   * Replace the list of server-side native SWAIG functions the agent enables, rendered into {@code
+   * ai.SWAIG.native_functions}. These execute on the platform, not through this agent's webhook.
+   *
+   * @param funcs the native function names.
+   * @return this agent, for chaining.
+   */
   public AgentBase setNativeFunctions(List<String> funcs) {
     this.nativeFunctions = new ArrayList<>(funcs);
     return this;
@@ -1370,6 +1679,14 @@ public class AgentBase extends Service {
   // backward compatibility.
   private final Map<String, Map<String, List<String>>> internalFillersMap = new LinkedHashMap<>();
 
+  /**
+   * Replace the legacy flat filler list with these raw {@code {text|file}} objects. This is the
+   * older shape; {@link #setInternalFillersMap(java.util.Map)} is the per-function, per-language
+   * form and validates the function names.
+   *
+   * @param fillers the filler objects.
+   * @return this agent, for chaining.
+   */
   public AgentBase setInternalFillers(List<Map<String, Object>> fillers) {
     internalFillers.clear();
     internalFillers.addAll(fillers);
@@ -1430,6 +1747,15 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append one legacy flat filler, spoken or played while an internal function runs. Either
+   * argument may be {@code null}, in which case that key is omitted. See {@link
+   * #addInternalFiller(String, String, java.util.List)} for the per-function, per-language form.
+   *
+   * @param text phrase to speak, or {@code null}.
+   * @param file audio file URL to play, or {@code null}.
+   * @return this agent, for chaining.
+   */
   public AgentBase addInternalFiller(String text, String file) {
     Map<String, Object> filler = new LinkedHashMap<>();
     if (text != null) filler.put("text", text);
@@ -1469,11 +1795,26 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Turn on the platform's debug event stream for this agent, so callbacks registered with {@link
+   * #onDebugEvent(Consumer)} receive events. Debug events carry conversation internals — do not
+   * leave this on in production.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase enableDebugEvents() {
     this.debugEventsEnabled = true;
     return this;
   }
 
+  /**
+   * Include SWAIG functions hosted at another URL, so the platform calls that endpoint for them
+   * rather than this agent. Renders an entry into {@code ai.SWAIG.includes}.
+   *
+   * @param url the remote SWAIG endpoint.
+   * @param functions the function definitions to include, or {@code null} to omit the key.
+   * @return this agent, for chaining.
+   */
   public AgentBase addFunctionInclude(String url, Map<String, Object> functions) {
     Map<String, Object> include = new LinkedHashMap<>();
     include.put("url", url);
@@ -1482,12 +1823,28 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Replace the whole include list with these raw entries, discarding anything added by {@link
+   * #addFunctionInclude(String, Map)}.
+   *
+   * @param includes the include objects as they should appear in {@code ai.SWAIG.includes}.
+   * @return this agent, for chaining.
+   */
   public AgentBase setFunctionIncludes(List<Map<String, Object>> includes) {
     functionIncludes.clear();
     functionIncludes.addAll(includes);
     return this;
   }
 
+  /**
+   * Merge LLM generation parameters (temperature, top_p, and the like) for the main prompt.
+   *
+   * <p>Despite the {@code set} name this MERGES, matching the reference. Successive calls with
+   * distinct keys accumulate; a repeated key overwrites.
+   *
+   * @param llmParams the parameters to merge.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPromptLlmParams(Map<String, Object> llmParams) {
     // MERGE (not replace) — mirrors Python's self._prompt_llm_params.update(params)
     // (ai_config_mixin.py). Successive calls with distinct keys accumulate; a
@@ -1496,6 +1853,13 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Merge LLM generation parameters for the post-prompt (summary) pass. Merges rather than
+   * replaces, matching the reference and {@link #setPromptLlmParams(Map)}.
+   *
+   * @param llmParams the parameters to merge.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPostPromptLlmParams(Map<String, Object> llmParams) {
     // MERGE (not replace) — mirrors Python's
     // self._post_prompt_llm_params.update(params) (ai_config_mixin.py).
@@ -1507,6 +1871,14 @@ public class AgentBase extends Service {
   // Verb Methods (5-Phase Call Flow)
   // ============================================================
 
+  /**
+   * Append a SWML verb to phase 1, which runs BEFORE the call is answered — the place for early
+   * media such as ringback or a pre-answer prompt.
+   *
+   * @param verbName the SWML verb name.
+   * @param verbData the verb's argument value.
+   * @return this agent, for chaining.
+   */
   public AgentBase addPreAnswerVerb(String verbName, Object verbData) {
     Map<String, Object> verb = new LinkedHashMap<>();
     verb.put(verbName, verbData);
@@ -1514,6 +1886,13 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append a SWML verb to phase 2, the answer phase.
+   *
+   * @param verbName the SWML verb name.
+   * @param verbData the verb's argument value.
+   * @return this agent, for chaining.
+   */
   public AgentBase addAnswerVerb(String verbName, Object verbData) {
     Map<String, Object> verb = new LinkedHashMap<>();
     verb.put(verbName, verbData);
@@ -1521,6 +1900,14 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append a SWML verb to phase 3, which runs after the call is answered but before the AI verb —
+   * for example a greeting played before the model takes over.
+   *
+   * @param verbName the SWML verb name.
+   * @param verbData the verb's argument value.
+   * @return this agent, for chaining.
+   */
   public AgentBase addPostAnswerVerb(String verbName, Object verbData) {
     Map<String, Object> verb = new LinkedHashMap<>();
     verb.put(verbName, verbData);
@@ -1528,6 +1915,14 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Append a SWML verb to phase 5, which runs after the AI verb finishes — for example a transfer
+   * or a closing message once the conversation ends.
+   *
+   * @param verbName the SWML verb name.
+   * @param verbData the verb's argument value.
+   * @return this agent, for chaining.
+   */
   public AgentBase addPostAiVerb(String verbName, Object verbData) {
     Map<String, Object> verb = new LinkedHashMap<>();
     verb.put(verbName, verbData);
@@ -1535,16 +1930,31 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Drop every phase-1 (pre-answer) verb.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase clearPreAnswerVerbs() {
     preAnswerVerbs.clear();
     return this;
   }
 
+  /**
+   * Drop every phase-3 (post-answer) verb.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase clearPostAnswerVerbs() {
     postAnswerVerbs.clear();
     return this;
   }
 
+  /**
+   * Drop every phase-5 (post-AI) verb.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase clearPostAiVerbs() {
     postAiVerbs.clear();
     return this;
@@ -1565,6 +1975,12 @@ public class AgentBase extends Service {
     return this.contextBuilder;
   }
 
+  /**
+   * The agent's existing {@link ContextBuilder}, WITHOUT creating one.
+   *
+   * @return the builder previously created by {@link #defineContexts()}, or {@code null} when no
+   *     contexts have been defined.
+   */
   public ContextBuilder contexts() {
     return this.contextBuilder;
   }
@@ -1587,6 +2003,14 @@ public class AgentBase extends Service {
   // Skills
   // ============================================================
 
+  /**
+   * Load a skill by registry name and configure it. The skill contributes its own tools, prompt
+   * sections, hints, and global data to the agent.
+   *
+   * @param skillName the registered skill name.
+   * @param params the skill's configuration.
+   * @return this agent, for chaining.
+   */
   public AgentBase addSkill(String skillName, Map<String, Object> params) {
     skillManager.addSkill(skillName, params);
     return this;
@@ -1617,6 +2041,12 @@ public class AgentBase extends Service {
     return addSkill(skillName.getValue(), Map.of());
   }
 
+  /**
+   * Unload a previously added skill, withdrawing the tools and prompt content it contributed.
+   *
+   * @param skillName the registered skill name.
+   * @return this agent, for chaining.
+   */
   public AgentBase removeSkill(String skillName) {
     skillManager.removeSkill(skillName);
     return this;
@@ -1627,10 +2057,21 @@ public class AgentBase extends Service {
     return removeSkill(skillName.getValue());
   }
 
+  /**
+   * The names of the skills currently loaded on this agent.
+   *
+   * @return the loaded skill names.
+   */
   public List<String> listSkills() {
     return skillManager.listSkills();
   }
 
+  /**
+   * Whether a skill is currently loaded under this name.
+   *
+   * @param skillName the registered skill name.
+   * @return {@code true} if loaded.
+   */
   public boolean hasSkill(String skillName) {
     return skillManager.hasSkill(skillName);
   }
@@ -1644,21 +2085,52 @@ public class AgentBase extends Service {
   // Web / HTTP Config
   // ============================================================
 
+  /**
+   * Install a callback that reconfigures the agent per inbound SWML request, using that request's
+   * query string, body, and headers — this is how one deployed agent serves per-caller or
+   * per-tenant behaviour.
+   *
+   * @param callback the callback, or {@code null} to remove it.
+   * @return this agent, for chaining.
+   */
   public AgentBase setDynamicConfigCallback(DynamicConfigCallback callback) {
     this.dynamicConfigCallback = callback;
     return this;
   }
 
+  /**
+   * Override the URL the platform calls back for SWAIG functions, in place of the one derived from
+   * the agent's host and route. Use it when the agent sits behind a proxy or tunnel whose external
+   * address it cannot infer.
+   *
+   * @param url the SWAIG webhook URL.
+   * @return this agent, for chaining.
+   */
   public AgentBase setWebHookUrl(String url) {
     this.webhookUrl = url;
     return this;
   }
 
+  /**
+   * Override the URL the platform POSTs the post-prompt summary to, in place of the derived one.
+   * The summary contains the conversation's content — point it somewhere you control.
+   *
+   * @param url the post-prompt URL.
+   * @return this agent, for chaining.
+   */
   public AgentBase setPostPromptUrl(String url) {
     this.postPromptUrl = url;
     return this;
   }
 
+  /**
+   * Set the external base URL every generated webhook URL is built from, overriding whatever {@code
+   * SWML_PROXY_URL_BASE} supplied. Required when the agent is reachable at an address it cannot see
+   * from inside — behind a load balancer, an ingress, or an ngrok-style tunnel.
+   *
+   * @param url the external base URL.
+   * @return this agent, for chaining.
+   */
   public AgentBase manualSetProxyUrl(String url) {
     this.proxyUrlBase = url;
     return this;
@@ -1701,16 +2173,35 @@ public class AgentBase extends Service {
                 }));
   }
 
+  /**
+   * Merge extra query parameters onto every generated SWAIG webhook URL. They are visible in the
+   * rendered SWML and in platform logs, so do not put secrets here — the {@code __token} the
+   * secure-tool path mints is handled separately.
+   *
+   * @param params the query parameters to merge.
+   * @return this agent, for chaining.
+   */
   public AgentBase addSwaigQueryParams(Map<String, String> params) {
     swaigQueryParams.putAll(params);
     return this;
   }
 
+  /**
+   * Drop every extra SWAIG webhook query parameter added by {@link #addSwaigQueryParams(Map)}.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase clearSwaigQueryParams() {
     swaigQueryParams.clear();
     return this;
   }
 
+  /**
+   * Accepted for parity with the reference's debug-route toggle. This port serves no separate debug
+   * routes, so the call changes nothing.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase enableDebugRoutes() {
     return this;
   }
@@ -1899,11 +2390,26 @@ public class AgentBase extends Service {
   // SIP
   // ============================================================
 
+  /**
+   * Turn on SIP routing, so the agent dispatches inbound calls by the username in the request URI
+   * against the set registered with {@link #registerSipUsername(String)}.
+   *
+   * @return this agent, for chaining.
+   */
   public AgentBase enableSipRouting() {
     this.sipRoutingEnabled = true;
     return this;
   }
 
+  /**
+   * Register a SIP username this agent answers for. Stored lower-cased, so registrations differing
+   * only in case collapse to one and matching is case-insensitive. A username failing the
+   * permitted-character pattern is REJECTED with a warning rather than registered — check the log
+   * if a call is not routing.
+   *
+   * @param username the SIP username.
+   * @return this agent, for chaining.
+   */
   public AgentBase registerSipUsername(String username) {
     if (username != null && SIP_USERNAME_PATTERN.matcher(username).matches()) {
       // Store lowercased — mirrors Python agent_base.register_sip_username,
@@ -1916,10 +2422,20 @@ public class AgentBase extends Service {
     return this;
   }
 
+  /**
+   * Whether {@link #enableSipRouting()} has been called.
+   *
+   * @return {@code true} when SIP routing is on.
+   */
   public boolean isSipRoutingEnabled() {
     return sipRoutingEnabled;
   }
 
+  /**
+   * The SIP usernames this agent answers for, lower-cased as stored.
+   *
+   * @return an unmodifiable view of the registered usernames.
+   */
   public Set<String> getSipUsernames() {
     return Collections.unmodifiableSet(sipUsernames);
   }
@@ -1970,11 +2486,25 @@ public class AgentBase extends Service {
   // Lifecycle Callbacks
   // ============================================================
 
+  /**
+   * Install the handler invoked when the platform POSTs the post-prompt summary back at the end of
+   * a call. The summary reflects what was actually said, so treat it as conversation content.
+   *
+   * @param callback receives the summary data and the raw request body.
+   * @return this agent, for chaining.
+   */
   public AgentBase onSummary(BiConsumer<Map<String, Object>, Map<String, Object>> callback) {
     this.onSummaryCallback = callback;
     return this;
   }
 
+  /**
+   * Install the handler invoked for each debug event, which arrive only while {@link
+   * #enableDebugEvents()} is on.
+   *
+   * @param callback receives the debug event payload.
+   * @return this agent, for chaining.
+   */
   public AgentBase onDebugEvent(Consumer<Map<String, Object>> callback) {
     this.onDebugEventCallback = callback;
     return this;
@@ -1984,27 +2514,62 @@ public class AgentBase extends Service {
   // Getters
   // ============================================================
 
+  /**
+   * The agent's name, as resolved at build time from the builder or the config file's {@code
+   * service.name}.
+   *
+   * @return the agent name.
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * The HTTP path the agent is served on, with any trailing slash already stripped.
+   *
+   * @return the route.
+   */
   public String getRoute() {
     return route;
   }
 
+  /**
+   * The interface address the agent binds.
+   *
+   * @return the bind address.
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * The TCP port the agent binds, as resolved from the builder, the config file, the {@code PORT}
+   * environment variable, or the default 3000.
+   *
+   * @return the port.
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * The basic-auth username protecting the agent's HTTP endpoints.
+   *
+   * @return the username.
+   */
   @Override
   public String getAuthUser() {
     return authUser;
   }
 
+  /**
+   * The basic-auth password protecting the agent's HTTP endpoints — the plaintext credential, so
+   * keep it out of logs and out of anything rendered to a caller. When no password was configured
+   * from any source this is the random value generated at build time, which exists only in this
+   * process and changes on every restart.
+   *
+   * @return the password.
+   */
   @Override
   public String getAuthPassword() {
     return authPassword;
@@ -2156,6 +2721,11 @@ public class AgentBase extends Service {
     return normalizeRoute();
   }
 
+  /**
+   * The manager that loads skills and collects what they contribute to the agent.
+   *
+   * @return this agent's skill manager.
+   */
   public SkillManager getSkillManager() {
     return skillManager;
   }
@@ -2907,6 +3477,16 @@ public class AgentBase extends Service {
   // Dynamic Config Callback Interface
   // ============================================================
 
+  /**
+   * Callback that reconfigures an agent per inbound SWML request. Registered with {@link
+   * AgentBase#setDynamicConfigCallback(DynamicConfigCallback)} and invoked before each render, so
+   * one deployed agent can serve per-caller or per-tenant behaviour.
+   *
+   * <p>The query parameters, body, and headers all come from the network. Validate anything read
+   * from them before letting it reach a prompt or a tool configuration.
+   *
+   * @see AgentBase#setDynamicConfigCallback(DynamicConfigCallback)
+   */
   @FunctionalInterface
   public interface DynamicConfigCallback {
     void configure(
