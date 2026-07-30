@@ -2293,9 +2293,24 @@ def collect(
             out_modules[target_mod]["classes"].setdefault(target_cls, {"methods": {}})
             out_modules[target_mod]["classes"][target_cls]["methods"].update(present)
             projected.update(present)
-        # Drop projected methods from AgentBase only.
+        # Drop projected methods from AgentBase, and from SWMLService when the
+        # reference does not record them there. Java flattens Python's composed
+        # mixins / ToolRegistry onto its Service base, so a method sourced from
+        # ``svc_methods`` was projected to its canonical mixin home but left
+        # behind on SWMLService too — a duplicate port-only symbol. ORACLE-KEYED
+        # (never a hardcoded list), lockstep with enumerate_surface.py: a method
+        # the reference genuinely records on SWMLService stays put.
         for n in projected:
             ab_methods.pop(n, None)
+        _svc_ref = PSDK / "python_signatures.json"
+        _ref_svc_members: set[str] = set()
+        if _svc_ref.is_file():
+            _ref_svc_members = _load_oracle_sig_members(_svc_ref).get(
+                ("signalwire.core.swml_service", "SWMLService"), set()
+            )
+        for n in projected:
+            if n in svc_methods and n not in _ref_svc_members:
+                svc_methods.pop(n, None)
         # ``handle_request`` is declared on both Java classes (SWMLService is the
         # framework-free dispatch core; AgentBase overrides it to render via its
         # own SWML pipeline). The SIGNATURE oracle records it only once — on the

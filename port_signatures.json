@@ -10182,34 +10182,6 @@
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
             },
-            "define_tool": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "tool_def",
-                  "type": "class:signalwire.swaig.ToolDefinition",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
-            "define_tools": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "tool_defs",
-                  "type": "list<class:signalwire.swaig.ToolDefinition>",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
             "denoise": {
               "params": [
                 {
@@ -10285,15 +10257,6 @@
               ],
               "returns": "bool"
             },
-            "get_all_functions": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "dict<string,class:signalwire.swaig.ToolDefinition>"
-            },
             "get_auth_password": {
               "params": [
                 {
@@ -10347,20 +10310,6 @@
                 }
               ],
               "returns": "class:signalwire.rest.namespaces.datasphere_types_generated.Document"
-            },
-            "get_function": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.swaig.ToolDefinition"
             },
             "get_registered_swaig_functions": {
               "params": [
@@ -10446,20 +10395,6 @@
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
-            "has_function": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
             },
             "is_schema_validation": {
               "params": [
@@ -10563,30 +10498,6 @@
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
             },
-            "on_function_call": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "func_name",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "args",
-                  "type": "dict<string,any>",
-                  "required": true
-                },
-                {
-                  "name": "raw_data",
-                  "type": "dict<string,any>",
-                  "required": false
-                }
-              ],
-              "returns": "class:signalwire.core.function_result.FunctionResult"
-            },
             "on_request": {
               "params": [
                 {
@@ -10602,25 +10513,6 @@
                   "name": "callback_path",
                   "type": "string",
                   "required": false
-                }
-              ],
-              "returns": "dict<string,any>"
-            },
-            "on_swml_request": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "request_data",
-                  "type": "dict<string,any>",
-                  "required": true
-                },
-                {
-                  "name": "callback_path",
-                  "type": "string",
-                  "required": true
                 }
               ],
               "returns": "dict<string,any>"
@@ -10728,20 +10620,6 @@
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
             },
-            "register_swaig_function": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "swaig_func",
-                  "type": "dict<string,any>",
-                  "required": true
-                }
-              ],
-              "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
             "register_verb_handler": {
               "params": [
                 {
@@ -10755,20 +10633,6 @@
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
-            "remove_function": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "name",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
             },
             "render_document": {
               "params": [
@@ -11047,25 +10911,6 @@
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
-            },
-            "validate_basic_auth": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                },
-                {
-                  "name": "username",
-                  "type": "string",
-                  "required": true
-                },
-                {
-                  "name": "password",
-                  "type": "string",
-                  "required": true
-                }
-              ],
-              "returns": "bool"
             },
             "verb_registry": {
               "params": [

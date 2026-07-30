@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ 1bed613ae8be1c6863e54c9157da22c7b7e30261",
+  "generated_from": "signalwire-java @ f8aad8881a95abf9d235bf4047efb0a68d2266d7",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -1117,8 +1117,6 @@
           "close",
           "cond",
           "connect",
-          "define_tool",
-          "define_tools",
           "denoise",
           "detect_machine",
           "domain",
@@ -1148,9 +1146,7 @@
           "live_translate",
           "manual_set_proxy_url",
           "name",
-          "on_function_call",
           "on_request",
-          "on_swml_request",
           "pay",
           "play",
           "port",
@@ -1159,7 +1155,6 @@
           "record",
           "record_call",
           "register_routing_callback",
-          "register_swaig_function",
           "register_verb_handler",
           "remove_function",
           "render_document",
@@ -1189,7 +1184,6 @@
           "transfer",
           "unset",
           "user_event",
-          "validate_basic_auth",
           "verb_registry"
         ]
       },

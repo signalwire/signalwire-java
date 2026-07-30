@@ -2201,15 +2201,30 @@ def enumerate_sdk(
         # detecting which mixin methods are "present on AgentBase" so the
         # WebMixin/AuthMixin projections fire for inherited methods too. The
         # signature enumerator sees these via JAR reflection; this restores
-        # parity for the source-based surface enumerator. Inherited methods are
-        # ADDED to the mixin path but NOT removed from SWMLService (they
-        # legitimately belong to both — the reference records them on both).
-        svc_methods = (
-            merged.get("signalwire.core.swml_service", {})
-            .get("classes", {})
-            .get("SWMLService", [])
+        # parity for the source-based surface enumerator.
+        #
+        # A projected method is ALSO stripped from SWMLService when the
+        # reference does not record it there. The previous premise here —
+        # "inherited methods legitimately belong to both, the reference records
+        # them on both" — is FALSE and was measured so: of the nine mixin
+        # methods Java declares on Service (define_tool, define_tools,
+        # on_function_call, register_swaig_function, has_function, get_function,
+        # remove_function, validate_basic_auth, on_swml_request), the surface
+        # oracle records ZERO on SWMLService. Java flattens Python's composed
+        # mixins/ToolRegistry onto its Service base; the projection is what
+        # re-files them, so leaving the Service copy behind emits a duplicate
+        # port-only symbol that then needs a PORT_ADDITIONS excuse. The strip is
+        # ORACLE-KEYED, never a hardcoded list: a method the reference genuinely
+        # DOES record on SWMLService (get_basic_auth_credentials, serve,
+        # on_request …) stays, so this cannot hide a real member.
+        svc_entry_cls = merged.get("signalwire.core.swml_service", {}).get(
+            "classes", {}
         )
+        svc_methods = svc_entry_cls.get("SWMLService", [])
         ab_visible = set(ab_methods) | set(svc_methods)
+        _ref_svc_members = oracle_class_members.get(
+            ("signalwire.core.swml_service", "SWMLService"), set()
+        )
         # Composition-delegate strip (§4c.1): drop the flattened pass-through copy
         # of a helper-object method from AgentBase when the SAME method is already
         # emitted on its canonical helper class (so the reference's helper filing is
@@ -2228,9 +2243,16 @@ def enumerate_sdk(
             target = merged.setdefault(target_mod, {"classes": {}, "functions": []})
             existing = target["classes"].get(target_cls, [])
             target["classes"][target_cls] = sorted(set(existing) | set(present))
-            # Only strip the projected methods from AgentBase's OWN declared
-            # list (never from the inherited SWMLService copy).
+            # Strip the projected methods from AgentBase's OWN declared list,
+            # and from the inherited SWMLService copy when the reference does
+            # not record them on SWMLService (see the premise correction above).
             ab_methods = [m for m in ab_methods if m not in present]
+            _strip_svc = [
+                m for m in present if m in svc_methods and m not in _ref_svc_members
+            ]
+            if _strip_svc:
+                svc_methods = [m for m in svc_methods if m not in _strip_svc]
+                svc_entry_cls["SWMLService"] = sorted(set(svc_methods))
         if ab_entry:
             if ab_methods:
                 ab_entry["classes"]["AgentBase"] = sorted(set(ab_methods))
