@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * SendFaxConfig — generated wire type (flattened SWMLMethod verb 'send_fax' config).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SendFaxConfig {
   public String document;

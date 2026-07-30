@@ -10,8 +10,8 @@ package com.signalwire.sdk.swml.generated;
  * OmitPropertiesBedrockPromptTextOmittedPromptProps — generated wire type (schema.json $defs schema
  * 'OmitPropertiesBedrockPromptTextOmittedPromptProps').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class OmitPropertiesBedrockPromptTextOmittedPromptProps {
   public java.util.Map<String, Object> voice_id;

@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.message;
 /**
  * ChargeDetail — generated wire type ('message' spec, components/schemas 'ChargeDetail').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ChargeDetail {
   public String description;

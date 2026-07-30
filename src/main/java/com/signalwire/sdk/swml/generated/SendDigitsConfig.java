@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * SendDigitsConfig — generated wire type (flattened SWMLMethod verb 'send_digits' config).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SendDigitsConfig {
   public String digits;

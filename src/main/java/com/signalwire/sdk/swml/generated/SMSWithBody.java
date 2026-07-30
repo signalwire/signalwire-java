@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * SMSWithBody — generated wire type (schema.json $defs schema 'SMSWithBody').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SMSWithBody {
   public String to_number;

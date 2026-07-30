@@ -9,8 +9,8 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
 /**
  * PlaybackBgAction — generated wire type (swaig-response action 'playback_bg' value object).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PlaybackBgAction {
   public java.util.Map<String, Object> file;

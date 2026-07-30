@@ -1806,8 +1806,8 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
     lines.append("/**")
     lines.append(f" * {java_name} — generated wire type ({source_desc}).")
     lines.append(" *")
-    lines.append(" * Pure data DTO: public fields carrying the snake wire key; no methods (the")
-    lines.append(" * reference records this as a method-less type definition).")
+    lines.append(" * Pure data DTO: public fields carrying the snake wire key, and no methods —")
+    lines.append(" * read and write the fields directly.")
     lines.append(" */")
     lines.append(f"public final class {java_name} {{")
     props = node.get("properties") or {}

@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * ConnectDeviceSingle — generated wire type ('fabric' spec, components/schemas
  * 'ConnectDeviceSingle').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ConnectDeviceSingle {
   public String from;

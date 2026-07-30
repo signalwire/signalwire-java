@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * AiSidecar — generated wire type (schema.json $defs schema 'AiSidecar').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AiSidecar {
   public java.util.Map<String, Object> ai_sidecar;

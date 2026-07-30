@@ -9,8 +9,8 @@ package com.signalwire.sdk.swaig.generated.postprompt;
 /**
  * PostPromptStampsUs — generated wire type (post-prompt components/schemas 'PostPromptStampsUs').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PostPromptStampsUs {
   public Long speech_start;

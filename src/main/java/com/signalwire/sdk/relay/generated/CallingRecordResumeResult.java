@@ -10,8 +10,8 @@ package com.signalwire.sdk.relay.generated;
  * CallingRecordResumeResult — generated wire type (RELAY method 'calling.record.resume', result
  * phase).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallingRecordResumeResult {
   public String call_id;
