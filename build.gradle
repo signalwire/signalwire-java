@@ -135,6 +135,16 @@ tasks.withType(JavaCompile).configureEach {
         //  reason — see WebhookFilterTest.Handler#invoke.)
         check('AnnotateFormatMethod', CheckSeverity.OFF)
         check('IterableAndIterator', CheckSeverity.OFF)
+        // PROMOTED to ERROR. ObjectToString ships as a mere WARNING, so it did
+        // not fail the gate — and it caught a real defect the moment lint first
+        // reached examples/: RestDemo printed an AvailablePhoneNumbersResponse
+        // (a final DTO with no toString()) by concatenation, so the demo emitted
+        // "AvailablePhoneNumbersResponse@4488aabb" instead of any phone number.
+        // The whole REST surface is generated pure-data DTOs with no toString(),
+        // so this is a repeatable trap for anyone writing an example or a log
+        // line. Repo-wide cost of the promotion: zero — that one site was the
+        // only occurrence, and it is fixed.
+        check('ObjectToString', CheckSeverity.ERROR)
     }
 }
 
