@@ -263,22 +263,18 @@ public class SchemaUtils {
     return validateVerbLightweight(verbName, verbConfig);
   }
 
-  /**
-   * Validate a verb config of ANY JSON shape — not just an object.
-   *
-   * <p>{@link #validateVerb(String, Map)} takes a {@code Map} because most verb configs are
-   * objects, but the schema says otherwise for several: {@code cond} and {@code toggle_functions}
-   * are ARRAYS, {@code label} / {@code say} / {@code change_context} are STRINGS, and {@code sleep}
-   * / {@code hangup} / {@code unset} union a primitive with an object. A caller that assumes
-   * "config must be a Map" therefore rejects legal documents. This entry point serialises whatever
-   * it is given — a {@code Map}, a {@code List}, a boxed primitive, or a generated typed config
-   * POJO — to the exact JSON the wire will carry, and validates THAT.
-   *
-   * @param verbName the SWML verb name.
-   * @param verbConfig the config value, of any JSON-representable shape.
-   * @return ({@code valid}, {@code errors}), same contract as {@link #validateVerb}.
-   */
-  public Map.Entry<Boolean, List<String>> validateVerbValue(String verbName, Object verbConfig) {
+  // Validate a verb config of ANY JSON shape — not just an object. PACKAGE-PRIVATE on
+  // purpose: it is the Service.addVerb implementation detail that lets Java match what
+  // Python's dynamically-typed validate_verb already accepts, so it must NOT widen the
+  // public surface (the reference declares only validate_verb(verb_name, verb_config)).
+  //
+  // validateVerb takes a Map because most verb configs are objects, but the schema says
+  // otherwise for several: cond and toggle_functions are ARRAYS, label/say/change_context
+  // are STRINGS, and sleep/hangup/unset union a primitive with an object. A caller that
+  // assumes "config must be a Map" therefore rejects legal documents. This entry point
+  // serialises whatever it is given — a Map, a List, a boxed primitive, or a generated
+  // typed config POJO — to the exact JSON the wire will carry, and validates THAT.
+  Map.Entry<Boolean, List<String>> validateVerbValue(String verbName, Object verbConfig) {
     if (!validationEnabled) {
       return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
     }
@@ -658,15 +654,12 @@ public class SchemaUtils {
     return local.isEmpty();
   }
 
-  /**
-   * Validate a field marked {@code x-sdk-widen}: keep the TYPE constraint, drop the {@code
-   * const}/{@code enum} membership constraint. The union is a hint about what the field usually
-   * carries, not a closed set the platform enforces — so {@code {"reason": "done"}} on {@code
-   * hangup} is a legal document even though {@code done} is not one of the three listed consts.
-   *
-   * <p>A branch's {@code $ref} is resolved so a widened field that unions a primitive with, say,
-   * {@code SWMLVar} still accepts the {@code SWMLVar} object form.
-   */
+  // Validate a field the schema marks as widened: keep the TYPE constraint, drop the
+  // const/enum membership constraint. For such a field the listed values are a hint
+  // about what it usually carries, not a closed set the platform enforces — so
+  // {"reason": "done"} on hangup is a legal document even though "done" is not one of
+  // the three listed values. A branch's $ref is resolved so a widened field that
+  // unions a primitive with, say, SWMLVar still accepts the SWMLVar object form.
   private void validateWidened(
       JsonObject schema, JsonElement value, String path, List<String> errors, int depth) {
     List<JsonObject> branches = new ArrayList<>();
