@@ -71,15 +71,20 @@ test {
     useJUnitPlatform()
 }
 
-// FMT gate — Spotless + google-java-format over every Java source set (main,
-// test, and the tools/CLI sources that live under src/main + src/test). The
-// formatter is source-style only and proven surface/emission-neutral (a
+// FMT gate — Spotless + google-java-format over EVERY Java source in the repo:
+// the SDK (src/main), the tests (src/test), all three example trees (examples/,
+// rest/examples/, relay/examples/) and the audit helper (scripts/
+// SignatureDump.java). There is ONE formatting bar and every directory meets it
+// — examples and tests are shipping code too, so nothing is carved out. The only
+// thing NOT formatted is build output (build/, .gradle/), which is not source.
+// The formatter is source-style only and proven surface/emission-neutral (a
 // reformat leaves port_signatures.json + port_surface.json byte-identical and
 // EMISSION 81/81 — verified during the rollout). run-ci.sh's FMT gate runs
 // `spotlessApply` locally and `spotlessCheck` in CI.
 spotless {
     java {
-        target 'src/**/*.java'
+        target 'src/**/*.java', 'examples/**/*.java', 'rest/examples/**/*.java',
+               'relay/examples/**/*.java', 'scripts/**/*.java'
         googleJavaFormat('1.22.0')
         removeUnusedImports()
         trimTrailingWhitespace()
@@ -124,12 +129,12 @@ tasks.withType(JavaCompile).configureEach {
         //   * IterableAndIterator — PaginatedIterator is a public final SDK type
         //     using the standard self-iterable pattern (implements both); the
         //     only "fix" is dropping a public interface = a surface change.
-        //   * JdkObsolete — WebhookFilterTest's HttpServletRequest proxy MUST
-        //     return a StringBuffer from getRequestURL() (the servlet contract's
-        //     declared type); a StringBuilder would ClassCastException.
+        // (JdkObsolete is NOT in this list: it used to be, to accommodate ONE
+        //  test site, which turned a per-site fact into a repo-wide blind spot.
+        //  It is now ON everywhere and suppressed at that single site with its
+        //  reason — see WebhookFilterTest.Handler#invoke.)
         check('AnnotateFormatMethod', CheckSeverity.OFF)
         check('IterableAndIterator', CheckSeverity.OFF)
-        check('JdkObsolete', CheckSeverity.OFF)
     }
 }
 
@@ -188,16 +193,30 @@ sourceSets {
     }
 }
 
-// Examples are illustrative user code, NOT part of the SDK's shipped surface,
-// so they are exempt from the SDK's LINT floor (Error Prone warnings-as-errors
-// + Checkstyle). Turn both OFF on the examples source set — an unused import in
-// a demo must not fail the SDK build/gates. (Spotless already skips examples/:
-// its target is src/**/*.java only.)
-tasks.named('compileExamplesJava') {
-    options.errorprone.enabled = false
-}
-tasks.matching { it.name == 'checkstyleExamples' }.configureEach {
-    enabled = false
+// LINT/FMT SCOPE: the WHOLE tree. The `examples` source set above is linted at
+// exactly the bar src/main and src/test meet — Error Prone warnings-as-errors
+// plus Checkstyle, zero findings — and formatted by Spotless. Examples and tests
+// are shipping code: a user copies an example verbatim, so a real bug in one is a
+// real bug shipped. Nothing here is excluded; there is no vendored third-party
+// Java in this repo, so there is nothing that could legitimately be.
+//
+// (This replaced a carve-out that set `options.errorprone.enabled = false` on
+//  compileExamplesJava and disabled checkstyleExamples outright, on the rationale
+//  that "an unused import in a demo must not fail the SDK build". Removing it
+//  found real defects in the example trees — see the commits that burned it down.)
+
+// The audit helper scripts/SignatureDump.java sits outside src/ and is compiled
+// by raw javac from scripts/enumerate_signatures.py, so no Gradle source set saw
+// it and NO lint ran on it — an undocumented carve-out by omission. It is
+// load-bearing (it produces port_signatures.json, the input to the SIGNATURES and
+// DRIFT gates), so it gets the same bar as everything else. This source set exists
+// only to lint+compile it; nothing depends on its output.
+sourceSets {
+    auditTools {
+        java {
+            srcDir 'scripts'
+        }
+    }
 }
 
 // runExample — compile every example, run the one named by -PexampleClass.
