@@ -46,8 +46,8 @@ public class ToolRegistry {
   }
 
   /**
-   * @param agent optional parent agent instance (kept as a back-reference for parity with the
-   *     Python/Ruby registries; may be {@code null} for standalone use).
+   * @param agent optional parent agent instance, kept as a back-reference so registered tools can
+   *     reach the agent that owns them; may be {@code null} for standalone use.
    */
   public ToolRegistry(Object agent) {
     this.agent = agent;
@@ -64,9 +64,9 @@ public class ToolRegistry {
   /**
    * Define a SWAIG function that the AI can call.
    *
-   * <p>Python parity: {@code define_tool(name, description, parameters, handler, secure=True,
-   * fillers=None, wait_file=None, wait_file_loops=None, webhook_url=None, required=None,
-   * is_typed_handler=False, **swaig_fields)}.
+   * <p>Accepts the tool's name, description, parameter schema and handler, plus the optional {@code
+   * secure}, {@code fillers}, {@code waitFile}, {@code waitFileLoops}, {@code webhookUrl}, {@code
+   * required}, {@code isTypedHandler} settings and any extra SWAIG fields.
    *
    * @param name function name (must be unique)
    * @param description LLM-facing description
@@ -130,9 +130,8 @@ public class ToolRegistry {
   /**
    * Register a raw SWAIG function dictionary (e.g. from a DataMap's {@code toSwaigFunction}).
    *
-   * <p>Python parity: {@code register_swaig_function(function_dict)} — requires a {@code function}
-   * field and rejects duplicates. These entries carry no handler (they execute on SignalWire's
-   * server).
+   * <p>Requires a {@code function} field and rejects duplicates. These entries carry no handler —
+   * they execute on SignalWire's server.
    *
    * @param functionDict complete SWAIG function definition
    * @return the stored definition
@@ -157,17 +156,13 @@ public class ToolRegistry {
   /**
    * Register tools defined via method annotations on the parent agent's class.
    *
-   * <p>Python parity: {@code register_class_decorated_tools()} scans the agent class for methods
-   * decorated with {@code @AgentBase.tool} (marked with {@code _is_tool}) and registers each one.
-   * Java has no method-decorator mechanism that mutates a function object, so the closest faithful
-   * analog is a reflective scan of the parent agent's class for methods annotated with {@link
-   * Tool}: for each such method, a tool is registered whose name/description come from the
-   * annotation (falling back to the method name) and whose handler invokes the method reflectively.
+   * <p>Reflectively scans the parent agent's class for methods annotated with {@link Tool}. For
+   * each such method a tool is registered whose name and description come from the annotation
+   * (falling back to the method name) and whose handler invokes the method reflectively.
    *
-   * <p>Agents built imperatively via {@link #defineTool} (the common Java idiom, since the Java SDK
-   * has no class-decorator tool-definition style) declare no {@link Tool}-annotated methods, so
-   * this is a no-op for them — mirroring a Python class with no {@code _is_tool} methods. If there
-   * is no parent agent, nothing is scanned.
+   * <p>Agents built imperatively via {@link #defineTool} — the common Java idiom — declare no
+   * {@link Tool}-annotated methods, so this is a no-op for them. If there is no parent agent,
+   * nothing is scanned.
    */
   public void registerClassDecoratedTools() {
     if (agent == null) {
