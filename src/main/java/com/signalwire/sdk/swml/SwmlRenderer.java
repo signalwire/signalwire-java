@@ -303,9 +303,14 @@ public final class SwmlRenderer {
       String responseText, Service service, List<Map<String, Object>> actions, String format) {
     service.getDocument().reset();
     if (responseText != null && !responseText.isEmpty()) {
+      // Text is played via the `say:` URL scheme — the SWML `play` verb has no `text`
+      // key (its config is PlayWithURL/PlayWithURLS, url matching `...|say: ?.*|...`).
+      // Emitting `{"text": ...}` produced a document the SWML schema rejects, and it
+      // shipped silently because this wrote through the RAW document. Route through the
+      // validating Service.addVerb choke point, as the reference does.
       Map<String, Object> play = new LinkedHashMap<>();
-      play.put("text", responseText);
-      service.getDocument().addVerb("play", play);
+      play.put("url", "say:" + responseText);
+      service.addVerb("play", play);
     }
     if (actions != null) {
       for (Map<String, Object> action : actions) {
@@ -323,11 +328,16 @@ public final class SwmlRenderer {
   // Helpers
   // ------------------------------------------------------------------
 
-  /** Add the first recognised action verb from an action map to the document. */
+  /**
+   * Add the first recognised action verb from an action map to the document, through the validating
+   * {@link Service#addVerb} choke point (the reference routes every response action through {@code
+   * service.add_verb} for the same reason — a caller-supplied action config that the SWML schema
+   * rejects must raise, not ship).
+   */
   private static void addResponseAction(Service service, Map<String, Object> action) {
     for (String v : RESPONSE_ACTION_VERBS) {
       if (action.containsKey(v)) {
-        service.getDocument().addVerb(v, action.get(v));
+        service.addVerb(v, action.get(v));
         return;
       }
     }
