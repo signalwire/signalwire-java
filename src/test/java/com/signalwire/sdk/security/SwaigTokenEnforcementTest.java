@@ -231,30 +231,34 @@ class SwaigTokenEnforcementTest {
   }
 
   // ==================================================================
-  // The transport-agnostic core itself
+  // The seam the transports compose their verdict from
   // ==================================================================
 
+  /**
+   * {@code validateToolToken} is the published seam every transport's check bottoms out in, so its
+   * verdict table is the one that matters. The refusal BODY is asserted through the transports
+   * above; the core decision is asserted here.
+   */
   @Test
-  void validationCoreReturnsNullOnlyForAGenuineTokenAndCallIdPair() {
+  void theTokenSeamAcceptsOnlyAGenuineTokenAndCallIdPair() {
     AgentBase a = agent();
     String token = a.createToolToken("say_hello", "c1");
 
-    assertNull(a.swaigValidateToken("say_hello", token, "c1"), "a valid pair proceeds");
-    assertNotNull(a.swaigValidateToken("say_hello", token, "other"), "wrong call_id is refused");
-    assertNotNull(a.swaigValidateToken("say_hello", token, null), "absent call_id is refused");
-    assertNotNull(a.swaigValidateToken("say_hello", null, "c1"), "absent token is refused");
-    assertNotNull(a.swaigValidateToken("say_hello", "junk", "c1"), "forged token is refused");
-    assertNull(a.swaigValidateToken("open_tool", null, null), "an insecure tool is never gated");
-    assertNull(a.swaigValidateToken("unregistered", null, null), "an unknown tool is not our call");
+    assertTrue(a.validateToolToken("say_hello", token, "c1"), "a valid pair proceeds");
+    assertFalse(a.validateToolToken("say_hello", token, "other"), "wrong call_id is refused");
+    assertFalse(a.validateToolToken("say_hello", token, null), "absent call_id is refused");
+    assertFalse(a.validateToolToken("say_hello", null, "c1"), "absent token is refused");
+    assertFalse(a.validateToolToken("say_hello", "junk", "c1"), "forged token is refused");
+    assertFalse(
+        a.validateToolToken("unregistered", token, "c1"), "an unknown tool never validates");
   }
 
+  /** The secure flag is what gates the check at all — an insecure tool is never asked. */
   @Test
-  void aRefusalCarriesTheFunctionResultShape() {
+  void onlyASecureToolIsGated() {
     AgentBase a = agent();
-    Map<String, Object> refusal = a.swaigValidateToken("say_hello", null, null);
-
-    assertNotNull(refusal);
-    assertEquals(REFUSAL, refusal.get("response"), "the refusal is a FunctionResult body");
+    assertTrue(a.getTools().get("say_hello").isSecure(), "define_tool defaults to secure");
+    assertFalse(a.getTools().get("open_tool").isSecure(), "setSecure(false) opts out");
   }
 
   /**

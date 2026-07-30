@@ -7,6 +7,7 @@ import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.LambdaUrlResolver;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -207,16 +208,27 @@ public final class LambdaAgentHandler {
           404, gson.toJson(Map.of("error", "Function not found: " + funcName)));
     }
 
-    // Enforce the tool's `secure` flag before dispatch, through the same transport-agnostic core
-    // the HTTP endpoint uses. The credential rides the query string and the call identity rides
-    // the body — serverless is not a weaker transport, just a different envelope.
-    Object rawCallId = payload.get("call_id");
-    Map<String, Object> refusal =
-        agent.swaigValidateToken(
-            funcName, swaigTokenOf(event), rawCallId == null ? null : rawCallId.toString());
-    if (refusal != null) {
-      // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status.
-      return LambdaResponse.json(gson.toJson(refusal));
+    // Enforce the tool's `secure` flag before dispatch. Composed from the agent's published
+    // seams so this adapter reaches the same verdict as the in-process endpoint — see
+    // AgentBase.swaigValidateToken, which that path uses directly. Serverless is not a weaker
+    // transport, just a different envelope: the credential still rides the query string and the
+    // call identity still rides the body. An absent token and an absent call_id both fail
+    // CLOSED — a token can only be checked against a call_id.
+    ToolDefinition tool = agent.getTools().get(funcName);
+    if (tool != null && tool.isSecure()) {
+      Object rawCallId = payload.get("call_id");
+      String callId = rawCallId == null ? null : rawCallId.toString();
+      if (!agent.validateToolToken(funcName, swaigTokenOf(event), callId)) {
+        // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status: the
+        // engine has no handling for a SWAIG refusal status, so the tool reports that it
+        // cannot execute and the model relays that.
+        return LambdaResponse.json(
+            gson.toJson(
+                new FunctionResult(
+                        "I'm sorry, the security token for this function is invalid or expired. "
+                            + "I cannot execute this action.")
+                    .toMap()));
+      }
     }
 
     Map<String, Object> args = extractParsedArgs(payload);

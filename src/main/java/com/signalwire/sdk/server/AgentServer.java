@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
@@ -787,19 +788,30 @@ public class AgentServer implements AutoCloseable {
       }
     }
 
-    // Enforce the tool's `secure` flag before dispatch, through the same transport-agnostic core
-    // the in-process endpoint and the serverless adapters use. The credential rides the query
-    // string; the call identity rides the body.
-    Object rawCallId = payload.get("call_id");
-    Map<String, Object> refusal =
-        agent.swaigValidateToken(
-            funcName,
-            swaigTokenOf(exchange.getRequestURI().getRawQuery()),
-            rawCallId == null ? null : rawCallId.toString());
-    if (refusal != null) {
-      // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status.
-      sendJson(exchange, 200, refusal);
-      return;
+    // Enforce the tool's `secure` flag before dispatch. Composed from the agent's published
+    // seams so this server, the in-process endpoint and the serverless adapters reach the same
+    // verdict — see AgentBase.swaigValidateToken, which the in-process path uses directly.
+    // The credential rides the query string; the call identity rides the body. An absent token
+    // and an absent call_id both fail CLOSED: a token can only be checked against a call_id, so
+    // a request carrying neither is unvalidated, never exempt.
+    ToolDefinition tool = agent.getTools().get(funcName);
+    if (tool != null && tool.isSecure()) {
+      Object rawCallId = payload.get("call_id");
+      String callId = rawCallId == null ? null : rawCallId.toString();
+      String token = swaigTokenOf(exchange.getRequestURI().getRawQuery());
+      if (!agent.validateToolToken(funcName, token, callId)) {
+        // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status: the
+        // engine has no handling for a SWAIG refusal status, so the tool reports that it
+        // cannot execute and the model relays that.
+        sendJson(
+            exchange,
+            200,
+            new FunctionResult(
+                    "I'm sorry, the security token for this function is invalid or expired. "
+                        + "I cannot execute this action.")
+                .toMap());
+        return;
+      }
     }
 
     FunctionResult result = agent.onFunctionCall(funcName, args, payload);

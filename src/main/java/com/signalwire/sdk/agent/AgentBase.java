@@ -1331,12 +1331,18 @@ public class AgentBase extends Service {
    * decision and cannot drift apart. Only the SECURITY half is transport-agnostic; dynamic
    * reconfiguration genuinely needs a request object and stays on the HTTP hook.
    *
+   * <p>Internal plumbing, not SDK surface: the reference files the same core as a private helper
+   * ({@code _swaig_validate_token}), so publishing it would invent an entry point the reference
+   * does not have. The out-of-package transports ({@code AgentServer}, {@code LambdaAgentHandler})
+   * compose the identical decision from the published {@link #getTools()} and {@link
+   * #validateToolToken} seams; keep the three in step.
+   *
    * @param functionName the tool the caller is invoking.
    * @param token the {@code __token} credential from the request's query string, or {@code null}.
    * @param callId the call identity from the request body, or {@code null}.
    * @return {@code null} to proceed with dispatch, or the refusal body to return instead.
    */
-  public Map<String, Object> swaigValidateToken(String functionName, String token, String callId) {
+  Map<String, Object> swaigValidateToken(String functionName, String token, String callId) {
     ToolDefinition tool = getTools().get(functionName);
     // An unregistered name is not this check's call — the dispatch path reports not-found.
     if (tool == null || !tool.isSecure()) {

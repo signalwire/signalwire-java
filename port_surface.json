@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ b18b3ac2c262cfe3aa49bb5fa8a4c6cc2291bac3",
+  "generated_from": "signalwire-java @ 1bed613ae8be1c6863e54c9157da22c7b7e30261",
   "language": "java",
   "modules": {
     "signalwire": {
