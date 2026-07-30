@@ -539,6 +539,16 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # JAVA_MODULE_OVERRIDES / _CLASS_RENAMES) — key on the CANONICAL name.
     ("SWMLService", "on_function_call"),        # +raw_data=None
     ("SWMLService", "on_request"),              # +request_data/callback_path=None
+    # Service.registerRoutingCallback(callback) delegates to
+    # registerRoutingCallback(callback, path) supplying the reference's own default
+    # "/sip" (Service.java:767) — Java's way of spelling ``path="/sip"``. The
+    # fewest-param collapse picked the 1-arg convenience form, which is the ONLY
+    # reason the recorded arity was 1 vs the oracle's 2. The two
+    # PORT_SIGNATURE_OMISSIONS entries that excused it claimed "the port collapses
+    # Python's optional kwargs ... so the param count differs" — false of the
+    # source: the declaration is (callback, path) in the reference's own order with
+    # the reference's own default. Removed; this is now drift-0 parity.
+    ("SWMLService", "register_routing_callback"),  # +path="/sip"
     ("PomBuilder", "add_to_section"),           # +body/bullet/bullets=None
     ("SWAIGFunction", "execute"),               # +raw_data=None
     ("InfoGathererAgent", "on_swml_request"),   # +callback_path/request=None

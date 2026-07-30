@@ -5913,6 +5913,11 @@
                   "name": "callback",
                   "type": "callable<list<dict<string,any>,dict<string,string>>,string>",
                   "required": true
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
@@ -10289,6 +10294,11 @@
                   "name": "callback",
                   "type": "callable<list<dict<string,any>,dict<string,string>>,string>",
                   "required": true
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.core.swml_service.SWMLService"
