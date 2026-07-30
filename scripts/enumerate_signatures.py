@@ -2650,7 +2650,18 @@ def main() -> int:
         "--raw", type=Path, default=None, help="Path to a pre-dumped SignatureDump JSON"
     )
     parser.add_argument("--out", type=Path, default=PORT_ROOT / "port_signatures.json")
-    parser.add_argument("--strict", action="store_true")
+    # Fail-loud is the DEFAULT, not an opt-in. As `store_true` this flag was dead
+    # code: the usage header advertised it, but no gate ever passed it, so a type
+    # that failed to translate silently DROPPED THE WHOLE SYMBOL and the artifact
+    # was written anyway at exit 0 — the port then got blamed for an omission it
+    # never had. `--no-strict` remains as the explicit escape hatch.
+    parser.add_argument(
+        "--strict",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="fail (exit 1) on any type-translation failure instead of silently "
+        "dropping the symbol (default: on; use --no-strict to opt out)",
+    )
     args = parser.parse_args()
 
     global CLASS_TO_MODULE

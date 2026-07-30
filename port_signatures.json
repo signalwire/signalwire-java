@@ -75783,6 +75783,34 @@
         }
       }
     },
+    "signalwire.rest.tls_context": {
+      "classes": {
+        "TlsContext": {
+          "methods": {
+            "from_ca_file": {
+              "params": [
+                {
+                  "name": "ca_file",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            },
+            "socket_factory": {
+              "params": [
+                {
+                  "name": "ca_file",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "any"
+            }
+          }
+        }
+      }
+    },
     "signalwire.runtime.env_provider": {
       "classes": {
         "EnvProvider": {
@@ -79360,6 +79388,20 @@
                 }
               ],
               "returns": "void"
+            },
+            "file_allowed": {
+              "params": [
+                {
+                  "name": "self",
+                  "kind": "self"
+                },
+                {
+                  "name": "path",
+                  "type": "string",
+                  "required": true
+                }
+              ],
+              "returns": "bool"
             },
             "remove_directory": {
               "params": [
