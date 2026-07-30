@@ -787,8 +787,58 @@ public class AgentServer implements AutoCloseable {
       }
     }
 
+    // Enforce the tool's `secure` flag before dispatch, through the same transport-agnostic core
+    // the in-process endpoint and the serverless adapters use. The credential rides the query
+    // string; the call identity rides the body.
+    Object rawCallId = payload.get("call_id");
+    Map<String, Object> refusal =
+        agent.swaigValidateToken(
+            funcName,
+            swaigTokenOf(exchange.getRequestURI().getRawQuery()),
+            rawCallId == null ? null : rawCallId.toString());
+    if (refusal != null) {
+      // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status.
+      sendJson(exchange, 200, refusal);
+      return;
+    }
+
     FunctionResult result = agent.onFunctionCall(funcName, args, payload);
     sendJson(exchange, 200, result.toMap());
+  }
+
+  /**
+   * Lift the SWAIG {@code __token} credential out of a raw {@code a=b&c=d} query string, falling
+   * back to a bare {@code token}. Returns {@code null} when neither is present or the value is
+   * empty, so a blank credential is indistinguishable from an absent one.
+   */
+  private static String swaigTokenOf(String rawQuery) {
+    if (rawQuery == null || rawQuery.isEmpty()) {
+      return null;
+    }
+    String fallback = null;
+    for (String pair : rawQuery.split("&")) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      String key = pair.substring(0, eq);
+      String value;
+      try {
+        value = java.net.URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      if (value.isEmpty()) {
+        continue;
+      }
+      if ("__token".equals(key)) {
+        return value;
+      }
+      if ("token".equals(key) && fallback == null) {
+        fallback = value;
+      }
+    }
+    return fallback;
   }
 
   @SuppressWarnings("unchecked")

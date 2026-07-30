@@ -1312,6 +1312,69 @@ public class AgentBase extends Service {
     }
   }
 
+  /**
+   * Enforce a tool's {@code secure} flag for one SWAIG call, independently of the transport that
+   * carried it.
+   *
+   * <p>A tool declared secure REQUIRES a valid per-call {@code __token}. An ABSENT token is refused
+   * exactly like a forged one — omitting the credential must never be weaker than presenting a
+   * wrong one, or {@code secure} would be a flag that permits anonymous calls. A token can only be
+   * checked against a {@code callId}, so a request that carries no call identity is unvalidated and
+   * is refused for the same reason.
+   *
+   * <p>The refusal shape is a {@code 200} carrying a {@link FunctionResult} body, NOT an HTTP error
+   * status: the engine has no handling for a SWAIG refusal status, so the tool reports that it
+   * cannot execute and the model relays that to the caller.
+   *
+   * <p>Deliberately takes three nullable strings and no request type, so every transport — the
+   * in-process HTTP endpoint, the standalone server, and the serverless adapters — shares one
+   * decision and cannot drift apart. Only the SECURITY half is transport-agnostic; dynamic
+   * reconfiguration genuinely needs a request object and stays on the HTTP hook.
+   *
+   * @param functionName the tool the caller is invoking.
+   * @param token the {@code __token} credential from the request's query string, or {@code null}.
+   * @param callId the call identity from the request body, or {@code null}.
+   * @return {@code null} to proceed with dispatch, or the refusal body to return instead.
+   */
+  public Map<String, Object> swaigValidateToken(String functionName, String token, String callId) {
+    ToolDefinition tool = getTools().get(functionName);
+    // An unregistered name is not this check's call — the dispatch path reports not-found.
+    if (tool == null || !tool.isSecure()) {
+      return null;
+    }
+    if (validateToolToken(functionName, token, callId)) {
+      return null;
+    }
+    log.warn(
+        "SWAIG token refused for secure function '%s' (token present: %s)",
+        functionName, token != null && !token.isEmpty());
+    return new FunctionResult(
+            "I'm sorry, the security token for this function is invalid or expired. "
+                + "I cannot execute this action.")
+        .toMap();
+  }
+
+  /**
+   * Enforce a tool's {@code secure} flag on the in-process HTTP {@code /swaig} endpoint.
+   *
+   * <p>The credential comes from the query string and the call identity from the body, so both are
+   * read here and handed to the transport-agnostic {@link #swaigValidateToken} the serverless
+   * adapters also call — the two transports share one decision rather than each carrying their own
+   * copy of the rule.
+   */
+  @Override
+  protected Object[] swaigPreDispatch(
+      Map<String, Object> requestData, String funcName, String token) {
+    Object rawCallId = requestData == null ? null : requestData.get("call_id");
+    String callId = rawCallId == null ? null : rawCallId.toString();
+
+    Map<String, Object> refusal = swaigValidateToken(funcName, token, callId);
+    if (refusal != null) {
+      return new Object[] {this, refusal};
+    }
+    return new Object[] {this, null};
+  }
+
   // ============================================================
   // AI Config Methods
   // ============================================================

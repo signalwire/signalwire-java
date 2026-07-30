@@ -405,10 +405,20 @@ public class Service implements AutoCloseable {
   /**
    * Extension point: invoked between argument parsing and function dispatch. Returns a 2-element
    * array: [target Service, shortCircuit Map]. If shortCircuit is non-null, it's returned as the
-   * SWAIG response without calling onFunctionCall. AgentBase may override to add session-token
-   * validation or ephemeral dynamic-config copies.
+   * SWAIG response without calling onFunctionCall. AgentBase overrides this to enforce a tool's
+   * {@code secure} flag and to build ephemeral dynamic-config copies.
+   *
+   * <p>{@code token} is the {@code __token} credential lifted from the request's QUERY STRING,
+   * which is where the platform puts it — the {@code call_id} it is validated against travels in
+   * {@code requestData} instead. Both halves are needed, so both are passed: a hook that only saw
+   * the body could not enforce anything.
+   *
+   * @param requestData the parsed SWAIG request body.
+   * @param funcName the tool the caller is invoking.
+   * @param token the {@code __token} query parameter, or {@code null} when absent.
    */
-  protected Object[] swaigPreDispatch(java.util.Map<String, Object> requestData, String funcName) {
+  protected Object[] swaigPreDispatch(
+      java.util.Map<String, Object> requestData, String funcName, String token) {
     return new Object[] {this, null};
   }
 
@@ -1918,6 +1928,48 @@ public class Service implements AutoCloseable {
     }
   }
 
+  /**
+   * Lift the SWAIG security credential out of a raw {@code a=b&c=d} query string.
+   *
+   * <p>Reads {@code __token} and falls back to a bare {@code token}, the same pair the rendered
+   * webhook URL may carry. Returns {@code null} when neither is present or the value is empty, so a
+   * blank credential is indistinguishable from an absent one.
+   *
+   * @param rawQuery the undecoded query string, or {@code null}.
+   * @return the token, or {@code null}.
+   */
+  static String swaigTokenOf(String rawQuery) {
+    if (rawQuery == null || rawQuery.isEmpty()) {
+      return null;
+    }
+    String fallback = null;
+    for (String pair : rawQuery.split("&")) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      String key = pair.substring(0, eq);
+      String value;
+      try {
+        value =
+            java.net.URLDecoder.decode(
+                pair.substring(eq + 1), java.nio.charset.StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      if (value.isEmpty()) {
+        continue;
+      }
+      if ("__token".equals(key)) {
+        return value;
+      }
+      if ("token".equals(key) && fallback == null) {
+        fallback = value;
+      }
+    }
+    return fallback;
+  }
+
   /** Reconstruct the full request URL (scheme://host/path?query) from an {@link HttpExchange}. */
   private static String fullUrlOf(HttpExchange exchange) {
     java.net.URI uri = exchange.getRequestURI();
@@ -2011,7 +2063,8 @@ public class Service implements AutoCloseable {
       }
     }
 
-    Object[] dispatch = swaigPreDispatch(payload, funcName);
+    Object[] dispatch =
+        swaigPreDispatch(payload, funcName, swaigTokenOf(exchange.getRequestURI().getRawQuery()));
     Service target = (Service) dispatch[0];
     @SuppressWarnings("unchecked")
     java.util.Map<String, Object> shortCircuit = (java.util.Map<String, Object>) dispatch[1];

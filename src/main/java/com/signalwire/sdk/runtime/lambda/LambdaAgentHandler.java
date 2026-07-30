@@ -8,6 +8,7 @@ import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.LambdaUrlResolver;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -206,6 +207,18 @@ public final class LambdaAgentHandler {
           404, gson.toJson(Map.of("error", "Function not found: " + funcName)));
     }
 
+    // Enforce the tool's `secure` flag before dispatch, through the same transport-agnostic core
+    // the HTTP endpoint uses. The credential rides the query string and the call identity rides
+    // the body — serverless is not a weaker transport, just a different envelope.
+    Object rawCallId = payload.get("call_id");
+    Map<String, Object> refusal =
+        agent.swaigValidateToken(
+            funcName, swaigTokenOf(event), rawCallId == null ? null : rawCallId.toString());
+    if (refusal != null) {
+      // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status.
+      return LambdaResponse.json(gson.toJson(refusal));
+    }
+
     Map<String, Object> args = extractParsedArgs(payload);
     FunctionResult result = agent.onFunctionCall(funcName, args, payload);
     return LambdaResponse.json(gson.toJson(result.toMap()));
@@ -389,6 +402,54 @@ public final class LambdaAgentHandler {
       return out;
     }
     return new LinkedHashMap<>();
+  }
+
+  /**
+   * Lift the SWAIG {@code __token} credential out of a lambda event's query string.
+   *
+   * <p>Reads the PARSED {@code queryStringParameters} mapping first — both the REST API v1 and HTTP
+   * API v2 payload shapes provide it — and falls back to the raw {@code rawQueryString} for
+   * payloads that carry only that. A bare {@code token} is accepted as an alias of {@code __token},
+   * matching the pair the rendered webhook URL may carry.
+   */
+  private static String swaigTokenOf(Map<String, Object> event) {
+    Map<String, String> params = extractQuery(event);
+    String direct = params.get("__token");
+    if (direct != null && !direct.isEmpty()) {
+      return direct;
+    }
+    String alias = params.get("token");
+    if (alias != null && !alias.isEmpty()) {
+      return alias;
+    }
+    Object raw = event.get("rawQueryString");
+    if (raw == null) {
+      return null;
+    }
+    String fallback = null;
+    for (String pair : raw.toString().split("&")) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      String key = pair.substring(0, eq);
+      String value;
+      try {
+        value = URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      if (value.isEmpty()) {
+        continue;
+      }
+      if ("__token".equals(key)) {
+        return value;
+      }
+      if ("token".equals(key) && fallback == null) {
+        fallback = value;
+      }
+    }
+    return fallback;
   }
 
   @SuppressWarnings("unchecked")
