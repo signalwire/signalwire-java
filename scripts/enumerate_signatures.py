@@ -2506,6 +2506,22 @@ def _typed_param_count(sig: dict) -> int:
     return n
 
 
+# Classes whose fluent methods the REFERENCE annotates with the ``Self``
+# type-var, so the oracle records ``returns: class:Self``. Java has no Self type
+# and returns the concrete declaring class instead; ``build_signature``
+# canonicalizes onto the oracle's spelling for exactly these, and only when the
+# Java return already IS the declaring class.
+#
+# Verified against the oracle, not assumed: ``class:Self`` appears as a return
+# type 7 times in python_signatures.json, all 7 on SWMLBuilder. Re-derive with
+# a scan for ``"returns": "class:Self"`` before adding a class here — a class
+# whose reference methods return the CONCRETE type must NOT be listed, or a real
+# return-type difference would be rewritten away.
+SELF_RETURNING_CLASSES: set[tuple[str, str]] = {
+    ("signalwire.core.swml_builder", "SWMLBuilder"),
+}
+
+
 def _delegating_overload_set(type_entry: dict, native_method: str) -> bool:
     """True when this method's shorter overloads are TRAILING-PREFIX DELEGATES.
 
@@ -2633,6 +2649,24 @@ def build_signature(
         return_canon = translate_java_type(
             method.get("return_type", "void"), aliases, context + "[->]"
         )
+        # Fluent self-return: the reference annotates "returns the receiver" with
+        # the ``Self`` type-var (``def say(...) -> Self: ... return self``), which
+        # the oracle records as ``class:Self``. Java has no Self type and spells
+        # the identical contract as the concrete declaring class
+        # (``SWMLBuilder say(...) { ...; return this; }``). Same fluent contract,
+        # two spellings, so canonicalize onto the oracle's.
+        #
+        # Scoped to the classes the reference actually declares ``Self`` on
+        # (SELF_RETURNING_CLASSES), and additionally requires the Java return to
+        # BE that class. Both halves matter: rewriting every self-returning method
+        # would erase a real difference wherever the reference returns the
+        # CONCRETE class, and rewriting a non-self return on a listed class would
+        # invent a fluent contract the method does not have.
+        if (
+            mod,
+            class_name,
+        ) in SELF_RETURNING_CLASSES and return_canon == f"class:{mod}.{class_name}":
+            return_canon = "class:Self"
     return {"params": params_out, "returns": return_canon}
 
 

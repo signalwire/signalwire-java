@@ -9616,7 +9616,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "ai": {
               "params": [
@@ -9630,7 +9630,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "answer": {
               "params": [
@@ -9649,7 +9649,7 @@
                   "required": false
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "build": {
               "params": [
@@ -9672,7 +9672,7 @@
                   "required": false
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "play": {
               "params": [
@@ -9686,7 +9686,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "render": {
               "params": [
@@ -9704,7 +9704,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "say": {
               "params": [
@@ -9738,7 +9738,7 @@
                   "required": false
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "sleep_verb": {
               "params": [
@@ -9752,7 +9752,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "verb": {
               "params": [
@@ -9771,7 +9771,7 @@
                   "required": true
                 }
               ],
-              "returns": "class:signalwire.core.swml_builder.SWMLBuilder"
+              "returns": "class:Self"
             },
             "service": {
               "params": [
