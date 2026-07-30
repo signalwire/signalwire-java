@@ -43,6 +43,13 @@ import java.util.*;
  */
 public class SwaigTest {
 
+  /**
+   * The call identity a simulated invocation runs under. Real traffic carries the platform's call
+   * id; a CLI invocation has no live call, so it uses a fixed one and mints the tool token against
+   * it — the token and the id it is checked against must agree, whatever the value is.
+   */
+  private static final String SIMULATED_CALL_ID = "swaig-test-simulated-call";
+
   private String baseUrl;
   private String authUser;
   private String authPassword;
@@ -461,14 +468,14 @@ public class SwaigTest {
    *   <li>Build a layered {@link EnvProvider} that masks {@code SWML_PROXY_URL_BASE} and overlays
    *       simulated values.
    *   <li>Warn if the real env had {@code SWML_PROXY_URL_BASE} set — the simulated view hides it,
-   *       matching Python's behaviour.
+   *       so the URLs the agent renders will not match what the real process env would produce.
    *   <li>Load the agent class by reflection, call its factory method, rebuild through {@link
    *       AgentBase.Builder#envProvider(EnvProvider)} if the user returned a raw-{@code build()}
    *       instance.
    *   <li>Route the request through the platform's adapter (e.g. {@link LambdaAgentHandler}) — NOT
    *       the HTTP server.
    *   <li>Nothing to restore — we never touched the real process env. (The {@code try/finally} is
-   *       still there for symmetry with Python and for any future state-bearing resources.)
+   *       kept for any future state-bearing resources.)
    * </ol>
    */
   private void runSimulation() throws Exception {
@@ -521,9 +528,15 @@ public class SwaigTest {
     String path = route.isEmpty() ? "/" : route;
 
     if (execTool != null) {
-      String body = buildSwaigRequestJson(execTool, params);
+      String body = buildSwaigRequestJson(execTool, params, SIMULATED_CALL_ID);
       Map<String, Object> event =
           buildApiGatewayV2Event("POST", route + "/swaig", basicAuthHeader(agent), body);
+      // Carry the credential a secure tool requires. The CLI drives the agent in-process, so it
+      // can mint the token from the very SessionManager that will check it — the same query-string
+      // placement the platform uses when it calls a rendered webhook back.
+      event.put(
+          "queryStringParameters",
+          Map.of("__token", agent.createToolToken(execTool, SIMULATED_CALL_ID)));
       if (verbose) System.err.println("[verbose] Dispatching SWAIG: " + body);
       LambdaResponse response = handler.handle(event);
       emitResponse(response);
@@ -547,11 +560,16 @@ public class SwaigTest {
     String path = route.isEmpty() ? "/" : route;
 
     if (execTool != null) {
-      String body = buildSwaigRequestJson(execTool, params);
+      String body = buildSwaigRequestJson(execTool, params, SIMULATED_CALL_ID);
       if (verbose) System.err.println("[verbose] Dispatching SWAIG (gcf): " + body);
+      String swaigPath =
+          route
+              + "/swaig?__token="
+              + java.net.URLEncoder.encode(
+                  agent.createToolToken(execTool, SIMULATED_CALL_ID), StandardCharsets.UTF_8);
       var resp =
           com.signalwire.sdk.runtime.ServerlessAdapter.handleGcf(
-              agent, "POST", route + "/swaig", basicAuthHeader(agent), body);
+              agent, "POST", swaigPath, basicAuthHeader(agent), body);
       emitBody(resp.status(), resp.body());
       return;
     }
@@ -662,12 +680,28 @@ public class SwaigTest {
   }
 
   /**
-   * Build a SWAIG invocation payload. Mirrors the structure the real HTTP server expects and the
-   * Python simulation produces.
+   * Build a SWAIG invocation payload in the structure the real HTTP server expects, so a simulated
+   * invocation exercises the same shape a live one would.
    */
   private static String buildSwaigRequestJson(String tool, Map<String, String> params) {
+    return buildSwaigRequestJson(tool, params, null);
+  }
+
+  /**
+   * As {@link #buildSwaigRequestJson(String, Map)}, additionally carrying {@code call_id}.
+   *
+   * <p>A tool declared {@code secure} — the default — is only dispatched when a valid per-call
+   * {@code __token} accompanies the request, and a token can only be validated against a {@code
+   * call_id}. The body is where the call identity travels, so a simulated invocation must carry one
+   * or every secure tool would be unreachable from this CLI.
+   */
+  private static String buildSwaigRequestJson(
+      String tool, Map<String, String> params, String callId) {
     StringBuilder json = new StringBuilder();
     json.append("{\"function\":\"").append(escapeJsonStatic(tool)).append("\"");
+    if (callId != null) {
+      json.append(",\"call_id\":\"").append(escapeJsonStatic(callId)).append("\"");
+    }
     if (!params.isEmpty()) {
       json.append(",\"argument\":{\"parsed\":[{");
       boolean first = true;
