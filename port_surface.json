@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ f8aad8881a95abf9d235bf4047efb0a68d2266d7",
+  "generated_from": "signalwire-java @ 6cda630db544a67195d7d366cafa5e17975d28f6",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -3936,7 +3936,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3954,7 +3953,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3971,7 +3969,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup",
@@ -3987,7 +3984,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4002,7 +3998,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup"
         ]
@@ -4017,7 +4012,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4033,7 +4027,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup"
@@ -4048,7 +4041,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4064,7 +4056,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_required_packages",
           "get_version",
           "register_tools",
@@ -4083,7 +4074,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4162,7 +4152,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup",
@@ -4194,7 +4183,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_version",
           "register_tools",
           "setup",
@@ -4210,7 +4198,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "search_wiki",
           "setup"

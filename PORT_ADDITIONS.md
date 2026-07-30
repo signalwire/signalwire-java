@@ -466,7 +466,6 @@ signalwire.skills.builtin.custom_skills_skill.CustomSkillsSkill.supports_multipl
 signalwire.skills.builtin.custom_skills_skill.CustomSkillsSkill: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.claude_skills.skill.ClaudeSkillsSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.claude_skills.skill.ClaudeSkillsSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.skills.claude_skills.skill.ClaudeSkillsSkill.get_prompt_sections: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.claude_skills.skill.ClaudeSkillsSkill.supports_multiple_instances: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.datasphere.skill.DataSphereSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.datasphere.skill.DataSphereSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
@@ -482,7 +481,6 @@ signalwire.skills.google_maps.skill.GoogleMapsSkill.get_description: idiomatic J
 signalwire.skills.google_maps.skill.GoogleMapsSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.info_gatherer.skill.InfoGathererSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.info_gatherer.skill.InfoGathererSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
-signalwire.skills.info_gatherer.skill.InfoGathererSkill.get_prompt_sections: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.info_gatherer.skill.InfoGathererSkill.supports_multiple_instances: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.joke.skill.JokeSkill.get_description: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart
 signalwire.skills.joke.skill.JokeSkill.get_name: idiomatic Java surface extension (builder, getter/setter, overload, or richer verb/config surface) with no Python-reference counterpart

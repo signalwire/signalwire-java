@@ -1233,6 +1233,81 @@ def _construction_accessor_field(accessor: str) -> str:
     return accessor
 
 
+# The built-in skill classes' reference modules. Keyed on the module PREFIX, not
+# a hand list of class names, so a new built-in skill is covered the day it lands
+# with no table edit. ``signalwire.skills.registry`` / ``.skill_name`` also live
+# under this prefix; they are not SkillBase subclasses and carry none of the base
+# hooks, so the strip below is inert on them.
+_SKILL_MODULE_PREFIX = "signalwire.skills."
+_SKILL_BASE_KEY = ("signalwire.core.skill_base", "SkillBase")
+
+
+def _base_only_skill_hooks(
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> set[str]:
+    """Hooks the reference records on ``SkillBase`` and on ZERO skill subclass.
+
+    That shape is exactly a FINAL template method: the reference exposes the
+    public member on the base and routes subclass specialization through a
+    separate, non-recorded hook. ``get_prompt_sections`` became one when the
+    reference wrapped it around the ``skip_prompt`` guard and delegated to a
+    PROTECTED ``_get_prompt_sections()`` (signalwire-python
+    ``core/skill_base.py``), which no oracle records; the same is true of
+    ``validate_env_vars`` / ``validate_packages`` / ``update_skill_data`` and the
+    ``agent`` / ``params`` attributes.
+
+    Derived from the oracle at CALL time, never hand-kept: if the reference ever
+    starts recording one of these on a subclass, it drops out of this set on the
+    next regen and the port's override is emitted again with no code edit.
+    """
+    base = oracle_class_members.get(_SKILL_BASE_KEY, set())
+    if not base:
+        return set()
+    on_subclass: set[str] = set()
+    for (mod, cls), members in oracle_class_members.items():
+        if mod.startswith(_SKILL_MODULE_PREFIX):
+            on_subclass |= members
+    return base - on_subclass
+
+
+def strip_base_only_skill_hooks(
+    modules: dict[str, dict],
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> None:
+    """In-place: drop a base-only ``SkillBase`` hook from a concrete skill class.
+
+    ORACLE-KEYED, never a hand list (see ``_base_only_skill_hooks``). Java's
+    ``SkillBase`` is an interface whose ``default getPromptSections()`` IS the
+    override point — it has no protected-hook twin, and the ``skip_prompt`` guard
+    the reference put in the template method lives in Java's CALLER instead
+    (``SkillManager.java:116-118``), so the WIRE behaviour matches. But emitting
+    each subclass override as public surface claims 11 public members the
+    reference does not expose, which is a phantom ``missing-reference`` addition
+    on every built-in skill.
+
+    This cannot hide a real member: a hook the reference DOES record on any
+    subclass (``setup``, ``register_tools``, ``get_hints``, ``get_global_data``,
+    ``get_parameter_schema``, ``get_instance_key``, ``cleanup``) never enters the
+    base-only set, and ``SkillBase``'s own copy is out of scope (it lives in
+    ``signalwire.core.skill_base``, not under the skills prefix).
+
+    Fail-safe: an unresolvable oracle yields an EMPTY hook set and strips
+    nothing, rather than emptying every skill class — a mass false deletion would
+    read as a real regression.
+    """
+    hooks = _base_only_skill_hooks(oracle_class_members)
+    if not hooks:
+        return
+    for mod, entry in modules.items():
+        if not mod.startswith(_SKILL_MODULE_PREFIX):
+            continue
+        for cls, methods in entry.get("classes", {}).items():
+            ref_members = oracle_class_members.get((mod, cls), set())
+            entry["classes"][cls] = [
+                m for m in methods if not (m in hooks and m not in ref_members)
+            ]
+
+
 # Idiom-scaffolding classes to DROP from the compared surface. These are the
 # Java expression of a Python kwargs bundle / return tuple / value object — a
 # static-typing NECESSITY, not reference surface: options-builders (the Java
@@ -2176,6 +2251,12 @@ def enumerate_sdk(
     if not native and oracle_class_members:
         fold_accessors_to_members(merged, oracle_class_members)
         exclude_ctor_dunder(merged, oracle_class_members)
+        # Base-only SkillBase-hook strip: a hook the reference exposes on
+        # SkillBase alone (final template method + protected hook) is not
+        # subclass surface, however each built-in skill overrides Java's
+        # interface default. Runs AFTER the accessor fold so it sees the
+        # snake-cased member names the oracle is keyed by.
+        strip_base_only_skill_hooks(merged, oracle_class_members)
 
     # Construction-param accessor strip (RULES.md §2 / ALLOWLIST_DISCIPLINE.md §0):
     # the read+write accessors for params already compared by the ``construction``
