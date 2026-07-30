@@ -92,12 +92,10 @@ public class ToolDefinition {
   }
 
   /**
-   * Serialize to SWAIG function format for SWML. Mirrors the Python reference ({@code
-   * SWAIGFunction.to_swaig} / {@code AgentBase._render_swaig_functions}): the function definition
-   * carries {@code function} (name), {@code description}, and {@code parameters} — the latter
-   * passed through {@link #ensureParameterStructure()} so a complete {@code {type,properties}}
-   * schema renders FLAT (not double-wrapped) and a bare property map is wrapped in {@code
-   * {type:object,properties:…}}.
+   * Serialize to SWAIG function format for SWML. The function definition carries {@code function}
+   * (name), {@code description}, and {@code parameters} — the latter passed through {@link
+   * #ensureParameterStructure()} so a complete {@code {type,properties}} schema renders FLAT (not
+   * double-wrapped) and a bare property map is wrapped in {@code {type:object,properties:…}}.
    */
   public Map<String, Object> toSwaigFunction(String webhookUrl, String metaDataToken) {
     Map<String, Object> func = new LinkedHashMap<>();
@@ -117,8 +115,7 @@ public class ToolDefinition {
   }
 
   /**
-   * Structure the parameters for the SWML wire — the Java mirror of Python's {@code
-   * SWAIGFunction._ensure_parameter_structure}: an empty map becomes {@code
+   * Structure the parameters for the SWML wire: an empty map becomes {@code
    * {type:object,properties:{}}}; a map already carrying {@code type} + {@code properties} passes
    * through unchanged (a complete schema is NOT double-wrapped); otherwise the map is treated as a
    * bare property set and wrapped in {@code {type:object,properties:…}}.

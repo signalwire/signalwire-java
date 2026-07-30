@@ -67,11 +67,9 @@ public class Call {
   private volatile Map<String, Object> device;
 
   /**
-   * Call identity carried on every RELAY call event and stored by the reference as public state
-   * ({@code self.project_id} / {@code self.context} / {@code self.segment_id},
-   * relay/call.py:357-363). The event frames already carry all three ({@link
-   * RelayEvent.CallReceiveEvent#getProjectId()} et al.); the port previously discarded them, so a
-   * Java caller could not read the project, context, or segment the call belongs to.
+   * Call identity carried on every RELAY call event: project id, context, and segment id. The event
+   * frames carry all three ({@link RelayEvent.CallReceiveEvent#getProjectId()} et al.), and they
+   * are retained here so a caller can read which project, context, and segment a call belongs to.
    */
   private volatile String projectId;
 
@@ -99,8 +97,8 @@ public class Call {
   }
 
   /**
-   * Full call identity, mirroring the reference's {@code Call(client, call_id, node_id, project_id,
-   * context, ..., segment_id)}.
+   * Full call identity: RELAY call id and node id plus the project, context, and segment the call
+   * belongs to.
    *
    * @param callId the RELAY call id
    * @param nodeId the RELAY node id
@@ -387,10 +385,9 @@ public class Call {
   /**
    * Block until the call is answered, or until {@code timeout} SECONDS elapse.
    *
-   * <p>Matches the reference's {@code wait_for_answered(timeout: float | None = None)}: the unit is
-   * SECONDS and {@code null} means "wait indefinitely". {@code Double} (boxed) is the port's
-   * established spelling for the reference's optional {@code float} — see {@code
-   * RequestOptions.timeout}. The underlying {@link #waitFor(String, long)} takes milliseconds, so
+   * <p>The unit is SECONDS and {@code null} means "wait indefinitely" — the boxed {@code Double} is
+   * the same spelling used for an optional timeout elsewhere in the SDK (see {@code
+   * RequestOptions.timeout}). The underlying {@link #waitFor(String, long)} takes milliseconds, so
    * this converts.
    *
    * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
@@ -449,9 +446,9 @@ public class Call {
   }
 
   /**
-   * Convert the reference's optional {@code timeout} in SECONDS to the millisecond deadline {@link
-   * #waitFor(String, long)} takes. {@code null} (the reference default) and any non-positive value
-   * mean "wait indefinitely", which that method spells as {@code 0}.
+   * Convert an optional {@code timeout} in SECONDS to the millisecond deadline {@link
+   * #waitFor(String, long)} takes. {@code null} and any non-positive value mean "wait
+   * indefinitely", which that method spells as {@code 0}.
    */
   private static long timeoutToMillis(Double timeout) {
     if (timeout == null || timeout <= 0.0) {
@@ -646,10 +643,7 @@ public class Call {
     return executeOnCall(Constants.METHOD_CLEAR_DIGIT_BINDINGS, params);
   }
 
-  /**
-   * Send a user event with {@code event} at its reference default of {@code None}. Mirrors {@code
-   * Call.user_event(*, event: str | None = None, **kwargs)} — signalwire/relay/call.py:1567.
-   */
+  /** Send a user event with no {@code event} name — the key is omitted from the request params. */
   public Map<String, Object> userEvent() {
     return userEvent(null);
   }
@@ -671,9 +665,8 @@ public class Call {
   }
 
   /**
-   * Start live translation with no options — the reference's optional keyword params ({@code
-   * status_url=None} plus {@code **kwargs}) all default to absent. Mirrors {@code
-   * Call.live_translate(action, *, status_url=None, **kwargs)} — signalwire/relay/call.py:1394.
+   * Start live translation with no options — the optional params ({@code status_url} and any
+   * additional keys) are all left absent from the request.
    */
   public Map<String, Object> liveTranslate(Map<String, Object> action) {
     return liveTranslate(action, null);
@@ -691,9 +684,8 @@ public class Call {
   }
 
   /**
-   * SIP REFER transfer with no options — the reference's optional keyword params ({@code
-   * status_url=None} plus {@code **kwargs}) all default to absent. Mirrors {@code
-   * Call.refer(device, *, status_url=None, **kwargs)} — signalwire/relay/call.py:974.
+   * SIP REFER transfer with no options — the optional params ({@code status_url} and any additional
+   * keys) are all left absent from the request.
    */
   public Map<String, Object> refer(Map<String, Object> deviceSpec) {
     return refer(deviceSpec, null);
@@ -758,9 +750,8 @@ public class Call {
   // ── Room methods ─────────────────────────────────────────────────
 
   /**
-   * Join a room with no options — the reference's optional keyword params ({@code status_url=None}
-   * plus {@code **kwargs}) all default to absent. Mirrors {@code Call.join_room(name, *,
-   * status_url=None, **kwargs)} — signalwire/relay/call.py:1412.
+   * Join a room with no options — the optional params ({@code status_url} and any additional keys)
+   * are all left absent from the request.
    */
   public Map<String, Object> joinRoom(String name) {
     return joinRoom(name, null);
@@ -877,8 +868,7 @@ public class Call {
 
   /**
    * Record with an explicit control_id (test helper). The {@code audioConfig} is wrapped as {@code
-   * record: {audio: <config>}} on the wire to match the Python {@code call.record(audio=...,
-   * control_id=...)} pattern.
+   * record: {audio: <config>}} on the wire.
    */
   public Action.RecordAction recordAudio(Map<String, Object> audioConfig, String controlId) {
     Map<String, Object> recordCfg = new LinkedHashMap<>();
@@ -1511,9 +1501,8 @@ public class Call {
   }
 
   /**
-   * Resume AI from hold with no options — the reference's optional keyword params ({@code
-   * prompt=None} plus {@code **kwargs}) all default to absent. Mirrors {@code Call.ai_unhold(*,
-   * prompt: str | None = None, **kwargs)} — signalwire/relay/call.py:1550.
+   * Resume AI from hold with no options — the optional params ({@code prompt} and any additional
+   * keys) are all left absent from the request.
    */
   public Map<String, Object> aiUnhold() {
     return aiUnhold(null);

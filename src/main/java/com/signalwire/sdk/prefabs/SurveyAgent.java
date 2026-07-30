@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class SurveyAgent {
 
-  /** Default brand name when the caller supplies none — the reference's fallback. */
+  /** Default brand name when the caller supplies none. */
   private static final String DEFAULT_BRAND_NAME = "Our Company";
 
   /** Default number of re-ask attempts for an invalid answer. */
@@ -40,23 +40,20 @@ public class SurveyAgent {
   }
 
   /**
-   * Full construction contract, mirroring the reference {@code SurveyAgent(survey_name, questions,
-   * brand_name, max_retries, introduction, conclusion, name, route)}.
-   *
-   * <p>The reference's {@code conclusion} is this port's {@code completionMessage} — the same
-   * closing text, spoken after the last question.
+   * Full construction contract: every configurable aspect of the survey in one call.
    *
    * @param name agent name
    * @param questions the survey questions (the {@code questions} param)
-   * @param completionMessage closing message (the reference's {@code conclusion} param)
+   * @param completionMessage closing message, spoken after the last question (the {@code
+   *     conclusion} param)
    * @param route HTTP route for this agent
    * @param port HTTP port for this agent
    * @param surveyName human-readable survey title (the {@code survey_name} param)
    * @param brandName brand conducting the survey (the {@code brand_name} param); defaults to {@code
-   *     "Our Company"} when {@code null}, as the reference does
+   *     "Our Company"} when {@code null}
    * @param maxRetries re-ask attempts for an invalid answer (the {@code max_retries} param)
-   * @param introduction opening message (the {@code introduction} param); defaults to the
-   *     reference's stock welcome text built from {@code surveyName} when {@code null}
+   * @param introduction opening message (the {@code introduction} param); defaults to a stock
+   *     welcome text built from {@code surveyName} when {@code null}
    */
   public SurveyAgent(
       String name,
@@ -222,10 +219,9 @@ public class SurveyAgent {
   }
 
   /**
-   * SWAIG tool handler: validate a response against a question's constraints. Ported from Python
-   * SurveyAgent.validate_response -- looks the question up by {@code id} and checks rating range
-   * (1..scale), multiple_choice membership, yes/no answers, and required open_ended responses.
-   * Returns a validity message.
+   * SWAIG tool handler: validate a response against a question's constraints. Looks the question up
+   * by {@code id} and checks rating range (1..scale), multiple_choice membership, yes/no answers,
+   * and required open_ended responses. Returns a validity message.
    */
   @SuppressWarnings("unchecked")
   public FunctionResult validateResponse(Map<String, Object> args, Map<String, Object> rawData) {
@@ -289,9 +285,8 @@ public class SurveyAgent {
   }
 
   /**
-   * SWAIG tool handler: acknowledge a validated response. Ported from Python
-   * SurveyAgent.log_response -- looks the question up by {@code id} for a friendlier message and
-   * confirms the response was recorded (a real deployment would persist it).
+   * SWAIG tool handler: acknowledge a validated response. Looks the question up by {@code id} for a
+   * friendlier message and confirms the response was recorded (a real deployment would persist it).
    */
   public FunctionResult logResponse(Map<String, Object> args, Map<String, Object> rawData) {
     String questionId = (String) args.getOrDefault("question_id", "");
@@ -301,9 +296,8 @@ public class SurveyAgent {
   }
 
   /**
-   * Register a post-prompt summary callback. Ported from the Python SurveyAgent.on_summary hook:
-   * invoked with the parsed survey summary and the raw post-prompt payload once the survey
-   * completes. Wires through to {@link AgentBase#onSummary}.
+   * Register a post-prompt summary callback: invoked with the parsed survey summary and the raw
+   * post-prompt payload once the survey completes. Wires through to {@link AgentBase#onSummary}.
    *
    * @param handler callback receiving (summary, rawData); {@code null} clears any handler
    * @return this prefab for chaining
@@ -419,8 +413,8 @@ public class SurveyAgent {
   }
 
   /**
-   * The closing message — the reference's {@code conclusion} construction param, named {@code
-   * completionMessage} in this port's constructor.
+   * The closing message (the {@code conclusion} construction param, supplied to the constructor as
+   * {@code completionMessage}).
    */
   public String getConclusion() {
     return completionMessage;
@@ -461,9 +455,9 @@ public class SurveyAgent {
   }
 
   /**
-   * Build an id-keyed survey question (Python shape: {@code id}/{@code text}/{@code type}/{@code
-   * scale}/{@code options}) usable with {@link #validateResponse} and {@link #logResponse}, which
-   * look questions up by {@code id}.
+   * Build an id-keyed survey question ({@code id}/{@code text}/{@code type}/{@code scale}/{@code
+   * options}) usable with {@link #validateResponse} and {@link #logResponse}, which look questions
+   * up by {@code id}.
    */
   public static Map<String, Object> idQuestion(
       String id, String text, String type, Integer scale, List<String> options) {

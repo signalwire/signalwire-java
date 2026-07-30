@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * StateDump — the Java port's STATE dump program for the cross-port state differ
- * (porting-sdk/scripts/diff_port_state.py).
+ * StateDump — this SDK's dump program for the STATE gate's state differ.
  *
  * <p>For each {@code state_corpus} case it builds the target object, applies the mutation chain via
  * the Java SDK's native API, reads the observable state through the public accessor / rendered
@@ -38,8 +37,8 @@ import java.util.function.Supplier;
  *   case-id -&gt; observed-state
  * </pre>
  *
- * to stdout. The differ canonicalizes both sides and byte-compares against the Python oracle. Only
- * stdout carries JSON. Mirrors Go's {@code cmd/state-dump/main.go}.
+ * to stdout. The differ canonicalizes both sides and byte-compares against the shared golden. Only
+ * stdout carries JSON.
  *
  * <p>Run via the {@code stateDump} Gradle task:
  *
@@ -51,7 +50,7 @@ final class StateDump {
 
   private StateDump() {}
 
-  /** A minimal custom verb handler — the Java analog of the corpus's throwaway "greet" handler. */
+  /** A minimal custom verb handler registering the corpus's throwaway "greet" verb. */
   private static final class GreetVerbHandler extends SWMLVerbHandler {
     /**
      * The SWML verb this test handler registers under.
@@ -268,9 +267,9 @@ final class StateDump {
   }
 
   /**
-   * Drive InfoGatherer.submitAnswer and reduce the result to the observable delta (mirrors
-   * diff_port_state._observe "submit_answer_delta"): the set_global_data action's question_index +
-   * answers, plus a {@code done} flag derived from the completion message.
+   * Drive InfoGatherer.submitAnswer and reduce the result to the observable delta the {@code
+   * submit_answer_delta} case compares: the set_global_data action's question_index + answers, plus
+   * a {@code done} flag derived from the completion message.
    */
   @SuppressWarnings("unchecked")
   private static Map<String, Object> submitAnswerDelta(

@@ -11,13 +11,11 @@ import java.util.regex.Pattern;
 /**
  * Masks credential VALUES in a raw RELAY frame before it is logged, so a {@code
  * SIGNALWIRE_LOG_LEVEL=debug} session never emits live credentials or the {@code
- * authorization_state} re-auth blob (the SECRET-SCRUB contract, PSDK-5).
+ * authorization_state} re-auth blob.
  *
- * <p>Mirrors the Python reference {@code _scrub_frame} / {@code _SCRUB_RE}
- * (relay/client.py:108-127): the string values of {@code token} / {@code project} / {@code
- * jwt_token} / {@code authorization_state} keys are replaced with {@code "***"} wherever they
- * appear in the JSON frame; all structural / non-credential content is preserved so the frame stays
- * diagnostic.
+ * <p>The string values of the {@code token} / {@code project} / {@code jwt_token} / {@code
+ * authorization_state} keys are replaced with {@code "***"} wherever they appear in the JSON frame;
+ * all structural / non-credential content is preserved so the frame stays diagnostic.
  */
 final class FrameScrub {
 

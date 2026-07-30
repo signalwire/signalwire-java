@@ -12,13 +12,12 @@ import java.util.Map;
  * framework-free {@link Service#handleRequest} dispatch core — the same core the in-process HTTP
  * server, {@code serve()}, and {@code asRouter()} use.
  *
- * <p>Java's Lambda path lives in {@link com.signalwire.sdk.runtime.lambda.LambdaAgentHandler}. This
- * adapter adds the remaining platforms the reference (Python {@code serverless_mixin.py}) and the
- * PHP reference ({@code Serverless\Adapter}) dispatch: <b>CGI</b> and <b>Google Cloud Functions</b>
- * (GCF). Each extracts {@code (method, path, headers, body)} from the platform's shape, calls
- * {@link Service#handleRequest}, and marshals the returned {@code (status, headers, body)} triple
- * back into the platform's response form — a real dispatched response, never a fall-through to the
- * long-running server or an "unsupported" error.
+ * <p>The AWS Lambda path lives in {@link com.signalwire.sdk.runtime.lambda.LambdaAgentHandler}.
+ * This adapter covers the remaining supported platforms: <b>CGI</b> and <b>Google Cloud
+ * Functions</b> (GCF). Each extracts {@code (method, path, headers, body)} from the platform's
+ * shape, calls {@link Service#handleRequest}, and marshals the returned {@code (status, headers,
+ * body)} triple back into the platform's response form — a real dispatched response, never a
+ * fall-through to the long-running server or an "unsupported" error.
  *
  * <p>Following the injectable-env pattern used throughout the runtime package (Java cannot mutate
  * {@link System#getenv()}), the platform-reading entrypoints take an {@link EnvProvider} and the
@@ -42,9 +41,9 @@ public final class ServerlessAdapter {
   /**
    * Dispatch a Google Cloud Functions invocation through {@link Service#handleRequest}.
    *
-   * <p>Mirrors Python {@code _handle_google_cloud_function_request} and PHP {@code
-   * Adapter::handleGcf}: reads the method / path / headers off the request, forwards the body, and
-   * returns the {@code (status, headers, body)} response the Flask/functions-framework layer emits.
+   * <p>Reads the method / path / headers off the request, forwards the body, and returns the {@code
+   * (status, headers, body)} response the functions-framework layer emits. {@code Content-Type:
+   * application/json} is added when the dispatch did not already set one.
    *
    * @param agent the SWML service / agent request handler.
    * @param method the HTTP method (e.g. {@code "POST"}).
@@ -66,10 +65,10 @@ public final class ServerlessAdapter {
    * response to the CGI wire form (a {@code Status:} line, the response headers, a blank line, then
    * the body).
    *
-   * <p>Mirrors Python's {@code mode == "cgi"} branch and PHP {@code Adapter::handleCgi}. Path and
-   * method are read from the supplied {@link EnvProvider} ({@code PATH_INFO} / {@code
-   * REQUEST_METHOD} — the standard CGI meta-variables); the body is passed explicitly (the real CGI
-   * runtime reads it from stdin, bounded by {@code CONTENT_LENGTH}).
+   * <p>Path and method are read from the supplied {@link EnvProvider} ({@code PATH_INFO} — falling
+   * back to {@code REQUEST_URI} with any query string stripped — and {@code REQUEST_METHOD}, the
+   * standard CGI meta-variables); the body is passed explicitly (the real CGI runtime reads it from
+   * stdin, bounded by {@code CONTENT_LENGTH}).
    *
    * @param agent the SWML service / agent request handler.
    * @param env the CGI environment (supplies {@code REQUEST_METHOD}, {@code PATH_INFO}).

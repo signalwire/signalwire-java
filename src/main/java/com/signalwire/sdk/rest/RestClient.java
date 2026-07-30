@@ -111,8 +111,7 @@ public class RestClient extends ResourceTree {
 
     /**
      * Client-default {@link RequestOptions} (timeout / retries / retry policy / abort signal)
-     * applied to every request this client makes, overridable per call. Mirrors the Python
-     * reference's {@code RestClient(request_options=...)}.
+     * applied to every request this client makes, overridable per call.
      */
     public Builder requestOptions(RequestOptions requestOptions) {
       this.requestOptions = requestOptions;

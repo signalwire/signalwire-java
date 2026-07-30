@@ -27,8 +27,7 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * WireRelayDump — the Java port's WIRE-RELAY dump program for the cross-port relay differ
- * (porting-sdk/scripts/diff_port_wire_relay.py).
+ * WireRelayDump — this SDK's dump program for the WIRE-RELAY gate's relay differ.
  *
  * <p>It captures, for each {@code wire_relay_corpus} case, the observable RELAY artifact:
  *
@@ -41,8 +40,8 @@ import org.java_websocket.server.WebSocketServer;
  * </ul>
  *
  * <p>It prints ONE JSON object mapping case-id -&gt; artifact to stdout; the differ canonicalizes
- * both sides (normalizing the random control_id to a sentinel) and byte-compares against the Python
- * oracle. Only stdout carries JSON. Mirrors Go's {@code cmd/wire-relay-dump/main.go}.
+ * both sides (normalizing the random control_id to a sentinel) and byte-compares against the shared
+ * golden. Only stdout carries JSON.
  *
  * <p>Frame capture: verb/client verbs send over a real WebSocket, so this program stands up a tiny
  * in-process mock RELAY WS server on a loopback port (pointed to via {@code .space("ws://host:port/

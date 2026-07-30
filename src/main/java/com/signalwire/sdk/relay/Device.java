@@ -47,8 +47,8 @@ import java.util.Map;
  *                      "from_number", "+15553334444")))), null);
  * }</pre>
  *
- * <p>Python uses a bare {@code dict} for this object, so there is no reference equivalent — this is
- * a documented Java addition.
+ * <p>A typed stand-in for what the wire carries as an untyped object, so the fields are
+ * discoverable and checked at compile time.
  */
 public final class Device {
 

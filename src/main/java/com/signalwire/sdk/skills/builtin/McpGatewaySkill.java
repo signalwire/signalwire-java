@@ -25,20 +25,18 @@ import javax.net.ssl.X509TrustManager;
  * <p>This is the CLIENT half of the mcp_gateway subsystem. It connects to an already-running MCP
  * Gateway service over HTTP, authenticates (bearer token OR HTTP-basic), enumerates the gateway's
  * services and their tools, and registers each MCP tool as a SWAIG function whose handler proxies
- * the tool call back through the gateway. Mirrors the Python reference {@code MCPGatewaySkill}
- * ({@code signalwire/skills/mcp_gateway/skill.py}).
+ * the tool call back through the gateway.
  *
  * <p><b>Client half only.</b> This skill is the gateway CLIENT. The gateway SERVER (the standalone
  * service that hosts the MCP servers and exposes the {@code /services} / {@code /call} HTTP
  * surface) is not part of the Java SDK — Java agents talk to an externally-run gateway; they do not
  * host one.
  *
- * <p><b>TLS verification ({@code verify_ssl}).</b> Config param, default {@code true} (verification
- * ON — the secure default, matching the Python reference {@code verify=self.verify_ssl}). Setting
- * {@code verify_ssl=false} is the explicit opt-out for self-signed-cert gateways: only then is a
- * permissive {@link SSLContext} installed on the {@link HttpClient}. Every request is issued
- * through {@link #httpClient()}, so the flag governs the actual peer-certificate check, not just a
- * stored boolean.
+ * <p><b>TLS verification ({@code verify_ssl}).</b> Config param, default {@code true} — the secure
+ * default, with verification ON. Setting {@code verify_ssl=false} is the explicit opt-out for
+ * self-signed-cert gateways: only then is a permissive {@link SSLContext} installed on the {@link
+ * HttpClient}. Every request is issued through {@link #httpClient()}, so the flag governs the
+ * actual peer-certificate check, not just a stored boolean.
  */
 public class McpGatewaySkill implements SkillBase {
 
@@ -107,7 +105,8 @@ public class McpGatewaySkill implements SkillBase {
    * <p>Auth is either a bearer token ({@code auth_token}) OR HTTP-basic ({@code auth_user} + {@code
    * auth_password}); {@code gateway_url} is always required. Reads {@code verify_ssl} (default
    * {@code true}) and threads it to the HTTP client. Finally performs a {@code GET /health} to
-   * confirm the gateway is reachable, exactly like the Python reference.
+   * confirm the gateway is reachable, so a misconfigured URL fails at setup rather than on the
+   * first tool call.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -589,10 +588,10 @@ public class McpGatewaySkill implements SkillBase {
    * The all-trusting {@link X509TrustManager} used ONLY on the {@code verify_ssl=false} opt-out
    * path (constructed inside the {@code if (!verifySsl)} guard in {@link #httpClient()}). A named
    * nested class rather than an inline anonymous one so the surface enumerator scopes its interface
-   * methods to THIS class, not the public {@code MCPGatewaySkill} surface. This deliberately-empty
-   * trust manager is the self-signed opt-out the python reference endorses via {@code
-   * verify=self.verify_ssl}. It needs no TLS-VERIFY allowlist entry: the gate proves this class is
-   * instantiated only inside the {@code if (!verifySsl)} guard, so the site passes on its merits.
+   * methods to THIS class, not the public {@code McpGatewaySkill} surface. It is deliberately empty
+   * because it exists solely to implement the documented {@code verify_ssl=false} opt-out for
+   * self-signed-certificate gateways; it is never reachable when {@code verify_ssl} is left at its
+   * secure default.
    */
   private static final class InsecureTrustManager implements X509TrustManager {
     /**

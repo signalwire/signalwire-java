@@ -10,14 +10,14 @@ package com.signalwire.sdk.tools;
 import com.signalwire.sdk.security.SessionManager;
 
 /**
- * TokenInteropMint — the Java port's TOKEN-INTEROP mint fixture for the cross-port checker ({@code
- * porting-sdk/scripts/diff_port_token_interop.py}).
+ * TokenInteropMint — the TOKEN-INTEROP mint fixture.
  *
- * <p>The contract being proven is property 3 of the SWAIG tool-token contract: a token this port
- * MINTS must validate under the REFERENCE's own decoder. The other two properties (that a token is
+ * <p>The contract being proven is property 3 of the SWAIG tool-token contract: a token this SDK
+ * MINTS must validate under an independent decoder. The other two properties (that a token is
  * minted at all; that the HMAC is keyed with the {@code secret_key} STRING's bytes) already had
- * coverage — this one did not, and a port can pass both and still emit a token no other
- * implementation accepts, in which case every secure tool call fails authentication in production.
+ * coverage — this one did not, and an implementation can satisfy both and still emit a token no
+ * other implementation accepts, in which case every secure tool call fails authentication in
+ * production.
  *
  * <p>Protocol: read the FIXED mint inputs from the environment (the checker owns them, so this
  * fixture cannot drift from the values it is verified against), construct a {@link SessionManager}

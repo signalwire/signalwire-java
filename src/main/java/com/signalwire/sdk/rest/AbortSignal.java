@@ -14,11 +14,10 @@ package com.signalwire.sdk.rest;
  * true} the request raises the typed transport error ({@link SignalWireRestTransportError}) instead
  * of sending, so a cancelled request never hits the wire.
  *
- * <p>Fidelity is the language's business (see the cross-port design): Java's REST client is
+ * <p><strong>Cancellation is cooperative, not pre-emptive.</strong> This SDK's REST client is
  * synchronous and {@code java.net.http.HttpClient.send} cannot be interrupted mid-flight without a
- * separate thread, so — like the Python reference's {@code threading.Event} check — cancellation is
- * checked cooperatively BETWEEN attempts (the honest, portable minimum). The FIELD exists in every
- * port; how deeply it cuts is per-port.
+ * separate thread, so the signal is checked BETWEEN attempts. Setting it will not tear down a
+ * request that is already in flight; it prevents the next attempt from being sent.
  *
  * <p>This is a {@link FunctionalInterface}, so an {@link java.util.concurrent.atomic.AtomicBoolean}
  * or any boolean-valued predicate can be adapted inline:
@@ -27,8 +26,6 @@ package com.signalwire.sdk.rest;
  * var cancelled = new java.util.concurrent.atomic.AtomicBoolean(false);
  * var opts = RequestOptions.builder().abortSignal(cancelled::get).build();
  * }</pre>
- *
- * <p>Mirrors the Python reference's {@code _AbortSignal} protocol ({@code is_set() -> bool}).
  */
 @FunctionalInterface
 public interface AbortSignal {

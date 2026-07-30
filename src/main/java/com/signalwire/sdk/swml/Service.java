@@ -116,13 +116,12 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Full construction contract, matching the Python reference's {@code SWMLService.__init__(name,
-   * route, host, port, basic_auth, schema_path, config_file, schema_validation)}.
+   * Full construction contract: name, route, host, port, basic auth, schema path, config file and
+   * schema validation.
    *
-   * <p>{@code authUser}/{@code authPassword} are the Java spelling of the reference's {@code
-   * basic_auth} 2-tuple. {@code schemaPath} and {@code schemaValidation} are forwarded to {@link
-   * SchemaUtils}; {@code configFile} is forwarded to {@link com.signalwire.sdk.core.SecurityConfig}
-   * — the same collaborators the reference forwards them to.
+   * <p>{@code authUser}/{@code authPassword} are the two halves of the basic-auth credential.
+   * {@code schemaPath} and {@code schemaValidation} are forwarded to {@link SchemaUtils}; {@code
+   * configFile} is forwarded to {@link com.signalwire.sdk.core.SecurityConfig}.
    *
    * @param name service name/identifier.
    * @param route HTTP route path for this service.
@@ -340,9 +339,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Dispatch a function call with {@code raw_data} at its reference default of {@code None}.
-   * Mirrors {@code ToolMixin.on_function_call(name, args, raw_data=None)} —
-   * signalwire/core/mixins/tool_mixin.py:235.
+   * Dispatch a function call with no raw SWAIG payload — equivalent to passing {@code null} for
+   * {@code rawData}.
    */
   public com.signalwire.sdk.swaig.FunctionResult onFunctionCall(
       String funcName, java.util.Map<String, Object> args) {
@@ -457,17 +455,16 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Request hook with both params at their reference default of {@code None}. Mirrors {@code
-   * SWMLService.on_request(request_data=None, callback_path=None)} —
-   * signalwire/core/mixins/web_mixin.py:1212.
+   * Request hook with neither request body nor callback path — equivalent to passing {@code null}
+   * for both.
    */
   public java.util.Map<String, Object> onRequest() {
     return onRequest(null, null);
   }
 
   /**
-   * Request hook supplying {@code request_data}, with {@code callback_path} at its reference
-   * default of {@code None} — signalwire/core/mixins/web_mixin.py:1212.
+   * Request hook supplying only the parsed request body; the callback path defaults to {@code
+   * null}.
    */
   public java.util.Map<String, Object> onRequest(java.util.Map<String, Object> requestData) {
     return onRequest(requestData, null);
@@ -530,8 +527,9 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * SchemaUtils helper bound to this Service. Mirrors Python's {@code self.schema_utils} public
-   * instance attribute on {@code SWMLService}. Built lazily on first access.
+   * SchemaUtils helper bound to this Service. Built lazily on first access.
+   *
+   * @return the schema helper for this service.
    */
   public SchemaUtils getSchemaUtils() {
     if (schemaUtilsInstance == null) {
@@ -542,7 +540,7 @@ public class Service implements AutoCloseable {
 
   /**
    * The explicit SWML schema file path this service was constructed with, or {@code null} when the
-   * schema is auto-discovered. Mirrors the reference's {@code schema_path} construction param.
+   * schema is auto-discovered.
    *
    * @return configured schema path, or null.
    */
@@ -552,7 +550,7 @@ public class Service implements AutoCloseable {
 
   /**
    * The config file this service was constructed with, or {@code null} when the default search
-   * paths are used. Mirrors the reference's {@code config_file} construction param.
+   * paths are used.
    *
    * @return configured config file path, or null.
    */
@@ -584,15 +582,15 @@ public class Service implements AutoCloseable {
 
   /**
    * The port the service binds to (the {@code port} construction param); defaults to the {@code
-   * PORT} env var, else 3000, exactly as the reference does.
+   * PORT} env var, else 3000.
    */
   public int getPort() {
     return port;
   }
 
   /**
-   * Whether SWML schema validation is enabled for this service. Mirrors the reference's {@code
-   * schema_validation} construction param.
+   * Whether SWML schema validation is enabled for this service (the {@code schemaValidation}
+   * construction param).
    *
    * @return true when schema validation is on.
    */
@@ -601,9 +599,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Unified security configuration for this service, built from the construction {@code
-   * config_file} plus environment. Mirrors the reference's {@code self.security} attribute on
-   * {@code SWMLService} (swml_service.py:139).
+   * Unified security configuration for this service, built from the construction {@code configFile}
+   * plus environment. Built lazily on first access.
    *
    * @return the service's SecurityConfig.
    */
@@ -624,8 +621,8 @@ public class Service implements AutoCloseable {
   // own `start()` re-reads them the same way at swml_service.py:1240).
 
   /**
-   * Whether TLS is enabled for this service. Mirrors the reference's {@code
-   * SWMLService.ssl_enabled} (swml_service.py:143).
+   * Whether TLS is enabled for this service. Read through {@link #getSecurity()} on each call, so a
+   * later config reload stays reflected.
    *
    * @return true when TLS is on.
    */
@@ -634,8 +631,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * The serving domain used for the TLS certificate. Mirrors the reference's {@code
-   * SWMLService.domain} (swml_service.py:144).
+   * The serving domain used for the TLS certificate. Read through {@link #getSecurity()} on each
+   * call, so a later config reload stays reflected.
    *
    * @return the configured domain, or null when unset.
    */
@@ -644,8 +641,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Filesystem path to the TLS certificate. Mirrors the reference's {@code
-   * SWMLService.ssl_cert_path} (swml_service.py:145).
+   * Filesystem path to the TLS certificate. Read through {@link #getSecurity()} on each call, so a
+   * later config reload stays reflected.
    *
    * @return the certificate path, or null when unset.
    */
@@ -654,8 +651,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Filesystem path to the TLS private key. Mirrors the reference's {@code
-   * SWMLService.ssl_key_path} (swml_service.py:146).
+   * Filesystem path to the TLS private key. Read through {@link #getSecurity()} on each call, so a
+   * later config reload stays reflected.
    *
    * @return the key path, or null when unset.
    */
@@ -671,17 +668,17 @@ public class Service implements AutoCloseable {
   // the cross-port surface compares equal (mirrors the Ruby port's SWMLService
   // delegators and the SIGNATURE gate's Service→SWMLService rename).
 
-  /** Add a section to the document. Mirrors SWMLService.add_section. */
+  /** Add a section to the document. */
   public Service addSection(String sectionName) {
     document.addSection(sectionName);
     return this;
   }
 
   /**
-   * Add a verb to the main section. Mirrors SWMLService.add_verb — the user-facing choke point that
-   * enforces the strict-render contract: schema validation runs here so an unknown verb, a
-   * misspelled/unknown config key on a closed verb, a wrong-typed config, or a missing required key
-   * raises {@link SchemaValidationError} instead of being appended silently.
+   * Add a verb to the main section — the user-facing choke point that enforces the strict-render
+   * contract: schema validation runs here so an unknown verb, a misspelled/unknown config key on a
+   * closed verb, a wrong-typed config, or a missing required key raises {@link
+   * SchemaValidationError} instead of being appended silently.
    *
    * <p><b>This is the ONE place a verb enters the document.</b> {@link SWMLBuilder}, {@link
    * SwmlRenderer}, {@code AgentBase.renderSwml} and the 38 specialized verb builders further down
@@ -698,7 +695,7 @@ public class Service implements AutoCloseable {
     return this;
   }
 
-  /** Add a verb to a named section. Mirrors SWMLService.add_verb_to_section. */
+  /** Add a verb to a named section. */
   public Service addVerbToSection(String sectionName, String verbName, Object verbData) {
     validateVerbOrThrow(verbName, verbData);
     document.addVerbToSection(sectionName, verbName, verbData);
@@ -707,8 +704,7 @@ public class Service implements AutoCloseable {
 
   /**
    * Schema-validate a user-supplied verb config and throw {@link SchemaValidationError} if it does
-   * not satisfy the SWML schema. Mirrors the validation half of Python's {@code add_verb}. A no-op
-   * when schema validation is disabled.
+   * not satisfy the SWML schema. A no-op when schema validation is disabled.
    *
    * <p>The config is validated by SHAPE-FROM-THE-SCHEMA, not by assuming it is an object. Most verb
    * configs are objects, but {@code cond} and {@code toggle_functions} are ARRAYS, {@code label} /
@@ -729,29 +725,26 @@ public class Service implements AutoCloseable {
     }
   }
 
-  /** Render the current document as a compact JSON string. Mirrors SWMLService.render_document. */
+  /** Render the current document as a compact JSON string. */
   public String renderDocument() {
     return document.render();
   }
 
-  /** Reset the current document to an empty state. Mirrors SWMLService.reset_document. */
+  /** Reset the current document to an empty state. */
   public Service resetDocument() {
     document.reset();
     return this;
   }
 
   /**
-   * Register a custom SWML verb handler. Mirrors SWMLService.register_verb_handler — delegates to
-   * the service's {@link VerbHandlerRegistry}.
+   * Register a custom SWML verb handler — delegates to the service's {@link VerbHandlerRegistry}.
    */
   public Service registerVerbHandler(SWMLVerbHandler handler) {
     verbRegistry().registerHandler(handler);
     return this;
   }
 
-  /**
-   * The verb-handler registry for this service (built lazily). Mirrors SWMLService.verb_registry.
-   */
+  /** The verb-handler registry for this service (built lazily). */
   public VerbHandlerRegistry verbRegistry() {
     if (verbHandlerRegistry == null) {
       verbHandlerRegistry = new VerbHandlerRegistry();
@@ -760,14 +753,12 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Register a routing callback invoked to resolve dynamic routes. Mirrors
-   * SWMLService.register_routing_callback. Java stores the callback for the HTTP layer (and the
-   * framework-free {@link #handleRequest} dispatch core) to consult.
+   * Register a routing callback invoked to resolve dynamic routes. The callback is stored for the
+   * HTTP layer (and the framework-free {@link #handleRequest} dispatch core) to consult.
    *
-   * <p>The callback receives the parsed request body dict and the request headers dict — {@code
+   * <p>The callback receives the parsed request body map and the request headers map — {@code
    * callback(body, headers)} — and returns a redirect route string, or {@code null} to continue
-   * normal processing. This is the decomposed {@code (body, headers) -> String} shape the Python
-   * reference and the other SDK ports share.
+   * normal processing.
    *
    * @param callback the routing callback, {@code (body, headers) -> route-or-null}.
    * @return this service for chaining.
@@ -780,9 +771,8 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Register a routing callback at a specific path. Mirrors Python's {@code
-   * register_routing_callback(callback_fn, path="/sip")} (web_mixin): the path is normalized
-   * (trailing {@code /} stripped, a leading {@code /} ensured) and used as the dict key, so
+   * Register a routing callback at a specific path (default {@code "/sip"}). The path is normalized
+   * — trailing {@code /} stripped, a leading {@code /} ensured — and used as the map key, so
    * distinct paths each carry their own callback. Re-registering a path replaces its callback.
    *
    * @param callback the routing callback, {@code (body, headers) -> route-or-null}.
@@ -812,8 +802,7 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * The normalized paths that have a routing callback registered, in registration order. Mirrors
-   * reading the keys of Python's {@code _routing_callbacks} dict.
+   * The normalized paths that have a routing callback registered, in registration order.
    *
    * @return an unmodifiable list of normalized callback paths.
    */
@@ -824,15 +813,13 @@ public class Service implements AutoCloseable {
   /**
    * Return a mountable request handler that embeds this service's routes into a host application.
    *
-   * <p>Mirrors {@code SWMLService.as_router} / {@code WebMixin.as_router}: Python returns a FastAPI
-   * {@code APIRouter} (a {@code HostAppRouter}) so a host ASGI/FastAPI app can mount the agent's
-   * routes without running the service's own server. Java has no external web framework, so the
-   * cross-port equivalent of the "embed my routes in a host app" unit is the JDK's {@link
-   * com.sun.net.httpserver.HttpHandler} — the same shape Go's {@code AsRouter} uses with {@code
-   * http.Handler}. The returned handler dispatches an incoming {@link HttpExchange} to the same
-   * route table {@link #serve()} installs (health, ready, {@code /swaig}, subclass extras, and the
-   * main SWML endpoint), selecting the handler whose registered context path is the longest prefix
-   * of the request path — the same longest-prefix rule {@code HttpServer} itself applies.
+   * <p>Use this to mount the agent's routes inside an application you already run, instead of
+   * starting the service's own server. This SDK has no external web-framework dependency, so the
+   * "embed my routes in a host app" unit is the JDK's {@link com.sun.net.httpserver.HttpHandler}.
+   * The returned handler dispatches an incoming {@link HttpExchange} to the same route table {@link
+   * #serve()} installs (health, ready, {@code /swaig}, subclass extras, and the main SWML
+   * endpoint), selecting the handler whose registered context path is the longest prefix of the
+   * request path — the same longest-prefix rule {@code HttpServer} itself applies.
    *
    * @return an {@link com.sun.net.httpserver.HttpHandler} exposing this service's routes for
    *     mounting under a host {@link HttpServer} (e.g. {@code hostServer.createContext(prefix,
@@ -1005,17 +992,13 @@ public class Service implements AutoCloseable {
   }
 
   /**
-   * Whether full JSON-Schema validation is enabled and available. Mirrors
-   * SWMLService.full_validation_enabled.
+   * Whether full JSON-Schema validation is both enabled on this service and available at runtime.
    */
   public boolean fullValidationEnabled() {
     return schemaValidation && getSchemaUtils().isFullValidationAvailable();
   }
 
-  /**
-   * Manually set the proxy URL base for webhook callbacks (may be called at runtime). Mirrors
-   * SWMLService.manual_set_proxy_url.
-   */
+  /** Manually set the proxy URL base for webhook callbacks (may be called at runtime). */
   public Service manualSetProxyUrl(String proxyUrl) {
     this.proxyUrlBase = proxyUrl;
     return this;
@@ -1023,10 +1006,7 @@ public class Service implements AutoCloseable {
 
   /**
    * The {@code (status, headers, body)} triple returned by the framework-free {@link
-   * #handleRequest} dispatch core. Mirrors the language-neutral {@code tuple<int,
-   * dict<string,string>, string>} the Python reference {@code handle_request} returns and the
-   * {@code (int, Dictionary, string)} .NET {@code HandleRequest} returns — Java has no value-tuple
-   * type, so this record stands in for it (the enumerator records the canonical tuple shape).
+   * #handleRequest} dispatch core. Java has no value-tuple type, so this record stands in for one.
    *
    * @param status the HTTP status code (200, 307, 401, …).
    * @param headers the response headers (e.g. {@code Location} for a 307 redirect, {@code
@@ -1038,12 +1018,11 @@ public class Service implements AutoCloseable {
   /**
    * Framework-free request-dispatch core.
    *
-   * <p>This is the primitive dispatch surface the SDK ports share (mirrors the Python reference
-   * {@code SWMLService.handle_request(method, url, headers, body) -> (status, headers, body)} and
-   * the .NET {@code (int, Dictionary, string) HandleRequest(method, path, headers, body)}). It
-   * performs basic-auth, the routing-callback check, and the {@code onRequest} modification over
-   * plain primitives instead of a {@link HttpExchange}, so the same dispatch behavior (identical
-   * status codes, headers, and body) is reachable without the embedded HTTP server.
+   * <p>This is the primitive dispatch surface: {@code handleRequest(method, path, headers, body)}
+   * returns {@code (status, headers, body)}. It performs basic-auth, the routing-callback check,
+   * and the {@code onRequest} modification over plain primitives instead of a {@link HttpExchange},
+   * so the same dispatch behavior (identical status codes, headers, and body) is reachable without
+   * the embedded HTTP server.
    *
    * @param method HTTP method, e.g. {@code "GET"} or {@code "POST"}.
    * @param url the full request URL (used to derive the routing-callback path).
@@ -1180,7 +1159,7 @@ public class Service implements AutoCloseable {
 
   /**
    * Extract the SIP username (the user portion of the {@code to} SIP URI) from a request body's
-   * call data. Mirrors the static SWMLService.extract_sip_username.
+   * call data.
    *
    * @param requestBody the parsed request body (expects {@code call.to} or a top-level {@code to})
    * @return the SIP username, or null when none is present
@@ -1298,11 +1277,10 @@ public class Service implements AutoCloseable {
 
   /**
    * Typed overload of {@link #connect(Map)}: dial a SIP URI or phone number described by the
-   * generated {@link com.signalwire.sdk.swml.generated.ConnectConfig} wire type. Mirrors the
-   * reference's {@code connect(config: ConnectConfig | None)} (swml_verbs_generated.py) — the
-   * config's set fields carry the exact snake wire keys, and unset (null) fields are omitted from
-   * the rendered SWML, so this produces byte-identical wire to passing the equivalent {@link Map}.
-   * The {@code Map} overload remains for the genuinely-dynamic/forward-compat path.
+   * generated {@link com.signalwire.sdk.swml.generated.ConnectConfig} wire type. The config's set
+   * fields carry the exact snake_case wire keys, and unset (null) fields are omitted from the
+   * rendered SWML, so this produces byte-identical wire to passing the equivalent {@link Map}. The
+   * {@code Map} overload remains for the genuinely-dynamic/forward-compat path.
    *
    * @param config the typed connect config; when {@code null}, renders an empty {@code connect}.
    */
@@ -1856,8 +1834,7 @@ public class Service implements AutoCloseable {
    * #handleRequest}, and marshals the returned {@code (status, headers, body)} triple back onto the
    * exchange. This is what makes {@link #serve()} and {@link #asRouter()} reach the
    * routing-callback {@code 307} branch (previously the served path re-implemented auth+render
-   * inline and never called the routing callback). Mirrors the .NET {@code DispatchAsync} / {@code
-   * RunHttp} adapters that funnel the served request through {@code HandleRequest}.
+   * inline and never called the routing callback).
    */
   protected void handleSwmlExchange(HttpExchange exchange) throws IOException {
     String method = exchange.getRequestMethod();

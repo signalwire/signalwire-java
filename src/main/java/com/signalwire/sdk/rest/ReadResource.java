@@ -11,9 +11,8 @@ import java.util.Map;
 /**
  * Read-only REST resource: {@code list} + {@code get}, no write verbs.
  *
- * <p>Mirrors Python's {@code signalwire.rest.namespaces._base.ReadResource}. Used by log/read
- * resources (fax logs, message logs, voice logs, conference logs, video room sessions, fabric
- * addresses) whose canonical surface is list + get only.
+ * <p>Used by log/read resources (fax logs, message logs, voice logs, conference logs, video room
+ * sessions, fabric addresses) whose canonical surface is list + get only.
  */
 public class ReadResource extends BaseResource {
 
@@ -53,10 +52,9 @@ public class ReadResource extends BaseResource {
   /**
    * Iterate every item across all pages of this resource's list endpoint.
    *
-   * <p>Mirrors Python's {@code ReadResource.paginate(**params)}. Where {@link #list()} returns a
-   * single raw page (the server's first response), {@code paginate()} returns a {@link
-   * PaginatedIterator} that follows the {@code links.next} cursor and yields each item across all
-   * pages, so callers no longer hand-build the path + token loop:
+   * <p>Where {@link #list()} returns a single raw page (the server's first response), {@code
+   * paginate()} returns a {@link PaginatedIterator} that follows the {@code links.next} cursor and
+   * yields each item across all pages, so callers no longer hand-build the path + token loop:
    *
    * <pre>{@code
    * for (Map<String, Object> address : client.fabric().addresses().paginate()) {

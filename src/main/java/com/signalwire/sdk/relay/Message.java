@@ -340,30 +340,32 @@ public class Message {
 
   /**
    * The terminal {@link RelayEvent}, or {@code null} if the message has not yet reached a terminal
-   * state. Python-surface name for the reference's {@code Message.result} property (the {@link
-   * #getResult()} accessor returns the same value wrapped in an {@link Optional}).
+   * state. The {@link #getResult()} accessor returns the same value wrapped in an {@link Optional}.
+   *
+   * @return the terminal event, or {@code null}.
    */
   public RelayEvent result() {
     return done ? result : null;
   }
 
   /**
-   * Block until the message reaches a terminal state, returning the terminal event. Java-idiom name
-   * for the reference's {@code Message.wait}: the bare name {@code wait} collides with {@code
-   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
-   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   * Block until the message reaches a terminal state, returning the terminal event. The name is
+   * {@code await} because the bare name {@code wait} collides with {@code java.lang.Object.wait()},
+   * which is final and cannot be overridden.
+   *
+   * @return the terminal event.
    */
   public RelayEvent await() {
     return waitForCompletion();
   }
 
   /**
-   * Block until the message reaches a terminal state, with a timeout. Java-idiom name for the
-   * reference's {@code Message.wait(timeout)} (see {@link #await()}).
+   * Block until the message reaches a terminal state, with a timeout (see {@link #await()} for why
+   * the name is {@code await} rather than {@code wait}).
    *
-   * <p>The unit is SECONDS and the type is boxed {@code Double}, matching the reference's {@code
-   * timeout: float | None = None} and the port's {@code RequestOptions.timeout} spelling; {@code
-   * null} means "wait indefinitely". {@link #waitForCompletion(long)} takes milliseconds.
+   * <p>The unit is SECONDS and the type is boxed {@code Double} — the same spelling as {@code
+   * RequestOptions.timeout}; {@code null} means "wait indefinitely". Note that {@link
+   * #waitForCompletion(long)} takes MILLISECONDS instead.
    *
    * @param timeout timeout in seconds ({@code null} = no timeout)
    * @return the terminal event, or null on timeout

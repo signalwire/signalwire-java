@@ -16,8 +16,7 @@ import java.util.Set;
  * Handler for the SWML 'ai' verb.
  *
  * <p>The 'ai' verb is complex and requires specialized handling, particularly for managing prompts,
- * SWAIG functions, and AI configurations. Mirrors the Python reference {@code
- * signalwire.core.swml_handler.AIVerbHandler} and the Ruby {@code SignalWire::SWML::AIVerbHandler}.
+ * SWAIG functions, and AI configurations.
  */
 public class AIVerbHandler extends SWMLVerbHandler {
 

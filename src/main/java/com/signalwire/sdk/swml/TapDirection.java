@@ -16,9 +16,9 @@ package com.signalwire.sdk.swml;
  * }</pre>
  *
  * <p><strong>This is a DIFFERENT set from {@link RecordDirection}.</strong> {@code tap} uses {@code
- * hear} where {@code record_call} uses {@code listen}, mirroring the reference's two separate
- * validation lists — the two sets are modelled as two distinct enums and are never shared (see the
- * 3-vocabulary trap: SWML {@code record_call} {@code {speak,listen,both}} vs SWML {@code tap}
+ * hear} where {@code record_call} uses {@code listen}: the server validates the two verbs against
+ * two separate lists, so the two sets are modelled as two distinct enums and are never shared (see
+ * the 3-vocabulary trap: SWML {@code record_call} {@code {speak,listen,both}} vs SWML {@code tap}
  * {@code {speak,hear,both}} vs RELAY {@code {listen,speak,both}}).
  *
  * <p>Each constant's {@link #getValue() value} is the canonical wire string, so routing a tap
@@ -37,7 +37,7 @@ public enum TapDirection implements WireEnum {
 
   /**
    * The canonical wire string for this direction ({@code "speak"} / {@code "hear"} / {@code
-   * "both"}). Equivalent to PHP's backed-enum {@code ->value}.
+   * "both"}).
    *
    * @return the lower-case direction name as it appears on the wire.
    */
@@ -48,9 +48,8 @@ public enum TapDirection implements WireEnum {
 
   /**
    * Parse a wire string into a {@link TapDirection}, or return {@code null} if it is not a
-   * recognised direction (the same strings the Python reference would reject with {@code
-   * ValueError}). Note {@code "listen"} is valid for {@link RecordDirection} but NOT for {@code
-   * tap}, so it returns {@code null} here. The Java analog of Rust's {@code from_str}.
+   * recognised direction — the same strings the server rejects. Note {@code "listen"} is valid for
+   * {@link RecordDirection} but NOT for {@code tap}, so it returns {@code null} here.
    *
    * @param wire the candidate wire string (case-sensitive).
    * @return the matching constant, or {@code null} if none matches.

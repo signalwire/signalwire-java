@@ -19,24 +19,22 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * WireDump — the Java port's WIRE-CRYPTO dump program for the cross-port wire differ
- * (porting-sdk/scripts/diff_port_wire.py).
+ * WIRE-CRYPTO dump program for the wire differ.
  *
- * <p>It runs the shared {@code wire_crypto} corpus against the Java SDK's native security package
- * ({@link SessionManager} tokens, webhook-signature validation, redact/filter helpers) and prints
- * ONE JSON object mapping
+ * <p>It runs the shared {@code wire_crypto} corpus against this SDK's security package ({@link
+ * SessionManager} tokens, webhook-signature validation, redact/filter helpers) and prints ONE JSON
+ * object mapping
  *
  * <pre>
  *   case-id -&gt; observable-artifact
  * </pre>
  *
  * to stdout. The differ runs this program, canonicalizes both sides, and byte-compares each entry
- * against the Python oracle. Only stdout carries JSON; nothing else is printed there. Mirrors Go's
- * {@code cmd/wire-dump/main.go}.
+ * against the expected artifacts. Only stdout carries JSON; nothing else is printed there.
  *
  * <p>The corpus sentinels ({@code __ORACLE_FORMAT_TOKEN__}, {@code __TAMPERED_TOKEN__}, {@code
- * __ORACLE_SIG__}) are materialized here from the fixed per-case SECRET exactly as the oracle
- * materializes them, so the interop/tamper cases are reproducible.
+ * __ORACLE_SIG__}) are materialized here from the fixed per-case SECRET, so the interop/tamper
+ * cases are reproducible.
  *
  * <p>Run via the {@code wireDump} Gradle task:
  *

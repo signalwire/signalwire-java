@@ -32,7 +32,7 @@ public final class TypeInference {
 
   /**
    * The inferred-schema tuple returned by {@link #inferSchema}: {@code (parameters, required,
-   * description, isTyped, hasRawData)}. Mirrors Python's {@code infer_schema} return contract.
+   * description, isTyped, hasRawData)}.
    *
    * @param parameters name → JSON-Schema property map (string keys, per-property {type,
    *     description, …} maps).
@@ -112,9 +112,9 @@ public final class TypeInference {
 
   /**
    * Wrap a typed handler so it can be invoked with the standard SWAIG calling convention {@code
-   * (args, rawData)}. Mirrors Python's {@code create_typed_handler_wrapper}: the wrapper passes the
-   * raw SWAIG payload to the wrapped handler only when it declared it ({@code hasRawData}),
-   * otherwise it is dropped (the wrapped handler sees {@code null} raw data).
+   * (args, rawData)}. The wrapper passes the raw SWAIG payload to the wrapped handler only when it
+   * declared it ({@code hasRawData}), otherwise it is dropped (the wrapped handler sees {@code
+   * null} raw data).
    *
    * @param func the typed handler.
    * @param hasRawData pass the raw SWAIG payload through when {@code true}.

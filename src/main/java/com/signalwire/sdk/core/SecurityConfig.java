@@ -20,11 +20,10 @@ import java.util.Map;
 /**
  * Unified security configuration for SignalWire services.
  *
- * <p>Java port of the Python reference {@code signalwire.core.security_config.SecurityConfig}.
- * Provides centralized security settings (SSL, allowed hosts, CORS, security headers, basic auth)
- * consumed by the web/agent services, ensuring consistent behavior. Defaults are applied first,
- * then environment variables (backward compatibility), then a config file if available (highest
- * priority).
+ * <p>Provides centralized security settings (SSL, allowed hosts, CORS, security headers, basic
+ * auth) consumed by the web/agent services, ensuring consistent behavior. Defaults are applied
+ * first, then environment variables (backward compatibility), then a config file if available
+ * (highest priority).
  */
 public class SecurityConfig {
 

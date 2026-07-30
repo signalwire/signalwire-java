@@ -16,10 +16,10 @@ import java.util.Map;
 /**
  * Builder for creating structured prompts using the Prompt Object Model.
  *
- * <p>Java port of the Python reference {@code signalwire.core.pom_builder.PomBuilder}. A flexible
- * wrapper around {@link PromptObjectModel} that allows dynamic creation of sections on demand,
- * adding content to existing sections, nesting subsections, and rendering to Markdown or XML. There
- * are no predefined section types. All mutator methods return {@code this} for fluent chaining.
+ * <p>A flexible wrapper around {@link PromptObjectModel} that allows dynamic creation of sections
+ * on demand, adding content to existing sections, nesting subsections, and rendering to Markdown or
+ * XML. There are no predefined section types. All mutator methods return {@code this} for fluent
+ * chaining.
  */
 public class PomBuilder {
 
@@ -105,26 +105,19 @@ public class PomBuilder {
   }
 
   /**
-   * Add content to a section with every optional param at its reference default ({@code body=None},
-   * {@code bullet=None}, {@code bullets=None}). Mirrors {@code PomBuilder.add_to_section(title,
-   * body=None, bullet=None, bullets=None)} — signalwire/core/pom_builder.py:84.
+   * Add content to a section with no body and no bullets — creates the section if it does not yet
+   * exist, and otherwise leaves it unchanged.
    */
   public PomBuilder addToSection(String title) {
     return addToSection(title, null, null, null);
   }
 
-  /**
-   * Add content to a section supplying {@code body}, with {@code bullet=None} and {@code
-   * bullets=None} — signalwire/core/pom_builder.py:84.
-   */
+  /** Add content to a section supplying only {@code body}; no bullets are appended. */
   public PomBuilder addToSection(String title, String body) {
     return addToSection(title, body, null, null);
   }
 
-  /**
-   * Add content to a section supplying {@code body} and {@code bullet}, with {@code bullets=None} —
-   * signalwire/core/pom_builder.py:84.
-   */
+  /** Add content to a section supplying {@code body} and a single {@code bullet}. */
   public PomBuilder addToSection(String title, String body, String bullet) {
     return addToSection(title, body, bullet, null);
   }
@@ -208,9 +201,7 @@ public class PomBuilder {
     return pom.toJson();
   }
 
-  /**
-   * Create a {@link PomBuilder} from a list of section maps. Mirrors Python {@code from_sections}.
-   */
+  /** Create a {@link PomBuilder} from a list of section maps. */
   public static PomBuilder fromSections(List<Map<String, Object>> sections) {
     PomBuilder builder = new PomBuilder();
     builder.pom = PromptObjectModel.fromJsonMap(sections);

@@ -15,12 +15,12 @@ import java.util.Map;
 /**
  * DocWireRunner — the DOC-WIRE fixture runner for signalwire-java.
  *
- * <p>The DOC-WIRE gate (porting-sdk {@code scripts/doc_wire.py}) spawns {@code mock_signalwire} in
- * flag mode, exports {@code MOCK_SIGNALWIRE_PORT}, then runs THIS program; it then reads the mock
- * journal and fails on any {@code wire_violations}. This program's only job is to DRIVE the
- * documented REST calls against the mock so the mock journals what the documented fixtures actually
- * put on the wire — a doc lie like {@code area_code=} (spec {@code areacode}) shows up as a
- * journaled violation and fails the gate.
+ * <p>The DOC-WIRE gate spawns {@code mock_signalwire} in flag mode, exports {@code
+ * MOCK_SIGNALWIRE_PORT}, then runs THIS program; it then reads the mock journal and fails on any
+ * {@code wire_violations}. This program's only job is to DRIVE the documented REST calls against
+ * the mock so the mock journals what the documented fixtures actually put on the wire — a doc lie
+ * like {@code area_code=} (spec {@code areacode}) shows up as a journaled violation and fails the
+ * gate.
  *
  * <p>It replays the wire-bearing REST fixtures shown in {@code README.md}, {@code
  * examples/QuickstartRest.java}, {@code rest/docs/*}, and {@code rest/examples/*} — the exact

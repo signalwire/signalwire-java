@@ -22,9 +22,9 @@ import java.util.Set;
 /**
  * Iterator that walks paged REST responses by following the {@code links.next} cursor.
  *
- * <p>Mirrors {@code signalwire.rest._pagination.PaginatedIterator}: the constructor records the
- * {@code http} client, path, query params, and the data-list key without performing an HTTP fetch.
- * Each call to {@link #next()} returns the next item from the buffered page; when the buffer is
+ * <p>The constructor records the {@code http} client, path, query params, and the data-list key
+ * WITHOUT performing an HTTP fetch — no request is issued until the first {@link #next()}. Each
+ * call to {@link #next()} returns the next item from the buffered page; when the buffer is
  * exhausted the iterator follows {@code links.next}, parses the URL query into the next request's
  * params, and fetches the next page.
  *
@@ -47,9 +47,9 @@ public final class PaginatedIterator
   private boolean done = false;
 
   /**
-   * Cycle guard: {@code links.next} cursors already followed. Because termination now keys ONLY on
-   * an ABSENT next link (matching the corrected Python reference), a server that keeps returning
-   * the SAME {@code links.next} would otherwise loop forever. Seeing a repeat terminates iteration.
+   * Cycle guard: {@code links.next} cursors already followed. Because termination keys ONLY on an
+   * ABSENT next link, a server that keeps returning the SAME {@code links.next} would otherwise
+   * loop forever. Seeing a repeat terminates iteration.
    */
   private final Set<String> seenNext = new HashSet<>();
 
@@ -190,9 +190,8 @@ public final class PaginatedIterator
   }
 
   /**
-   * Parse the query string of {@code nextUrl} into a flat {@code key -> value} map. Multi-valued
-   * keys collapse to the last occurrence to match Python's behaviour ({@code v[0] if len(v) == 1
-   * else v}, but flattened to a single string).
+   * Parse the query string of {@code nextUrl} into a flat {@code key -> value} map. A key that
+   * appears more than once collapses to its LAST occurrence.
    */
   static Map<String, String> parseQuery(String nextUrl) {
     Map<String, String> out = new LinkedHashMap<>();

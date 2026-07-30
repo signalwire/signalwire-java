@@ -27,20 +27,18 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * HttpDump — the Java port's HTTP dump program for the cross-port HTTP differ
- * (porting-sdk/scripts/diff_port_http.py).
+ * HttpDump — the HTTP dump program consumed by the SDK's HTTP-conformance differ.
  *
- * <p>For each {@code http_corpus} case it feeds a synthetic request into the Java SDK's
- * framework-free dispatch core ({@link Service#handleRequest}, {@link Service#extractSipUsername},
- * the webhook {@link WebhookValidator}, and the {@link LambdaAgentHandler} serverless adapter) and
- * prints ONE JSON object mapping
+ * <p>For each {@code http_corpus} case it feeds a synthetic request into this SDK's framework-free
+ * dispatch core ({@link Service#handleRequest}, {@link Service#extractSipUsername}, the webhook
+ * {@link WebhookValidator}, and the {@link LambdaAgentHandler} serverless adapter) and prints ONE
+ * JSON object mapping
  *
  * <pre>
  *   case-id -&gt; reduced-artifact
  * </pre>
  *
- * to stdout, reduced to the same shape the Python oracle emits. Only stdout carries JSON. Mirrors
- * Go's {@code cmd/http-dump/main.go}.
+ * to stdout, reduced to the canonical artifact shape the differ compares. Only stdout carries JSON.
  *
  * <p>Run via the {@code httpDump} Gradle task:
  *

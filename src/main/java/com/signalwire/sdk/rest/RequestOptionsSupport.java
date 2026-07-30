@@ -9,13 +9,11 @@ package com.signalwire.sdk.rest;
 import java.util.Set;
 
 /**
- * Resolution + retry-policy helpers for the REST request-options envelope (plan 4.2).
+ * Resolution + retry-policy helpers for the REST request-options envelope.
  *
- * <p>Java has no module-level free functions, so the reference's module-level {@code resolve} and
- * {@code status_is_retryable} (in {@code signalwire.rest._request_options}) are hosted here as
- * static methods and projected back to their canonical free-function homes by the signature/surface
- * enumerators (FREE_FUNCTION_PROJECTIONS). {@link EffectiveOptions} is the port's stand-in for the
- * reference's private {@code _EffectiveOptions} — every field concrete, so the request loop reads
+ * <p>Java has no module-level free functions, so {@link #resolve} and {@link #statusIsRetryable}
+ * are hosted here as static methods on an uninstantiable holder. {@link EffectiveOptions} is the
+ * fully-resolved form of a {@link RequestOptions} — every field concrete, so the request loop reads
  * values without re-checking defaults on every attempt.
  */
 public final class RequestOptionsSupport {
@@ -38,7 +36,7 @@ public final class RequestOptionsSupport {
 
   /**
    * A {@link RequestOptions} with every field resolved to a concrete value. Produced by {@link
-   * #resolve}; no {@code null} remains. Mirrors the reference's private {@code _EffectiveOptions}.
+   * #resolve}; no {@code null} remains.
    */
   public record EffectiveOptions(
       double timeout,
@@ -51,7 +49,7 @@ public final class RequestOptionsSupport {
    * Resolve the effective options: per-request over client-default over built-in.
    *
    * <p>A {@code null} field inherits the next level down; the built-in defaults are the floor. The
-   * result has every field concrete. Mirrors the reference's module-level {@code resolve}.
+   * result has every field concrete.
    *
    * @param clientDefault the client-level default options (may be {@code null})
    * @param perRequest the per-request override (may be {@code null})
@@ -76,8 +74,7 @@ public final class RequestOptionsSupport {
    * <p>Idempotent methods (GET/PUT/DELETE) retry on the full {@code retryOnStatus} set.
    * Non-idempotent methods (POST/PATCH) retry only on 429/503 (the Retry-After-bearing throttles,
    * which mean "the request was NOT processed, back off"), never on 500/502/504, to avoid replaying
-   * a side effect that may have partially applied. Mirrors the reference's {@code
-   * status_is_retryable}.
+   * a side effect that may have partially applied.
    *
    * @param method the HTTP method
    * @param status the HTTP status returned

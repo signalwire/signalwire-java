@@ -13,23 +13,18 @@ import java.util.Map;
 /**
  * Fluent builder for SWML documents.
  *
- * <p>Mirrors the Python reference {@code signalwire.core.swml_builder.SWMLBuilder} (which wraps an
- * {@code SWMLService}) and the Ruby {@code SignalWire::SWML::SWMLBuilder}. It delegates to an
- * underlying {@link Service} instance for the actual document creation.
+ * <p>Delegates to an underlying {@link Service} instance for the actual document creation.
  *
  * <p>The explicit verb helpers ({@link #answer()}, {@link #hangup()}, {@link #play(Map)}, {@link
  * #ai(Map)}, {@link #say(String)}) cover the common verbs; every other schema verb is dispatched
- * through {@link #verb(String, Map)} / {@link #sleepVerb(int)} — the Java analog of the Python
- * reference's runtime {@code __getattr__} verb dispatch (Java has no {@code __getattr__} / {@code
- * method_missing}, so the catch-all is a named method).
+ * through {@link #verb(String, Map)} / {@link #sleepVerb(int)}, which take the verb name as an
+ * argument.
  *
  * <p><b>Every verb goes through {@link Service#addVerb} — the validating choke point.</b> The
  * builder must never reach past it to {@code service.getDocument().addVerb(...)}: the raw Document
  * entry point writes whatever it is handed, which is how schema-invalid configs shipped silently
  * (an empty {@code play} with no url, an {@code ai} with no prompt, LLM tuning keys at the {@code
- * ai} verb's top level). The reference does the same — every method in {@code swml_builder.py},
- * including the auto-vivified verb dispatch and the {@code sleep} special case, calls {@code
- * self.service.add_verb(...)}.
+ * ai} verb's top level).
  */
 public class SWMLBuilder {
 

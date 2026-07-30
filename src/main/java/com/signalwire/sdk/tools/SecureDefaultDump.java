@@ -17,8 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * SecureDefaultDump — the Java port's SECURE-DEFAULT dump program for the cross-port secure-default
- * differ (porting-sdk/scripts/diff_port_secure_default.py, A+ campaign A1 / PSDK-4a).
+ * SECURE-DEFAULT dump program for the secure-default differ.
  *
  * <p>Defines a default (no explicit {@code secure=}) tool + an explicit {@code secure=false} tool,
  * renders the agent's SWML with the fixed corpus {@code CALL_ID}, and emits per fixture the
@@ -36,9 +35,9 @@ import java.util.Map;
  *       vary per run; the KEY PATH is the whole contract and is preserved exactly).
  * </ul>
  *
- * <p>This program deliberately makes NO judgement about whether the render is correct. The previous
+ * <p>This program deliberately makes NO judgement about whether the render is correct. An earlier
  * version emitted a self-computed {@code wire_reflects_secure} boolean, which made the gate
- * vacuous: java classified on {@code meta_data_token} (the SWML metadata SCOPING key) and passed
+ * vacuous: it classified on {@code meta_data_token} (the SWML metadata SCOPING key) and passed
  * green while emitting a tokenless {@code web_hook_url}. The differ now sees the keys and decides.
  *
  * <p>Only stdout carries JSON; the SDK Logger is silenced. Run via the {@code secureDefaultDump}
@@ -121,8 +120,7 @@ final class SecureDefaultDump {
   /**
    * Replace every nondeterministic token VALUE (an HMAC) with the corpus placeholder while
    * preserving every KEY and key path exactly — both a token-suffixed field and a token-suffixed
-   * query parameter on a URL value. Mirrors diff_port_secure_default.redact_entry so the differ's
-   * re-application is a no-op.
+   * query parameter on a URL value, so re-applying the same redaction is a no-op.
    */
   private static Map<String, Object> redact(Map<String, Object> fn) {
     Map<String, Object> out = new LinkedHashMap<>();

@@ -94,11 +94,9 @@ public class Action {
   }
 
   /**
-   * Whether the action has reached its terminal state — the reference's {@code completed} flag,
-   * which starts false and is set true exactly once by the terminal-state resolve (call.py:90, then
-   * :102 inside {@code _complete}). The reference exposes BOTH this attribute and an {@code
-   * is_done()} method over the same state, so this port does too; {@link #isDone()} is the method
-   * form and reads the identical field.
+   * Whether the action has reached its terminal state. The flag starts {@code false} and is set
+   * {@code true} exactly once, when the action resolves. {@link #isDone()} is the method form and
+   * reads the identical field.
    *
    * @return true once the action has completed.
    */
@@ -169,22 +167,23 @@ public class Action {
   }
 
   /**
-   * Wait for the action to complete, returning the terminal event. Java-idiom name for the
-   * reference's {@code Action.wait}: the bare name {@code wait} collides with {@code
-   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
-   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   * Wait for the action to complete, returning the terminal event. The name is {@code await}
+   * because the bare name {@code wait} collides with {@code java.lang.Object.wait()}, which is
+   * final and cannot be overridden.
+   *
+   * @return the terminal event.
    */
   public RelayEvent await() {
     return waitForCompletion();
   }
 
   /**
-   * Wait for the action to complete with a timeout. Java-idiom name for the reference's {@code
-   * Action.wait(timeout)} (see {@link #await()} for why the name differs).
+   * Wait for the action to complete with a timeout (see {@link #await()} for why the name is {@code
+   * await} rather than {@code wait}).
    *
-   * <p>The unit is SECONDS and the type is boxed {@code Double}, matching the reference's {@code
-   * timeout: float | None = None} and the port's {@code RequestOptions.timeout} spelling; {@code
-   * null} means "wait indefinitely". {@link #waitForCompletion(long)} takes milliseconds.
+   * <p>The unit is SECONDS and the type is boxed {@code Double} — the same spelling as {@code
+   * RequestOptions.timeout}; {@code null} means "wait indefinitely". Note that {@link
+   * #waitForCompletion(long)} takes MILLISECONDS instead.
    *
    * @param timeout timeout in seconds ({@code null} = no timeout)
    * @return the terminal event, or null on timeout
@@ -277,15 +276,14 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_PLAY_STOP, baseParams());
     }
 
-    /** Pause playback. Mirrors the reference PlayAction.pause. */
+    /** Pause playback, with no {@code behavior} hint. */
     public void pause() {
       pause(null);
     }
 
     /**
-     * Pause playback with an optional {@code behavior} hint. Mirrors the reference {@code
-     * PlayAction.pause(behavior: str | None)} — when {@code behavior} is non-null it rides in the
-     * request params.
+     * Pause playback with an optional {@code behavior} hint — when {@code behavior} is non-null it
+     * rides in the request params.
      *
      * @param behavior optional pause behavior; may be {@code null}
      */
@@ -338,15 +336,14 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_RECORD_STOP, baseParams());
     }
 
-    /** Pause the recording. Mirrors the reference RecordAction.pause. */
+    /** Pause the recording, with no {@code behavior} hint. */
     public void pause() {
       pause(null);
     }
 
     /**
-     * Pause the recording with an optional {@code behavior} hint. Mirrors the reference {@code
-     * RecordAction.pause(behavior: str | None)} — when {@code behavior} is non-null it rides in the
-     * request params.
+     * Pause the recording with an optional {@code behavior} hint — when {@code behavior} is
+     * non-null it rides in the request params.
      *
      * @param behavior optional pause behavior; may be {@code null}
      */
@@ -440,15 +437,14 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_STOP, baseParams());
     }
 
-    /** Pause the play-and-collect operation. Mirrors the reference CollectAction.pause. */
+    /** Pause the play-and-collect operation, with no {@code behavior} hint. */
     public void pause() {
       pause(null);
     }
 
     /**
-     * Pause the play-and-collect operation with an optional {@code behavior} hint. Mirrors the
-     * reference {@code CollectAction.pause(behavior: str | None)} — when {@code behavior} is
-     * non-null it rides in the request params.
+     * Pause the play-and-collect operation with an optional {@code behavior} hint — when {@code
+     * behavior} is non-null it rides in the request params.
      *
      * @param behavior optional pause behavior; may be {@code null}
      */
@@ -460,7 +456,7 @@ public class Action {
       getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_PAUSE, params);
     }
 
-    /** Resume the play-and-collect operation. Mirrors the reference CollectAction.resume. */
+    /** Resume the play-and-collect operation paused by {@link #pause()}. */
     public void resume() {
       getCall().executeOnCall(Constants.METHOD_PLAY_AND_COLLECT_RESUME, baseParams());
     }
@@ -485,8 +481,8 @@ public class Action {
     }
 
     /**
-     * Restart the digit/speech input timers on this standalone collect. Mirrors the reference
-     * StandaloneCollectAction.start_input_timers (same wire method as CollectAction).
+     * Restart the digit/speech input timers on this standalone collect. Sends the same wire method
+     * as a {@code CollectAction}.
      */
     public void startInputTimers() {
       Map<String, Object> params = new LinkedHashMap<>();

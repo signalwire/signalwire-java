@@ -106,9 +106,9 @@ public class ClaudeSkillsSkill implements SkillBase {
 
   /**
    * Walk the immediate subdirectories of {@code root}; each subdirectory that declares a {@code
-   * SKILL.md} is registered as one skill (its directory name is the skill name). Mirrors Python's
-   * {@code _discover_skills}, which iterates {@code skills_path.iterdir()} and requires a {@code
-   * SKILL.md} in each candidate directory. Returns the number of valid skills discovered.
+   * SKILL.md} is registered as one skill (its directory name is the skill name). A candidate
+   * subdirectory without a {@code SKILL.md} is not a valid skill declaration and is skipped.
+   * Returns the number of valid skills discovered.
    */
   private int discoverSkillMdDirectories(Path root) {
     int count = 0;
@@ -138,8 +138,9 @@ public class ClaudeSkillsSkill implements SkillBase {
 
   /**
    * Register top-level {@code *.md} files placed directly in {@code root} (single-file skill
-   * declaration). This is the port's back-compat convenience alongside the Python subdirectory
-   * model. Returns the number of skills registered.
+   * declaration). This is accepted in addition to the one-directory-per-skill layout, so a skill
+   * that needs no supporting files can be a single markdown file. Returns the number of skills
+   * registered.
    */
   private int discoverTopLevelMdFiles(Path root) {
     int count = 0;

@@ -16,22 +16,18 @@ import java.util.function.BiFunction;
 /**
  * Represents a SWAIG function — a tool the AI model can call.
  *
- * <p>Mirrors the Python reference {@code signalwire.core.swaig_function.SWAIGFunction} and the Ruby
- * {@code SignalWire::Swaig::SWAIGFunction}. A SWAIGFunction is exactly the same concept as a "tool"
- * in native OpenAI / Anthropic tool calling: it holds a name/description/parameters/handler and
- * renders into the tool schema sent to the model.
+ * <p>A SWAIGFunction is the same concept as a "tool" in native OpenAI / Anthropic tool calling: it
+ * holds a name/description/parameters/handler and renders into the tool schema sent to the model.
  *
- * <p>Construct one via {@link #builder()} (the {@code name}, {@code description}, and {@code
- * handler} are required; everything else is optional) — the enumerator records this as the single
- * {@code __init__}.
+ * <p>Construct one via {@link #builder()} — the {@code name}, {@code description}, and {@code
+ * handler} are required; everything else is optional.
  */
 public class SWAIGFunction {
 
   /**
    * Handler signature: {@code (args, rawData) -> result}. The result may be a {@link
    * FunctionResult}, a {@code Map} already containing a {@code "response"} key, any other {@code
-   * Map}, or a plain value coerced via {@code toString()} — matching the Python reference's
-   * coercion in {@link #execute}.
+   * Map}, or a plain value coerced via {@code toString()} — see the coercion in {@link #execute}.
    */
   @FunctionalInterface
   public interface Handler extends BiFunction<Map<String, Object>, Map<String, Object>, Object> {}
@@ -186,9 +182,9 @@ public class SWAIGFunction {
   /**
    * Call the underlying handler function.
    *
-   * <p>Java analog of the Python reference's {@code __call__} (which makes the object callable).
-   * {@code function.call(args, rawData)} invokes the handler and returns its raw (uncoerced) return
-   * value.
+   * <p>{@code function.call(args, rawData)} invokes the handler and returns its raw (uncoerced)
+   * return value. Use {@link #execute} instead when you want the result coerced to a {@link
+   * FunctionResult} map and handler errors caught.
    *
    * @param args parsed arguments for the function
    * @param rawData optional raw request data
@@ -199,8 +195,8 @@ public class SWAIGFunction {
   }
 
   /**
-   * Execute the function with {@code raw_data} at its reference default of {@code None}. Mirrors
-   * {@code SWAIGFunction.execute(args, raw_data=None)} — signalwire/core/swaig_function.py:142.
+   * Execute the function with no raw request data — equivalent to passing {@code null} for {@code
+   * rawData}.
    *
    * @param args parsed arguments for the function
    * @return function result as a Map (from {@link FunctionResult#toMap()})
@@ -233,11 +229,9 @@ public class SWAIGFunction {
    * Validate the arguments against the parameter schema.
    *
    * <p>Performs a lightweight built-in check of the {@code required} list and each property's
-   * {@code type}. This is the Python reference's optional-validator FALLBACK behaviour: the
-   * reference tries {@code jsonschema_rs} / {@code jsonschema} and, when neither is installed,
-   * skips validation. Java has no bundled JSON-Schema validator dependency, so only the
-   * always-available built-in check is ported here (a real dependency limit — see the class docs).
-   * If no properties are declared, validation passes.
+   * {@code type}. This SDK bundles no JSON-Schema validator dependency, so this built-in check is
+   * the whole of the validation — constructs beyond {@code required} and {@code type} (patterns,
+   * ranges, nested schemas) are not enforced. If no properties are declared, validation passes.
    *
    * @param args arguments to validate
    * @return a {@link ValidationResult} of {@code (valid, errors)}

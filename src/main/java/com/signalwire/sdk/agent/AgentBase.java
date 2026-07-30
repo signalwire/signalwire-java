@@ -168,8 +168,8 @@ public class AgentBase extends Service {
 
   /**
    * Full construction contract. Forwards {@code schemaPath} / {@code configFile} / {@code
-   * schemaValidation} to {@link Service} exactly as the reference's {@code AgentBase.__init__}
-   * forwards them to {@code super().__init__} (agent_base.py:205-207).
+   * schemaValidation} straight through to {@link Service}, which owns SWML schema loading and
+   * validation.
    *
    * @param name agent name/identifier.
    * @param route HTTP route path for this agent.
@@ -462,9 +462,8 @@ public class AgentBase extends Service {
     // -- Params the reference FORWARDS to SWMLService (agent_base.py:205-207) --
 
     /**
-     * Explicit path to the SWML schema file. When unset the SDK auto-discovers the bundled schema
-     * (the reference's {@code _find_schema_path}). Forwarded to {@link Service} / {@link
-     * SchemaUtils}.
+     * Explicit path to the SWML schema file. When unset the SDK auto-discovers the bundled schema.
+     * Forwarded to {@link Service} / {@link SchemaUtils}.
      *
      * @param path schema file path, or null to auto-discover.
      * @return this builder.
@@ -490,7 +489,7 @@ public class AgentBase extends Service {
 
     /**
      * Enable or disable SWML schema validation. Default {@code true}. Forwarded to {@link Service}
-     * / {@link SchemaUtils}, mirroring the reference's {@code schema_validation}.
+     * / {@link SchemaUtils}.
      *
      * @param enabled whether validation is on.
      * @return this builder.
@@ -503,8 +502,7 @@ public class AgentBase extends Service {
     // -- Agent-own construction params --
 
     /**
-     * Unique id for this agent. When unset a random UUID is generated, mirroring the reference's
-     * {@code agent_id or str(uuid.uuid4())}.
+     * Unique id for this agent. When unset a random UUID is generated.
      *
      * @param id agent id, or null to generate one.
      * @return this builder.
@@ -540,7 +538,7 @@ public class AgentBase extends Service {
 
     /**
      * Default webhook URL applied to every SWAIG function, in place of the URL derived from the
-     * agent's host/route. Mirrors the reference's {@code default_webhook_url}.
+     * agent's host/route.
      *
      * @param url the default SWAIG webhook URL, or null to derive it.
      * @return this builder.
@@ -562,8 +560,8 @@ public class AgentBase extends Service {
     }
 
     /**
-     * Enable the post-prompt override path. Default {@code false}. Mirrors the reference's {@code
-     * enable_post_prompt_override}.
+     * Enable the post-prompt override path (the {@code enable_post_prompt_override} setting).
+     * Default {@code false}.
      *
      * @param enabled whether the override is enabled.
      * @return this builder.
@@ -574,8 +572,8 @@ public class AgentBase extends Service {
     }
 
     /**
-     * Enable the check-for-input override path. Default {@code false}. Mirrors the reference's
-     * {@code check_for_input_override}.
+     * Enable the check-for-input override path (the {@code check_for_input_override} setting).
+     * Default {@code false}.
      *
      * @param enabled whether the override is enabled.
      * @return this builder.
@@ -587,8 +585,7 @@ public class AgentBase extends Service {
 
     /**
      * Lifetime, in seconds, of the per-call SWAIG function tokens this agent mints. Default {@code
-     * 3600}. Forwarded to the agent's {@link SessionManager}, mirroring the reference's {@code
-     * SessionManager(token_expiry_secs=…)}.
+     * 3600}. Forwarded to the agent's {@link SessionManager}.
      *
      * @param secs token lifetime in seconds.
      * @return this builder.
@@ -754,9 +751,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Load the {@code service} section of a config file, mirroring the reference's {@code
-   * AgentBase._load_service_config}. Returns an empty map when there is no config file, it is
-   * unreadable, or it carries no {@code service} section.
+   * Load the {@code service} section of a config file. Returns an empty map when there is no config
+   * file, it is unreadable, or it carries no {@code service} section.
    *
    * @param configFile explicit config path, or null to search the default locations.
    * @param serviceName service name seeding the default search paths.
@@ -805,8 +801,7 @@ public class AgentBase extends Service {
   // ============================================================
 
   /**
-   * This agent's unique id — the builder-supplied {@code agentId} or a generated UUID. Mirrors the
-   * reference's public {@code agent_id} attribute.
+   * This agent's unique id — the builder-supplied {@code agentId} or a generated UUID.
    *
    * @return the agent id, never null.
    */
@@ -1034,8 +1029,7 @@ public class AgentBase extends Service {
   /**
    * Returns the post-prompt text that was set via setPostPrompt, or null when none has been set.
    *
-   * <p>Mirrors Python's PromptManager.get_post_prompt / PromptMixin.get_post_prompt — used by SWML
-   * rendering when a post-prompt is configured.
+   * <p>Used by SWML rendering when a post-prompt is configured.
    */
   public String getPostPrompt() {
     return postPrompt;
@@ -1044,8 +1038,6 @@ public class AgentBase extends Service {
   /**
    * Returns the raw prompt text whatever setPromptText stored, or null when no raw prompt has been
    * set. Distinct from getPrompt() which may return a POM map when usePom is true.
-   *
-   * <p>Mirrors Python's PromptManager.get_raw_prompt.
    */
   public String getRawPrompt() {
     return promptText;
@@ -1053,10 +1045,8 @@ public class AgentBase extends Service {
 
   /**
    * Sets the prompt as a list of POM section maps. Each section map supports keys "title", "body",
-   * "bullets", "numbered", "numbered_bullets", and "subsections". Switches the agent to POM mode.
-   *
-   * <p>Mirrors Python's PromptManager.set_prompt_pom — accepts a list of section dicts and stores
-   * them in pomSections.
+   * "bullets", "numbered", "numbered_bullets", and "subsections". Switches the agent to POM mode,
+   * replacing any sections previously set.
    */
   public AgentBase setPromptPom(List<Map<String, Object>> pom) {
     this.usePom = true;
@@ -1088,8 +1078,6 @@ public class AgentBase extends Service {
   /**
    * Returns the contexts dictionary as serialised SWML, or null when no contexts have been defined
    * yet.
-   *
-   * <p>Mirrors Python's PromptManager.get_contexts which returns the contexts dict or None.
    */
   public Map<String, Object> getContexts() {
     if (contextBuilder == null) {
@@ -1212,11 +1200,10 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Dispatch a function call with {@code raw_data} at its reference default of {@code None}.
-   * Mirrors {@code ToolMixin.on_function_call(name, args, raw_data=None)} —
-   * signalwire/core/mixins/tool_mixin.py:235. Redeclared here (rather than inherited from {@link
-   * com.signalwire.sdk.swml.Service}) so the optional-{@code rawData} contract is visible on {@code
-   * AgentBase} itself; it delegates to the 3-arg override below.
+   * Dispatch a function call with {@code rawData} at its default of {@code null}. Redeclared here
+   * (rather than inherited from {@link com.signalwire.sdk.swml.Service}) so the optional-{@code
+   * rawData} contract is visible on {@code AgentBase} itself; it delegates to the 3-arg override
+   * below.
    */
   @Override
   public FunctionResult onFunctionCall(String name, Map<String, Object> args) {
@@ -1226,12 +1213,11 @@ public class AgentBase extends Service {
   /**
    * Dispatch a tool call to its registered handler, in process.
    *
-   * <p>This path does NOT validate a SWAIG token, matching the reference's {@code
-   * on_function_call}. The per-tool token is a WIRE artifact: a {@code secure} tool's rendered
-   * webhook URL carries {@code ?__token=<hmac>}, and it is the HTTP {@code /swaig} handler that
-   * validates it when the platform calls back. Enforcing it here would make every secure tool (the
-   * default) unreachable from {@code swaig-test}, MCP {@code tools/call}, and the prefab agents'
-   * own tools.
+   * <p>This path does NOT validate a SWAIG token. The per-tool token is a WIRE artifact: a {@code
+   * secure} tool's rendered webhook URL carries {@code ?__token=<hmac>}, and it is the HTTP {@code
+   * /swaig} handler that validates it when the platform calls back. Enforcing it here would make
+   * every secure tool (the default) unreachable from {@code swaig-test}, MCP {@code tools/call},
+   * and the prefab agents' own tools.
    *
    * <p>Never throws: an unknown or handler-less name and any exception the handler raises both come
    * back as a {@link FunctionResult} carrying the message, so one bad tool cannot kill the call.
@@ -1331,11 +1317,10 @@ public class AgentBase extends Service {
    * decision and cannot drift apart. Only the SECURITY half is transport-agnostic; dynamic
    * reconfiguration genuinely needs a request object and stays on the HTTP hook.
    *
-   * <p>Internal plumbing, not SDK surface: the reference files the same core as a private helper
-   * ({@code _swaig_validate_token}), so publishing it would invent an entry point the reference
-   * does not have. The out-of-package transports ({@code AgentServer}, {@code LambdaAgentHandler})
-   * compose the identical decision from the published {@link #getTools()} and {@link
-   * #validateToolToken} seams; keep the three in step.
+   * <p>Internal plumbing, not SDK surface — it is deliberately unpublished. The out-of-package
+   * transports ({@code AgentServer}, {@code LambdaAgentHandler}) compose the identical decision
+   * from the published {@link #getTools()} and {@link #validateToolToken} seams; keep the three in
+   * step.
    *
    * @param functionName the tool the caller is invoking.
    * @param token the {@code __token} credential from the request's query string, or {@code null}.
@@ -1457,8 +1442,7 @@ public class AgentBase extends Service {
 
   /**
    * Add a language configuration carrying speech/function fillers plus an explicit engine and
-   * model. Mirrors Python's {@code add_language(name, code, voice, speech_fillers,
-   * function_fillers, engine, model, params)}.
+   * model. Equivalent to the full overload with {@code params} left {@code null}.
    */
   public AgentBase addLanguage(
       String name,
@@ -1472,9 +1456,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Add a language configuration to support multilingual conversations. Mirrors Python {@code
-   * AIConfigMixin.add_language(name, code, voice, speech_fillers=None, function_fillers=None,
-   * engine=None, model=None, params=None)} exactly, including:
+   * Add a language configuration to support multilingual conversations. The full-arity form; the
+   * rules it applies are:
    *
    * <ul>
    *   <li><b>Voice parsing</b>: when {@code engine}/{@code model} are given they win; otherwise a
@@ -1537,9 +1520,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Set (or replace) the per-language ``params`` dict on an already-added language. Empty/null
-   * params removes the key. Unknown code is a no-op. Returns self for chaining. Mirrors Python's
-   * set_language_params.
+   * Set (or replace) the per-language {@code params} map on an already-added language. Empty/null
+   * params removes the key. An unknown code is a no-op. Returns this agent for chaining.
    */
   public AgentBase setLanguageParams(String code, Map<String, Object> params) {
     for (Map<String, Object> lang : languages) {
@@ -1556,8 +1538,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Read the per-language ``params`` dict for a previously-added language. Returns null when the
-   * code is unknown or params were never set. Mirrors Python's get_language_params.
+   * Read the per-language {@code params} map for a previously-added language. Returns null when the
+   * code is unknown or params were never set.
    */
   @SuppressWarnings("unchecked")
   public Map<String, Object> getLanguageParams(String code) {
@@ -1587,8 +1569,7 @@ public class AgentBase extends Service {
    * Configure ASR-driven multilingual mode (Mode B). Emits a top-level {@code multilingual} object
    * on the AI verb — the recognizer runs in code-switching mode and the agent answers in whatever
    * language the caller actually spoke. Mutually exclusive with {@link #setLanguages}: if both are
-   * set the server uses {@code multilingual} and ignores {@code languages}. Mirrors
-   * AIConfigMixin.set_multilingual.
+   * set the server uses {@code multilingual} and ignores {@code languages}.
    *
    * @param config the multilingual config object (languages, allowed, start_language,
    *     min_switch_words, fillers, etc.)
@@ -1602,9 +1583,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Add a pronunciation rule with {@code ignore_case} at its reference default of {@code False}.
-   * Mirrors {@code AIConfigMixin.add_pronunciation(replace, with_text, ignore_case=False)} —
-   * signalwire/core/mixins/ai_config_mixin.py:249.
+   * Add a pronunciation rule with {@code ignore_case} at its default of {@code false} — the match
+   * is case-sensitive.
    */
   public AgentBase addPronunciation(String replace, String with) {
     return addPronunciation(replace, with, false);
@@ -1671,9 +1651,9 @@ public class AgentBase extends Service {
    * Merge key/value data into the AI verb's {@code global_data}, readable by the model and by
    * DataMap expressions throughout the call.
    *
-   * <p>Despite the {@code set} name this MERGES rather than replaces, matching the reference's
-   * {@code set_global_data}. That is deliberate: skills and application code each contribute keys,
-   * and a replace would silently drop what earlier callers added.
+   * <p>Despite the {@code set} name this MERGES rather than replaces. That is deliberate: skills
+   * and application code each contribute keys, and a replace would silently drop what earlier
+   * callers added.
    *
    * @param data the keys to merge; {@code null} is a no-op.
    * @return this agent, for chaining.
@@ -1877,9 +1857,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Turn on the platform's debug event stream at a specific verbosity. Mirrors the reference's
-   * {@code enable_debug_events(level=1)} (ai_config_mixin.py:512); the level is rendered as {@code
-   * ai.params.debug_webhook_level}.
+   * Turn on the platform's debug event stream at a specific verbosity. The level is rendered as
+   * {@code ai.params.debug_webhook_level}.
    *
    * @param level the debug verbosity level.
    * @return this agent, for chaining.
@@ -1922,8 +1901,8 @@ public class AgentBase extends Service {
   /**
    * Merge LLM generation parameters (temperature, top_p, and the like) for the main prompt.
    *
-   * <p>Despite the {@code set} name this MERGES, matching the reference. Successive calls with
-   * distinct keys accumulate; a repeated key overwrites.
+   * <p>Despite the {@code set} name this MERGES. Successive calls with distinct keys accumulate; a
+   * repeated key overwrites.
    *
    * @param llmParams the parameters to merge.
    * @return this agent, for chaining.
@@ -1938,7 +1917,7 @@ public class AgentBase extends Service {
 
   /**
    * Merge LLM generation parameters for the post-prompt (summary) pass. Merges rather than
-   * replaces, matching the reference and {@link #setPromptLlmParams(Map)}.
+   * replaces, exactly as {@link #setPromptLlmParams(Map)} does.
    *
    * @param llmParams the parameters to merge.
    * @return this agent, for chaining.
@@ -2220,10 +2199,9 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Get the underlying HTTP application/server instance for deployment adapters. Mirrors
-   * WebMixin.get_app — Python returns the FastAPI app for adapters like Mangum/Lambda; Java has no
-   * web framework, so this returns the JDK {@link com.sun.net.httpserver.HttpServer} (lazily
-   * started if not already running).
+   * Get the underlying HTTP application/server instance for deployment adapters. This SDK uses no
+   * web framework, so what is returned is the JDK {@link com.sun.net.httpserver.HttpServer}, lazily
+   * started if it is not already running.
    *
    * @return the bound HttpServer instance
    */
@@ -2239,9 +2217,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Register a JVM shutdown hook for graceful shutdown (useful under Kubernetes). Mirrors
-   * WebMixin.setup_graceful_shutdown — Python installs SIGTERM/SIGINT handlers; Java uses a JVM
-   * shutdown hook that stops the HTTP server cleanly.
+   * Register a JVM shutdown hook for graceful shutdown (useful under Kubernetes). The hook stops
+   * the HTTP server cleanly when the JVM is asked to terminate.
    */
   public void setupGracefulShutdown() {
     Runtime.getRuntime()
@@ -2282,10 +2259,10 @@ public class AgentBase extends Service {
   /**
    * Enable debug routes for testing and development.
    *
-   * <p>Intentionally a no-op that returns {@code this}, matching the reference exactly: debug
-   * routes are registered automatically during route registration, and the reference's {@code
-   * enable_debug_routes} (web_mixin.py) likewise only does {@code return self}, existing for
-   * backward compatibility. The empty body is the correct behaviour, not an unimplemented stub.
+   * <p>Intentionally a no-op that returns {@code this}: debug routes are registered automatically
+   * during route registration, so there is nothing left for this call to enable. It is retained for
+   * backward compatibility, and the empty body is the correct behaviour rather than an
+   * unimplemented stub.
    *
    * @return this agent, for chaining.
    */
@@ -2740,7 +2717,7 @@ public class AgentBase extends Service {
 
   /**
    * Rebuild the public URL the platform POSTed to, used as input to the webhook signature digest.
-   * Resolution order mirrors the Python reference implementation:
+   * Resolution order, first match wins:
    *
    * <ol>
    *   <li>{@code SWML_PROXY_URL_BASE} (when set) joined with the request path + query.
@@ -2826,13 +2803,10 @@ public class AgentBase extends Service {
    *
    * <p>Every verb is appended through the inherited {@link Service#addVerb} choke point, so a
    * schema-invalid config raises {@link com.signalwire.sdk.swml.SchemaValidationError} here rather
-   * than shipping to the wire. This method previously hand-assembled the verb list and the {@code
-   * {version, sections}} envelope, touching neither {@link Service} nor {@code Document} — the
-   * agent's primary render path was therefore the one path in the port with NO validation at all,
-   * including for the caller-supplied phase verbs from {@link #addPreAnswerVerb}, {@link
-   * #addAnswerVerb}, {@link #addPostAnswerVerb} and {@link #addPostAiVerb}. The reference does the
-   * same thing this now does: {@code agent_base.py:_render_swml} calls {@code reset_document()} and
-   * then {@code add_verb(...)} for each of the five phases.
+   * than shipping to the wire. That includes the caller-supplied phase verbs from {@link
+   * #addPreAnswerVerb}, {@link #addAnswerVerb}, {@link #addPostAnswerVerb} and {@link
+   * #addPostAiVerb} — none of them bypass validation. The document is reset at the start of each
+   * render, so calling this repeatedly on a long-lived agent never accumulates verbs.
    */
   public Map<String, Object> renderSwml(String baseUrl) {
     // Start from a clean document — renderSwml is called once per request on a
@@ -3033,29 +3007,26 @@ public class AgentBase extends Service {
   }
 
   /**
-   * Build the SWAIG {@code functions[]} array, mirroring the reference {@code
-   * AgentBase._render_swaig_functions} (agent_base.py:1027-1100).
+   * Build the SWAIG {@code functions[]} array.
    *
    * <p>The wire manifestation of a tool's {@code secure} flag is a per-tool {@code __token} QUERY
-   * PARAMETER on that function's OWN {@code web_hook_url} (reference agent_base.py:1096-1100, read
-   * back at :1414 / web_mixin.py:935). The engine treats the webhook URL as opaque and round-trips
-   * it verbatim, so only the SDK that minted the token ever interprets it — which is why {@code
-   * __token} appears nowhere in the engine source.
+   * PARAMETER on that function's OWN {@code web_hook_url}. The engine treats the webhook URL as
+   * opaque and round-trips it verbatim, so only the SDK that minted the token ever interprets it —
+   * which is why {@code __token} appears nowhere in the engine source.
    *
    * <p>It is deliberately NOT {@code meta_data_token}: {@code schema.json} defines that as the
    * "Scoping token for meta_data", the engine MD5-derives it from {@code
    * web_hook_url+auth_user+auth_pass} when the SWML omits it ({@code
    * mod_openai/app_config.c:1031-1042}) and uses it ONLY as a key into the per-function metadata
    * store ({@code actions.c:2085-2093}) and to scope function-toggle actions ({@code
-   * actions.c:419-420}). Nothing validates it as a credential. Emitting the security token there
-   * left the callback unauthenticated AND mis-scoped the metadata store; it is the SECURE-DEFAULT
-   * divergence fixed 2026-07-27.
+   * actions.c:419-420}). Nothing validates it as a credential, so emitting the security token there
+   * would leave the callback unauthenticated AND mis-scope the metadata store.
    *
    * <p>A per-tool {@code web_hook_url} is emitted only when the tool has an external webhook URL,
-   * OR carries a token, OR the agent has SWAIG query params — matching the reference's {@code elif
-   * token or ..._swaig_query_params} guard. An insecure locally-handled tool therefore has NO entry
-   * of its own and falls back to the shared {@code SWAIG.defaults.web_hook_url}; giving it a
-   * function-specific webhook would publish an unauthenticated per-function callback.
+   * OR carries a token, OR the agent has SWAIG query params. An insecure locally-handled tool
+   * therefore has NO entry of its own and falls back to the shared {@code
+   * SWAIG.defaults.web_hook_url}; giving it a function-specific webhook would publish an
+   * unauthenticated per-function callback.
    */
   private List<Map<String, Object>> buildSwaigFunctions(String baseUrl) {
     List<Map<String, Object>> functions = new ArrayList<>();
@@ -3088,10 +3059,10 @@ public class AgentBase extends Service {
 
   /**
    * Append the per-tool SWAIG security token to a webhook URL as the {@code __token} query
-   * parameter — the reference's wire manifestation of {@code secure} (agent_base.py:1097, which
-   * notes "Use __token to avoid collision" with a caller's own {@code token} param). Returns the
-   * URL unchanged when there is no token, and picks {@code ?} vs {@code &} based on whether {@link
-   * #buildWebhookUrl} already emitted the agent's SWAIG query params.
+   * parameter — the wire manifestation of {@code secure}. The double-underscore name avoids
+   * colliding with a caller's own {@code token} query param. Returns the URL unchanged when there
+   * is no token, and picks {@code ?} vs {@code &} based on whether {@link #buildWebhookUrl} already
+   * emitted the agent's SWAIG query params.
    */
   private String appendTokenParam(String url, String token) {
     if (url == null || token == null || token.isEmpty()) {
@@ -3123,9 +3094,8 @@ public class AgentBase extends Service {
   }
 
   /**
-   * The URL the platform POSTs debug events to. Mirrors the reference's {@code
-   * _build_webhook_url("debug_events", swaig_query_params)} (agent_base.py:1286-1288) — the same
-   * base and query params as the SWAIG webhook, but the {@code debug_events} endpoint.
+   * The URL the platform POSTs debug events to — the same base and query params as the SWAIG
+   * webhook, but the {@code debug_events} endpoint.
    */
   private String buildDebugEventsUrl(String baseUrl) {
     if (baseUrl == null) {

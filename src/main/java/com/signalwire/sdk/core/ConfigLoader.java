@@ -27,13 +27,11 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * Configuration loader with environment variable substitution.
  *
- * <p>Java port of the Python reference {@code signalwire.core.config_loader.ConfigLoader}. Supports
- * {@code ${VAR|default}} syntax for referencing environment variables within JSON (or YAML)
- * configuration files. The first existing, parseable file in the search paths wins.
+ * <p>Supports {@code ${VAR|default}} syntax for referencing environment variables within JSON (or
+ * YAML) configuration files. The first existing, parseable file in the search paths wins.
  *
- * <p>Idiom mapping: JSON is parsed with Gson and YAML with SnakeYAML (both already repo
- * dependencies). After substitution, string values that look like booleans/integers/floats are
- * coerced to those native types.
+ * <p>JSON is parsed with Gson and YAML with SnakeYAML. After substitution, string values that look
+ * like booleans/integers/floats are coerced to those native types.
  */
 public class ConfigLoader {
 
@@ -96,9 +94,10 @@ public class ConfigLoader {
   }
 
   /**
-   * The config search paths (the {@code config_paths} construction param), resolved to the default
-   * search list when the caller passed {@code null}. The reference exposes this as a public
-   * attribute ({@code self.config_paths}, config_loader.py:37).
+   * The config search paths (the {@code configPaths} construction param), resolved to the default
+   * search list when the caller passed {@code null}.
+   *
+   * @return an unmodifiable view of the resolved search paths.
    */
   public List<String> getConfigPaths() {
     return Collections.unmodifiableList(configPaths);

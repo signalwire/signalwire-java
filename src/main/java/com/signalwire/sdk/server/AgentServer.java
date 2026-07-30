@@ -77,9 +77,8 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Full construction contract, mirroring the reference {@code AgentServer(host, port, log_level)}.
-   * The level is lower-cased and applied to the global logger, exactly as the reference does
-   * ({@code self.log_level = log_level.lower()}, agent_server.py:63) before creating its logger.
+   * Full construction contract: bind host, bind port, and log level. The level is lower-cased and
+   * applied to the global logger before the server's own logger is created.
    *
    * @param host host to bind the server to
    * @param port port to bind the server to
@@ -212,8 +211,7 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Return all registered agents as {@code (route, agent)} pairs. Ported from Python
-   * AgentServer.get_agents (which returns a list of {@code (route, agent)} tuples).
+   * Return all registered agents as {@code (route, agent)} pairs.
    *
    * @return an unmodifiable list of route/agent entries
    */
@@ -241,8 +239,7 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Serve static files at the reference's default route {@code "/"}. Mirrors {@code
-   * AgentServer.serve_static_files(directory, route="/")} — signalwire/agent_server.py:750.
+   * Serve static files at the default route {@code "/"}.
    *
    * @param directory Filesystem path to the directory containing static files
    */
@@ -255,9 +252,8 @@ public class AgentServer implements AutoCloseable {
   // ============================================================
 
   /**
-   * Serve over HTTPS using an explicit PEM certificate chain and PKCS#8 private key. This is the
-   * explicit-cert option that parallels Python's {@code SWMLService.serve(ssl_cert=...,
-   * ssl_key=...)}; it takes precedence over the {@code SWML_SSL_*} environment variables.
+   * Serve over HTTPS using an explicit PEM certificate chain and PKCS#8 private key. Configuring
+   * the cert and key here takes precedence over the {@code SWML_SSL_*} environment variables.
    *
    * <p>{@code certPath} must be a PEM file containing the leaf (and any intermediate) certificates;
    * {@code keyPath} must be the matching unencrypted PKCS#8 private key in PEM form. When both
@@ -285,8 +281,8 @@ public class AgentServer implements AutoCloseable {
   /**
    * Resolves the effective cert/key pair from the explicit option first, then the SWML_SSL_*
    * environment variables, returning {@code [cert, key]} when both exist on disk, or {@code null}
-   * when TLS is not configured. Mirrors the validation Python's AgentServer.run() performs (a
-   * configured path that doesn't exist disables SSL rather than crashing the server).
+   * when TLS is not configured. A configured path that doesn't exist disables SSL rather than
+   * crashing the server.
    */
   private String[] resolveTls() {
     String cert = sslCertPath;
@@ -385,9 +381,8 @@ public class AgentServer implements AutoCloseable {
 
   /**
    * Get the agent route mapped to a SIP username, or {@code null} if none. The lookup is
-   * case-insensitive — mirrors Python AgentServer._lookup_sip_route, which does
-   * self._sip_username_mapping.get(username.lower()); usernames are stored lowercased by {@link
-   * #registerSipUsername}.
+   * case-insensitive: usernames are stored lowercased by {@link #registerSipUsername} and the
+   * argument is lowercased before lookup.
    */
   public String getSipRoute(String username) {
     if (username == null) {
@@ -397,18 +392,18 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * A snapshot of the SIP-username → agent-route mapping (lowercased keys). Mirrors reading Python
-   * AgentServer._sip_username_mapping.
+   * A snapshot of the SIP-username → agent-route mapping (lowercased keys). The returned map is a
+   * copy; mutating it does not affect the server's routing table.
    */
   public Map<String, String> getSipUsernameMapping() {
     return new LinkedHashMap<>(sipRoutes);
   }
 
   /**
-   * Set up central SIP-based routing across all registered agents. Ported from Python
-   * AgentServer.setup_sip_routing: enables SIP routing at {@code route}, optionally auto-maps each
-   * registered agent's name/route to a SIP username, and installs a unified routing callback (that
-   * resolves the SIP username to a target route) on every agent at {@code route}.
+   * Set up central SIP-based routing across all registered agents: enables SIP routing at {@code
+   * route}, optionally auto-maps each registered agent's name/route to a SIP username, and installs
+   * a unified routing callback (that resolves the SIP username to a target route) on every agent at
+   * {@code route}.
    *
    * @param route the SIP routing path (default "/sip"); normalized to a leading-slash form
    * @param autoMap whether to auto-map SIP usernames from agent names/routes
@@ -448,9 +443,8 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Register a mapping from a SIP username to an agent route. Ported from Python
-   * AgentServer.register_sip_username. Requires {@link #setupSipRouting} to have been called first;
-   * the username is lowercased for case-insensitive resolution.
+   * Register a mapping from a SIP username to an agent route. Requires {@link #setupSipRouting} to
+   * have been called first; the username is lowercased for case-insensitive resolution.
    *
    * @param username the SIP username
    * @param route the target agent route
@@ -492,9 +486,8 @@ public class AgentServer implements AutoCloseable {
 
   /**
    * Extract a SIP username from a SWML/SWAIG request body for routing. SIP routing keys on the
-   * DESTINATION of the call — the {@code call.to} (or top-level {@code to}) SIP URI — mirroring the
-   * Python reference ({@code AgentServer.server_sip_routing_callback} calls {@code
-   * SWMLService.extract_sip_username}, which reads {@code to}). Delegates to the canonical {@link
+   * DESTINATION of the call — the {@code call.to} (or top-level {@code to}) SIP URI — never the
+   * caller. Delegates to the canonical {@link
    * com.signalwire.sdk.swml.Service#extractSipUsername(Map)} so the server and the framework-free
    * dispatch core agree on which field a SIP username is drawn from.
    */
@@ -503,9 +496,9 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Register a routing callback across all registered agents at a shared path. Ported from Python
-   * AgentServer.register_global_routing_callback: installs the same {@code (body, headers) ->
-   * targetRoute} callback on every agent so unified routing logic applies uniformly.
+   * Register a routing callback across all registered agents at a shared path: installs the same
+   * {@code (body, headers) -> targetRoute} callback on every agent so unified routing logic applies
+   * uniformly.
    *
    * @param callback the routing callback, {@code (body, headers) -> route-or-null}
    * @param path the routing path to register the callback at (normalized)

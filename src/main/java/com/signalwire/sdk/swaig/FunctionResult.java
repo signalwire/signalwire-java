@@ -127,9 +127,8 @@ public class FunctionResult {
   }
 
   /**
-   * SWML transfer with AI response setup, using the reference's default {@code final=True} (a
-   * permanent transfer). Mirrors {@code FunctionResult.swml_transfer(dest, ai_response,
-   * final=True)} — signalwire/core/function_result.py:190.
+   * SWML transfer with AI response setup, defaulting {@code isFinal} to {@code true} — a permanent
+   * transfer that does not return to the agent.
    */
   public FunctionResult swmlTransfer(String dest, String aiResponse) {
     return swmlTransfer(dest, aiResponse, true);
@@ -159,10 +158,7 @@ public class FunctionResult {
     return addAction("hangup", true);
   }
 
-  /**
-   * Put the call on hold with the reference's default 300s timeout. Mirrors {@code
-   * FunctionResult.hold(timeout: int = 300)} — signalwire/core/function_result.py:440.
-   */
+  /** Put the call on hold with the default 300-second timeout. */
   public FunctionResult hold() {
     return hold(300);
   }
@@ -306,10 +302,8 @@ public class FunctionResult {
   }
 
   /**
-   * Replace the tool_call+result pair in conversation history using the reference's default {@code
-   * text=True} — i.e. REMOVE the pair entirely. Mirrors {@code
-   * FunctionResult.replace_in_history(text: str | bool = True)} —
-   * signalwire/core/function_result.py:672.
+   * Replace the tool_call+result pair in conversation history, defaulting to {@code true} — i.e.
+   * REMOVE the pair entirely rather than substituting replacement text.
    */
   public FunctionResult replaceInHistory() {
     return replaceInHistory(true);
@@ -538,9 +532,9 @@ public class FunctionResult {
   }
 
   /**
-   * Start background call recording with the reference defaults: mono, {@code wav}, both
-   * directions, and no control id (so {@link #stopRecordCall()} stops it). Recording call audio
-   * carries consent and retention obligations in most jurisdictions.
+   * Start background call recording with the defaults: mono, {@code wav}, both directions, and no
+   * control id (so {@link #stopRecordCall()} stops it). Recording call audio carries consent and
+   * retention obligations in most jurisdictions.
    *
    * @return this result, for chaining.
    */
@@ -623,9 +617,8 @@ public class FunctionResult {
   }
 
   /**
-   * Enable function calls on speaker timeout, using the reference's default {@code enabled=True}.
-   * Mirrors {@code FunctionResult.enable_functions_on_timeout(enabled: bool = True)} —
-   * signalwire/core/function_result.py:647.
+   * Enable function calls on speaker timeout — {@link #enableFunctionsOnTimeout(boolean)} with
+   * {@code true}.
    */
   public FunctionResult enableFunctionsOnTimeout() {
     return enableFunctionsOnTimeout(true);
@@ -643,9 +636,8 @@ public class FunctionResult {
   }
 
   /**
-   * Send full data to the LLM for this turn only, using the reference's default {@code
-   * enabled=True}. Mirrors {@code FunctionResult.enable_extensive_data(enabled: bool = True)} —
-   * signalwire/core/function_result.py:659.
+   * Send full data to the LLM for this turn only — {@link #enableExtensiveData(boolean)} with
+   * {@code true}.
    */
   public FunctionResult enableExtensiveData() {
     return enableExtensiveData(true);
@@ -712,9 +704,9 @@ public class FunctionResult {
   /**
    * Join an ad-hoc audio conference with RELAY and CXML calls using SWML.
    *
-   * <p>Every optional parameter the reference exposes is a positional argument here, with the same
-   * default and the same validation. Hold music is {@code waitUrl} (snake_case wire key {@code
-   * wait_url}) — there is no separate "hold audio" parameter; the reference uses {@code wait_url}.
+   * <p>Every option is a positional argument here; the parameter list below states each default.
+   * Hold music is {@code waitUrl} (wire key {@code wait_url}) — there is no separate "hold audio"
+   * parameter.
    *
    * @param name conference name (required, must be non-blank)
    * @param muted join muted (default {@code false})
@@ -990,18 +982,16 @@ public class FunctionResult {
   }
 
   /**
-   * Start a call tap with every optional param at its reference default. Mirrors {@code
-   * FunctionResult.tap(uri, control_id=None, direction="both", codec="PCMU", rtp_ptime=20,
-   * status_url=None)} — signalwire/core/function_result.py:1224.
+   * Start a call tap with every optional param at its default: no control id, {@code
+   * direction="both"}, {@code codec="PCMU"}, {@code rtpPtime=20}, and no status URL.
    */
   public FunctionResult tap(String uri) {
     return tap(uri, null, "both", "PCMU", 20, null);
   }
 
   /**
-   * Start a call tap, supplying {@code control_id} and defaulting the rest to the reference's
-   * values ({@code direction="both"}, {@code codec="PCMU"}, {@code rtp_ptime=20}, {@code
-   * status_url=None}) — signalwire/core/function_result.py:1224.
+   * Start a call tap, supplying {@code controlId} and defaulting the rest: {@code
+   * direction="both"}, {@code codec="PCMU"}, {@code rtpPtime=20}, and no status URL.
    */
   public FunctionResult tap(String uri, String controlId) {
     return tap(uri, controlId, "both", "PCMU", 20, null);
@@ -1009,7 +999,7 @@ public class FunctionResult {
 
   /**
    * Start a call tap, supplying {@code direction} and defaulting {@code codec="PCMU"}, {@code
-   * rtp_ptime=20}, {@code status_url=None} — signalwire/core/function_result.py:1224.
+   * rtpPtime=20}, and no status URL.
    */
   public FunctionResult tap(String uri, String controlId, String direction) {
     return tap(uri, controlId, direction, "PCMU", 20, null);
@@ -1017,8 +1007,7 @@ public class FunctionResult {
 
   /**
    * Start a call tap (convenience form). Delegates to the full-arity {@link #tap(String, String,
-   * String, String, int, String)} with {@code rtp_ptime} at its reference default (20) and no
-   * {@code status_url}.
+   * String, String, int, String)} with {@code rtpPtime} at its default (20) and no status URL.
    */
   public FunctionResult tap(String uri, String controlId, String direction, String codec) {
     return tap(uri, controlId, direction, codec, 20, null);
@@ -1131,28 +1120,20 @@ public class FunctionResult {
   }
 
   /**
-   * Send SMS with every optional param at its reference default ({@code body=None}, {@code
-   * media=None}, {@code tags=None}, {@code region=None}). Mirrors {@code
-   * FunctionResult.send_sms(to_number, from_number, body=None, media=None, tags=None, region=None)}
-   * — signalwire/core/function_result.py:752. Like the reference this raises unless {@code body} or
-   * {@code media} is supplied; it exists so the optional params are visible in the surface.
+   * Send SMS with every optional param defaulted to {@code null} — no body, media, tags, or region.
+   * Because at least one of {@code body} or {@code media} must be supplied, this arity always
+   * throws; it exists so the optional parameters are discoverable from the shortest overload.
    */
   public FunctionResult sendSms(String toNumber, String fromNumber) {
     return sendSms(toNumber, fromNumber, null, null, null, null);
   }
 
-  /**
-   * Send SMS supplying {@code body}, defaulting {@code media=None}, {@code tags=None}, {@code
-   * region=None} — signalwire/core/function_result.py:752.
-   */
+  /** Send SMS supplying {@code body}, with no media, tags, or region. */
   public FunctionResult sendSms(String toNumber, String fromNumber, String body) {
     return sendSms(toNumber, fromNumber, body, null, null, null);
   }
 
-  /**
-   * Send SMS supplying {@code body} and {@code media}, defaulting {@code tags=None}, {@code
-   * region=None} — signalwire/core/function_result.py:752.
-   */
+  /** Send SMS supplying {@code body} and {@code media}, with no tags or region. */
   public FunctionResult sendSms(
       String toNumber, String fromNumber, String body, List<String> media) {
     return sendSms(toNumber, fromNumber, body, media, null, null);
@@ -1169,15 +1150,14 @@ public class FunctionResult {
   /**
    * Process payment via SWML pay action.
    *
-   * <p>Every optional parameter the reference exposes is a positional argument here, in the same
-   * order, with the same default and the same emitted wire key. The reference ALWAYS emits {@code
-   * payment_connector_url}, {@code input}, {@code payment_method}, {@code timeout}, {@code
+   * <p>Every option is a positional argument here; the parameter list below states each default.
+   * {@code payment_connector_url}, {@code input}, {@code payment_method}, {@code timeout}, {@code
    * max_attempts}, {@code security_code}, {@code min_postal_code_length}, {@code token_type},
    * {@code currency}, {@code language}, {@code voice}, {@code valid_card_types} and {@code
-   * postal_code}; {@code status_url}, {@code charge_amount}, {@code description}, {@code
-   * parameters} and {@code prompts} are emitted only when supplied. Numeric values are stringified
-   * to match Python's {@code str(...)}. A {@code set} verb carrying {@code ai_response} is emitted
-   * before the {@code pay} verb.
+   * postal_code} are ALWAYS emitted, even at their defaults; {@code status_url}, {@code
+   * charge_amount}, {@code description}, {@code parameters} and {@code prompts} are emitted only
+   * when supplied. Numeric values go on the wire as strings, not JSON numbers. A {@code set} verb
+   * carrying {@code ai_response} is emitted before the {@code pay} verb.
    *
    * @param connectorUrl payment connector URL (required)
    * @param inputMethod "dtmf" (the SWML schema is {@code const:"dtmf"}; default "dtmf")
@@ -1269,12 +1249,12 @@ public class FunctionResult {
   }
 
   /**
-   * Process payment with every optional param at its reference default. Mirrors {@code
-   * FunctionResult.pay(payment_connector_url, input_method="dtmf", status_url=None,
-   * payment_method="credit-card", timeout=5, max_attempts=1, security_code=True, postal_code=True,
-   * min_postal_code_length=0, token_type="reusable", charge_amount=None, currency="usd",
-   * language="en-US", voice="woman", description=None, valid_card_types="visa mastercard amex",
-   * parameters=None, prompts=None, ai_response=DEFAULT)} — signalwire/core/function_result.py:810.
+   * Process payment with every optional param at its default: {@code inputMethod="dtmf"}, no status
+   * URL, {@code paymentMethod="credit-card"}, {@code timeout=5}, {@code maxAttempts=1}, {@code
+   * securityCode=true}, {@code postalCode=true}, {@code minPostalCodeLength=0}, {@code
+   * tokenType="reusable"}, no charge amount, {@code currency="usd"}, {@code language="en-US"},
+   * {@code voice="woman"}, no description, {@code validCardTypes="visa mastercard amex"}, no extra
+   * parameters or prompts, and {@link #DEFAULT_PAY_AI_RESPONSE} as the AI response.
    */
   public FunctionResult pay(String connectorUrl) {
     return pay(
@@ -1302,8 +1282,8 @@ public class FunctionResult {
   /**
    * Process payment (convenience form). Delegates to the full-arity {@link #pay(String, String,
    * String, String, int, int, boolean, Object, int, String, String, String, String, String, String,
-   * String, List, List, String)} with every other option at its reference default, so the emitted
-   * SWML is identical to the reference with those defaults.
+   * String, List, List, String)} with every other option at the default listed on {@link
+   * #pay(String)}.
    */
   public FunctionResult pay(
       String connectorUrl, String inputMethod, String statusUrl, int timeout, int maxAttempts) {
@@ -1432,19 +1412,15 @@ public class FunctionResult {
   // ======== Payment Helpers (static) ========
 
   /**
-   * Create a payment prompt with {@code card_type} and {@code error_type} at their reference
-   * default of {@code None}. Mirrors {@code FunctionResult.create_payment_prompt(for_situation,
-   * actions, card_type=None, error_type=None)} — signalwire/core/function_result.py:1471.
+   * Create a payment prompt with no {@code cardType} and no {@code errorType} — neither key is
+   * emitted.
    */
   public static Map<String, Object> createPaymentPrompt(
       String forSituation, List<Map<String, String>> payActions) {
     return createPaymentPrompt(forSituation, payActions, null, null);
   }
 
-  /**
-   * Create a payment prompt supplying {@code card_type}, with {@code error_type} at its reference
-   * default of {@code None} — signalwire/core/function_result.py:1471.
-   */
+  /** Create a payment prompt supplying {@code cardType}, with no {@code errorType}. */
   public static Map<String, Object> createPaymentPrompt(
       String forSituation, List<Map<String, String>> payActions, String cardType) {
     return createPaymentPrompt(forSituation, payActions, cardType, null);

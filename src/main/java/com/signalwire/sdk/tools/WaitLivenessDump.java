@@ -27,13 +27,12 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * WaitLivenessDump — the Java port's WAIT-LIVENESS dump program for the cross-port liveness differ
- * (porting-sdk/scripts/diff_port_wait_liveness.py).
+ * WaitLivenessDump — this SDK's dump program for the WAIT-LIVENESS gate's liveness differ.
  *
  * <p>For each liveness case (play, record) it drives a REAL {@link Call} verb against a tiny
  * embedded RELAY WebSocket mock, arms the completing event to arrive {@code DELAY_MS} AFTER {@code
- * waitForCompletion()} begins, measures the wall-clock instants, and derives the same deterministic
- * LIVENESS CLASSIFICATION the differ compares against the Python golden:
+ * waitForCompletion()} begins, measures the wall-clock instants, and derives the deterministic
+ * LIVENESS CLASSIFICATION the differ compares against the shared golden:
  *
  * <pre>
  *   {"blocked_until_event": bool, "returned_after_event": bool,

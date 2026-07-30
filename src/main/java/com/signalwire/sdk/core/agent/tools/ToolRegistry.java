@@ -19,9 +19,7 @@ import java.util.Map;
 /**
  * Manages SWAIG function registration.
  *
- * <p>Mirrors Python's {@code signalwire.core.agent.tools.registry.ToolRegistry} and the Ruby {@code
- * SignalWire::Core::Agent::Tools::ToolRegistry}. A registry holds SWAIG function definitions keyed
- * by name. Two kinds of entries are supported:
+ * <p>A registry holds SWAIG function definitions keyed by name. Two kinds of entries are supported:
  *
  * <ul>
  *   <li>definitions created via {@link #defineTool} (carry a {@code handler}), and
@@ -29,8 +27,8 @@ import java.util.Map;
  *       {@code toSwaigFunction}) which execute on SignalWire's server and carry no handler.
  * </ul>
  *
- * <p>Like the Ruby port, the registry stores the built definition Map with string keys, matching
- * the wire shape (the Java SDK's AgentBase also stores plain Maps on the wire).
+ * <p>The registry stores each built definition as a string-keyed {@code Map}, which is the shape
+ * that goes on the wire — so no conversion step sits between what is registered and what is sent.
  */
 public class ToolRegistry {
 
@@ -55,7 +53,7 @@ public class ToolRegistry {
 
   /**
    * The agent this registry belongs to (the {@code agent} construction param), or {@code null} for
-   * standalone use. The reference keeps it as a public back reference ({@code self.agent}).
+   * standalone use.
    */
   public Object getAgent() {
     return agent;
@@ -119,7 +117,7 @@ public class ToolRegistry {
   }
 
   /**
-   * Convenience overload with Python defaults ({@code secure=true}, all optionals {@code null}).
+   * Convenience overload using the defaults: {@code secure=true} and all optionals {@code null}.
    */
   public Map<String, Object> defineTool(
       String name, String description, Map<String, Object> parameters, Object handler) {
@@ -330,9 +328,9 @@ public class ToolRegistry {
   }
 
   /**
-   * Marker annotation — the Java analog of Python's {@code @AgentBase.tool} decorator. Annotate a
-   * public method on an agent subclass so {@link #registerClassDecoratedTools()} auto-registers it.
-   * The method must accept {@code (Map<String,Object> args, Map<String,Object> rawData)}.
+   * Marker annotation for declaring a tool on the agent class itself. Annotate a public method on
+   * an agent subclass so {@link #registerClassDecoratedTools()} auto-registers it. The method must
+   * accept {@code (Map<String,Object> args, Map<String,Object> rawData)}.
    */
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)

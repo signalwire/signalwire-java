@@ -102,18 +102,18 @@ public class RelayEvent {
   }
 
   /**
-   * Create the appropriate typed event subclass from a raw {@code signalwire.event} payload. Alias
-   * of {@link #fromRawParams(Map)} under the reference's {@code RelayEvent.from_payload} name; both
-   * accept the outer payload ({@code event_type}/{@code timestamp}/{@code params}).
+   * Create the appropriate typed event subclass from a raw {@code signalwire.event} payload. An
+   * alias of {@link #fromRawParams(Map)}; both take the OUTER payload ({@code event_type} / {@code
+   * timestamp} / {@code params}), not the inner {@code params} map alone.
    */
   public static RelayEvent fromPayload(Map<String, Object> payload) {
     return fromRawParams(payload);
   }
 
   /**
-   * Parse a raw {@code signalwire.event} payload into a typed event object. Module-level free
-   * function analog of the reference's {@code signalwire.relay.event.parse_event}; dispatches by
-   * {@code event_type} to the matching subclass (falling back to a plain {@link RelayEvent}).
+   * Parse a raw {@code signalwire.event} payload into a typed event object: dispatches by {@code
+   * event_type} to the matching subclass, falling back to a plain {@link RelayEvent} for an
+   * unrecognised type. An alias of {@link #fromRawParams(Map)}.
    */
   public static RelayEvent parseEvent(Map<String, Object> payload) {
     return fromRawParams(payload);
@@ -242,7 +242,10 @@ public class RelayEvent {
     return getStr(payload, "event_type", "");
   }
 
-  /** Extract {@code timestamp} from an outer payload's inner params, per the reference. */
+  /**
+   * Extract {@code timestamp} from an outer payload: the inner {@code params} copy wins, falling
+   * back to the outer one, then to {@code 0.0}.
+   */
   @SuppressWarnings("unchecked")
   static double payloadTimestamp(Map<String, Object> payload) {
     Map<String, Object> inner =
@@ -266,7 +269,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallStateEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallStateEvent fromPayload(Map<String, Object> payload) {
       return new CallStateEvent(
@@ -335,7 +338,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallReceiveEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallReceiveEvent fromPayload(Map<String, Object> payload) {
       return new CallReceiveEvent(
@@ -413,7 +416,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallDialEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallDialEvent fromPayload(Map<String, Object> payload) {
       return new CallDialEvent(
@@ -485,7 +488,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallPlayEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallPlayEvent fromPayload(Map<String, Object> payload) {
       return new CallPlayEvent(
@@ -523,7 +526,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallRecordEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallRecordEvent fromPayload(Map<String, Object> payload) {
       return new CallRecordEvent(
@@ -602,7 +605,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallDetectEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallDetectEvent fromPayload(Map<String, Object> payload) {
       return new CallDetectEvent(
@@ -646,7 +649,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallCollectEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallCollectEvent fromPayload(Map<String, Object> payload) {
       return new CallCollectEvent(
@@ -681,8 +684,8 @@ public class RelayEvent {
     }
 
     /**
-     * The collect result object ({@code {type, params}}). Mirrors Python CollectEvent.result =
-     * p.get("result", {}) — the nested {@code result} value, NOT the top-level {@code params}.
+     * The collect result object ({@code {type, params}}) — the nested {@code result} value, NOT the
+     * top-level {@code params}. Empty when the wire omitted {@code result}.
      */
     public Map<String, Object> getResult() {
       return getMap(getParams(), "result");
@@ -705,7 +708,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallFaxEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallFaxEvent fromPayload(Map<String, Object> payload) {
       return new CallFaxEvent(
@@ -740,7 +743,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallTapEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallTapEvent fromPayload(Map<String, Object> payload) {
       return new CallTapEvent(
@@ -781,7 +784,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallStreamEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallStreamEvent fromPayload(Map<String, Object> payload) {
       return new CallStreamEvent(
@@ -822,7 +825,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallTranscribeEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallTranscribeEvent fromPayload(Map<String, Object> payload) {
       return new CallTranscribeEvent(
@@ -884,7 +887,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallConnectEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallConnectEvent fromPayload(Map<String, Object> payload) {
       return new CallConnectEvent(
@@ -917,7 +920,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallReferEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallReferEvent fromPayload(Map<String, Object> payload) {
       return new CallReferEvent(
@@ -974,7 +977,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallSendDigitsEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallSendDigitsEvent fromPayload(Map<String, Object> payload) {
       return new CallSendDigitsEvent(
@@ -1005,7 +1008,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link CallPayEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static CallPayEvent fromPayload(Map<String, Object> payload) {
       return new CallPayEvent(
@@ -1036,7 +1039,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link ConferenceEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static ConferenceEvent fromPayload(Map<String, Object> payload) {
       return new ConferenceEvent(
@@ -1072,7 +1075,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link QueueEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static QueueEvent fromPayload(Map<String, Object> payload) {
       return new QueueEvent(
@@ -1096,12 +1099,12 @@ public class RelayEvent {
       return getStringParam("status");
     }
 
-    /** Queue identifier. RENAMED from the wire {@code id} key (Python: {@code queue_id = p.id}). */
+    /** Queue identifier. Note the wire key is the bare {@code id}, not {@code queue_id}. */
     public String getQueueId() {
       return getStringParam("id");
     }
 
-    /** Queue name. RENAMED from the wire {@code name} key (Python: {@code queue_name = p.name}). */
+    /** Queue name. Note the wire key is the bare {@code name}, not {@code queue_name}. */
     public String getQueueName() {
       return getStringParam("name");
     }
@@ -1152,7 +1155,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link MessagingReceiveEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static MessagingReceiveEvent fromPayload(Map<String, Object> payload) {
       return new MessagingReceiveEvent(
@@ -1239,7 +1242,7 @@ public class RelayEvent {
 
     /**
      * Build a {@link MessagingStateEvent} from a raw {@code signalwire.event} payload ({@code
-     * event_type}/{@code timestamp}/{@code params}). Reference {@code from_payload} classmethod.
+     * event_type}/{@code timestamp}/{@code params}).
      */
     public static MessagingStateEvent fromPayload(Map<String, Object> payload) {
       return new MessagingStateEvent(
@@ -1330,10 +1333,7 @@ public class RelayEvent {
       super(eventType, timestamp, params);
     }
 
-    /**
-     * Build a {@link DenoiseEvent} from a raw {@code signalwire.event} payload. Reference {@code
-     * from_payload} classmethod.
-     */
+    /** Build a {@link DenoiseEvent} from a raw {@code signalwire.event} payload. */
     public static DenoiseEvent fromPayload(Map<String, Object> payload) {
       return new DenoiseEvent(
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
@@ -1357,10 +1357,7 @@ public class RelayEvent {
       super(eventType, timestamp, params);
     }
 
-    /**
-     * Build an {@link EchoEvent} from a raw {@code signalwire.event} payload. Reference {@code
-     * from_payload} classmethod.
-     */
+    /** Build an {@link EchoEvent} from a raw {@code signalwire.event} payload. */
     public static EchoEvent fromPayload(Map<String, Object> payload) {
       return new EchoEvent(
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
@@ -1383,10 +1380,7 @@ public class RelayEvent {
       super(eventType, timestamp, params);
     }
 
-    /**
-     * Build a {@link HoldEvent} from a raw {@code signalwire.event} payload. Reference {@code
-     * from_payload} classmethod.
-     */
+    /** Build a {@link HoldEvent} from a raw {@code signalwire.event} payload. */
     public static HoldEvent fromPayload(Map<String, Object> payload) {
       return new HoldEvent(
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));
@@ -1409,10 +1403,7 @@ public class RelayEvent {
       super(eventType, timestamp, params);
     }
 
-    /**
-     * Build a {@link CallingErrorEvent} from a raw {@code signalwire.event} payload. Reference
-     * {@code from_payload} classmethod.
-     */
+    /** Build a {@link CallingErrorEvent} from a raw {@code signalwire.event} payload. */
     public static CallingErrorEvent fromPayload(Map<String, Object> payload) {
       return new CallingErrorEvent(
           payloadEventType(payload), payloadTimestamp(payload), payloadParams(payload));

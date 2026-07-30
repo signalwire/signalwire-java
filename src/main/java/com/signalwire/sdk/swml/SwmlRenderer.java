@@ -17,13 +17,10 @@ import org.yaml.snakeyaml.Yaml;
  * Renders SWML documents for SignalWire AI Agents with AI and SWAIG components, built on top of the
  * {@link Service} document model.
  *
- * <p>Mirrors the Python reference {@code signalwire.core.swml_renderer.SwmlRenderer} (two
- * static-method helpers) and the Ruby {@code SignalWire::SWML::SwmlRenderer}. Both helpers are
- * static.
+ * <p>Both helpers are static; there is nothing to instantiate.
  *
  * <p>{@link #renderSwml(RenderOptions)} has many optional inputs, so it takes a {@link
- * RenderOptions} builder object (the Java named-parameter idiom); convenience overloads cover the
- * common minimal calls.
+ * RenderOptions} builder object; convenience overloads cover the common minimal calls.
  */
 public final class SwmlRenderer {
 
@@ -37,9 +34,8 @@ public final class SwmlRenderer {
   private SwmlRenderer() {}
 
   /**
-   * Options for {@link #renderSwml(RenderOptions)} — the Java named-parameter idiom for the many
-   * optional inputs of the reference {@code render_swml} static method. Build with {@link
-   * #of(Object, Service)} then chain setters.
+   * Options for {@link #renderSwml(RenderOptions)}, which has too many optional inputs for a
+   * positional signature. Build with {@link #of(Object, Service)} then chain setters.
    */
   public static final class RenderOptions {
     private Object prompt;
@@ -144,9 +140,8 @@ public final class SwmlRenderer {
     }
 
     /**
-     * Extra keys merged at the {@code ai} verb's TOP level — the analog of the reference's {@code
-     * **(params or {})} splat into {@code builder.ai(...)} (swml_renderer.py:131-137), which lands
-     * them beside {@code prompt}/{@code SWAIG}, not inside {@code ai.params}.
+     * Extra keys merged at the {@code ai} verb's TOP level — they land beside {@code prompt} and
+     * {@code SWAIG}, NOT inside {@code ai.params}.
      *
      * <p>{@code AIObject} is CLOSED ({@code unevaluatedProperties: {"not": {}}}), so only keys it
      * declares are legal here — {@code prompt}, {@code post_prompt}, {@code post_prompt_url},
@@ -343,9 +338,8 @@ public final class SwmlRenderer {
 
   /**
    * Add the first recognised action verb from an action map to the document, through the validating
-   * {@link Service#addVerb} choke point (the reference routes every response action through {@code
-   * service.add_verb} for the same reason — a caller-supplied action config that the SWML schema
-   * rejects must raise, not ship).
+   * {@link Service#addVerb} choke point — a caller-supplied action config that the SWML schema
+   * rejects must raise, not ship.
    */
   private static void addResponseAction(Service service, Map<String, Object> action) {
     for (String v : RESPONSE_ACTION_VERBS) {

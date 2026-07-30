@@ -32,14 +32,13 @@ import java.util.Map;
 /**
  * Static file serving service with an HTTP API.
  *
- * <p>Java port of the Python reference {@code signalwire.web.web_service.WebService}. Maps URL
- * route prefixes to local directories and serves their files over HTTP with security headers,
- * extension filtering, path-traversal protection, and optional basic auth.
+ * <p>Maps URL route prefixes to local directories and serves their files over HTTP with security
+ * headers, extension filtering, path-traversal protection, and optional basic auth.
  *
- * <p>Java idiom note: Python builds a FastAPI/uvicorn app; Java uses the JDK built-in {@link
- * HttpServer}. {@link #start(String, Integer)} launches the server (non-blocking) and returns the
- * bound port, so it is safe to start and {@link #stop()} in tests without hanging. Pass port 0 to
- * bind an ephemeral port.
+ * <p>It runs on the JDK built-in {@link HttpServer} — no external web framework is required. {@link
+ * #start(String, Integer)} launches the server (non-blocking) and returns the bound port, so it is
+ * safe to start and {@link #stop()} in tests without hanging. Pass port 0 to bind an ephemeral
+ * port.
  */
 public class WebService {
 
@@ -160,8 +159,8 @@ public class WebService {
   }
 
   /**
-   * Extension allow-list (the {@code allowed_extensions} param), or {@code null} when every
-   * extension not blocked is permitted — the reference's {@code None} default.
+   * Extension allow-list (the {@code allowed_extensions} param), or {@code null} — the default —
+   * when every extension not blocked is permitted.
    */
   public List<String> getAllowedExtensions() {
     return allowedExtensions == null ? null : Collections.unmodifiableList(allowedExtensions);

@@ -28,11 +28,11 @@ public class SpiderSkill implements SkillBase {
   private String toolName = "spider";
 
   /**
-   * XPath expressions for elements dropped before text extraction — the reference's PREFILLED
-   * {@code self.remove_xpaths} default (spider/skill.py:191-199), same expressions in the same
-   * order. The reference drops each matching element via lxml; this port has no XPath engine on the
-   * scrape path, so {@link #removeXpathTagPattern()} compiles the tag names out of these
-   * expressions into the element-stripping regex — one source for what gets removed.
+   * XPath expressions for elements dropped before text extraction, PREFILLED with the default set
+   * in the order shown. The scrape path runs no XPath engine, so {@link #removeXpathTagPattern()}
+   * compiles the tag names out of these expressions into the element-stripping regex — this list
+   * stays the single source for what gets removed, whether you keep the defaults or replace them
+   * via {@link #setRemoveXpaths(List)}.
    */
   private List<String> removeXpaths =
       new ArrayList<>(
@@ -41,7 +41,7 @@ public class SpiderSkill implements SkillBase {
   /**
    * The XPath expressions for elements removed before text extraction.
    *
-   * @return the removal expressions, prefilled with the reference's defaults.
+   * @return the removal expressions, prefilled with the defaults.
    */
   public List<String> getRemoveXpaths() {
     return removeXpaths;

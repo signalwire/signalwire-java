@@ -19,9 +19,9 @@ package com.signalwire.sdk.swml;
  * PCMU,PCMA,OPUS,G729,G722,VP8,H264}, comma-joined); the 2-value SWAIG tap codec set is
  * deliberately distinct and never shared.
  *
- * <p>The wire strings are upper-case ({@code "PCMU"} / {@code "PCMA"}), matching the reference's
- * literal list exactly. Each constant's {@link #getValue() value} is the canonical wire string, so
- * routing a tap through the enum is byte-for-byte identical to passing that string.
+ * <p>The wire strings are upper-case ({@code "PCMU"} / {@code "PCMA"}). Each constant's {@link
+ * #getValue() value} is the canonical wire string, so routing a tap through the enum is
+ * byte-for-byte identical to passing that string.
  */
 public enum Codec implements WireEnum {
   PCMU("PCMU"),
@@ -35,7 +35,6 @@ public enum Codec implements WireEnum {
 
   /**
    * The canonical (upper-case) wire string for this codec ({@code "PCMU"} / {@code "PCMA"}).
-   * Equivalent to PHP's backed-enum {@code ->value}.
    *
    * @return the upper-case codec name as it appears on the wire.
    */
@@ -46,9 +45,8 @@ public enum Codec implements WireEnum {
 
   /**
    * Parse a wire string into a {@link Codec}, or return {@code null} if it is not a recognised
-   * codec. Matching is exact (case-sensitive), mirroring the reference's literal {@code in ["PCMU",
-   * "PCMA"]} check (so {@code "pcmu"} returns {@code null}). The Java analog of Rust's {@code
-   * from_str}.
+   * codec. Matching is exact and case-sensitive — the server compares against the literal
+   * upper-case names, so {@code "pcmu"} returns {@code null} rather than {@link #PCMU}.
    *
    * @param wire the candidate wire string (case-sensitive).
    * @return the matching constant, or {@code null} if none matches.

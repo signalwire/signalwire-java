@@ -92,9 +92,8 @@ public class RestError extends RuntimeException {
 
   /**
    * The response body of the failing request — the {@code body} envelope field. Alias of {@link
-   * #getResponseBody()} under the reference's field name ({@code SignalWireRestError.body},
-   * _base.py) so the error envelope (status / body / url / method) is reachable under the reference
-   * spelling.
+   * #getResponseBody()}, so the whole error envelope (status / body / url / method) is reachable
+   * under its wire field names.
    */
   public String getBody() {
     return responseBody;
@@ -153,8 +152,7 @@ public class RestError extends RuntimeException {
 
   /**
    * Response header names SignalWire (and common proxies) use for the platform request id, in
-   * preference order. Matched case-insensitively. Mirrors the reference's {@code
-   * _REQUEST_ID_HEADERS} (_base.py).
+   * preference order. Matched case-insensitively.
    */
   private static final List<String> REQUEST_ID_HEADERS =
       List.of("x-request-id", "x-signalwire-request-id", "request-id", "x-amzn-requestid");

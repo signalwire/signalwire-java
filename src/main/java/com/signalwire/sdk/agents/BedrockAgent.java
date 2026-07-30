@@ -16,13 +16,12 @@ import java.util.Map;
 /**
  * Agent implementation for the Amazon Bedrock voice-to-voice model.
  *
- * <p>Mirrors Python's {@code signalwire.agents.bedrock.BedrockAgent} and the Ruby {@code
- * SignalWire::Agents::BedrockAgent}. It extends {@link AgentBase} to keep full compatibility with
- * all SignalWire agent features (skills, POM, SWAIG functions, post-prompt) and renders the same
- * base SWML as {@link AgentBase}, then transforms the {@code ai} verb into an {@code
- * amazon_bedrock} verb whose object carries voice + inference parameters inside its prompt config,
- * per the SWML {@code amazon_bedrock} schema (keys: {@code prompt}, {@code SWAIG}, {@code params},
- * {@code global_data}, {@code post_prompt}, {@code post_prompt_url}).
+ * <p>Extends {@link AgentBase} to keep full compatibility with all SignalWire agent features
+ * (skills, POM, SWAIG functions, post-prompt) and renders the same base SWML as {@link AgentBase},
+ * then transforms the {@code ai} verb into an {@code amazon_bedrock} verb whose object carries
+ * voice + inference parameters inside its prompt config, per the SWML {@code amazon_bedrock} schema
+ * (keys: {@code prompt}, {@code SWAIG}, {@code params}, {@code global_data}, {@code post_prompt},
+ * {@code post_prompt_url}).
  */
 public class BedrockAgent extends AgentBase {
 
@@ -119,8 +118,8 @@ public class BedrockAgent extends AgentBase {
 
   /**
    * Build the {@code amazon_bedrock} verb object from the base {@code ai} config. Voice + inference
-   * params live inside the prompt config; only non-null keys are emitted (matches the Python
-   * reference and the {@code amazon_bedrock} schema).
+   * params live inside the prompt config; only non-null keys are emitted, per the {@code
+   * amazon_bedrock} schema.
    */
   @SuppressWarnings("unchecked")
   private Map<String, Object> buildBedrockObject(Map<String, Object> aiConfig) {
@@ -171,26 +170,19 @@ public class BedrockAgent extends AgentBase {
   }
 
   /**
-   * Update inference params leaving all three at the reference's default of {@code None} (i.e.
-   * unchanged). Mirrors {@code BedrockAgent.set_inference_params(temperature=None, top_p=None,
-   * max_tokens=None)} — signalwire/agents/bedrock.py:215.
+   * Update inference params leaving {@code temperature}, {@code topP} and {@code maxTokens} all
+   * unchanged.
    */
   public BedrockAgent setInferenceParams() {
     return setInferenceParams(null, null, null);
   }
 
-  /**
-   * Update only {@code temperature}, leaving {@code top_p} and {@code max_tokens} at their
-   * reference default of {@code None} — signalwire/agents/bedrock.py:215.
-   */
+  /** Update only {@code temperature}, leaving {@code topP} and {@code maxTokens} unchanged. */
   public BedrockAgent setInferenceParams(Double temperature) {
     return setInferenceParams(temperature, null, null);
   }
 
-  /**
-   * Update {@code temperature} and {@code top_p}, leaving {@code max_tokens} at its reference
-   * default of {@code None} — signalwire/agents/bedrock.py:215.
-   */
+  /** Update {@code temperature} and {@code topP}, leaving {@code maxTokens} unchanged. */
   public BedrockAgent setInferenceParams(Double temperature, Double topP) {
     return setInferenceParams(temperature, topP, null);
   }

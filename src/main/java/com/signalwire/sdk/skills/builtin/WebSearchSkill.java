@@ -298,8 +298,7 @@ public class WebSearchSkill implements SkillBase {
    * {@code allOf(...).get(remaining, MILLIS)}. If that times out we keep whatever futures already
    * completed and abandon the rest (cancelling them so the executor can wind down). In sequential
    * mode we scrape one-at-a-time, breaking out once the deadline passes. The overall_deadline is
-   * enforced in BOTH modes. Mirrors Python's {@code search_and_scrape_best} (skill.py, commit
-   * 51101da).
+   * enforced in BOTH modes.
    */
   private List<ScrapedResult> scrapeCandidates(
       String query, List<Map<String, Object>> items, long deadlineAtMillis) {
@@ -363,7 +362,7 @@ public class WebSearchSkill implements SkillBase {
   /**
    * Fetch one candidate page and return its extracted text bundled with the CSE title/snippet/link.
    * Returns {@code null} on any fetch/parse failure (including the per-page timeout firing) so the
-   * caller can skip it. Mirrors Python's {@code _scrape_one} closure.
+   * caller can skip it — one bad page never fails the whole search.
    */
   private ScrapedResult scrapeOne(String unused, Map<String, Object> item) {
     String title = stringVal(item.get("title"));
@@ -410,9 +409,9 @@ public class WebSearchSkill implements SkillBase {
   }
 
   /**
-   * Crude HTML-to-text: strip script/style blocks and tags, collapse whitespace. Good enough to
-   * give the model page context without pulling in a full HTML parser. Mirrors the intent of
-   * Python's extract_html_content.
+   * Crude HTML-to-text: strip script/style blocks and tags, decode a few common entities, and
+   * collapse whitespace. Good enough to give the model page context without pulling in a full HTML
+   * parser as a dependency.
    */
   private static String extractText(String html) {
     if (html == null || html.isEmpty()) return "";
@@ -439,7 +438,7 @@ public class WebSearchSkill implements SkillBase {
    * fast path and as the graceful fallback when page scraping is abandoned by the overall_deadline
    * (or every page was empty / below threshold). The result is shorter than a fully-scraped
    * response but always non-empty when the CSE returned anything, so the kernel never sees a
-   * webhook timeout. Mirrors Python's {@code GoogleSearchScraper._format_snippet_results}.
+   * webhook timeout.
    */
   private String formatSnippetResults(String query, List<Map<String, Object>> items) {
     if (items == null || items.isEmpty()) {
@@ -469,7 +468,7 @@ public class WebSearchSkill implements SkillBase {
   /**
    * Apply the optional response_prefix / response_postfix around a non-empty result body. Shared by
    * the scraped-result and snippet paths; the error and no-results branches deliberately stay
-   * unwrapped, matching Python.
+   * unwrapped, so a configured prefix never decorates a failure message.
    */
   private String wrapResponse(String body) {
     if (!responsePrefix.isEmpty()) {
@@ -551,9 +550,9 @@ public class WebSearchSkill implements SkillBase {
   }
 
   /**
-   * Advertise every configurable param so GUI tooling can discover it. Mirrors Python's
-   * get_parameter_schema (commit 295745b), including the six latency / response params. Each
-   * setup() read must appear here.
+   * Advertise every configurable param so GUI tooling can discover it, including the six latency /
+   * response params. Every value {@code setup()} reads must appear here, or tooling will not offer
+   * it.
    */
   @Override
   public Map<String, Object> getParameterSchema() {

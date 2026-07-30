@@ -24,16 +24,15 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * SecretScrubDump — the Java port's SECRET-SCRUB-LIVE dump program for the cross-port secret-scrub
- * differ (porting-sdk/scripts/diff_port_secret_scrub.py, PSDK-5).
+ * SecretScrubDump — the SECRET-SCRUB-LIVE dump program.
  *
  * <p>Drives the RelayClient through a real connect + an inbound {@code
  * signalwire.authorization.state} event at {@code SIGNALWIRE_LOG_LEVEL=debug} with the fixture
  * sentinel credentials (project= {@code PJ-TESTLEAK}, token={@code PT-TESTLEAK},
  * authorization_state={@code AENC-TESTLEAK}), captures its OWN stdout+stderr, and reports
  * per-sentinel {@code {leaked: bool}} — True iff the sentinel string appears verbatim in the
- * captured output. All must be False: a port that logs the raw connect frame ({@code >>}) or the
- * raw inbound frame ({@code <<}) at debug leaks the sentinel and reds.
+ * captured output. All must be False: logging the raw connect frame ({@code >>}) or the raw inbound
+ * frame ({@code <<}) at debug leaks the sentinel and fails the check.
  *
  * <p>Prints ONE JSON object mapping sentinel-id -&gt; classification to stdout (on the RESTORED
  * stdout, after capture ends).

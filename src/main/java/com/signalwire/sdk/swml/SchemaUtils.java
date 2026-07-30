@@ -28,12 +28,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * SchemaUtils — Java port of {@code signalwire.utils.schema_utils.SchemaUtils}.
+ * SchemaUtils — loads the SWML JSON Schema, extracts verb metadata, and validates either a single
+ * verb config or a complete SWML document.
  *
- * <p>Loads the SWML JSON Schema, extracts verb metadata, and validates either a single verb config
- * or a complete SWML document.
- *
- * <p>Construction rules mirror Python:
+ * <p>Construction rules:
  *
  * <ul>
  *   <li>Pass {@code schemaPath=null} to use the embedded {@code schema.json}.
@@ -43,10 +41,10 @@ import java.util.TreeSet;
  *       regardless of the constructor argument.
  * </ul>
  *
- * <p>The Java port currently ships only the lightweight validator (verb existence +
- * required-property check). Full JSON Schema validation can be wired in by extending {@link
- * #initFullValidator()}. The lightweight contract matches Python's {@code
- * _validate_verb_lightweight()} exactly.
+ * <p>Only the lightweight validator ships today: it checks that the verb exists in the schema and
+ * that every required property is present, but does not enforce property types or nested
+ * constraints. Full JSON Schema validation can be wired in by extending {@link
+ * #initFullValidator()}.
  */
 public class SchemaUtils {
 
@@ -72,8 +70,7 @@ public class SchemaUtils {
   }
 
   /**
-   * Construct a SchemaUtils. Mirrors Python's {@code SchemaUtils(schema_path=None,
-   * schema_validation=True)}.
+   * Construct a SchemaUtils.
    *
    * @param schemaPath optional path to a schema.json file; pass null to use the embedded resource
    *     bundled with the SDK jar.
@@ -100,8 +97,7 @@ public class SchemaUtils {
 
   /**
    * The explicit schema file path this instance was constructed with, or {@code null} when the
-   * embedded resource is used. Mirrors Python's {@code schema_utils.schema_path} attribute (read by
-   * {@code AgentBase.__init__} at agent_base.py:210).
+   * embedded resource is used. {@code AgentBase} reads this when it builds its own schema view.
    *
    * @return the configured schema path, or null.
    */
@@ -109,7 +105,11 @@ public class SchemaUtils {
     return schemaPath;
   }
 
-  /** Read and parse the JSON Schema. Mirrors Python's {@code load_schema()}. */
+  /**
+   * Read and parse the JSON Schema — from {@code schemaPath} when one was given, otherwise from the
+   * {@code schema.json} resource bundled in the jar. Returns an empty object rather than throwing
+   * when the schema cannot be read.
+   */
   public JsonObject loadSchema() {
     try {
       InputStream is;
@@ -176,21 +176,20 @@ public class SchemaUtils {
   }
 
   /**
-   * Whether full JSON Schema validation is wired up. Mirrors Python's {@code
-   * full_validation_available} property.
+   * Whether full JSON Schema validation is wired up. When {@code false}, {@link #validateVerb}
+   * falls back to the required-property-only check.
    */
   public boolean isFullValidationAvailable() {
     return this.fullValidator != null;
   }
 
-  /** Sorted list of all known verb names. Mirrors Python's {@code get_all_verb_names()}. */
+  /** Sorted list of all known verb names. */
   public List<String> getAllVerbNames() {
     return new ArrayList<>(new TreeSet<>(verbs.keySet()));
   }
 
   /**
    * The {@code properties[verb_name]} block for a verb, or an empty map when the verb is unknown.
-   * Mirrors Python's {@code get_verb_properties(verb_name)}.
    */
   public Map<String, Object> getVerbProperties(String verbName) {
     VerbInfo v = verbs.get(verbName);
@@ -204,7 +203,7 @@ public class SchemaUtils {
 
   /**
    * The {@code required} list for a verb, or an empty list when the verb is unknown or has no
-   * required properties. Mirrors Python's {@code get_verb_required_properties(verb_name)}.
+   * required properties.
    */
   public List<String> getVerbRequiredProperties(String verbName) {
     VerbInfo v = verbs.get(verbName);
@@ -226,10 +225,7 @@ public class SchemaUtils {
     return out;
   }
 
-  /**
-   * Parameter-definition block used by code-gen tooling. Mirrors Python's {@code
-   * get_verb_parameters(verb_name)}.
-   */
+  /** Parameter-definition block used by code-gen tooling. */
   public Map<String, Object> getVerbParameters(String verbName) {
     Map<String, Object> inner = getVerbProperties(verbName);
     Object props = inner.get("properties");
@@ -242,11 +238,10 @@ public class SchemaUtils {
   }
 
   /**
-   * Validate a verb config against the schema. Mirrors Python's {@code validate_verb(verb_name,
-   * verb_config)}.
+   * Validate a verb config against the schema.
    *
-   * @return ({@code valid}, {@code errors}) entry; mirrors Python's {@code Tuple[bool, List[str]]}
-   *     return.
+   * @return an entry of ({@code valid}, {@code errors}) — the flag is {@code true} only when the
+   *     error list is empty.
    */
   public Map.Entry<Boolean, List<String>> validateVerb(
       String verbName, Map<String, Object> verbConfig) {
@@ -773,9 +768,9 @@ public class SchemaUtils {
   }
 
   /**
-   * Validate a complete SWML document. Mirrors Python's {@code validate_document(document)}.
-   * Returns {@code (false, ["Schema validator not initialized"])} when no full validator is wired
-   * in — same contract as Python.
+   * Validate a complete SWML document. Returns {@code (false, ["Schema validator not
+   * initialized"])} when no full validator is wired in — note this is a FAILURE, not a pass:
+   * document validation has no lightweight fallback the way {@link #validateVerb} does.
    */
   public Map.Entry<Boolean, List<String>> validateDocument(Map<String, Object> document) {
     if (fullValidator == null) {
@@ -798,10 +793,7 @@ public class SchemaUtils {
         false, Collections.singletonList("Document validation error: " + joined));
   }
 
-  /**
-   * Generate a Python-style method signature string for a verb. Mirrors Python's {@code
-   * generate_method_signature(verb_name)}.
-   */
+  /** Generate a Python-style method signature string for a verb, for code-generation tooling. */
   public String generateMethodSignature(String verbName) {
     Map<String, Object> params = getVerbParameters(verbName);
     Set<String> required = new LinkedHashSet<>(getVerbRequiredProperties(verbName));
@@ -838,10 +830,7 @@ public class SchemaUtils {
     return "def " + verbName + "(" + String.join(", ", parts) + ") -> bool:\n" + doc;
   }
 
-  /**
-   * Generate a Python-style method body string for a verb. Mirrors Python's {@code
-   * generate_method_body(verb_name)}.
-   */
+  /** Generate a Python-style method body string for a verb, for code-generation tooling. */
   public String generateMethodBody(String verbName) {
     Map<String, Object> params = getVerbParameters(verbName);
     List<String> keys = new ArrayList<>(params.keySet());

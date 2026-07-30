@@ -21,20 +21,20 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * StrictRenderDump — the Java port's SWML STRICT-RENDER dump program for the cross-port
- * strict-render differ (porting-sdk/scripts/diff_port_strict_render.py).
+ * StrictRenderDump — the SWML STRICT-RENDER dump program consumed by the SDK's strict-render
+ * conformance differ.
  *
- * <p>For each case in the shared {@code strict_render_corpus} it builds the target in the Java
- * idiom (a {@link Service} for verb-level cases, an {@link AgentBase} + contexts builder for
- * contexts-level cases), catches any build/validation exception as {@code "raised"}, and reports a
- * clean build as {@code "ok"}. It emits ONE JSON object mapping
+ * <p>For each case in the shared {@code strict_render_corpus} it builds the target (a {@link
+ * Service} for verb-level cases, an {@link AgentBase} + contexts builder for contexts-level cases),
+ * catches any build/validation exception as {@code "raised"}, and reports a clean build as {@code
+ * "ok"}. It emits ONE JSON object mapping
  *
  * <pre>
  *   case-id -&gt; "raised" | "ok"
  * </pre>
  *
- * to stdout (logs to stderr). The differ compares each outcome against the Python oracle. Only
- * stdout carries JSON. Mirrors Go's {@code cmd/strict-render-dump}.
+ * to stdout (logs to stderr). The differ compares each outcome against the expected one. Only
+ * stdout carries JSON.
  *
  * <p>Run via the {@code strictRenderDump} Gradle task:
  *
@@ -42,9 +42,9 @@ import java.util.Map;
  *   ./gradlew --quiet --console=plain strictRenderDump
  * </pre>
  *
- * <p>The corpus itself is the source of truth (porting-sdk/scripts/strict_render_corpus.py); the
- * case builders below reproduce each case's chain in Java. Because a case absent from a port's dump
- * is PENDING (not a failure) the set here must stay in lockstep with that corpus.
+ * <p>The shared corpus itself is the source of truth; the case builders below reproduce each case's
+ * chain in Java. Because a case absent from the dump is reported as PENDING rather than as a
+ * failure, the set here must stay in lockstep with that corpus.
  */
 final class StrictRenderDump {
 

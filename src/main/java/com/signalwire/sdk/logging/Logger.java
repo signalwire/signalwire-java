@@ -129,7 +129,7 @@ public final class Logger {
 
   /**
    * One-time global logging configuration. Idempotent — a second call is a no-op until {@link
-   * #resetLoggingConfiguration()} runs. Mirrors logging_config.configure_logging.
+   * #resetLoggingConfiguration()} runs.
    */
   public static synchronized void configureLogging() {
     if (loggingConfigured) {
@@ -146,10 +146,7 @@ public final class Logger {
     loggingConfigured = true;
   }
 
-  /**
-   * Reset the one-time configuration guard so {@link #configureLogging()} can run again. Mirrors
-   * logging_config.reset_logging_configuration.
-   */
+  /** Reset the one-time configuration guard so {@link #configureLogging()} can run again. */
   public static synchronized void resetLoggingConfiguration() {
     loggingConfigured = false;
     configureLogging();
@@ -158,9 +155,9 @@ public final class Logger {
   /**
    * Remove ASCII control characters (except tab/newline/carriage-return) from a single string.
    *
-   * <p>INTERNAL: the reference's public contract is the event-map form ({@link
-   * #stripControlChars(Map)}); this is the per-value scrub that form is built out of, and the unit
-   * the emitter needs. Package-private, so it is not port surface.
+   * <p>INTERNAL: the public contract is the event-map form ({@link #stripControlChars(Map)}); this
+   * is the per-value scrub that form is built out of, and the unit the emitter needs.
+   * Package-private, so it is not part of the SDK's public surface.
    *
    * @param value the raw log string (null-safe → returns null)
    * @return the sanitized string
@@ -182,13 +179,11 @@ public final class Logger {
   /**
    * Strip control characters from log event values to prevent log injection.
    *
-   * <p>Mirrors {@code signalwire.core.logging_config.strip_control_chars}: takes the log event map,
-   * scrubs every STRING value, and returns the map. Non-string values pass through untouched,
-   * exactly as the reference's {@code isinstance(value, str)} guard does.
+   * <p>Takes the log event map, scrubs every STRING value, and returns the map. Non-string values
+   * pass through untouched.
    *
-   * <p>The reference registers this in BOTH of its structlog processor chains, so the scrub sits on
-   * the real emission path rather than merely being available; this port does the same from {@link
-   * #log}.
+   * <p>{@link #log} calls this on every emission, so the scrub sits on the real logging path rather
+   * than merely being available to callers who remember to invoke it.
    *
    * @param eventDict the log event map (null-safe → returns null)
    * @return a map with every string value sanitized
