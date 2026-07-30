@@ -2163,7 +2163,12 @@ def collect(
             # the MOST-param overload there instead.
             if method_canonical in methods_out:
                 existing = methods_out[method_canonical]
-                if (canonical_name, method_canonical) in PREFER_FULL_OVERLOAD:
+                if (
+                    canonical_name,
+                    method_canonical,
+                ) in PREFER_FULL_OVERLOAD or _delegating_overload_set(
+                    type_entry, native
+                ):
                     n_new, n_old = len(sig["params"]), len(existing["params"])
                     if n_new < n_old:
                         continue
@@ -2499,6 +2504,53 @@ def _typed_param_count(sig: dict) -> int:
         if "class:" in t:
             n += 1
     return n
+
+
+def _delegating_overload_set(type_entry: dict, native_method: str) -> bool:
+    """True when this method's shorter overloads are TRAILING-PREFIX DELEGATES.
+
+    Java has no default arguments; the idiomatic substitute is a shorter
+    overload that omits the trailing params and forwards the reference's
+    defaults — ``pause()`` delegating to ``pause(behavior)`` IS
+    ``behavior: str | None = None``. When the overload set has that shape the
+    FULL-arity overload is the parity surface: it carries every parameter the
+    reference declares, and ``optional_param_names`` has already marked the
+    omitted ones ``required: false``. Collapsing to the FEWEST-param overload
+    instead would drop those params from the recorded signature entirely and
+    surface as a ``param-count-mismatch`` that is pure idiom — the very shape
+    the hand-maintained ``PREFER_FULL_OVERLOAD`` set was itemising one method
+    at a time.
+
+    Reusing ``optional_param_names``' predicate keeps the two decisions from
+    drifting: the same prefix test that says "these params are optional" is
+    what says "keep the overload that HAS them".
+
+    Deliberately narrow, and the narrowing is load-bearing. EVERY shorter
+    overload must be a trailing prefix of the full one — not merely one of
+    them. A set that MIXES a delegate with an unrelated same-arity type-swap
+    sibling is not a defaults chain, and preferring its full-arity member picks
+    an arbitrary form: ``SessionManager`` offers ``(int defaultExpiry, String
+    secretKey)`` beside ``(byte[] secretKey, int defaultExpiry)``, whose
+    parameters are REORDERED and RETYPED rather than extended. Requiring the
+    whole set to be prefix-consistent keeps the fewest-param default there, so
+    a genuine surface collapse (an options-object, a type-swap) still reports
+    instead of being silently re-picked.
+    """
+    overloads = [
+        m for m in type_entry.get("methods", []) if m.get("name") == native_method
+    ]
+    if len(overloads) < 2:
+        return False
+    names = [
+        [camel_to_snake(p.get("name", "")) for p in m.get("parameters", [])]
+        for m in overloads
+    ]
+    full = max(names, key=len)
+    # Unique arities only: two overloads of the SAME arity cannot both be
+    # trailing prefixes of the full one, so their presence proves a type-swap.
+    if len(names) != len({len(n) for n in names}):
+        return False
+    return all(n == full[: len(n)] for n in names)
 
 
 def optional_param_names(type_entry: dict, native_method: str) -> set[str]:
