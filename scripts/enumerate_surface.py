@@ -1693,6 +1693,84 @@ _NONPUBLIC_TYPE_HEADER = re.compile(
     r"(?P<name>[A-Za-z_$][\w$]*)"
 )
 
+
+def record_component_accessors(src: str, header_end: int) -> list[str]:
+    """Return the accessor names a compact ``record`` header declares.
+
+    A Java ``record Foo(int status, Map<String,String> headers, String body) {}``
+    implicitly declares a public accessor per component — ``status()``,
+    ``headers()``, ``body()`` — which are REAL public API even though no method
+    body appears in the source. The walker only ever matched explicit method
+    headers, so these 30 accessors across the SDK's 10 public records were
+    invisible to the NATIVE surface, and therefore to DOC-AUDIT, which resolves
+    every identifier a doc snippet writes against that file.
+
+    ``src`` must be the comment/string-stripped source and ``header_end`` the end
+    of the ``_TYPE_HEADER`` match, i.e. just past the record's NAME. Returns []
+    for a non-compact header (``record Foo {`` — no parameter list) and for the
+    empty component list ``record Foo() {}``.
+
+    Generic parameters are depth-tracked, so ``Map<String, String> headers``
+    contributes one accessor (``headers``), not two.
+    """
+    j = header_end
+    while j < len(src) and src[j].isspace():
+        j += 1
+    # A generic record header (``record Box<T>(T value)``) puts the type
+    # parameters before the component list; step over them.
+    if j < len(src) and src[j] == "<":
+        depth = 0
+        while j < len(src):
+            if src[j] == "<":
+                depth += 1
+            elif src[j] == ">":
+                depth -= 1
+                if depth == 0:
+                    j += 1
+                    break
+            j += 1
+        while j < len(src) and src[j].isspace():
+            j += 1
+    if j >= len(src) or src[j] != "(":
+        return []
+    depth = 0
+    close = -1
+    for k in range(j, len(src)):
+        if src[k] == "(":
+            depth += 1
+        elif src[k] == ")":
+            depth -= 1
+            if depth == 0:
+                close = k
+                break
+    if close < 0:
+        return []
+    params = src[j + 1 : close]
+    out: list[str] = []
+    depth = 0
+    current = ""
+    for ch in params:
+        if ch in "<([":
+            depth += 1
+        elif ch in ">)]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(current)
+            current = ""
+        else:
+            current += ch
+    if current.strip():
+        out.append(current)
+    names: list[str] = []
+    for comp in out:
+        tokens = comp.replace("\n", " ").split()
+        # The component NAME is the last token; everything before it is the
+        # (possibly annotated, possibly generic) type.
+        if tokens and re.fullmatch(r"[A-Za-z_$][\w$]*", tokens[-1]):
+            names.append(tokens[-1])
+    return names
+
+
 # Matches a ``public ... methodName(...)`` or constructor signature. The type
 # can be arbitrarily complex (generics, arrays, qualified names), so we allow
 # any run of non-special characters up to the identifier + ``(``.
@@ -1813,7 +1891,18 @@ def parse_type_body(
             effective_name = (
                 renamed if renamed in known_python_classes else outer_name + renamed
             )
-            # Skip compact record headers (record Foo(...) {}) — still treat body.
+            # A compact record header declares an implicit public accessor per
+            # component; harvest them BEFORE stepping over the header into the
+            # body (the body holds only the explicitly-written members).
+            # NATIVE ONLY: the native surface answers "does this identifier exist
+            # in the Java API", which DOC-AUDIT resolves doc snippets against, and
+            # these accessors demonstrably do. The parity surface is oracle-keyed
+            # and already carries the components the reference records
+            # (BasicCredentials/BearerCredentials), so adding them there would
+            # emit members the reference does not expose.
+            record_members: list[str] = []
+            if native and m_type.group("kind") == "record":
+                record_members = record_component_accessors(src, m_type.end())
             body_open = src.find("{", m_type.end())
             if body_open < 0:
                 i = m_type.end()
@@ -1829,6 +1918,8 @@ def parse_type_body(
                 native=native,
                 is_interface=inner_is_interface,
             )
+            if record_members:
+                inner_classes.setdefault(effective_name, []).extend(record_members)
             for cls_name, cls_methods in inner_classes.items():
                 if cls_name in classes:
                     classes[cls_name].extend(cls_methods)
@@ -2001,6 +2092,11 @@ def enumerate_file(
         native=native,
         is_interface=(m_type.group("kind") == "interface"),
     )
+    # Top-level compact record (see the nested-type site for the rationale).
+    if native and m_type.group("kind") == "record":
+        top_components = record_component_accessors(stripped, m_type.end())
+        if top_components:
+            classes.setdefault(outer_name, []).extend(top_components)
 
     # Generated wire-type / read-side-payload files (item A/H + D): a method-less
     # DTO class (or a public enum) per components/schemas / $defs OBJECT. Route the

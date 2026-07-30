@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ c485c73e7ba5bbaaec4ec411d2bd52307c7714b0",
+  "generated_from": "signalwire-java @ 97b2e51c9cb408dab9f4fc5923c7ff412a0f9cf2",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -556,6 +556,14 @@
           "verify_api_key",
           "verify_basic_auth",
           "verify_bearer_token"
+        ],
+        "BasicCredentials": [
+          "password",
+          "username"
+        ],
+        "BearerCredentials": [
+          "credentials",
+          "scheme"
         ]
       },
       "functions": []
@@ -737,7 +745,6 @@
       "classes": {
         "DataMap": [
           "DataMap",
-          "body",
           "data_map",
           "description",
           "errorKeys",
@@ -4402,7 +4409,11 @@
     },
     "signalwire.runtime.serverless_adapter_response": {
       "classes": {
-        "ServerlessAdapterResponse": []
+        "ServerlessAdapterResponse": [
+          "body",
+          "headers",
+          "status"
+        ]
       },
       "functions": []
     },
@@ -5225,7 +5236,11 @@
     },
     "signalwire.swml.service_http_result": {
       "classes": {
-        "ServiceHttpResult": []
+        "ServiceHttpResult": [
+          "body",
+          "headers",
+          "status"
+        ]
       },
       "functions": []
     },
