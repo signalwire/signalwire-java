@@ -157,6 +157,67 @@ class SwmlHandlerTest {
     assertTrue(r.getErrors().contains("'SWAIG' must be an object"));
   }
 
+  // ---- post_prompt shape (mirrors signalwire-python 4371610) ----
+  //
+  // The engine holds post_prompt to the SAME contract as prompt:
+  // mod_openai/app_config.c checks !cJSON_IsObject(assistant_prompt) at :3193 and
+  // !cJSON_IsObject(post_prompt) at :3219 — same structure, same fatal:true
+  // calling.error, 26 lines apart. A bare-string or array post_prompt aborts the
+  // call, so a validator that reports it VALID is lying to the caller.
+
+  @Test
+  void testValidateConfigRejectsBareStringPostPrompt() {
+    Map<String, Object> config = new LinkedHashMap<>();
+    config.put("prompt", Map.of("text", "hi"));
+    config.put("post_prompt", "Summarize.");
+    ValidationResult r = handler.validateConfig(config);
+    assertFalse(r.isValid());
+    assertTrue(r.getErrors().contains("'post_prompt' must be an object"));
+  }
+
+  @Test
+  void testValidateConfigRejectsArrayPostPrompt() {
+    Map<String, Object> config = new LinkedHashMap<>();
+    config.put("prompt", Map.of("text", "hi"));
+    config.put("post_prompt", List.of(Map.of("text", "Summarize.")));
+    ValidationResult r = handler.validateConfig(config);
+    assertFalse(r.isValid());
+    assertTrue(r.getErrors().contains("'post_prompt' must be an object"));
+  }
+
+  @Test
+  void testValidateConfigAcceptsObjectPostPrompt() {
+    Map<String, Object> config = new LinkedHashMap<>();
+    config.put("prompt", Map.of("text", "hi"));
+    config.put("post_prompt", Map.of("text", "Summarize."));
+    ValidationResult r = handler.validateConfig(config);
+    assertTrue(r.isValid());
+    assertTrue(r.getErrors().isEmpty());
+  }
+
+  @Test
+  void testValidateConfigAcceptsAbsentPostPrompt() {
+    // post_prompt is OPTIONAL — absence must not be an error.
+    Map<String, Object> config = new LinkedHashMap<>();
+    config.put("prompt", Map.of("text", "hi"));
+    ValidationResult r = handler.validateConfig(config);
+    assertTrue(r.isValid());
+    assertTrue(r.getErrors().isEmpty());
+  }
+
+  @Test
+  void testBuildConfigPostPromptRoundTripsThroughValidate() {
+    // What the builder emits must still validate — buildConfig wraps the
+    // post-prompt text as {"text": ...}, which is exactly the shape the engine
+    // requires.
+    Map<String, Object> config =
+        handler.buildConfig("hi", null, null, "summarize", null, null, null);
+    assertEquals(Map.of("text", "summarize"), config.get("post_prompt"));
+    ValidationResult r = handler.validateConfig(config);
+    assertTrue(r.isValid());
+    assertTrue(r.getErrors().isEmpty());
+  }
+
   // ---- SWMLVerbHandler base + VerbHandlerRegistry ----
 
   @Test
