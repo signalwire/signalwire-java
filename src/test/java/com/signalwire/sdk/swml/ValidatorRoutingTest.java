@@ -63,16 +63,28 @@ class ValidatorRoutingTest {
    */
   @Test
   void builderHangupAcceptsAnyReasonBecauseTheFieldIsWidened() {
-    for (String reason : List.of("hangup", "busy", "decline", "done", "completed")) {
+    // The last two are legitimate platform values that sit outside the listed union —
+    // the case widening exists for.
+    for (String reason :
+        List.of("hangup", "busy", "decline", "done", "completed", "user_hangup", "no_answer")) {
       assertDoesNotThrow(() -> new SWMLBuilder(svc()).hangup(reason), reason);
     }
   }
 
-  /** The widened field still enforces its TYPE — a non-string reason is not legal. */
+  /**
+   * Widening drops the const/enum MEMBERSHIP constraint and nothing else — the underlying TYPE
+   * still holds. A widened string field that accepted a number, a boolean, an object or an array
+   * would have been widened into an untyped field, which is a different (and wrong) contract.
+   */
   @Test
   void builderHangupStillRejectsAWrongTypedReason() {
     SWMLBuilder b = new SWMLBuilder(svc());
-    assertThrows(SchemaValidationError.class, () -> b.verb("hangup", Map.of("reason", 42)));
+    for (Object wrong : List.of(42, true, Map.of(), List.of())) {
+      assertThrows(
+          SchemaValidationError.class,
+          () -> b.verb("hangup", Map.of("reason", wrong)),
+          "a widened string field must still reject " + wrong.getClass().getSimpleName());
+    }
   }
 
   @Test
