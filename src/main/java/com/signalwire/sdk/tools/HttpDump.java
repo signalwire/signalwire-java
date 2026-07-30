@@ -255,6 +255,7 @@ final class HttpDump {
 
     // ---- serverless (lambda) ----
     out.put("http_serverless_lambda_swaig", serverlessSwaig());
+    out.put("http_serverless_lambda_swaig_valid_token", serverlessSwaigValidToken());
     out.put("http_serverless_lambda_noauth_401", serverlessNoAuth());
 
     System.out.println(GSON.toJson(out));
@@ -303,6 +304,40 @@ final class HttpDump {
             map("http", map("method", "POST")),
             "headers",
             map("authorization", basicAuth(USER, PASSWORD), "content-type", "application/json"),
+            "body",
+            "{\"function\":\"say_hello\",\"argument\":{\"parsed\":[{}]},\"call_id\":\"c1\"}");
+    return reduceLambda(h.handle(event));
+  }
+
+  /**
+   * The POSITIVE half of the serverless token contract: identical to {@link #serverlessSwaig()} in
+   * every respect EXCEPT that it carries a genuinely minted {@code __token} in the lambda query
+   * string, so it pins that a valid credential is ACCEPTED and the secure tool RUNS.
+   *
+   * <p>The token cannot be a literal: it is an HMAC keyed by the agent's per-process random
+   * SessionManager secret and it expires, so it is minted from the SAME agent instance this fixture
+   * drives. The token rides the query string and the {@code call_id} rides the POST body — the same
+   * split the in-process HTTP path uses.
+   */
+  private static Map<String, Object> serverlessSwaigValidToken() {
+    AgentBase a =
+        AgentBase.builder().name("demo").route("/").authUser(USER).authPassword(PASSWORD).build();
+    a.defineTool(
+        "say_hello",
+        "greet",
+        new LinkedHashMap<>(),
+        (argsMap, raw) -> new FunctionResult("hello there"));
+    LambdaAgentHandler h = new LambdaAgentHandler(a);
+    Map<String, Object> event =
+        map(
+            "rawPath",
+            "/swaig",
+            "requestContext",
+            map("http", map("method", "POST")),
+            "headers",
+            map("authorization", basicAuth(USER, PASSWORD), "content-type", "application/json"),
+            "queryStringParameters",
+            map("__token", a.createToolToken("say_hello", "c1")),
             "body",
             "{\"function\":\"say_hello\",\"argument\":{\"parsed\":[{}]},\"call_id\":\"c1\"}");
     return reduceLambda(h.handle(event));
