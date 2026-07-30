@@ -127,3 +127,37 @@ sw_gradle() {
     # shellcheck disable=SC2086
     (cd "$REPO_ROOT" && "$GRADLEW" $GRADLE_DAEMON_FLAG --build-cache "$@")
 }
+
+# ---------------------------------------------------------------------------
+# Python toolchain (ruff) — this repo is a Java SDK, but scripts/ holds
+# hand-written Python that is fully load-bearing: the enumerators that produce
+# port_signatures.json / port_surface.json (the inputs to the SIGNATURES, SURFACE
+# and DRIFT gates) and the generators that emit the committed REST/RELAY/SWML/
+# SWAIG trees. It is linted + formatted at the same bar as everything else, via
+# ruff, configured in the repo-root ruff.toml.
+# ---------------------------------------------------------------------------
+
+# sw_ruff <ruff-args…> — run ruff from the repo root with the repo's config.
+#
+# The config lives at eng/ruff.toml, NOT the repo root: every other port keeps its
+# linter config at the root (.golangci.yml, .rubocop.yml, phpstan.neon,
+# clippy.toml, .clang-tidy), but porting-sdk's ROOT-HYGIENE gate has no entry for
+# `ruff.toml` and reds on it as root clutter. Since ruff takes --config, filing it
+# under eng/ is the honest fix rather than an allowlist entry for a file that can
+# perfectly well move. --config is passed HERE, once, so no call site can forget
+# it and silently lint under ruff's defaults instead (which would drop the whole
+# rule selection and every per-file exemption).
+#
+# Fails LOUD with an install hint when ruff is absent, rather than skipping the
+# Python half of the gate silently — a gate that quietly does nothing is worse
+# than no gate.
+sw_ruff() {
+    if ! command -v ruff >/dev/null 2>&1; then
+        echo "FATAL: ruff not found on PATH — the Python half of FMT/LINT cannot run." >&2
+        echo "       Install it, e.g.:" >&2
+        echo "         brew install ruff        # macOS" >&2
+        echo "         pipx install ruff        # or: pip install ruff" >&2
+        return 1
+    fi
+    (cd "$REPO_ROOT" && ruff "$@" --config eng/ruff.toml)
+}

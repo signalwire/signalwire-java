@@ -44,6 +44,7 @@ Usage:
     python3 scripts/generate_relay_protocol.py --check    # GEN-FRESH: fail if stale
     python3 scripts/generate_relay_protocol.py --out DIR  # scratch: emit into DIR
 """
+
 from __future__ import annotations
 
 import argparse
@@ -56,7 +57,9 @@ from pathlib import Path
 
 def _load_rest_generator():
     here = Path(__file__).resolve().parent
-    spec = importlib.util.spec_from_file_location("generate_rest", here / "generate_rest.py")
+    spec = importlib.util.spec_from_file_location(
+        "generate_rest", here / "generate_rest.py"
+    )
     if spec is None or spec.loader is None:  # pragma: no cover
         raise SystemExit("generate_relay_protocol.py: cannot load generate_rest.py")
     mod = importlib.util.module_from_spec(spec)
@@ -129,17 +132,22 @@ def build_outputs(psdk: Path) -> dict[str, str]:
             # The relay JSON schemas carry no in-file $ref (every nested object is
             # inline), so no schemas node is needed (inline objects collapse to Map).
             outs[f"{java_name}.java"] = GR.emit_type_class(
-                GEN_PACKAGE, java_name, node,
-                f"RELAY method {method!r}, {phase} phase", class_name=java_name)
+                GEN_PACKAGE,
+                java_name,
+                node,
+                f"RELAY method {method!r}, {phase} phase",
+                class_name=java_name,
+            )
 
-    for fn, formatted in GR.gjf_format_many(outs).items():
-        outs[fn] = formatted
+    outs.update(GR.gjf_format_many(outs))
     return outs
 
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -164,11 +172,15 @@ def main(argv: list[str]) -> int:
                 if rel not in expected:
                     stale.append(f"{p} (leftover — not in generator output)")
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated RELAY-protocol file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated RELAY-protocol file(s) stale:\n"
+            )
             for s in stale:
-                sys.stderr.write("  - %s\n" % s)
+                sys.stderr.write(f"  - {s}\n")
             return 1
-        print("GEN-FRESH: generated RELAY-protocol files match porting-sdk/relay-protocol/*.json.")
+        print(
+            "GEN-FRESH: generated RELAY-protocol files match porting-sdk/relay-protocol/*.json."
+        )
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)

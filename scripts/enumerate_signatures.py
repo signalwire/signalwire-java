@@ -43,15 +43,26 @@ _psdk_candidates = [
     PORT_ROOT.parent / "porting-sdk",
     Path.home() / "src" / "porting-sdk",
 ]
-PSDK = next((c.resolve() for c in _psdk_candidates if c and c.is_dir()),
-            (PORT_ROOT.parent / "porting-sdk").resolve())
+PSDK = next(
+    (c.resolve() for c in _psdk_candidates if c and c.is_dir()),
+    (PORT_ROOT.parent / "porting-sdk").resolve(),
+)
 
+# E402: this import is structurally forced to come after the sys.path insert
+# above — enumerate_surface is a SIBLING script in scripts/, not an installed
+# package, so it is unimportable until scripts/ is on sys.path. Same shape as the
+# reference's tests/conftest.py, which patches sys.path before importing the SDK.
 sys.path.insert(0, str(HERE))
-from enumerate_surface import (  # type: ignore
-    _CLASS_RENAMES, _EVENT_METHOD_RENAMES_BY_CLASS, _METHOD_RENAMES, _PY_KEYWORDS,
+from enumerate_surface import (  # noqa: E402  # type: ignore
+    _CLASS_RENAMES,
+    _EVENT_METHOD_RENAMES_BY_CLASS,
+    _METHOD_RENAMES,
+    _PY_KEYWORDS,
     _SURFACE_METHOD_ALIASES,
-    build_class_to_module_map, camel_to_snake, translate_method_name,
-    _gen_type_module, _gen_type_unrename,
+    build_class_to_module_map,
+    camel_to_snake,
+    _gen_type_module,
+    _gen_type_unrename,
 )
 
 
@@ -60,14 +71,62 @@ from enumerate_surface import (  # type: ignore
 # field-accessor recording strips that suffix back to the bare wire key the oracle
 # records. Kept in sync with generate_rest.JAVA_KEYWORDS.
 _JAVA_FIELD_KEYWORDS = {
-    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
-    "class", "const", "continue", "default", "do", "double", "else", "enum",
-    "extends", "final", "finally", "float", "for", "goto", "if", "implements",
-    "import", "instanceof", "int", "interface", "long", "native", "new",
-    "package", "private", "protected", "public", "return", "short", "static",
-    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
-    "transient", "try", "void", "volatile", "while", "true", "false", "null",
-    "var", "record", "yield",
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "double",
+    "else",
+    "enum",
+    "extends",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "try",
+    "void",
+    "volatile",
+    "while",
+    "true",
+    "false",
+    "null",
+    "var",
+    "record",
+    "yield",
 }
 
 
@@ -112,8 +171,17 @@ def load_rest_sidecar() -> dict[str, list[dict]]:
     resource methods. Keyed by ``<ResourceClass>::<javaMethod>`` → param list
     (each ``{name, kind, type, required[, default]}``)."""
     path = (
-        PORT_ROOT / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
-        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+        PORT_ROOT
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "signalwire"
+        / "sdk"
+        / "rest"
+        / "namespaces"
+        / "generated"
+        / "rest_signatures.json"
     )
     if not path.is_file():
         return {}
@@ -130,8 +198,17 @@ def load_rest_crud_bases() -> dict[str, dict]:
     The enumerator attaches it to the class entry as ``crud_base`` so the drift gate
     compares bindings for equivalence (diff_port_signatures ``crud_bases_equivalent``)."""
     path = (
-        PORT_ROOT / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
-        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+        PORT_ROOT
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "signalwire"
+        / "sdk"
+        / "rest"
+        / "namespaces"
+        / "generated"
+        / "rest_signatures.json"
     )
     if not path.is_file():
         return {}
@@ -175,7 +252,7 @@ def translate_java_type(t: str, aliases: dict[str, str], context: str) -> str:
     # ``? super Foo`` collapses to ``any`` (covariant write-side has no
     # canonical analog), bare ``?`` collapses to ``any``.
     if t.startswith("? extends "):
-        return translate_java_type(t[len("? extends "):], aliases, context)
+        return translate_java_type(t[len("? extends ") :], aliases, context)
     if t.startswith("? super "):
         return "any"
     if t == "?":
@@ -211,21 +288,32 @@ def translate_java_type(t: str, aliases: dict[str, str], context: str) -> str:
         args = split_generic_args(inner)
         canon_args = [translate_java_type(a, aliases, context) for a in args]
         if head in (
-            "java.util.List", "java.util.ArrayList", "java.util.LinkedList",
-            "java.util.Set", "java.util.HashSet", "java.util.LinkedHashSet",
-            "java.util.Collection", "java.lang.Iterable",
+            "java.util.List",
+            "java.util.ArrayList",
+            "java.util.LinkedList",
+            "java.util.Set",
+            "java.util.HashSet",
+            "java.util.LinkedHashSet",
+            "java.util.Collection",
+            "java.lang.Iterable",
         ):
             return f"list<{canon_args[0]}>" if canon_args else "list<any>"
         if head in (
-            "java.util.Map", "java.util.HashMap", "java.util.LinkedHashMap",
-            "java.util.TreeMap", "java.util.concurrent.ConcurrentHashMap",
+            "java.util.Map",
+            "java.util.HashMap",
+            "java.util.LinkedHashMap",
+            "java.util.TreeMap",
+            "java.util.concurrent.ConcurrentHashMap",
         ):
             if len(canon_args) >= 2:
                 return f"dict<{canon_args[0]},{canon_args[1]}>"
             return "dict<string,any>"
         if head == "java.util.Optional":
             return f"optional<{canon_args[0]}>" if canon_args else "optional<any>"
-        if head in ("java.util.concurrent.CompletableFuture", "java.util.concurrent.Future"):
+        if head in (
+            "java.util.concurrent.CompletableFuture",
+            "java.util.concurrent.Future",
+        ):
             return canon_args[0] if canon_args else "any"
         if head == "java.util.Map$Entry":
             # Java's Map.Entry<K, V> is the idiomatic two-arity tuple shape;
@@ -257,9 +345,7 @@ def translate_java_type(t: str, aliases: dict[str, str], context: str) -> str:
         return _translate_sdk_class_ref(t)
     if t in ("byte", "short", "int", "long", "float", "double", "boolean", "char"):
         # Should have been hit in aliases
-        raise TypeTranslationError(
-            f"primitive {t!r} not in aliases at {context}"
-        )
+        raise TypeTranslationError(f"primitive {t!r} not in aliases at {context}")
 
     # Fall back to last segment lookup
     last = t.rsplit(".", 1)[-1]
@@ -290,7 +376,7 @@ def _pkg_to_module(pkg: str) -> str:
     """com.signalwire.sdk.agent → signalwire.agent_base / signalwire.<seg>"""
     if not pkg.startswith("com.signalwire.sdk"):
         return "signalwire." + pkg.lower()
-    rest = pkg[len("com.signalwire.sdk"):].lstrip(".")
+    rest = pkg[len("com.signalwire.sdk") :].lstrip(".")
     if not rest:
         return "signalwire"
     parts = [camel_to_snake(p) for p in rest.split(".")]
@@ -323,8 +409,8 @@ CLASS_TO_MODULE: dict[str, str] = {}
 # Additional Java class renames not in enumerate_surface.py:
 # These are core SDK classes that Java names differently from Python.
 JAVA_EXTRA_RENAMES = {
-    "Service": "SWMLService",       # SignalWire.SWML.Service → core.swml_service.SWMLService
-    "AgentBase": "AgentBase",       # already matches
+    "Service": "SWMLService",  # SignalWire.SWML.Service → core.swml_service.SWMLService
+    "AgentBase": "AgentBase",  # already matches
 }
 
 # Nested-class qualification: SignatureDump emits each nested class with its
@@ -347,21 +433,33 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
     # FastAPI's HTTPBasicCredentials / HTTPAuthorizationCredentials under these
     # names). Without this, SignatureDump's bare simple name would not match the
     # reference's identity. See the note in _SIG_EXCLUDED_SIMPLE_NAMES.
-    ("com.signalwire.sdk.core", "BasicCredentials"):
-        ("BasicCredentials", "signalwire.core.auth_handler"),
-    ("com.signalwire.sdk.core", "BearerCredentials"):
-        ("BearerCredentials", "signalwire.core.auth_handler"),
+    ("com.signalwire.sdk.core", "BasicCredentials"): (
+        "BasicCredentials",
+        "signalwire.core.auth_handler",
+    ),
+    ("com.signalwire.sdk.core", "BearerCredentials"): (
+        "BearerCredentials",
+        "signalwire.core.auth_handler",
+    ),
     # AgentBase.Builder, AgentBase.DynamicConfigCallback (nested in AgentBase.java)
-    ("com.signalwire.sdk.agent", "Builder"):
-        ("AgentBaseBuilder", "signalwire.agent.agent_base_builder"),
-    ("com.signalwire.sdk.agent", "DynamicConfigCallback"):
-        ("AgentBaseDynamicConfigCallback", "signalwire.agent.agent_base_dynamic_config_callback"),
+    ("com.signalwire.sdk.agent", "Builder"): (
+        "AgentBaseBuilder",
+        "signalwire.agent.agent_base_builder",
+    ),
+    ("com.signalwire.sdk.agent", "DynamicConfigCallback"): (
+        "AgentBaseDynamicConfigCallback",
+        "signalwire.agent.agent_base_dynamic_config_callback",
+    ),
     # RelayClient.Builder (nested in RelayClient.java)
-    ("com.signalwire.sdk.relay", "Builder"):
-        ("RelayClientBuilder", "signalwire.relay.relay_client_builder"),
+    ("com.signalwire.sdk.relay", "Builder"): (
+        "RelayClientBuilder",
+        "signalwire.relay.relay_client_builder",
+    ),
     # RestClient.Builder (nested in RestClient.java)
-    ("com.signalwire.sdk.rest", "Builder"):
-        ("RestClientBuilder", "signalwire.rest.rest_client_builder"),
+    ("com.signalwire.sdk.rest", "Builder"): (
+        "RestClientBuilder",
+        "signalwire.rest.rest_client_builder",
+    ),
     # Action subtypes nested under Call.java's relay package. The reference
     # projects each concrete action's control methods (stop/pause/resume/volume)
     # directly onto the action class in ``signalwire.relay.call``, so these must
@@ -372,42 +470,65 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
     # ``CollectAction``; Java's ``CollectAction`` (prefix ``collect``,
     # stop + start_input_timers) IS the reference's ``StandaloneCollectAction``.
     # Java's inbound ``ReceiveFaxAction`` is the reference's ``FaxAction``.
-    ("com.signalwire.sdk.relay", "PlayAndCollectAction"):
-        ("CollectAction", "signalwire.relay.call"),
-    ("com.signalwire.sdk.relay", "CollectAction"):
-        ("StandaloneCollectAction", "signalwire.relay.call"),
-    ("com.signalwire.sdk.relay", "ReceiveFaxAction"):
-        ("FaxAction", "signalwire.relay.call"),
-    ("com.signalwire.sdk.relay", "SendFaxAction"):
-        ("CallSendFaxAction", "signalwire.relay.call_send_fax_action"),
+    ("com.signalwire.sdk.relay", "PlayAndCollectAction"): (
+        "CollectAction",
+        "signalwire.relay.call",
+    ),
+    ("com.signalwire.sdk.relay", "CollectAction"): (
+        "StandaloneCollectAction",
+        "signalwire.relay.call",
+    ),
+    ("com.signalwire.sdk.relay", "ReceiveFaxAction"): (
+        "FaxAction",
+        "signalwire.relay.call",
+    ),
+    ("com.signalwire.sdk.relay", "SendFaxAction"): (
+        "CallSendFaxAction",
+        "signalwire.relay.call_send_fax_action",
+    ),
     # AuthorizationStateEvent — nested under RelayEvent in Java
-    ("com.signalwire.sdk.relay", "AuthorizationStateEvent"):
-        ("RelayEventAuthorizationStateEvent", "signalwire.relay.relay_event_authorization_state_event"),
+    ("com.signalwire.sdk.relay", "AuthorizationStateEvent"): (
+        "RelayEventAuthorizationStateEvent",
+        "signalwire.relay.relay_event_authorization_state_event",
+    ),
     # Constants — top-level in Java but with no Python counterpart
-    ("com.signalwire.sdk.relay", "Constants"):
-        ("RelayConstants", "signalwire.relay.relay_constants"),
+    ("com.signalwire.sdk.relay", "Constants"): (
+        "RelayConstants",
+        "signalwire.relay.relay_constants",
+    ),
     # SwaigTest.Platform (the inner enum in SwaigTest.java)
-    ("com.signalwire.sdk.cli", "SwaigTest"):
-        ("SwaigTest", "signalwire.cli.swaig_test"),
+    ("com.signalwire.sdk.cli", "SwaigTest"): ("SwaigTest", "signalwire.cli.swaig_test"),
     # ServerlessSimulator.Platform — Java nests Platform inside ServerlessSimulator
-    ("com.signalwire.sdk.cli.simulation", "Platform"):
-        ("ServerlessSimulatorPlatform", "signalwire.cli.simulation.serverless_simulator_platform"),
+    ("com.signalwire.sdk.cli.simulation", "Platform"): (
+        "ServerlessSimulatorPlatform",
+        "signalwire.cli.simulation.serverless_simulator_platform",
+    ),
     # Logger — top-level in com.signalwire.sdk.logging
-    ("com.signalwire.sdk.logging", "Logger"):
-        ("Logger", "signalwire.core.logging_config"),
-    ("com.signalwire.sdk.logging", "Level"):
-        ("LoggingLevel", "signalwire.logging.logging_level"),
+    ("com.signalwire.sdk.logging", "Logger"): (
+        "Logger",
+        "signalwire.core.logging_config",
+    ),
+    ("com.signalwire.sdk.logging", "Level"): (
+        "LoggingLevel",
+        "signalwire.logging.logging_level",
+    ),
     # ToolDefinition / ToolHandler — top-level swaig classes
-    ("com.signalwire.sdk.swaig", "ToolDefinition"):
-        ("ToolDefinition", "signalwire.swaig.tool_definition"),
-    ("com.signalwire.sdk.swaig", "ToolHandler"):
-        ("ToolHandler", "signalwire.swaig.tool_handler"),
+    ("com.signalwire.sdk.swaig", "ToolDefinition"): (
+        "ToolDefinition",
+        "signalwire.swaig.tool_definition",
+    ),
+    ("com.signalwire.sdk.swaig", "ToolHandler"): (
+        "ToolHandler",
+        "signalwire.swaig.tool_handler",
+    ),
     # ParameterSchema.Builder (nested in ParameterSchema.java) — like
     # AgentBase.Builder, the bare ``Builder`` is qualified with its outer
     # class to avoid collision, mirroring the surface enumerator's
     # ``effective_name = outer_name + renamed`` → ``ParameterSchemaBuilder``.
-    ("com.signalwire.sdk.swaig", "Builder"):
-        ("ParameterSchemaBuilder", "signalwire.swaig.parameter_schema_builder"),
+    ("com.signalwire.sdk.swaig", "Builder"): (
+        "ParameterSchemaBuilder",
+        "signalwire.swaig.parameter_schema_builder",
+    ),
     # Document — Java's swml.Document (note: there's also a JAVA_MODULE_OVERRIDES entry
     # routing it to signalwire.core.swml_builder; the projection here keeps the class
     # name aligned with the surface emission for the audit walker).
@@ -415,54 +536,93 @@ JAVA_NESTED_CLASS_RENAMES: dict[tuple[str, str], tuple[str, str]] = {
     # Skill builtin classes — Java exposes builtin skills under
     # signalwire.skills.builtin.* with their own naming, but Python uses
     # signalwire.skills.<name>.skill.<NameSkill>. Map per-class.
-    ("com.signalwire.sdk.skills.builtin", "ApiNinjasTriviaSkill"):
-        ("ApiNinjasTriviaSkill", "signalwire.skills.builtin"),
-    ("com.signalwire.sdk.skills.builtin", "DateTimeSkill"):
-        ("DateTimeSkill", "signalwire.skills.builtin"),
+    ("com.signalwire.sdk.skills.builtin", "ApiNinjasTriviaSkill"): (
+        "ApiNinjasTriviaSkill",
+        "signalwire.skills.builtin",
+    ),
+    ("com.signalwire.sdk.skills.builtin", "DateTimeSkill"): (
+        "DateTimeSkill",
+        "signalwire.skills.builtin",
+    ),
     # PhoneCallHandler — top-level enum in rest.call_handler
-    ("com.signalwire.sdk.rest", "PhoneCallHandler"):
-        ("PhoneCallHandler", "signalwire.rest.call_handler"),
+    ("com.signalwire.sdk.rest", "PhoneCallHandler"): (
+        "PhoneCallHandler",
+        "signalwire.rest.call_handler",
+    ),
     # HttpClient (rest._base) — top-level
-    ("com.signalwire.sdk.rest", "HttpClient"):
-        ("HttpClient", "signalwire.rest._base"),
+    ("com.signalwire.sdk.rest", "HttpClient"): ("HttpClient", "signalwire.rest._base"),
     # Lambda runtime — Java nests handlers under runtime.lambda
-    ("com.signalwire.sdk.runtime.lambda", "LambdaAgentHandler"):
-        ("LambdaAgentHandler", "signalwire.runtime.lambda.lambda_agent_handler"),
-    ("com.signalwire.sdk.runtime.lambda", "LambdaResponse"):
-        ("LambdaResponse", "signalwire.runtime.lambda.lambda_response"),
+    ("com.signalwire.sdk.runtime.lambda", "LambdaAgentHandler"): (
+        "LambdaAgentHandler",
+        "signalwire.runtime.lambda.lambda_agent_handler",
+    ),
+    ("com.signalwire.sdk.runtime.lambda", "LambdaResponse"): (
+        "LambdaResponse",
+        "signalwire.runtime.lambda.lambda_response",
+    ),
     # EnvProvider / ExecutionMode — runtime helpers (top-level interfaces/enums)
-    ("com.signalwire.sdk.runtime", "EnvProvider"):
-        ("EnvProvider", "signalwire.runtime.env_provider"),
-    ("com.signalwire.sdk.runtime", "ExecutionMode"):
-        ("ExecutionMode", "signalwire.runtime.execution_mode"),
+    ("com.signalwire.sdk.runtime", "EnvProvider"): (
+        "EnvProvider",
+        "signalwire.runtime.env_provider",
+    ),
+    ("com.signalwire.sdk.runtime", "ExecutionMode"): (
+        "ExecutionMode",
+        "signalwire.runtime.execution_mode",
+    ),
     # REST namespace classes — Java exposes <Name>Namespace at top-level rest.namespaces;
     # Python doesn't have these classes (they're erased through indexed CrudResource).
-    ("com.signalwire.sdk.rest.namespaces", "BillingNamespace"):
-        ("BillingNamespace", "signalwire.rest.namespaces.billing"),
-    ("com.signalwire.sdk.rest.namespaces", "CampaignNamespace"):
-        ("CampaignNamespace", "signalwire.rest.namespaces.campaign"),
-    ("com.signalwire.sdk.rest.namespaces", "ChatNamespace"):
-        ("ChatNamespace", "signalwire.rest.namespaces.chat"),
-    ("com.signalwire.sdk.rest.namespaces", "ComplianceNamespace"):
-        ("ComplianceNamespace", "signalwire.rest.namespaces.compliance"),
-    ("com.signalwire.sdk.rest.namespaces", "ConferenceNamespace"):
-        ("ConferenceNamespace", "signalwire.rest.namespaces.conference"),
-    ("com.signalwire.sdk.rest.namespaces", "FaxNamespace"):
-        ("FaxNamespace", "signalwire.rest.namespaces.fax"),
-    ("com.signalwire.sdk.rest.namespaces", "MessagingNamespace"):
-        ("MessagingNamespace", "signalwire.rest.namespaces.messaging"),
-    ("com.signalwire.sdk.rest.namespaces", "NumberLookupNamespace"):
-        ("NumberLookupNamespace", "signalwire.rest.namespaces.number_lookup"),
-    ("com.signalwire.sdk.rest.namespaces", "PubSubNamespace"):
-        ("PubSubNamespace", "signalwire.rest.namespaces.pub_sub"),
-    ("com.signalwire.sdk.rest.namespaces", "SipNamespace"):
-        ("SipNamespace", "signalwire.rest.namespaces.sip"),
-    ("com.signalwire.sdk.rest.namespaces", "StreamNamespace"):
-        ("StreamNamespace", "signalwire.rest.namespaces.stream"),
-    ("com.signalwire.sdk.rest.namespaces", "SwmlNamespace"):
-        ("SwmlNamespace", "signalwire.rest.namespaces.swml"),
-    ("com.signalwire.sdk.rest.namespaces", "TranscriptionNamespace"):
-        ("TranscriptionNamespace", "signalwire.rest.namespaces.transcription"),
+    ("com.signalwire.sdk.rest.namespaces", "BillingNamespace"): (
+        "BillingNamespace",
+        "signalwire.rest.namespaces.billing",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "CampaignNamespace"): (
+        "CampaignNamespace",
+        "signalwire.rest.namespaces.campaign",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "ChatNamespace"): (
+        "ChatNamespace",
+        "signalwire.rest.namespaces.chat",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "ComplianceNamespace"): (
+        "ComplianceNamespace",
+        "signalwire.rest.namespaces.compliance",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "ConferenceNamespace"): (
+        "ConferenceNamespace",
+        "signalwire.rest.namespaces.conference",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "FaxNamespace"): (
+        "FaxNamespace",
+        "signalwire.rest.namespaces.fax",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "MessagingNamespace"): (
+        "MessagingNamespace",
+        "signalwire.rest.namespaces.messaging",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "NumberLookupNamespace"): (
+        "NumberLookupNamespace",
+        "signalwire.rest.namespaces.number_lookup",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "PubSubNamespace"): (
+        "PubSubNamespace",
+        "signalwire.rest.namespaces.pub_sub",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "SipNamespace"): (
+        "SipNamespace",
+        "signalwire.rest.namespaces.sip",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "StreamNamespace"): (
+        "StreamNamespace",
+        "signalwire.rest.namespaces.stream",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "SwmlNamespace"): (
+        "SwmlNamespace",
+        "signalwire.rest.namespaces.swml",
+    ),
+    ("com.signalwire.sdk.rest.namespaces", "TranscriptionNamespace"): (
+        "TranscriptionNamespace",
+        "signalwire.rest.namespaces.transcription",
+    ),
 }
 
 # Overloaded methods where the canonical projection must surface the
@@ -487,12 +647,18 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # surface, so emit it (and the PORT_SIGNATURE_OMISSIONS entries that
     # excused the old collapsed shape are removed — these are now drift-0
     # parity, like join_conference).
-    ("FunctionResult", "pay"),            # +16 params, caller-overridable ai_response
-    ("FunctionResult", "tap"),            # +rtp_ptime/status_url, +direction/codec/rtp_ptime validation
-    ("FunctionResult", "record_call"),    # +5 params, always-emit beep/input_sensitivity, +format/direction validation
-    ("FunctionResult", "send_sms"),       # +region
-    ("FunctionResult", "rpc_dial"),       # +device_type (was hard-coded "phone")
-    ("FunctionResult", "rpc_ai_message"), # +role (was hard-coded "system")
+    ("FunctionResult", "pay"),  # +16 params, caller-overridable ai_response
+    (
+        "FunctionResult",
+        "tap",
+    ),  # +rtp_ptime/status_url, +direction/codec/rtp_ptime validation
+    (
+        "FunctionResult",
+        "record_call",
+    ),  # +5 params, always-emit beep/input_sensitivity, +format/direction validation
+    ("FunctionResult", "send_sms"),  # +region
+    ("FunctionResult", "rpc_dial"),  # +device_type (was hard-coded "phone")
+    ("FunctionResult", "rpc_ai_message"),  # +role (was hard-coded "system")
     # RELAY action pause() exposes the reference's optional ``behavior`` kwarg via
     # a ``pause(String behavior)`` overload alongside the no-arg convenience
     # ``pause()``. The full overload is the parity surface (matches the oracle's
@@ -525,16 +691,16 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # fewest-param collapse would pick the NEW short overload instead, hiding the
     # very params we just made optional and turning a ``required-flip`` into a
     # ``param-count-mismatch`` (measured: exactly these 20 symbols).
-    ("FunctionResult", "swml_transfer"),        # +final=True
-    ("FunctionResult", "hold"),                 # +timeout=300
-    ("FunctionResult", "replace_in_history"),   # +text=True
+    ("FunctionResult", "swml_transfer"),  # +final=True
+    ("FunctionResult", "hold"),  # +timeout=300
+    ("FunctionResult", "replace_in_history"),  # +text=True
     ("FunctionResult", "enable_functions_on_timeout"),  # +enabled=True
-    ("FunctionResult", "enable_extensive_data"),        # +enabled=True
-    ("FunctionResult", "create_payment_prompt"),        # +card_type/error_type=None
-    ("AgentServer", "serve_static_files"),      # +route="/"
-    ("BedrockAgent", "set_inference_params"),   # +temperature/top_p/max_tokens=None
-    ("AgentBase", "add_pronunciation"),         # +ignore_case=False
-    ("AgentBase", "on_function_call"),          # +raw_data=None
+    ("FunctionResult", "enable_extensive_data"),  # +enabled=True
+    ("FunctionResult", "create_payment_prompt"),  # +card_type/error_type=None
+    ("AgentServer", "serve_static_files"),  # +route="/"
+    ("BedrockAgent", "set_inference_params"),  # +temperature/top_p/max_tokens=None
+    ("AgentBase", "add_pronunciation"),  # +ignore_case=False
+    ("AgentBase", "on_function_call"),  # +raw_data=None
     # AgentBase.enableDebugEvents() delegates to enableDebugEvents(level) supplying
     # the reference's own default 1 (AgentBase.java:1807) — Java's way of spelling
     # ``level: int = 1``. The oracle records enable_debug_events(level=1); the
@@ -545,11 +711,11 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # reachable via additional fluent calls" — false of the source: there is no
     # builder, no fluent setter, and none of those params exist on this method. Same
     # shape (and same boilerplate rationale) as register_routing_callback.
-    ("AgentBase", "enable_debug_events"),       # +level=1
+    ("AgentBase", "enable_debug_events"),  # +level=1
     # com.signalwire.sdk.swml.Service canonicalizes to SWMLService (see
     # JAVA_MODULE_OVERRIDES / _CLASS_RENAMES) — key on the CANONICAL name.
-    ("SWMLService", "on_function_call"),        # +raw_data=None
-    ("SWMLService", "on_request"),              # +request_data/callback_path=None
+    ("SWMLService", "on_function_call"),  # +raw_data=None
+    ("SWMLService", "on_request"),  # +request_data/callback_path=None
     # Service.registerRoutingCallback(callback) delegates to
     # registerRoutingCallback(callback, path) supplying the reference's own default
     # "/sip" (Service.java:767) — Java's way of spelling ``path="/sip"``. The
@@ -560,14 +726,14 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # source: the declaration is (callback, path) in the reference's own order with
     # the reference's own default. Removed; this is now drift-0 parity.
     ("SWMLService", "register_routing_callback"),  # +path="/sip"
-    ("PomBuilder", "add_to_section"),           # +body/bullet/bullets=None
-    ("SWAIGFunction", "execute"),               # +raw_data=None
-    ("InfoGathererAgent", "on_swml_request"),   # +callback_path/request=None
-    ("Call", "ai_unhold"),                      # +prompt=None (options bag)
-    ("Call", "join_room"),                      # +status_url=None (options bag)
-    ("Call", "live_translate"),                 # +status_url=None (options bag)
-    ("Call", "refer"),                          # +status_url=None (options bag)
-    ("Call", "user_event"),                     # +event=None
+    ("PomBuilder", "add_to_section"),  # +body/bullet/bullets=None
+    ("SWAIGFunction", "execute"),  # +raw_data=None
+    ("InfoGathererAgent", "on_swml_request"),  # +callback_path/request=None
+    ("Call", "ai_unhold"),  # +prompt=None (options bag)
+    ("Call", "join_room"),  # +status_url=None (options bag)
+    ("Call", "live_translate"),  # +status_url=None (options bag)
+    ("Call", "refer"),  # +status_url=None (options bag)
+    ("Call", "user_event"),  # +event=None
     # The typed call-state waits expose the reference's optional ``timeout``
     # (``wait_for_answered(timeout: float | None = None)``) via a trailing-param
     # overload alongside the no-arg convenience form. The underlying
@@ -575,16 +741,16 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     # four typed wrappers hid it. Their PORT_SIGNATURE_OMISSIONS entries claimed
     # "no relay Call state-wait primitive in the Java port" — false: waitFor /
     # waitForAnswered / waitForRinging / waitForEnding / waitForEnded all exist.
-    ("Call", "wait_for_answered"),              # +timeout=None
-    ("Call", "wait_for_ringing"),               # +timeout=None
-    ("Call", "wait_for_ending"),                # +timeout=None
-    ("Call", "wait_for_ended"),                 # +timeout=None
+    ("Call", "wait_for_answered"),  # +timeout=None
+    ("Call", "wait_for_ringing"),  # +timeout=None
+    ("Call", "wait_for_ending"),  # +timeout=None
+    ("Call", "wait_for_ended"),  # +timeout=None
     # Action/Message `await(Double timeout)` — canonical name `wait` via the
     # `await_` → `wait` rename (java.lang.Object.wait is final, so `await` is the
     # reserved-name escape). The no-arg `await()` convenience would otherwise win
     # the collapse and hide the reference's optional `timeout`.
-    ("Action", "wait"),                         # +timeout=None
-    ("Message", "wait"),                        # +timeout=None
+    ("Action", "wait"),  # +timeout=None
+    ("Message", "wait"),  # +timeout=None
     # HttpClient verbs + constructor expose the optional request_options envelope
     # (plan 4.2) via a trailing-param overload alongside the convenience overloads.
     # The full overload is the parity surface (matches the oracle's request_options
@@ -711,17 +877,23 @@ JAVA_MODULE_OVERRIDES = {
 # the audit would be looking for "signalwire.utils.url_validator.validate_url"
 # but the port emits "signalwire.utils.url_validator.UrlValidator.validate_url".
 FREE_FUNCTION_PROJECTIONS = {
-    ("com.signalwire.sdk.utils.UrlValidator", "validateUrl"):
-        ("signalwire.utils.url_validator", "validate_url"),
+    ("com.signalwire.sdk.utils.UrlValidator", "validateUrl"): (
+        "signalwire.utils.url_validator",
+        "validate_url",
+    ),
     # RelayEvent.parseEvent → module-level signalwire.relay.event.parse_event
     # (Python free function; Java groups it as a static factory on RelayEvent).
-    ("com.signalwire.sdk.relay.RelayEvent", "parseEvent"):
-        ("signalwire.relay.event", "parse_event"),
+    ("com.signalwire.sdk.relay.RelayEvent", "parseEvent"): (
+        "signalwire.relay.event",
+        "parse_event",
+    ),
     # ExecutionMode helpers — Python ships them as free functions in
     # two distinct modules; Java groups both static methods on the
     # ExecutionMode enum for cohesion.
-    ("com.signalwire.sdk.runtime.ExecutionMode", "getExecutionMode"):
-        ("signalwire.core.logging_config", "get_execution_mode"),
+    ("com.signalwire.sdk.runtime.ExecutionMode", "getExecutionMode"): (
+        "signalwire.core.logging_config",
+        "get_execution_mode",
+    ),
     # logging_config module-level free functions grouped on Logger's static
     # helpers (mirrors _FREE_FUNCTION_SURFACE_PROJECTIONS in enumerate_surface.py).
     # ``getLogger`` is overloaded (String name / Class<?> clazz); the generic
@@ -731,40 +903,58 @@ FREE_FUNCTION_PROJECTIONS = {
     # ``get_logger(name: string) -> any`` (the String overload). Keeping this
     # line here restores lockstep with enumerate_surface.py, which has always
     # projected ("Logger", "getLogger").
-    ("com.signalwire.sdk.logging.Logger", "getLogger"):
-        ("signalwire.core.logging_config", "get_logger"),
-    ("com.signalwire.sdk.logging.Logger", "configureLogging"):
-        ("signalwire.core.logging_config", "configure_logging"),
-    ("com.signalwire.sdk.logging.Logger", "resetLoggingConfiguration"):
-        ("signalwire.core.logging_config", "reset_logging_configuration"),
-    ("com.signalwire.sdk.logging.Logger", "stripControlChars"):
-        ("signalwire.core.logging_config", "strip_control_chars"),
-    ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"):
-        ("signalwire.utils", "is_serverless_mode"),
+    ("com.signalwire.sdk.logging.Logger", "getLogger"): (
+        "signalwire.core.logging_config",
+        "get_logger",
+    ),
+    ("com.signalwire.sdk.logging.Logger", "configureLogging"): (
+        "signalwire.core.logging_config",
+        "configure_logging",
+    ),
+    ("com.signalwire.sdk.logging.Logger", "resetLoggingConfiguration"): (
+        "signalwire.core.logging_config",
+        "reset_logging_configuration",
+    ),
+    ("com.signalwire.sdk.logging.Logger", "stripControlChars"): (
+        "signalwire.core.logging_config",
+        "strip_control_chars",
+    ),
+    ("com.signalwire.sdk.runtime.ExecutionMode", "isServerlessMode"): (
+        "signalwire.utils",
+        "is_serverless_mode",
+    ),
     # Top-level Signalwire class projects each static helper onto the
     # canonical signalwire.<name> free function. The Java method is
     # PascalCase ``RestClient`` to mirror Python's same-cased function;
     # other helpers use camelCase that converts to snake_case via
     # camel_to_snake (registerSkill -> register_skill, etc.).
-    ("com.signalwire.sdk.Signalwire", "RestClient"):
-        ("signalwire", "RestClient"),
-    ("com.signalwire.sdk.Signalwire", "registerSkill"):
-        ("signalwire", "register_skill"),
-    ("com.signalwire.sdk.Signalwire", "addSkillDirectory"):
-        ("signalwire", "add_skill_directory"),
-    ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"):
-        ("signalwire", "list_skills_with_params"),
-    ("com.signalwire.sdk.Signalwire", "listSkills"):
-        ("signalwire", "list_skills"),
+    ("com.signalwire.sdk.Signalwire", "RestClient"): ("signalwire", "RestClient"),
+    ("com.signalwire.sdk.Signalwire", "registerSkill"): (
+        "signalwire",
+        "register_skill",
+    ),
+    ("com.signalwire.sdk.Signalwire", "addSkillDirectory"): (
+        "signalwire",
+        "add_skill_directory",
+    ),
+    ("com.signalwire.sdk.Signalwire", "listSkillsWithParams"): (
+        "signalwire",
+        "list_skills_with_params",
+    ),
+    ("com.signalwire.sdk.Signalwire", "listSkills"): ("signalwire", "list_skills"),
     # WebhookValidator static methods → Python module-level free functions
     # in signalwire.core.security.webhook_validator. Java collapses both
     # entry points onto a static-only utility class for namespacing; the
     # projection lifts them back to the canonical Python locations so the
     # cross-port audit sees the same symbols.
-    ("com.signalwire.sdk.security.WebhookValidator", "validateWebhookSignature"):
-        ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
-    ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"):
-        ("signalwire.core.security.webhook_validator", "validate_request"),
+    ("com.signalwire.sdk.security.WebhookValidator", "validateWebhookSignature"): (
+        "signalwire.core.security.webhook_validator",
+        "validate_webhook_signature",
+    ),
+    ("com.signalwire.sdk.security.WebhookValidator", "validateRequest"): (
+        "signalwire.core.security.webhook_validator",
+        "validate_request",
+    ),
     # WebhookValidator.validate → the framework-free decomposed webhook-validation
     # core (signalwire.core.security.webhook_middleware.validate). Java's method
     # returns a WebhookRejection record (status, headers, body) or null; the oracle
@@ -773,19 +963,27 @@ FREE_FUNCTION_PROJECTIONS = {
     # FREE_FUNCTION_SIGNATURE_OVERRIDES below to the canonical tuple (same as .NET's
     # ValueTuple-based WebhookValidationMiddleware.Validate). The WebhookFilter
     # servlet wrapper on top of it stays a PORT_ADDITION idiom.
-    ("com.signalwire.sdk.security.WebhookValidator", "validate"):
-        ("signalwire.core.security.webhook_middleware", "validate"),
+    ("com.signalwire.sdk.security.WebhookValidator", "validate"): (
+        "signalwire.core.security.webhook_middleware",
+        "validate",
+    ),
     # SecurityUtils static methods → Python module-level free functions in
     # signalwire.core.security.security_utils. The Python reference exports
     # these as bare module functions (filter_sensitive_headers, redact_url,
     # is_valid_hostname); Java groups them on a static-only utility class for
     # namespacing, so lift them back to the canonical free-function home.
-    ("com.signalwire.sdk.security.SecurityUtils", "filterSensitiveHeaders"):
-        ("signalwire.core.security.security_utils", "filter_sensitive_headers"),
-    ("com.signalwire.sdk.security.SecurityUtils", "redactUrl"):
-        ("signalwire.core.security.security_utils", "redact_url"),
-    ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"):
-        ("signalwire.core.security.security_utils", "is_valid_hostname"),
+    ("com.signalwire.sdk.security.SecurityUtils", "filterSensitiveHeaders"): (
+        "signalwire.core.security.security_utils",
+        "filter_sensitive_headers",
+    ),
+    ("com.signalwire.sdk.security.SecurityUtils", "redactUrl"): (
+        "signalwire.core.security.security_utils",
+        "redact_url",
+    ),
+    ("com.signalwire.sdk.security.SecurityUtils", "isValidHostname"): (
+        "signalwire.core.security.security_utils",
+        "is_valid_hostname",
+    ),
     # TypeInference static methods → Python module-level free functions in
     # signalwire.core.agent.tools.type_inference. Python reflects a handler's
     # signature; Java has no runtime lambda-parameter reflection, so the typed
@@ -795,10 +993,14 @@ FREE_FUNCTION_PROJECTIONS = {
     # Java groups both on a static-only utility class; lift them back to the
     # canonical free-function home. Native shapes are recorded canonically via
     # FREE_FUNCTION_SIGNATURE_OVERRIDES below.
-    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"):
-        ("signalwire.core.agent.tools.type_inference", "infer_schema"),
-    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"):
-        ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
+    ("com.signalwire.sdk.core.agent.tools.TypeInference", "inferSchema"): (
+        "signalwire.core.agent.tools.type_inference",
+        "infer_schema",
+    ),
+    (
+        "com.signalwire.sdk.core.agent.tools.TypeInference",
+        "createTypedHandlerWrapper",
+    ): ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
     # RequestOptionsSupport static methods → Python module-level free functions in
     # signalwire.rest._request_options. The reference exports resolve /
     # status_is_retryable as bare module functions; Java has no module-level free
@@ -807,10 +1009,14 @@ FREE_FUNCTION_PROJECTIONS = {
     # recorded canonically via FREE_FUNCTION_SIGNATURE_OVERRIDES below (Java's
     # EffectiveOptions record stands in for the reference's private
     # _EffectiveOptions, and the AbortSignal interface for _AbortSignal).
-    ("com.signalwire.sdk.rest.RequestOptionsSupport", "resolve"):
-        ("signalwire.rest._request_options", "resolve"),
-    ("com.signalwire.sdk.rest.RequestOptionsSupport", "statusIsRetryable"):
-        ("signalwire.rest._request_options", "status_is_retryable"),
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "resolve"): (
+        "signalwire.rest._request_options",
+        "resolve",
+    ),
+    ("com.signalwire.sdk.rest.RequestOptionsSupport", "statusIsRetryable"): (
+        "signalwire.rest._request_options",
+        "status_is_retryable",
+    ),
 }
 
 
@@ -846,7 +1052,12 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "url", "type": "string", "required": True},
             {"name": "headers", "type": "dict<string,string>", "required": True},
             {"name": "body", "type": "string", "required": True},
-            {"name": "signing_key", "kind": "keyword", "type": "string", "required": True},
+            {
+                "name": "signing_key",
+                "kind": "keyword",
+                "type": "string",
+                "required": True,
+            },
         ],
         "returns": "optional<tuple<int,dict<string,string>,string>>",
     },
@@ -859,13 +1070,15 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         "params": [
             {"name": "func", "type": "callable<list<any>,any>", "required": True},
         ],
-        "returns":
-            "tuple<dict<string,dict<string,any>>,list<string>,optional<string>,bool,bool>",
+        "returns": "tuple<dict<string,dict<string,any>>,list<string>,optional<string>,bool,bool>",
     },
     # create_typed_handler_wrapper(func, has_raw_data) -> callable. Java's method
     # takes a ToolHandler + boolean and returns a ToolHandler; recorded as the
     # canonical callable shape.
-    ("com.signalwire.sdk.core.agent.tools.TypeInference", "createTypedHandlerWrapper"): {
+    (
+        "com.signalwire.sdk.core.agent.tools.TypeInference",
+        "createTypedHandlerWrapper",
+    ): {
         "params": [
             {"name": "func", "type": "callable<list<any>,any>", "required": True},
             {"name": "has_raw_data", "type": "bool", "required": True},
@@ -878,12 +1091,16 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
     # return and both params as required (positional) optional<RequestOptions>.
     ("com.signalwire.sdk.rest.RequestOptionsSupport", "resolve"): {
         "params": [
-            {"name": "client_default",
-             "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-             "required": True},
-            {"name": "per_request",
-             "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-             "required": True},
+            {
+                "name": "client_default",
+                "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                "required": True,
+            },
+            {
+                "name": "per_request",
+                "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                "required": True,
+            },
         ],
         "returns": "class:signalwire.rest._request_options._EffectiveOptions",
     },
@@ -893,9 +1110,11 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         "params": [
             {"name": "method", "type": "string", "required": True},
             {"name": "status", "type": "int", "required": True},
-            {"name": "opts",
-             "type": "class:signalwire.rest._request_options._EffectiveOptions",
-             "required": True},
+            {
+                "name": "opts",
+                "type": "class:signalwire.rest._request_options._EffectiveOptions",
+                "required": True,
+            },
         ],
         "returns": "bool",
     },
@@ -925,8 +1144,12 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "method", "type": "string", "required": True},
             {"name": "url", "type": "string", "required": True},
             {"name": "headers", "type": "dict<string,string>", "required": True},
-            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
-             "default": None},
+            {
+                "name": "body",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "tuple<int,dict<string,string>,string>",
     },
@@ -936,8 +1159,12 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "method", "type": "string", "required": True},
             {"name": "url", "type": "string", "required": True},
             {"name": "headers", "type": "dict<string,string>", "required": True},
-            {"name": "body", "type": "optional<dict<string,any>>", "required": False,
-             "default": None},
+            {
+                "name": "body",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "tuple<int,dict<string,string>,string>",
     },
@@ -960,15 +1187,23 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         (_cls, "paginate"): {
             "params": [
                 {"name": "self", "kind": "self"},
-                {"name": "request_options", "kind": "keyword",
-                 "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
-                 "required": False, "default": None},
+                {
+                    "name": "request_options",
+                    "kind": "keyword",
+                    "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                    "required": False,
+                    "default": None,
+                },
             ],
             "returns": "class:signalwire.rest._pagination.PaginatedIterator",
         }
         for _cls in (
-            "ReadResource", "FabricAddresses", "FaxLogs", "MessageLogs",
-            "VideoRoomSessions", "VoiceLogs",
+            "ReadResource",
+            "FabricAddresses",
+            "FaxLogs",
+            "MessageLogs",
+            "VideoRoomSessions",
+            "VoiceLogs",
         )
     },
     # AI Chat client verbs: Java collapses the reference's optional kwargs into a
@@ -982,12 +1217,24 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "conversation_id", "type": "string", "required": True},
             {"name": "message", "type": "string", "required": True},
             {"name": "role", "type": "string", "required": False, "default": "user"},
-            {"name": "config_url", "type": "optional<string>", "required": False,
-             "default": None},
-            {"name": "user_metadata", "type": "optional<dict<string,any>>",
-             "required": False, "default": None},
-            {"name": "timeout", "type": "optional<int>", "required": False,
-             "default": None},
+            {
+                "name": "config_url",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "user_metadata",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "timeout",
+                "type": "optional<int>",
+                "required": False,
+                "default": None,
+            },
             {"name": "reinit", "type": "bool", "required": False, "default": False},
         ],
         "returns": "class:signalwire.ai_chat.client.ChatResponse",
@@ -997,12 +1244,24 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "self", "kind": "self"},
             {"name": "conversation_id", "type": "string", "required": True},
             {"name": "config_url", "type": "string", "required": True},
-            {"name": "user_message", "type": "optional<string>", "required": False,
-             "default": None},
-            {"name": "timeout", "type": "optional<int>", "required": False,
-             "default": None},
-            {"name": "user_metadata", "type": "optional<dict<string,any>>",
-             "required": False, "default": None},
+            {
+                "name": "user_message",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "timeout",
+                "type": "optional<int>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "user_metadata",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
             {"name": "reinit", "type": "bool", "required": False, "default": False},
         ],
         "returns": "class:signalwire.ai_chat.client.ConversationInfo",
@@ -1011,8 +1270,12 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         "params": [
             {"name": "self", "kind": "self"},
             {"name": "conversation_id", "type": "string", "required": True},
-            {"name": "summary_prompt", "type": "optional<string>", "required": False,
-             "default": None},
+            {
+                "name": "summary_prompt",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "string",
     },
@@ -1024,14 +1287,30 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
     ("AIChatClient", "__init__"): {
         "params": [
             {"name": "self", "kind": "self"},
-            {"name": "project", "type": "optional<string>", "required": False,
-             "default": None},
-            {"name": "token", "type": "optional<string>", "required": False,
-             "default": None},
-            {"name": "space", "type": "optional<string>", "required": False,
-             "default": None},
-            {"name": "url", "type": "optional<string>", "required": False,
-             "default": None},
+            {
+                "name": "project",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "token",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "space",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "url",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "void",
     },
@@ -1043,8 +1322,12 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "self", "kind": "self"},
             {"name": "id", "type": "string", "required": True},
             {"name": "status", "type": "string", "required": True},
-            {"name": "initial_message", "type": "optional<string>", "required": False,
-             "default": None},
+            {
+                "name": "initial_message",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "void",
     },
@@ -1053,18 +1336,30 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {"name": "self", "kind": "self"},
             {"name": "text", "type": "string", "required": True},
             {"name": "conversation_id", "type": "string", "required": True},
-            {"name": "user_event", "type": "optional<dict<string,any>>",
-             "required": False, "default": None},
+            {
+                "name": "user_event",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "void",
     },
     ("ChatLog", "__init__"): {
         "params": [
             {"name": "self", "kind": "self"},
-            {"name": "messages", "type": "list<dict<string,any>>", "required": False,
-             "default": "list()"},
-            {"name": "call_timeline", "type": "list<dict<string,any>>",
-             "required": False, "default": "list()"},
+            {
+                "name": "messages",
+                "type": "list<dict<string,any>>",
+                "required": False,
+                "default": "list()",
+            },
+            {
+                "name": "call_timeline",
+                "type": "list<dict<string,any>>",
+                "required": False,
+                "default": "list()",
+            },
         ],
         "returns": "void",
     },
@@ -1108,17 +1403,36 @@ _SYNTHETIC_INIT: dict[tuple[str, str], dict] = {
     ("signalwire.rest._request_options", "RequestOptions"): {
         "params": [
             {"name": "self", "kind": "self"},
-            {"name": "timeout", "type": "optional<float>", "required": False,
-             "default": None},
-            {"name": "retries", "type": "optional<int>", "required": False,
-             "default": None},
-            {"name": "retry_on_status", "type": "optional<list<int>>", "required": False,
-             "default": None},
-            {"name": "retry_backoff", "type": "optional<float>", "required": False,
-             "default": None},
-            {"name": "abort_signal",
-             "type": "optional<class:signalwire.rest._request_options._AbortSignal>",
-             "required": False, "default": None},
+            {
+                "name": "timeout",
+                "type": "optional<float>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "retries",
+                "type": "optional<int>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "retry_on_status",
+                "type": "optional<list<int>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "retry_backoff",
+                "type": "optional<float>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "abort_signal",
+                "type": "optional<class:signalwire.rest._request_options._AbortSignal>",
+                "required": False,
+                "default": None,
+            },
         ],
         "returns": "void",
     },
@@ -1127,21 +1441,44 @@ _SYNTHETIC_INIT: dict[tuple[str, str], dict] = {
 
 MIXIN_PROJECTIONS = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
-        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
-        "add_language", "add_mcp_server", "add_pattern_hint", "add_pronunciation",
-        "enable_debug_events", "enable_mcp_server", "get_language_params",
-        "set_function_includes", "set_global_data", "set_internal_fillers",
-        "set_language_params", "set_languages", "set_multilingual",
-        "set_native_functions", "set_param", "set_params",
-        "set_post_prompt_llm_params", "set_prompt_llm_params",
-        "set_pronunciations", "update_global_data",
+        "add_function_include",
+        "add_hint",
+        "add_hints",
+        "add_internal_filler",
+        "add_language",
+        "add_mcp_server",
+        "add_pattern_hint",
+        "add_pronunciation",
+        "enable_debug_events",
+        "enable_mcp_server",
+        "get_language_params",
+        "set_function_includes",
+        "set_global_data",
+        "set_internal_fillers",
+        "set_language_params",
+        "set_languages",
+        "set_multilingual",
+        "set_native_functions",
+        "set_param",
+        "set_params",
+        "set_post_prompt_llm_params",
+        "set_prompt_llm_params",
+        "set_pronunciations",
+        "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
-        "contexts", "define_contexts", "get_post_prompt", "get_prompt",
+        "contexts",
+        "define_contexts",
+        "get_post_prompt",
+        "get_prompt",
         "prompt_add_section",
-        "prompt_add_subsection", "prompt_add_to_section",
-        "prompt_has_section", "reset_contexts", "set_post_prompt",
-        "set_prompt_pom", "set_prompt_text",
+        "prompt_add_subsection",
+        "prompt_add_to_section",
+        "prompt_has_section",
+        "reset_contexts",
+        "set_post_prompt",
+        "set_prompt_pom",
+        "set_prompt_text",
     ],
     # Python additionally extracted a ``PromptManager`` class that
     # PromptMixin delegates to. The user-facing surface is identical
@@ -1149,31 +1486,55 @@ MIXIN_PROJECTIONS = {
     # AgentBase methods to PromptManager so the cross-language audit
     # treats both paths as covered.
     ("signalwire.core.agent.prompt.manager", "PromptManager"): [
-        "define_contexts", "get_contexts", "get_post_prompt", "get_prompt",
+        "define_contexts",
+        "get_contexts",
+        "get_post_prompt",
+        "get_prompt",
         "get_raw_prompt",
-        "prompt_add_section", "prompt_add_subsection", "prompt_add_to_section",
-        "prompt_has_section", "set_post_prompt", "set_prompt_pom",
+        "prompt_add_section",
+        "prompt_add_subsection",
+        "prompt_add_to_section",
+        "prompt_has_section",
+        "set_post_prompt",
+        "set_prompt_pom",
         "set_prompt_text",
     ],
     ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
-        "add_skill", "has_skill", "list_skills", "remove_skill",
+        "add_skill",
+        "has_skill",
+        "list_skills",
+        "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "define_tools", "on_function_call",
+        "define_tool",
+        "define_tools",
+        "on_function_call",
         "register_swaig_function",
     ],
     ("signalwire.core.agent.tools.registry", "ToolRegistry"): [
-        "define_tool", "register_swaig_function",
-        "has_function", "get_function", "get_all_functions",
+        "define_tool",
+        "register_swaig_function",
+        "has_function",
+        "get_function",
+        "get_all_functions",
         "remove_function",
     ],
     ("signalwire.core.mixins.auth_mixin", "AuthMixin"): [
-        "validate_basic_auth", "get_basic_auth_credentials",
+        "validate_basic_auth",
+        "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "as_router", "enable_debug_routes", "get_app", "manual_set_proxy_url",
-        "on_request", "on_swml_request", "register_routing_callback", "run",
-        "serve", "set_dynamic_config_callback", "setup_graceful_shutdown",
+        "as_router",
+        "enable_debug_routes",
+        "get_app",
+        "manual_set_proxy_url",
+        "on_request",
+        "on_swml_request",
+        "register_routing_callback",
+        "run",
+        "serve",
+        "set_dynamic_config_callback",
+        "setup_graceful_shutdown",
     ],
     ("signalwire.core.mixins.state_mixin", "StateMixin"): [
         "validate_tool_token",
@@ -1197,8 +1558,16 @@ MIXIN_PROJECTIONS = {
 # position (last param) so the specific open-map value type doesn't matter.
 KWARGS_TAIL_OPTIONAL: set[tuple[str, str | None, str]] = {
     ("signalwire", None, "RestClient"),
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_prompt_llm_params"),
-    ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin", "set_post_prompt_llm_params"),
+    (
+        "signalwire.core.mixins.ai_config_mixin",
+        "AIConfigMixin",
+        "set_prompt_llm_params",
+    ),
+    (
+        "signalwire.core.mixins.ai_config_mixin",
+        "AIConfigMixin",
+        "set_post_prompt_llm_params",
+    ),
     # BedrockAgent overrides both LLM-param setters (Python: `set_prompt_llm_params(self,
     # **params)` / `set_post_prompt_llm_params(self, **params)`); the oracle strips the
     # `**params` tail (self-only) while Java exposes it as one trailing `Map<String,Object>
@@ -1236,12 +1605,16 @@ def _mark_varargs_heads_optional(out_modules: dict) -> None:
         if cls is None:
             sig = mod_entry.get("functions", {}).get(method)
         else:
-            sig = mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+            sig = (
+                mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+            )
         if not sig:
             raise RuntimeError(
                 f"VARARGS_HEAD_OPTIONAL: symbol {module}.{cls or ''}.{method} not found"
             )
-        head = [p for p in sig.get("params", []) if p.get("kind") not in ("self", "cls")]
+        head = [
+            p for p in sig.get("params", []) if p.get("kind") not in ("self", "cls")
+        ]
         if not head:
             raise RuntimeError(
                 f"VARARGS_HEAD_OPTIONAL: {module}.{cls or ''}.{method} has no value param to mark"
@@ -1257,23 +1630,33 @@ _ACCESSOR_PREFIX_RE_SIG = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
 # from emission rather than allow-list it (idiom_reaudit_brief cat3). Excluded
 # ONLY when the reference does NOT record the same dunder on that class (so a
 # class whose reference twin genuinely declares __init__ still matches).
-_CTOR_DUNDER_NAMES = frozenset({
-    "__init__", "__repr__", "__str__", "__eq__", "__hash__",
-    "__enter__", "__exit__",
-    # Java's identity trio, under the names SignatureDump emits after snake_casing.
-    # These are the SAME construction/identity idiom as the Python dunders above,
-    # just spelled the JVM way: `equals` IS `__eq__`, `hash_code` IS `__hash__`,
-    # `to_string` IS `__str__`/`__repr__`. javac GENERATES all three for every
-    # `record`, so a port carrying a record gets them whether or not the author
-    # wrote them — they are not a capability the reference lacks.
-    # The guard below still applies: they are dropped ONLY when the reference
-    # records no member of that name on that class, so a genuine twin still matches.
-    "equals", "hash_code", "to_string",
-})
+_CTOR_DUNDER_NAMES = frozenset(
+    {
+        "__init__",
+        "__repr__",
+        "__str__",
+        "__eq__",
+        "__hash__",
+        "__enter__",
+        "__exit__",
+        # Java's identity trio, under the names SignatureDump emits after snake_casing.
+        # These are the SAME construction/identity idiom as the Python dunders above,
+        # just spelled the JVM way: `equals` IS `__eq__`, `hash_code` IS `__hash__`,
+        # `to_string` IS `__str__`/`__repr__`. javac GENERATES all three for every
+        # `record`, so a port carrying a record gets them whether or not the author
+        # wrote them — they are not a capability the reference lacks.
+        # The guard below still applies: they are dropped ONLY when the reference
+        # records no member of that name on that class, so a genuine twin still matches.
+        "equals",
+        "hash_code",
+        "to_string",
+    }
+)
 
 
-def _exclude_ctor_dunder_sig(out_modules: dict,
-                             oracle_members: dict[tuple[str, str], set[str]]) -> None:
+def _exclude_ctor_dunder_sig(
+    out_modules: dict, oracle_members: dict[tuple[str, str], set[str]]
+) -> None:
     """In-place: drop ctor/dunder method keys that would be port-only ADDITIONS
     (the reference records no such dunder on that class). Lockstep with the
     surface enumerator's exclusion."""
@@ -1297,8 +1680,9 @@ def _load_oracle_sig_members(reference_json: Path) -> dict[tuple[str, str], set[
     return out
 
 
-def _fold_accessors_sig(out_modules: dict,
-                        oracle_members: dict[tuple[str, str], set[str]]) -> None:
+def _fold_accessors_sig(
+    out_modules: dict, oracle_members: dict[tuple[str, str], set[str]]
+) -> None:
     """In-place accessor→member fold on the signature dict, lockstep with the
     surface enumerator's ``fold_accessors_to_members``. Renames a class's
     ``getX``/``setX``/``isX``/``hasX``/``withX`` method KEY onto the reference
@@ -1315,8 +1699,7 @@ def _fold_accessors_sig(out_modules: dict,
             renames: list[tuple[str, str]] = []
             for name in list(methods):
                 m = _ACCESSOR_PREFIX_RE_SIG.match(name)
-                if (m and m.group("field") in ref_members
-                        and name not in ref_members):
+                if m and m.group("field") in ref_members and name not in ref_members:
                     renames.append((name, m.group("field")))
             for src_name, dst_name in renames:
                 sig = methods.pop(src_name, None)
@@ -1325,16 +1708,24 @@ def _fold_accessors_sig(out_modules: dict,
                 # Getter (0 non-receiver params) wins over setter on collision.
                 existing = methods.get(dst_name)
                 if existing is not None:
+
                     def _arity(s: dict) -> int:
-                        return len([p for p in s.get("params", [])
-                                    if p.get("kind") not in ("self", "cls")])
+                        return len(
+                            [
+                                p
+                                for p in s.get("params", [])
+                                if p.get("kind") not in ("self", "cls")
+                            ]
+                        )
+
                     if _arity(existing) <= _arity(sig):
                         continue
                 methods[dst_name] = sig
 
 
-def _apply_method_aliases_sig(out_modules: dict,
-                              oracle_members: dict[tuple[str, str], set[str]]) -> None:
+def _apply_method_aliases_sig(
+    out_modules: dict, oracle_members: dict[tuple[str, str], set[str]]
+) -> None:
     """In-place per-(module, class) method-key rename, lockstep with the surface
     enumerator's ``_SURFACE_METHOD_ALIASES`` application.
 
@@ -1381,7 +1772,9 @@ def _mark_kwargs_tails_optional(out_modules: dict) -> None:
         if cls is None:
             sig = mod_entry.get("functions", {}).get(method)
         else:
-            sig = mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+            sig = (
+                mod_entry.get("classes", {}).get(cls, {}).get("methods", {}).get(method)
+            )
         if not sig:
             raise RuntimeError(
                 f"KWARGS_TAIL_OPTIONAL: symbol {module}.{cls or ''}.{method} not found"
@@ -1401,11 +1794,11 @@ def _mark_kwargs_tails_optional(out_modules: dict) -> None:
 # emits for the nested/helper type). All are port-only value/builder types with
 # no reference counterpart.
 _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
-    "RenderOptions",            # SwmlRenderer options-builder
-    "SWAIGFunctionBuilder",     # SWAIGFunction options-builder
-    "ValidationResult",         # (valid, errors) tuple record (swml/swaig/security)
-    "AuthException",            # AuthHandler nested exception
-    "AuthResult",               # AuthHandler nested result
+    "RenderOptions",  # SwmlRenderer options-builder
+    "SWAIGFunctionBuilder",  # SWAIGFunction options-builder
+    "ValidationResult",  # (valid, errors) tuple record (swml/swaig/security)
+    "AuthException",  # AuthHandler nested exception
+    "AuthResult",  # AuthHandler nested result
     # BasicCredentials / BearerCredentials are DELIBERATELY NOT excluded. They were
     # listed here as "port-only value types with no reference counterpart", which was
     # true only while griffe could not resolve FastAPI's HTTPBasicCredentials /
@@ -1416,15 +1809,15 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     # excluding them here made four members read as missing-port while the code
     # implemented them correctly. Java carries them as records nested in AuthHandler;
     # JAVA_NESTED_CLASS_RENAMES maps them into signalwire.core.auth_handler.
-    "RequestHandler",           # AuthHandler framework-neutral middleware wrapper
-    "Response",                 # AuthHandler nested response value
-    "LoggingLevel",             # logging enum helper (Logger.Level is the surface)
-    "SkillParams",              # package-private skill base-schema helper
-    "SWAIGFunctionHandler",     # @FunctionalInterface handler
-    "ToolRegistryTool",         # ToolRegistry nested tool value
-    "WebhookRejection",         # WebhookValidator.validate reject-triple record
-    "HttpResult",               # Service.handleRequest (status, headers, body) triple record
-    "InferredSchema",           # TypeInference.inferSchema 5-tuple stand-in record
+    "RequestHandler",  # AuthHandler framework-neutral middleware wrapper
+    "Response",  # AuthHandler nested response value
+    "LoggingLevel",  # logging enum helper (Logger.Level is the surface)
+    "SkillParams",  # package-private skill base-schema helper
+    "SWAIGFunctionHandler",  # @FunctionalInterface handler
+    "ToolRegistryTool",  # ToolRegistry nested tool value
+    "WebhookRejection",  # WebhookValidator.validate reject-triple record
+    "HttpResult",  # Service.handleRequest (status, headers, body) triple record
+    "InferredSchema",  # TypeInference.inferSchema 5-tuple stand-in record
     # RequestOptions envelope (plan 4.2) helper types with no PUBLIC reference
     # counterpart: EffectiveOptions is the port's stand-in for the reference's
     # PRIVATE _EffectiveOptions (underscore classes are not enumerated by the
@@ -1448,8 +1841,12 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
 }
 
 
-def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = None,
-            crud_bases: dict[str, dict] | None = None) -> tuple[dict, list]:
+def collect(
+    raw: dict,
+    aliases: dict,
+    sidecar: dict[str, list[dict]] | None = None,
+    crud_bases: dict[str, dict] | None = None,
+) -> tuple[dict, list]:
     out_modules: dict = {}
     failures: list = []
     sidecar = sidecar or {}
@@ -1489,9 +1886,10 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
         # surface enumerator drops all nested classes in the package. The
         # resource classes (Mfa, Calling, …) and the namespace CONTAINERS
         # (RegistryNamespace, …) are kept.
-        if pkg == _GENERATED_PKG:
-            if java_name.endswith("Request") or java_name == "Builder":
-                continue
+        if pkg == _GENERATED_PKG and (
+            java_name.endswith("Request") or java_name == "Builder"
+        ):
+            continue
 
         # ``ResourceTree`` plumbing base → RETARGET onto RestClient.
         #
@@ -1560,7 +1958,11 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 # Undo the generator's reserved-word field suffix (`default_` →
                 # `default`, `enum_` → `enum`) so the recorded name is the bare wire
                 # key the oracle records. The generator suffixed on a JAVA keyword.
-                recorded = wire[:-1] if (wire.endswith("_") and wire[:-1] in _JAVA_FIELD_KEYWORDS) else wire
+                recorded = (
+                    wire[:-1]
+                    if (wire.endswith("_") and wire[:-1] in _JAVA_FIELD_KEYWORDS)
+                    else wire
+                )
                 # The wire-type DTO fields are LOOSELY typed (boxed scalar / Map /
                 # List / Object — never a ref to another generated class, to keep the
                 # emitter deterministic). The reference records the RICH field type
@@ -1572,8 +1974,10 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 # the sig-oracle-ABSENT modules — so no un-excused return-mismatch and
                 # no diff-tool change needed. (The RICH types live in the SURFACE, which
                 # records only the class name; the field-level shape is not compared.)
-                members[recorded] = {"params": [{"name": "self", "kind": "self"}],
-                                     "returns": "any"}
+                members[recorded] = {
+                    "params": [{"name": "self", "kind": "self"}],
+                    "returns": "any",
+                }
             if members:
                 out_modules.setdefault(gen_type_mod, {"classes": {}})
                 out_modules[gen_type_mod]["classes"][canonical_name] = {
@@ -1610,7 +2014,9 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 mod = _pkg_to_module_with_class(pkg, canonical_name)
 
         methods_out: dict = {}
-        free_functions_out: list[tuple[str, str, dict]] = []  # (target_mod, target_fn, sig)
+        free_functions_out: list[
+            tuple[str, str, dict]
+        ] = []  # (target_mod, target_fn, sig)
         for m in type_entry.get("methods", []):
             native = m.get("name", "")
             if native == "<init>":
@@ -1705,7 +2111,10 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             # with the canonical one keyed by (canonical_class, method).
             mo = METHOD_SIGNATURE_OVERRIDES.get((canonical_name, method_canonical))
             if mo is not None:
-                sig = {"params": [dict(p) for p in mo["params"]], "returns": mo["returns"]}
+                sig = {
+                    "params": [dict(p) for p in mo["params"]],
+                    "returns": mo["returns"],
+                }
                 methods_out[method_canonical] = sig
                 continue
             # Generated-REST typed-input unfold (L10). Java reflection sees a
@@ -1758,20 +2167,20 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                     n_new, n_old = len(sig["params"]), len(existing["params"])
                     if n_new < n_old:
                         continue
-                    if n_new == n_old:
-                        # Same arity (e.g. the all-String full-arity overload vs
-                        # the SAME-arity fully-typed overload that swaps a couple
-                        # closed-set params to enums — record_call format/direction,
-                        # tap direction/codec). Both reach full reference parity;
-                        # break the tie toward the overload that types MORE params
-                        # (more ``class:`` refs) so the knowable closed sets surface
-                        # as the wave-1 ``enum<...>`` contract instead of bare
-                        # ``string``. The String full-arity overload is then just a
-                        # forward-compat escape hatch the Java overload-collapse
-                        # drops (no separate surface entry — same collapse model as
-                        # every other Java overload).
-                        if _typed_param_count(sig) <= _typed_param_count(existing):
-                            continue
+                    # Same arity (e.g. the all-String full-arity overload vs the
+                    # SAME-arity fully-typed overload that swaps a couple closed-set
+                    # params to enums — record_call format/direction, tap
+                    # direction/codec). Both reach full reference parity; break the
+                    # tie toward the overload that types MORE params (more ``class:``
+                    # refs) so the knowable closed sets surface as the wave-1
+                    # ``enum<...>`` contract instead of bare ``string``. The String
+                    # full-arity overload is then just a forward-compat escape hatch
+                    # the Java overload-collapse drops (no separate surface entry —
+                    # same collapse model as every other Java overload).
+                    if n_new == n_old and _typed_param_count(sig) <= _typed_param_count(
+                        existing
+                    ):
+                        continue
                 elif len(sig["params"]) >= len(existing["params"]):
                     continue
             methods_out[method_canonical] = sig
@@ -1787,11 +2196,13 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
             # params optional on it, and the short form would hide them.
             existing = out_modules[target_mod]["functions"].get(target_fn)
             if (target_mod, target_fn) in PREFER_FULL_OVERLOAD_FREE_FUNCTIONS:
-                if existing is not None and \
-                        len(sig.get("params", [])) <= len(existing.get("params", [])):
+                if existing is not None and len(sig.get("params", [])) <= len(
+                    existing.get("params", [])
+                ):
                     continue
-            elif existing is not None and \
-                    len(sig.get("params", [])) >= len(existing.get("params", [])):
+            elif existing is not None and len(sig.get("params", [])) >= len(
+                existing.get("params", [])
+            ):
                 continue
             out_modules[target_mod]["functions"][target_fn] = sig
 
@@ -1835,19 +2246,35 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
                 # This entry is the BASE: it may only fill gaps.
                 merged = dict(cls_entry["methods"])
                 merged.update(prior.get("methods", {}))
-                cls_entry = {**cls_entry, **prior, "methods": dict(sorted(merged.items()))}
+                cls_entry = {
+                    **cls_entry,
+                    **prior,
+                    "methods": dict(sorted(merged.items())),
+                }
             else:
                 # This entry is the SUBCLASS: its declarations win.
                 merged = dict(prior.get("methods", {}))
                 merged.update(cls_entry["methods"])
-                cls_entry = {**prior, **cls_entry, "methods": dict(sorted(merged.items()))}
+                cls_entry = {
+                    **prior,
+                    **cls_entry,
+                    "methods": dict(sorted(merged.items())),
+                }
         out_modules[mod]["classes"][canonical_name] = cls_entry
 
     # Mixin projection — methods may live on AgentBase OR on SWMLService
     # (its parent class). Tool/auth/state helpers are typically declared
     # on Service and inherited.
-    ab_entry = out_modules.get("signalwire.core.agent_base", {}).get("classes", {}).get("AgentBase")
-    svc_entry = out_modules.get("signalwire.core.swml_service", {}).get("classes", {}).get("SWMLService")
+    ab_entry = (
+        out_modules.get("signalwire.core.agent_base", {})
+        .get("classes", {})
+        .get("AgentBase")
+    )
+    svc_entry = (
+        out_modules.get("signalwire.core.swml_service", {})
+        .get("classes", {})
+        .get("SWMLService")
+    )
     if ab_entry or svc_entry:
         ab_methods = ab_entry["methods"] if ab_entry else {}
         svc_methods = svc_entry["methods"] if svc_entry else {}
@@ -1936,10 +2363,8 @@ def collect(raw: dict, aliases: dict, sidecar: dict[str, list[dict]] | None = No
 # canonical snake_case by translate_method_name, so no name mapping is needed here;
 # only the BINDING was missing.
 _BUILDER_CONSTRUCTS: dict[str, str] = {
-    "signalwire.agent.agent_base_builder.AgentBaseBuilder":
-        "signalwire.core.agent_base.AgentBase",
-    "signalwire.relay.relay_client_builder.RelayClientBuilder":
-        "signalwire.relay.client.RelayClient",
+    "signalwire.agent.agent_base_builder.AgentBaseBuilder": "signalwire.core.agent_base.AgentBase",
+    "signalwire.relay.relay_client_builder.RelayClientBuilder": "signalwire.relay.client.RelayClient",
 }
 
 # Builder members that are the builder MECHANISM, not construction parameters.
@@ -1961,10 +2386,18 @@ _CONSTRUCTION_OPTIONAL_PARAMS: dict[str, frozenset[str]] = {
     # (name, route, host, port, authUser, authPassword) and the full 9-arg
     # constructor — so everything after ``name`` is optional by construction,
     # matching the reference's defaulted SWMLService.__init__ params.
-    "signalwire.core.swml_service.SWMLService": frozenset({
-        "route", "host", "port", "auth_user", "auth_password",
-        "schema_path", "config_file", "schema_validation",
-    }),
+    "signalwire.core.swml_service.SWMLService": frozenset(
+        {
+            "route",
+            "host",
+            "port",
+            "auth_user",
+            "auth_password",
+            "schema_path",
+            "config_file",
+            "schema_validation",
+        }
+    ),
 }
 
 
@@ -1991,8 +2424,12 @@ def build_construction(modules: dict) -> dict:
         for p in sig.get("params", []):
             if not isinstance(p, dict):
                 continue
-            if (p.get("kind") or "positional") in ("self", "cls", "var_keyword",
-                                                   "var_positional"):
+            if (p.get("kind") or "positional") in (
+                "self",
+                "cls",
+                "var_keyword",
+                "var_positional",
+            ):
                 continue
             name = p.get("name")
             if not name or name.startswith("_"):
@@ -2029,17 +2466,23 @@ def build_construction(modules: dict) -> dict:
                     continue
                 if not isinstance(msig, dict):
                     continue
-                args = [p for p in msig.get("params", [])
-                        if (p.get("kind") or "positional") not in ("self", "cls")]
+                args = [
+                    p
+                    for p in msig.get("params", [])
+                    if (p.get("kind") or "positional") not in ("self", "cls")
+                ]
                 if len(args) != 1:
                     continue
                 # A builder setter is optional by construction; only fill in what the
                 # class's own __init__ did not already declare, so a real ctor param's
                 # required flag wins over the builder's implicit optionality.
-                params.setdefault(mname, {
-                    "type": args[0].get("type", "any"),
-                    "required": False,
-                })
+                params.setdefault(
+                    mname,
+                    {
+                        "type": args[0].get("type", "any"),
+                        "required": False,
+                    },
+                )
             out[target]["params"] = dict(sorted(params.items()))
 
     return dict(sorted(out.items()))
@@ -2084,8 +2527,9 @@ def optional_param_names(type_entry: dict, native_method: str) -> set[str]:
     (``Coverage.default_unrecorded``). Recording ``required: false`` is the
     honest, verifiable half; inventing the value would not be.
     """
-    overloads = [m for m in type_entry.get("methods", [])
-                 if m.get("name") == native_method]
+    overloads = [
+        m for m in type_entry.get("methods", []) if m.get("name") == native_method
+    ]
     if len(overloads) < 2:
         return set()
 
@@ -2102,13 +2546,15 @@ def optional_param_names(type_entry: dict, native_method: str) -> set[str]:
         if len(names) >= len(full_names):
             continue
         # Trailing-omission (prefix) overload only — see docstring.
-        if names != full_names[:len(names)]:
+        if names != full_names[: len(names)]:
             continue
-        optional.update(full_names[len(names):])
+        optional.update(full_names[len(names) :])
     return optional
 
 
-def build_signature(method: dict, aliases: dict, context: str, mod: str, class_name: str) -> dict:
+def build_signature(
+    method: dict, aliases: dict, context: str, mod: str, class_name: str
+) -> dict:
     params_out: list = []
     is_static = method.get("is_static", False)
     if not is_static:
@@ -2132,13 +2578,16 @@ def build_signature(method: dict, aliases: dict, context: str, mod: str, class_n
     if method.get("name") == "<init>":
         return_canon = "void"
     else:
-        return_canon = translate_java_type(method.get("return_type", "void"), aliases, context + "[->]")
+        return_canon = translate_java_type(
+            method.get("return_type", "void"), aliases, context + "[->]"
+        )
     return {"params": params_out, "returns": return_canon}
 
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def run_dump() -> dict:
     """Build SDK JAR + run SignatureDump."""
@@ -2148,10 +2597,21 @@ def run_dump() -> dict:
     # behavior, which once hid a sort-determinism fix).
     helper_src = HERE / "SignatureDump.java"
     helper_class = PORT_ROOT / "build" / "scripts" / "SignatureDump.class"
-    if not helper_class.exists() or helper_src.stat().st_mtime > helper_class.stat().st_mtime:
+    if (
+        not helper_class.exists()
+        or helper_src.stat().st_mtime > helper_class.stat().st_mtime
+    ):
         cp = subprocess.run(
-            ["javac", "-parameters", str(HERE / "SignatureDump.java"), "-d", str(PORT_ROOT / "build" / "scripts")],
-            capture_output=True, text=True, timeout=120,
+            [
+                "javac",
+                "-parameters",
+                str(HERE / "SignatureDump.java"),
+                "-d",
+                str(PORT_ROOT / "build" / "scripts"),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
         if cp.returncode != 0:
             raise RuntimeError(f"javac failed:\n{cp.stderr}")
@@ -2169,12 +2629,15 @@ def run_dump() -> dict:
 
     # Build classpath: helper + SDK + ~/.gradle dep cache (gson, websocket, slf4j)
     cp_parts = [str(PORT_ROOT / "build" / "scripts"), str(jar)]
-    for dep_jar in (Path.home() / ".gradle" / "caches").rglob("*.jar"):
-        cp_parts.append(str(dep_jar))
+    cp_parts.extend(
+        str(dep_jar) for dep_jar in (Path.home() / ".gradle" / "caches").rglob("*.jar")
+    )
     classpath = ":".join(cp_parts)
     cp = subprocess.run(
         ["java", "-cp", classpath, "SignatureDump", str(jar)],
-        capture_output=True, text=True, timeout=300,
+        capture_output=True,
+        text=True,
+        timeout=300,
     )
     if cp.returncode != 0:
         raise RuntimeError(f"SignatureDump failed:\n{cp.stderr}")
@@ -2183,10 +2646,10 @@ def run_dump() -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--raw", type=Path, default=None,
-                        help="Path to a pre-dumped SignatureDump JSON")
-    parser.add_argument("--out", type=Path,
-                        default=PORT_ROOT / "port_signatures.json")
+    parser.add_argument(
+        "--raw", type=Path, default=None, help="Path to a pre-dumped SignatureDump JSON"
+    )
+    parser.add_argument("--out", type=Path, default=PORT_ROOT / "port_signatures.json")
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 
@@ -2204,7 +2667,10 @@ def main() -> int:
 
     canonical, failures = collect(raw, aliases, sidecar, crud_bases)
     if failures:
-        print(f"enumerate_signatures: {len(failures)} translation failure(s)", file=sys.stderr)
+        print(
+            f"enumerate_signatures: {len(failures)} translation failure(s)",
+            file=sys.stderr,
+        )
         for f in failures[:30]:
             print(f"  - {f}", file=sys.stderr)
         if len(failures) > 30:
@@ -2212,10 +2678,17 @@ def main() -> int:
         if args.strict:
             return 1
 
-    args.out.write_text(json.dumps(canonical, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    args.out.write_text(
+        json.dumps(canonical, indent=2, sort_keys=False) + "\n", encoding="utf-8"
+    )
     n_mods = len(canonical["modules"])
-    n_methods = sum(sum(len(c["methods"]) for c in m.get("classes", {}).values()) for m in canonical["modules"].values())
-    print(f"enumerate_signatures: wrote {args.out} ({n_mods} modules, {n_methods} methods)")
+    n_methods = sum(
+        sum(len(c["methods"]) for c in m.get("classes", {}).values())
+        for m in canonical["modules"].values()
+    )
+    print(
+        f"enumerate_signatures: wrote {args.out} ({n_mods} modules, {n_methods} methods)"
+    )
     return 0
 
 

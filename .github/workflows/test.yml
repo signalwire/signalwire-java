@@ -71,6 +71,14 @@ jobs:
           pip install -e porting-sdk/test_harness/mock_relay
           pip install -e porting-sdk/test_harness/mock_signalwire
 
+      # ruff is the Python half of the FMT and LINT gates. scripts/ holds the
+      # hand-written enumerators + generators that feed SIGNATURES/SURFACE/DRIFT
+      # and emit the committed generated trees; they are linted + formatted at the
+      # same bar as the Java. scripts/_env.sh fails LOUD when ruff is missing, so
+      # this install is required, not an optional speedup. Config: ./ruff.toml.
+      - name: Install ruff (Python half of FMT + LINT)
+        run: pip install ruff
+
       # The EMISSION gate needs `import signalwire` (the oracle). Install it from
       # the adjacent checkout only if it isn't already importable — so a runner
       # that already has it (or a future shared setup) isn't reinstalled.
