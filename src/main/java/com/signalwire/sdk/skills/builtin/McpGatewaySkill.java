@@ -591,8 +591,8 @@ public class McpGatewaySkill implements SkillBase {
    * nested class rather than an inline anonymous one so the surface enumerator scopes its interface
    * methods to THIS class, not the public {@code MCPGatewaySkill} surface. This deliberately-empty
    * trust manager is the self-signed opt-out the python reference endorses via {@code
-   * verify=self.verify_ssl}; it is allowlisted in {@code TLS_VERIFY_ALLOW.md} as a
-   * secure-default-gated site (the only legitimate allowlist reason per the TLS-VERIFY gate).
+   * verify=self.verify_ssl}. It needs no TLS-VERIFY allowlist entry: the gate proves this class is
+   * instantiated only inside the {@code if (!verifySsl)} guard, so the site passes on its merits.
    */
   private static final class InsecureTrustManager implements X509TrustManager {
     /**
