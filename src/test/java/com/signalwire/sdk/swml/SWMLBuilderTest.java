@@ -76,15 +76,20 @@ class SWMLBuilderTest {
         "summarize",
         "https://ex.com/pp",
         Map.of("functions", List.of()),
-        Map.of("temperature", 0.4));
+        Map.of("params", Map.of("temperature", 0.4)));
     Map<String, Object> ai = (Map<String, Object>) main().get(0).get("ai");
 
     assertEquals(Map.of("pom", pom), ai.get("prompt"));
     assertEquals(Map.of("text", "summarize"), ai.get("post_prompt"));
     assertEquals("https://ex.com/pp", ai.get("post_prompt_url"));
     assertEquals(Map.of("functions", List.of()), ai.get("SWAIG"));
-    // kwargs merge at top level (parity with Python config.update(kwargs)).
-    assertEquals(0.4, (Double) ai.get("temperature"), 1e-9);
+    // kwargs merge at the ai top level (parity with Python config.update(kwargs)),
+    // so they must be keys `AIObject` actually declares — it is closed
+    // (`unevaluatedProperties: {"not": {}}`). LLM tuning knobs like `temperature`
+    // are `ai.params` keys, not top-level ones; passing one at the top level made
+    // the document invalid, which is what this fixture used to assert.
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    assertEquals(0.4, (Double) params.get("temperature"), 1e-9);
   }
 
   @Test
@@ -100,9 +105,13 @@ class SWMLBuilderTest {
   @Test
   @SuppressWarnings("unchecked")
   void testPlayUrlsList() {
-    builder.play(null, List.of("a.mp3", "b.mp3"), null, null, null, null, null);
+    // Bare filenames are not valid `$defs/play_url` — the scheme is mandatory
+    // (`http(s)://` / `say:` / `ring:` / `silence:`), so "a.mp3" produced a document
+    // the SWML schema rejects.
+    List<String> urls = List.of("https://cdn.example.com/a.mp3", "https://cdn.example.com/b.mp3");
+    builder.play(null, urls, null, null, null, null, null);
     Map<String, Object> play = (Map<String, Object>) main().get(0).get("play");
-    assertEquals(List.of("a.mp3", "b.mp3"), play.get("urls"));
+    assertEquals(urls, play.get("urls"));
     assertFalse(play.containsKey("url"));
   }
 
@@ -153,6 +162,8 @@ class SWMLBuilderTest {
 
   @Test
   void testFluentChainingReturnsThis() {
+    // `$defs/Hangup.reason` carries `x-sdk-widen: true` — its hangup|busy|decline
+    // union is a HINT, not a closed set, so an arbitrary reason is a legal document.
     SWMLBuilder result = builder.reset().answer().say("hi").hangup("done");
     assertSame(builder, result);
     assertEquals("answer", firstKey(main().get(0)));

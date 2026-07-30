@@ -671,9 +671,16 @@ public class Service implements AutoCloseable {
    * Add a verb to the main section. Mirrors SWMLService.add_verb — the user-facing choke point that
    * enforces the strict-render contract: schema validation runs here so an unknown verb, a
    * misspelled/unknown config key on a closed verb, a wrong-typed config, or a missing required key
-   * raises {@link SchemaValidationError} instead of being appended silently. (The 38 specialized
-   * verb builders below call {@code document.addVerb} directly with configs they construct, so they
-   * are not double-validated — mirrors Python, whose add_verb is likewise the choke point.)
+   * raises {@link SchemaValidationError} instead of being appended silently.
+   *
+   * <p><b>This is the ONE place a verb enters the document.</b> {@link SWMLBuilder}, {@link
+   * SwmlRenderer}, {@code AgentBase.renderSwml} and the 38 specialized verb builders further down
+   * this class all route through here. They used to reach past it to the raw {@link
+   * Document#addVerb}, which appends whatever it is handed — that bypass is why several
+   * schema-invalid wire shapes shipped unnoticed (see {@code ValidatorRoutingTest}), and it meant
+   * {@code service.play(...)} was unvalidated while {@code service.addVerb("play", ...)} was not,
+   * with nothing at the call site to tell the two apart. Anything that emits a verb belongs on this
+   * method; nothing should call {@code document.addVerb} but this method and its section twin.
    */
   public Service addVerb(String verbName, Object verbData) {
     validateVerbOrThrow(verbName, verbData);
@@ -690,28 +697,23 @@ public class Service implements AutoCloseable {
 
   /**
    * Schema-validate a user-supplied verb config and throw {@link SchemaValidationError} if it does
-   * not satisfy the SWML schema. Mirrors the validation half of Python's {@code add_verb}: the
-   * {@code sleep}-with-integer verb takes a direct value (no dict), a non-map config for any other
-   * verb is invalid, and otherwise {@code SchemaUtils.validateVerb} decides. A no-op when schema
-   * validation is disabled.
+   * not satisfy the SWML schema. Mirrors the validation half of Python's {@code add_verb}. A no-op
+   * when schema validation is disabled.
+   *
+   * <p>The config is validated by SHAPE-FROM-THE-SCHEMA, not by assuming it is an object. Most verb
+   * configs are objects, but {@code cond} and {@code toggle_functions} are ARRAYS, {@code label} /
+   * {@code say} / {@code change_context} are STRINGS, and {@code sleep} / {@code hangup} / {@code
+   * unset} union a primitive with an object — an "must be an object" precondition would reject
+   * legal documents. Generated typed config POJOs (e.g. {@code ConnectConfig}) are covered too:
+   * {@link SchemaUtils#validateVerbValue} serialises whatever it is handed to the exact JSON {@link
+   * Document#render()} will emit and validates that, so the typed surface is not an unvalidated
+   * back door.
    */
-  @SuppressWarnings("unchecked")
   private void validateVerbOrThrow(String verbName, Object verbData) {
     if (!schemaValidation) {
       return;
     }
-    // sleep takes a direct integer value — not a config map.
-    if ("sleep".equals(verbName) && (verbData instanceof Integer || verbData instanceof Long)) {
-      return;
-    }
-    if (!(verbData instanceof Map)) {
-      throw new SchemaValidationError(
-          verbName,
-          java.util.Collections.singletonList(
-              "config for verb '" + verbName + "' must be an object"));
-    }
-    Map.Entry<Boolean, List<String>> res =
-        getSchemaUtils().validateVerb(verbName, (Map<String, Object>) verbData);
+    Map.Entry<Boolean, List<String>> res = getSchemaUtils().validateVerbValue(verbName, verbData);
     if (!res.getKey()) {
       throw new SchemaValidationError(verbName, res.getValue());
     }
@@ -1226,7 +1228,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service answer(Map<String, Object> params) {
-    document.addVerb("answer", params != null ? params : new LinkedHashMap<>());
+    addVerb("answer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1242,7 +1244,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service ai(Map<String, Object> params) {
-    document.addVerb("ai", params != null ? params : new LinkedHashMap<>());
+    addVerb("ai", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1254,7 +1256,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service amazonBedrock(Map<String, Object> params) {
-    document.addVerb("amazon_bedrock", params != null ? params : new LinkedHashMap<>());
+    addVerb("amazon_bedrock", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1266,7 +1268,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service cond(List<Map<String, Object>> conditions) {
-    document.addVerb("cond", conditions);
+    addVerb("cond", conditions);
     return this;
   }
 
@@ -1280,7 +1282,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service connect(Map<String, Object> params) {
-    document.addVerb("connect", params != null ? params : new LinkedHashMap<>());
+    addVerb("connect", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1295,7 +1297,7 @@ public class Service implements AutoCloseable {
    * @param config the typed connect config; when {@code null}, renders an empty {@code connect}.
    */
   public Service connect(com.signalwire.sdk.swml.generated.ConnectConfig config) {
-    document.addVerb(
+    addVerb(
         "connect", config != null ? config : new com.signalwire.sdk.swml.generated.ConnectConfig());
     return this;
   }
@@ -1308,7 +1310,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service denoise(Map<String, Object> params) {
-    document.addVerb("denoise", params != null ? params : new LinkedHashMap<>());
+    addVerb("denoise", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1320,7 +1322,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service detectMachine(Map<String, Object> params) {
-    document.addVerb("detect_machine", params != null ? params : new LinkedHashMap<>());
+    addVerb("detect_machine", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1332,7 +1334,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service enterQueue(Map<String, Object> params) {
-    document.addVerb("enter_queue", params != null ? params : new LinkedHashMap<>());
+    addVerb("enter_queue", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1345,7 +1347,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service execute(Map<String, Object> params) {
-    document.addVerb("execute", params != null ? params : new LinkedHashMap<>());
+    addVerb("execute", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1358,7 +1360,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service gotoLabel(Map<String, Object> params) {
-    document.addVerb("goto", params != null ? params : new LinkedHashMap<>());
+    addVerb("goto", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1369,7 +1371,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service hangup(Map<String, Object> params) {
-    document.addVerb("hangup", params != null ? params : new LinkedHashMap<>());
+    addVerb("hangup", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1379,7 +1381,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service hangup() {
-    document.addVerb("hangup", new LinkedHashMap<>());
+    addVerb("hangup", new LinkedHashMap<>());
     return this;
   }
 
@@ -1391,7 +1393,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service joinConference(Map<String, Object> params) {
-    document.addVerb("join_conference", params != null ? params : new LinkedHashMap<>());
+    addVerb("join_conference", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1402,7 +1404,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service joinRoom(Map<String, Object> params) {
-    document.addVerb("join_room", params != null ? params : new LinkedHashMap<>());
+    addVerb("join_room", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1414,7 +1416,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service label(Map<String, Object> params) {
-    document.addVerb("label", params != null ? params : new LinkedHashMap<>());
+    addVerb("label", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1427,7 +1429,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service liveTranscribe(Map<String, Object> params) {
-    document.addVerb("live_transcribe", params != null ? params : new LinkedHashMap<>());
+    addVerb("live_transcribe", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1439,7 +1441,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service liveTranslate(Map<String, Object> params) {
-    document.addVerb("live_translate", params != null ? params : new LinkedHashMap<>());
+    addVerb("live_translate", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1453,7 +1455,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service pay(Map<String, Object> params) {
-    document.addVerb("pay", params != null ? params : new LinkedHashMap<>());
+    addVerb("pay", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1464,7 +1466,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service play(Map<String, Object> params) {
-    document.addVerb("play", params != null ? params : new LinkedHashMap<>());
+    addVerb("play", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1477,7 +1479,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service prompt(Map<String, Object> params) {
-    document.addVerb("prompt", params != null ? params : new LinkedHashMap<>());
+    addVerb("prompt", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1488,7 +1490,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service receiveFax(Map<String, Object> params) {
-    document.addVerb("receive_fax", params != null ? params : new LinkedHashMap<>());
+    addVerb("receive_fax", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1501,7 +1503,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service record(Map<String, Object> params) {
-    document.addVerb("record", params != null ? params : new LinkedHashMap<>());
+    addVerb("record", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1514,7 +1516,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service recordCall(Map<String, Object> params) {
-    document.addVerb("record_call", params != null ? params : new LinkedHashMap<>());
+    addVerb("record_call", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1526,7 +1528,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service request(Map<String, Object> params) {
-    document.addVerb("request", params != null ? params : new LinkedHashMap<>());
+    addVerb("request", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1539,7 +1541,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service returnVerb(Map<String, Object> params) {
-    document.addVerb("return", params != null ? params : new LinkedHashMap<>());
+    addVerb("return", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1552,7 +1554,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service sipRefer(Map<String, Object> params) {
-    document.addVerb("sip_refer", params != null ? params : new LinkedHashMap<>());
+    addVerb("sip_refer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1563,7 +1565,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service sendDigits(Map<String, Object> params) {
-    document.addVerb("send_digits", params != null ? params : new LinkedHashMap<>());
+    addVerb("send_digits", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1574,7 +1576,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service sendFax(Map<String, Object> params) {
-    document.addVerb("send_fax", params != null ? params : new LinkedHashMap<>());
+    addVerb("send_fax", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1586,7 +1588,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service sendSms(Map<String, Object> params) {
-    document.addVerb("send_sms", params != null ? params : new LinkedHashMap<>());
+    addVerb("send_sms", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1598,13 +1600,13 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service set(Map<String, Object> params) {
-    document.addVerb("set", params != null ? params : new LinkedHashMap<>());
+    addVerb("set", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
   /** Sleep takes an integer (milliseconds), not a map. */
   public Service sleep(int milliseconds) {
-    document.addVerb("sleep", milliseconds);
+    addVerb("sleep", milliseconds);
     return this;
   }
 
@@ -1616,7 +1618,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service stopDenoise(Map<String, Object> params) {
-    document.addVerb("stop_denoise", params != null ? params : new LinkedHashMap<>());
+    addVerb("stop_denoise", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1628,7 +1630,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service stopRecordCall(Map<String, Object> params) {
-    document.addVerb("stop_record_call", params != null ? params : new LinkedHashMap<>());
+    addVerb("stop_record_call", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1639,7 +1641,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service stopTap(Map<String, Object> params) {
-    document.addVerb("stop_tap", params != null ? params : new LinkedHashMap<>());
+    addVerb("stop_tap", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1652,7 +1654,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service switchVerb(Map<String, Object> params) {
-    document.addVerb("switch", params != null ? params : new LinkedHashMap<>());
+    addVerb("switch", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1665,7 +1667,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service tap(Map<String, Object> params) {
-    document.addVerb("tap", params != null ? params : new LinkedHashMap<>());
+    addVerb("tap", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1677,7 +1679,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service transfer(Map<String, Object> params) {
-    document.addVerb("transfer", params != null ? params : new LinkedHashMap<>());
+    addVerb("transfer", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1689,7 +1691,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service unset(Map<String, Object> params) {
-    document.addVerb("unset", params != null ? params : new LinkedHashMap<>());
+    addVerb("unset", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 
@@ -1702,7 +1704,7 @@ public class Service implements AutoCloseable {
    * @return this service, for chaining.
    */
   public Service userEvent(Map<String, Object> params) {
-    document.addVerb("user_event", params != null ? params : new LinkedHashMap<>());
+    addVerb("user_event", params != null ? params : new LinkedHashMap<>());
     return this;
   }
 

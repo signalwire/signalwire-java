@@ -64,12 +64,16 @@ public class SwmlServiceAiSidecar extends Service {
 
         String publicUrl = resolvePublicUrl();
 
-        // 1. Emit any SWML -- including ai_sidecar. Service exposes
-        //    addVerbToSection via getDocument(), so new platform verbs work
-        //    without an SDK release. UPPERCASE "SWAIG" is the SWML schema key
-        //    that registers the LLM-callable webhook for the sidecar.
+        // 1. Emit ai_sidecar through Service.addVerbToSection -- the VALIDATING
+        //    entry point, which schema-checks the config before it is appended.
+        //    (This used to reach past it to getDocument().addVerbToSection on the
+        //    rationale that new platform verbs need an escape hatch; ai_sidecar is
+        //    in schema.json as $defs/AiSidecar and validates, so the example was
+        //    teaching users the unvalidated idiom for no benefit.)
+        //    UPPERCASE "SWAIG" is the SWML schema key that registers the
+        //    LLM-callable webhook for the sidecar.
         answer(Map.of());
-        getDocument().addVerbToSection(
+        addVerbToSection(
                 "main",
                 "ai_sidecar",
                 Map.of(

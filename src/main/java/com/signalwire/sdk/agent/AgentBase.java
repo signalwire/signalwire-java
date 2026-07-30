@@ -100,6 +100,7 @@ public class AgentBase extends Service {
   private List<String> nativeFunctions;
   private final List<Map<String, Object>> internalFillers = new ArrayList<>();
   private boolean debugEventsEnabled = false;
+  private int debugEventsLevel = 1;
   private final List<Map<String, Object>> functionIncludes = new ArrayList<>();
 
   // --- Tools ---
@@ -1803,7 +1804,20 @@ public class AgentBase extends Service {
    * @return this agent, for chaining.
    */
   public AgentBase enableDebugEvents() {
+    return enableDebugEvents(1);
+  }
+
+  /**
+   * Turn on the platform's debug event stream at a specific verbosity. Mirrors the reference's
+   * {@code enable_debug_events(level=1)} (ai_config_mixin.py:512); the level is rendered as {@code
+   * ai.params.debug_webhook_level}.
+   *
+   * @param level the debug verbosity level.
+   * @return this agent, for chaining.
+   */
+  public AgentBase enableDebugEvents(int level) {
     this.debugEventsEnabled = true;
+    this.debugEventsLevel = level;
     return this;
   }
 
@@ -2738,62 +2752,90 @@ public class AgentBase extends Service {
   // SWML Rendering — 5-Phase Pipeline
   // ============================================================
 
-  /** Render the complete SWML document. 5 phases: pre-answer, answer, post-answer, AI, post-AI */
+  /**
+   * Render the complete SWML document. 5 phases: pre-answer, answer, post-answer, AI, post-AI.
+   *
+   * <p>Every verb is appended through the inherited {@link Service#addVerb} choke point, so a
+   * schema-invalid config raises {@link com.signalwire.sdk.swml.SchemaValidationError} here rather
+   * than shipping to the wire. This method previously hand-assembled the verb list and the {@code
+   * {version, sections}} envelope, touching neither {@link Service} nor {@code Document} — the
+   * agent's primary render path was therefore the one path in the port with NO validation at all,
+   * including for the caller-supplied phase verbs from {@link #addPreAnswerVerb}, {@link
+   * #addAnswerVerb}, {@link #addPostAnswerVerb} and {@link #addPostAiVerb}. The reference does the
+   * same thing this now does: {@code agent_base.py:_render_swml} calls {@code reset_document()} and
+   * then {@code add_verb(...)} for each of the five phases.
+   */
   public Map<String, Object> renderSwml(String baseUrl) {
-    List<Map<String, Object>> mainVerbs = new ArrayList<>();
+    // Start from a clean document — renderSwml is called once per request on a
+    // long-lived agent (mirrors the reference's `agent_to_use.reset_document()`).
+    resetDocument();
 
     // Phase 1: Pre-answer verbs
-    mainVerbs.addAll(preAnswerVerbs);
+    addPhaseVerbs(preAnswerVerbs);
 
     // Phase 2: Answer
     if (autoAnswer) {
       Map<String, Object> answerParams = new LinkedHashMap<>();
       answerParams.put("max_duration", maxDuration);
-      mainVerbs.add(Map.of("answer", answerParams));
+      addVerb("answer", answerParams);
 
       // Record call if enabled
       if (recordCall) {
         Map<String, Object> recParams = new LinkedHashMap<>();
         recParams.put("format", recordFormat);
         recParams.put("stereo", recordStereo);
-        mainVerbs.add(Map.of("record_call", recParams));
+        addVerb("record_call", recParams);
       }
     }
-    mainVerbs.addAll(answerVerbs);
+    addPhaseVerbs(answerVerbs);
 
     // Phase 3: Post-answer verbs
-    mainVerbs.addAll(postAnswerVerbs);
+    addPhaseVerbs(postAnswerVerbs);
 
     // Phase 4: AI verb
-    Map<String, Object> aiVerb = buildAiVerb(baseUrl);
-    mainVerbs.add(Map.of("ai", aiVerb));
+    addVerb("ai", buildAiVerb(baseUrl));
 
     // Phase 5: Post-AI verbs
-    mainVerbs.addAll(postAiVerbs);
+    addPhaseVerbs(postAiVerbs);
 
-    // Build document
-    Map<String, Object> doc = new LinkedHashMap<>();
-    doc.put("version", "1.0.0");
-    doc.put("sections", Map.of("main", mainVerbs));
-    return doc;
+    return getDocument().toMap();
+  }
+
+  /**
+   * Append each verb of one phase list through the validating {@link Service#addVerb}. The phase
+   * lists hold single-entry {@code {verbName: verbData}} maps as recorded by {@link
+   * #addPreAnswerVerb} and friends.
+   */
+  private void addPhaseVerbs(List<Map<String, Object>> phaseVerbs) {
+    for (Map<String, Object> verb : phaseVerbs) {
+      for (Map.Entry<String, Object> e : verb.entrySet()) {
+        addVerb(e.getKey(), e.getValue());
+      }
+    }
   }
 
   private Map<String, Object> buildAiVerb(String baseUrl) {
     Map<String, Object> ai = new LinkedHashMap<>();
 
     // Prompt
-    ai.put("prompt", getPrompt());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> promptMap = (Map<String, Object>) getPrompt();
+    Map<String, Object> prompt = new LinkedHashMap<>(promptMap);
 
     // Merge LLM params into prompt
-    if (!promptLlmParams.isEmpty()) {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> promptMap = (Map<String, Object>) ai.get("prompt");
-      Map<String, Object> merged = new LinkedHashMap<>(promptMap);
-      for (var entry : promptLlmParams.entrySet()) {
-        merged.put(entry.getKey(), entry.getValue());
-      }
-      ai.put("prompt", merged);
+    prompt.putAll(promptLlmParams);
+
+    // Contexts belong INSIDE the prompt object, alongside `text`/`pom` — the
+    // reference builds them into `prompt_config["contexts"]`
+    // (swml_handler.py:191, validated at :107-122). `AIObject` is closed and
+    // declares no top-level `contexts`, so emitting it as a sibling of `prompt`
+    // both invalidated the document and put the contexts/steps workflow
+    // somewhere the AI engine never reads.
+    if (contextBuilder != null && !contextBuilder.isEmpty()) {
+      prompt.put("contexts", contextBuilder.toMap());
     }
+
+    ai.put("prompt", prompt);
 
     // Post prompt
     if (postPrompt != null) {
@@ -2812,9 +2854,21 @@ public class AgentBase extends Service {
       ai.put("post_prompt_url", ppUrl);
     }
 
-    // Params
-    if (!params.isEmpty()) {
-      ai.put("params", new LinkedHashMap<>(params));
+    // Params — including the auto-wired debug webhook when debug events are on.
+    // The debug stream is configured through `ai.params.debug_webhook_url` +
+    // `ai.params.debug_webhook_level` (both are declared AIParams keys), NOT a
+    // top-level `ai.debug` object: `AIObject` is closed
+    // (`unevaluatedProperties: {"not": {}}`) and has no `debug` property, so the
+    // shape this used to emit made the whole document schema-invalid and the
+    // platform never turned the stream on. Mirrors the reference
+    // (agent_base.py:1280-1293), which writes both keys into `_params`.
+    Map<String, Object> effectiveParams = new LinkedHashMap<>(params);
+    if (debugEventsEnabled) {
+      effectiveParams.put("debug_webhook_url", buildDebugEventsUrl(baseUrl));
+      effectiveParams.put("debug_webhook_level", debugEventsLevel);
+    }
+    if (!effectiveParams.isEmpty()) {
+      ai.put("params", effectiveParams);
     }
 
     // Hints
@@ -2838,18 +2892,25 @@ public class AgentBase extends Service {
       ai.put("pronounce", new ArrayList<>(pronunciations));
     }
 
-    // Internal fillers
-    if (!internalFillers.isEmpty()) {
-      ai.put("internal_fillers", new ArrayList<>(internalFillers));
-    }
-
-    // Debug events
-    if (debugEventsEnabled) {
-      ai.put("debug", Map.of("events", true));
-    }
-
     // SWAIG section
     Map<String, Object> swaig = new LinkedHashMap<>();
+
+    // Internal fillers live INSIDE the SWAIG object, not at the ai top level, and
+    // are an OBJECT keyed by internal-function name — `$defs/SWAIGInternalFiller`,
+    // referenced from `SWAIG.internal_fillers`, whose properties are `hangup`,
+    // `check_time`, `next_step`, ... each a `FunctionFillers`. The reference sets
+    // exactly that: `swaig_obj["internal_fillers"] = self._internal_fillers`
+    // (agent_base.py:1024-1029) off `set_internal_fillers(dict[str, dict[str,
+    // list[str]]])`.
+    //
+    // What shipped instead was the flat `internalFillers` LIST at the ai TOP LEVEL —
+    // wrong container AND wrong shape, so the document was invalid twice over and no
+    // filler was ever spoken. Meanwhile `internalFillersMap`, the field holding the
+    // correct reference-shaped data, was never rendered at all. The raw-document
+    // bypass is why neither was caught.
+    if (!internalFillersMap.isEmpty()) {
+      swaig.put("internal_fillers", new LinkedHashMap<>(internalFillersMap));
+    }
 
     // Build functions list
     List<Map<String, Object>> functions = buildSwaigFunctions(baseUrl);
@@ -2897,11 +2958,6 @@ public class AgentBase extends Service {
     // Global data
     if (!globalData.isEmpty()) {
       ai.put("global_data", new LinkedHashMap<>(globalData));
-    }
-
-    // Contexts
-    if (contextBuilder != null && !contextBuilder.isEmpty()) {
-      ai.put("contexts", contextBuilder.toMap());
     }
 
     return ai;
@@ -2997,6 +3053,31 @@ public class AgentBase extends Service {
     return url.toString();
   }
 
+  /**
+   * The URL the platform POSTs debug events to. Mirrors the reference's {@code
+   * _build_webhook_url("debug_events", swaig_query_params)} (agent_base.py:1286-1288) — the same
+   * base and query params as the SWAIG webhook, but the {@code debug_events} endpoint.
+   */
+  private String buildDebugEventsUrl(String baseUrl) {
+    if (baseUrl == null) {
+      return null;
+    }
+    StringBuilder url = new StringBuilder();
+    url.append(baseUrl).append(normalizeRoute()).append("/debug_events");
+    if (!swaigQueryParams.isEmpty()) {
+      url.append("?");
+      boolean first = true;
+      for (Map.Entry<String, String> entry : swaigQueryParams.entrySet()) {
+        if (!first) {
+          url.append("&");
+        }
+        url.append(entry.getKey()).append("=").append(entry.getValue());
+        first = false;
+      }
+    }
+    return url.toString();
+  }
+
   private String normalizeRoute() {
     return route.equals("/") ? "" : route;
   }
@@ -3059,6 +3140,17 @@ public class AgentBase extends Service {
     }
     copy.internalFillers.addAll(deepCopyList(this.internalFillers));
     copy.debugEventsEnabled = this.debugEventsEnabled;
+    copy.debugEventsLevel = this.debugEventsLevel;
+    // internal_fillers is rendered off internalFillersMap, so the ephemeral copy
+    // must carry it or a dynamic-config request silently drops every filler
+    // (the reference deep-copies _internal_fillers at agent_base.py:1659-1660).
+    for (var e : this.internalFillersMap.entrySet()) {
+      Map<String, List<String>> langs = new LinkedHashMap<>();
+      for (var l : e.getValue().entrySet()) {
+        langs.put(l.getKey(), new ArrayList<>(l.getValue()));
+      }
+      copy.internalFillersMap.put(e.getKey(), langs);
+    }
     copy.functionIncludes.addAll(deepCopyList(this.functionIncludes));
     copy.tools.putAll(this.tools);
     copy.registeredSwaigFunctions.addAll(deepCopyList(this.registeredSwaigFunctions));

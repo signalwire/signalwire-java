@@ -55,7 +55,7 @@ class RenderTest {
   @SuppressWarnings("unchecked")
   void testPreAnswerVerbsRendered() {
     agent.setPromptText("Test");
-    agent.addPreAnswerVerb("play", Map.of("url", "ringback.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/ringback.wav"));
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
     assertTrue(main.get(0).containsKey("play"));
@@ -197,15 +197,23 @@ class RenderTest {
     assertNotNull(ai.get("params"));
   }
 
+  /**
+   * Contexts render INSIDE the prompt object, alongside {@code text}/{@code pom} — the reference
+   * builds {@code prompt_config["contexts"]} (swml_handler.py:191). A top-level {@code ai.contexts}
+   * (the old shape) is rejected by the closed {@code AIObject}, so the entire contexts/steps
+   * workflow was landing where the AI engine never looks.
+   */
   @Test
   @SuppressWarnings("unchecked")
-  void testAiVerbContainsContexts() {
+  void testAiVerbContainsContextsInsidePrompt() {
     agent.setPromptText("Test");
     var builder = agent.defineContexts();
     var ctx = builder.addContext("default");
     ctx.addStep("greeting").setText("Hello!");
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
-    assertNotNull(ai.get("contexts"));
+    assertFalse(ai.containsKey("contexts"), "must NOT sit at the ai top level");
+    Map<String, Object> prompt = (Map<String, Object>) ai.get("prompt");
+    assertNotNull(prompt.get("contexts"));
   }
 
   // ======== Phase 5: Post-AI ========
@@ -248,7 +256,7 @@ class RenderTest {
     agent.updateGlobalData(Map.of("key", "val"));
     agent.setNativeFunctions(List.of("check_for_input"));
     agent.defineTool("my_tool", "desc", Map.of(), (a, r) -> new FunctionResult("ok"));
-    agent.addPreAnswerVerb("play", Map.of("url", "ring.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/ring.wav"));
     agent.addPostAiVerb("hangup", Map.of());
     agent.enableDebugEvents();
 
@@ -268,7 +276,11 @@ class RenderTest {
     assertNotNull(ai.get("pronounce"));
     assertNotNull(ai.get("params"));
     assertNotNull(ai.get("global_data"));
-    assertNotNull(ai.get("debug"));
+    // Debug events ride ai.params.debug_webhook_*, not a top-level ai.debug object.
+    assertFalse(ai.containsKey("debug"));
+    Map<String, Object> aiParams = (Map<String, Object>) ai.get("params");
+    assertNotNull(aiParams.get("debug_webhook_url"));
+    assertNotNull(aiParams.get("debug_webhook_level"));
     assertNotNull(ai.get("SWAIG"));
   }
 

@@ -144,9 +144,19 @@ public final class SwmlRenderer {
     }
 
     /**
-     * AI-verb parameters to render into {@code ai.params}.
+     * Extra keys merged at the {@code ai} verb's TOP level — the analog of the reference's {@code
+     * **(params or {})} splat into {@code builder.ai(...)} (swml_renderer.py:131-137), which lands
+     * them beside {@code prompt}/{@code SWAIG}, not inside {@code ai.params}.
      *
-     * @param v the parameters.
+     * <p>{@code AIObject} is CLOSED ({@code unevaluatedProperties: {"not": {}}}), so only keys it
+     * declares are legal here — {@code prompt}, {@code post_prompt}, {@code post_prompt_url},
+     * {@code SWAIG}, {@code params}, {@code global_data}, {@code hints}, {@code languages}, {@code
+     * pronounce}. LLM tuning knobs such as {@code temperature} are {@code AIParams} keys: pass them
+     * as {@code params(Map.of("params", Map.of("temperature", 0.4)))}. (This javadoc previously
+     * claimed the map rendered into {@code ai.params}; it does not, and the mismatch shipped
+     * invalid documents because this path bypassed the validator.)
+     *
+     * @param v the top-level ai keys.
      * @return these options, for chaining.
      */
     public RenderOptions params(Map<String, Object> v) {
@@ -252,7 +262,10 @@ public final class SwmlRenderer {
       Map<String, Object> rc = new LinkedHashMap<>();
       rc.put("format", opts.recordFormat);
       rc.put("stereo", opts.recordStereo);
-      opts.service.getDocument().addVerb("record_call", rc);
+      // Through the validating Service.addVerb choke point, as the reference does
+      // (swml_renderer.py routes every verb through service.add_verb) — the raw
+      // Document entry point accepts any shape, which is how invalid configs ship.
+      opts.service.addVerb("record_call", rc);
     }
 
     List<Map<String, Object>> functions =

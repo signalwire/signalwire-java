@@ -132,14 +132,22 @@ class SwmlRendererTest {
     assertEquals(Map.of("pom", pom), ai.get("prompt"));
   }
 
+  /**
+   * {@code params(...)} merges at the {@code ai} TOP level (the reference's {@code **params}
+   * splat), so its keys must be ones the closed {@code AIObject} declares. {@code temperature} is
+   * an {@code AIParams} key, so it travels under the {@code params} key — the previous fixture
+   * asserted it at the top level, which is a document the schema rejects.
+   */
   @Test
   @SuppressWarnings("unchecked")
   void testRenderSwmlParamsMergedIntoAi() {
     String json =
         SwmlRenderer.renderSwml(
-            SwmlRenderer.RenderOptions.of("hi", newService()).params(Map.of("temperature", 0.3)));
+            SwmlRenderer.RenderOptions.of("hi", newService())
+                .params(Map.of("params", Map.of("temperature", 0.3))));
     Map<String, Object> ai = (Map<String, Object>) mainOf(json).get(0).get("ai");
-    assertEquals(0.3, (Double) ai.get("temperature"), 1e-9);
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    assertEquals(0.3, (Double) params.get("temperature"), 1e-9);
   }
 
   @Test
@@ -211,8 +219,12 @@ class SwmlRendererTest {
 
   /**
    * Response actions are routed through the validating {@link Service#addVerb}, not the raw
-   * document — so a caller-supplied action config the SWML schema rejects (here an out-of-enum
-   * {@code hangup.reason}) raises instead of being appended silently.
+   * document — so a caller-supplied action config the SWML schema rejects (here a misspelled key on
+   * the closed {@code hangup} verb) raises instead of being appended silently.
+   *
+   * <p>This originally used an out-of-enum {@code hangup.reason}, which is NOT a rejection case:
+   * {@code $defs/Hangup.reason} carries {@code x-sdk-widen: true}, so its {@code
+   * hangup|busy|decline} union is a hint and the platform accepts any string.
    */
   @Test
   void testFunctionResponseActionIsSchemaValidated() {
@@ -220,9 +232,18 @@ class SwmlRendererTest {
         SchemaValidationError.class,
         () ->
             SwmlRenderer.renderFunctionResponseSwml(
+                "bye", newService(), List.of(Map.of("hangup", Map.of("reasonn", "busy"))), "json"));
+  }
+
+  /** A widened reason is accepted by that same path. */
+  @Test
+  void testFunctionResponseActionAcceptsWidenedHangupReason() {
+    assertDoesNotThrow(
+        () ->
+            SwmlRenderer.renderFunctionResponseSwml(
                 "bye",
                 newService(),
-                List.of(Map.of("hangup", Map.of("reason", "not-a-real-reason"))),
+                List.of(Map.of("hangup", Map.of("reason", "not-a-listed-reason"))),
                 "json"));
   }
 

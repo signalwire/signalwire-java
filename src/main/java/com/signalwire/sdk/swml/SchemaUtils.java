@@ -263,6 +263,41 @@ public class SchemaUtils {
     return validateVerbLightweight(verbName, verbConfig);
   }
 
+  /**
+   * Validate a verb config of ANY JSON shape — not just an object.
+   *
+   * <p>{@link #validateVerb(String, Map)} takes a {@code Map} because most verb configs are
+   * objects, but the schema says otherwise for several: {@code cond} and {@code toggle_functions}
+   * are ARRAYS, {@code label} / {@code say} / {@code change_context} are STRINGS, and {@code sleep}
+   * / {@code hangup} / {@code unset} union a primitive with an object. A caller that assumes
+   * "config must be a Map" therefore rejects legal documents. This entry point serialises whatever
+   * it is given — a {@code Map}, a {@code List}, a boxed primitive, or a generated typed config
+   * POJO — to the exact JSON the wire will carry, and validates THAT.
+   *
+   * @param verbName the SWML verb name.
+   * @param verbConfig the config value, of any JSON-representable shape.
+   * @return ({@code valid}, {@code errors}), same contract as {@link #validateVerb}.
+   */
+  public Map.Entry<Boolean, List<String>> validateVerbValue(String verbName, Object verbConfig) {
+    if (!validationEnabled) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    if (!verbs.containsKey(verbName)) {
+      return new AbstractMap.SimpleImmutableEntry<>(
+          false, Collections.singletonList("Unknown verb: " + verbName));
+    }
+    if (fullValidator == null) {
+      // The lightweight path only knows how to check required keys on an object.
+      if (verbConfig instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> asMap = (Map<String, Object>) verbConfig;
+        return validateVerbLightweight(verbName, asMap);
+      }
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    return validateVerbElement(verbName, new Gson().toJsonTree(verbConfig));
+  }
+
   private Map.Entry<Boolean, List<String>> validateVerbFull(
       String verbName, Map<String, Object> verbConfig) {
     // Full structural validation against the vendored SWML JSON Schema
@@ -290,8 +325,21 @@ public class SchemaUtils {
     if (!outerProps.has(verbName) || !outerProps.get(verbName).isJsonObject()) {
       return validateVerbLightweight(verbName, verbConfig);
     }
+    return validateVerbElement(verbName, new Gson().toJsonTree(verbConfig));
+  }
+
+  /** Validate an already-serialised config element against the verb's inner schema. */
+  private Map.Entry<Boolean, List<String>> validateVerbElement(
+      String verbName, JsonElement configEl) {
+    VerbInfo v = verbs.get(verbName);
+    if (v == null || !v.definition.has("properties")) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    JsonObject outerProps = v.definition.getAsJsonObject("properties");
+    if (!outerProps.has(verbName) || !outerProps.get(verbName).isJsonObject()) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
     JsonObject innerSchema = outerProps.getAsJsonObject(verbName);
-    JsonElement configEl = new Gson().toJsonTree(verbConfig);
     List<String> errors = new ArrayList<>();
     // The ai verb is validated TOP-LEVEL-KEYS ONLY (reject unknown/misspelled
     // top-level keys + require `prompt`; ai.params stays open). Its deep
@@ -399,6 +447,21 @@ public class SchemaUtils {
       return;
     }
     JsonObject schema = schemaEl.getAsJsonObject();
+
+    // x-sdk-widen — a DECLARED ruling that this field's const/enum union is a
+    // documentation HINT, not a closed set: the platform accepts values outside
+    // it. Enforcing the union anyway invents a constraint the server does not
+    // have and makes the SDK reject documents that work on the wire. Honour the
+    // flag by checking only the underlying TYPE of each branch, never the const.
+    //
+    // Exactly one field carries it today — $defs/Hangup.reason, whose
+    // hangup|busy|decline union this validator was rejecting anything outside of.
+    if (schema.has("x-sdk-widen")
+        && schema.get("x-sdk-widen").isJsonPrimitive()
+        && schema.get("x-sdk-widen").getAsBoolean()) {
+      validateWidened(schema, value, path, errors, depth);
+      return;
+    }
 
     // $ref — resolve and validate against the referenced def.
     if (schema.has("$ref") && schema.get("$ref").isJsonPrimitive()) {
@@ -593,6 +656,54 @@ public class SchemaUtils {
     List<String> local = new ArrayList<>();
     validateAgainst(schemaEl, value, "$", local, depth);
     return local.isEmpty();
+  }
+
+  /**
+   * Validate a field marked {@code x-sdk-widen}: keep the TYPE constraint, drop the {@code
+   * const}/{@code enum} membership constraint. The union is a hint about what the field usually
+   * carries, not a closed set the platform enforces — so {@code {"reason": "done"}} on {@code
+   * hangup} is a legal document even though {@code done} is not one of the three listed consts.
+   *
+   * <p>A branch's {@code $ref} is resolved so a widened field that unions a primitive with, say,
+   * {@code SWMLVar} still accepts the {@code SWMLVar} object form.
+   */
+  private void validateWidened(
+      JsonObject schema, JsonElement value, String path, List<String> errors, int depth) {
+    List<JsonObject> branches = new ArrayList<>();
+    for (String key : List.of("anyOf", "oneOf")) {
+      if (schema.has(key) && schema.get(key).isJsonArray()) {
+        for (JsonElement sub : schema.getAsJsonArray(key)) {
+          if (sub.isJsonObject()) {
+            JsonObject o = sub.getAsJsonObject();
+            if (o.has("$ref") && o.get("$ref").isJsonPrimitive()) {
+              JsonObject resolved = resolveRef(o.get("$ref").getAsString());
+              if (resolved != null) {
+                o = resolved;
+              }
+            }
+            branches.add(o);
+          }
+        }
+      }
+    }
+    if (branches.isEmpty()) {
+      // No union to widen — fall back to a plain type check when one is declared.
+      if (schema.has("type")) {
+        checkType(schema.get("type"), value, path, errors);
+      }
+      return;
+    }
+    for (JsonObject b : branches) {
+      if (!b.has("type")) {
+        return; // an untyped branch accepts anything
+      }
+      List<String> local = new ArrayList<>();
+      checkType(b.get("type"), value, path, local);
+      if (local.isEmpty()) {
+        return; // some branch's type accepts this value
+      }
+    }
+    errors.add(path + " does not match the type of any allowed schema");
   }
 
   /** Resolve a local {@code #/$defs/Name} reference against the loaded schema. */

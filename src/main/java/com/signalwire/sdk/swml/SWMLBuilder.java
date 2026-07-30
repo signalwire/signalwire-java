@@ -22,6 +22,14 @@ import java.util.Map;
  * through {@link #verb(String, Map)} / {@link #sleepVerb(int)} — the Java analog of the Python
  * reference's runtime {@code __getattr__} verb dispatch (Java has no {@code __getattr__} / {@code
  * method_missing}, so the catch-all is a named method).
+ *
+ * <p><b>Every verb goes through {@link Service#addVerb} — the validating choke point.</b> The
+ * builder must never reach past it to {@code service.getDocument().addVerb(...)}: the raw Document
+ * entry point writes whatever it is handed, which is how schema-invalid configs shipped silently
+ * (an empty {@code play} with no url, an {@code ai} with no prompt, LLM tuning keys at the {@code
+ * ai} verb's top level). The reference does the same — every method in {@code swml_builder.py},
+ * including the auto-vivified verb dispatch and the {@code sleep} special case, calls {@code
+ * self.service.add_verb(...)}.
  */
 public class SWMLBuilder {
 
@@ -69,7 +77,7 @@ public class SWMLBuilder {
     if (codecs != null) {
       config.put("codecs", codecs);
     }
-    service.getDocument().addVerb("answer", config);
+    service.addVerb("answer", config);
     return this;
   }
 
@@ -93,7 +101,7 @@ public class SWMLBuilder {
     if (reason != null) {
       config.put("reason", reason);
     }
-    service.getDocument().addVerb("hangup", config);
+    service.addVerb("hangup", config);
     return this;
   }
 
@@ -108,7 +116,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder ai(Map<String, Object> config) {
-    service.getDocument().addVerb("ai", config != null ? config : new LinkedHashMap<>());
+    service.addVerb("ai", config != null ? config : new LinkedHashMap<>());
     return this;
   }
 
@@ -163,7 +171,7 @@ public class SWMLBuilder {
       config.putAll(kwargs);
     }
 
-    service.getDocument().addVerb("ai", config);
+    service.addVerb("ai", config);
     return this;
   }
 
@@ -174,7 +182,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder play(Map<String, Object> config) {
-    service.getDocument().addVerb("play", config != null ? config : new LinkedHashMap<>());
+    service.addVerb("play", config != null ? config : new LinkedHashMap<>());
     return this;
   }
 
@@ -222,7 +230,7 @@ public class SWMLBuilder {
     if (autoAnswer != null) {
       config.put("auto_answer", autoAnswer);
     }
-    service.getDocument().addVerb("play", config);
+    service.addVerb("play", config);
     return this;
   }
 
@@ -321,7 +329,7 @@ public class SWMLBuilder {
         }
       }
     }
-    service.getDocument().addVerb(name, clean);
+    service.addVerb(name, clean);
     return this;
   }
 
@@ -333,7 +341,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder sleepVerb(int milliseconds) {
-    service.getDocument().addVerb("sleep", milliseconds);
+    service.addVerb("sleep", milliseconds);
     return this;
   }
 }
