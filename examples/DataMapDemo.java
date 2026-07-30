@@ -46,14 +46,14 @@ public class DataMapDemo {
 
         agent.registerSwaigFunction(statusMap.toSwaigFunction());
 
-        // DataMap tool 3: POST with body
+        // DataMap tool 3: POST with request params
         var feedbackMap = new DataMap("submit_feedback")
                 .purpose("Submit customer feedback")
                 .parameter("rating", "integer", "Rating from 1-5", true)
                 .parameter("comment", "string", "Feedback comment", false)
                 .webhook("POST", "https://api.example.com/feedback",
                         Map.of("Content-Type", "application/json"))
-                .body(Map.of(
+                .params(Map.of(
                         "rating", "${args.rating}",
                         "comment", "${args.comment}",
                         "timestamp", "${system.timestamp}"

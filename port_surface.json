@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ c67ea3efe456437a5a1585dd04b21efae38a1918",
+  "generated_from": "signalwire-java @ b18b3ac2c262cfe3aa49bb5fa8a4c6cc2291bac3",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -608,7 +608,6 @@
       "classes": {
         "DataMap": [
           "__init__",
-          "body",
           "description",
           "error_keys",
           "expression",

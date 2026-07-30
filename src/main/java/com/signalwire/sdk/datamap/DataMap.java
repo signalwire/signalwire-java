@@ -216,15 +216,6 @@ public class DataMap {
     return this;
   }
 
-  /** Set request body for the last added webhook (POST/PUT requests). */
-  public DataMap body(Map<String, Object> data) {
-    if (webhooks.isEmpty()) {
-      throw new IllegalStateException("Must add webhook before setting body");
-    }
-    webhooks.getLast().put("body", data);
-    return this;
-  }
-
   /** Set request params for the last added webhook. */
   public DataMap params(Map<String, Object> data) {
     if (webhooks.isEmpty()) {

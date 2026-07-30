@@ -58,14 +58,14 @@ public class AdvancedDatamapDemo {
 
         agent.registerSwaigFunction(searchMap.toSwaigFunction());
 
-        // 3. POST webhook with body and fallback
+        // 3. POST webhook with request params and fallback
         var feedbackMap = new DataMap("submit_feedback")
                 .purpose("Submit customer feedback")
                 .parameter("rating", "integer", "Rating from 1-5", true)
                 .parameter("comment", "string", "Feedback comment", false)
                 .webhook("POST", "https://api.example.com/feedback",
                         Map.of("Content-Type", "application/json"))
-                .body(Map.of(
+                .params(Map.of(
                         "rating", "${args.rating}",
                         "comment", "${args.comment}",
                         "timestamp", "${system.timestamp}"
