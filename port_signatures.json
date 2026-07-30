@@ -5225,6 +5225,11 @@
                 {
                   "name": "self",
                   "kind": "self"
+                },
+                {
+                  "name": "level",
+                  "type": "int",
+                  "required": false
                 }
               ],
               "returns": "class:signalwire.core.agent_base.AgentBase"

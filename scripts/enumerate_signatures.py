@@ -535,6 +535,17 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("BedrockAgent", "set_inference_params"),   # +temperature/top_p/max_tokens=None
     ("AgentBase", "add_pronunciation"),         # +ignore_case=False
     ("AgentBase", "on_function_call"),          # +raw_data=None
+    # AgentBase.enableDebugEvents() delegates to enableDebugEvents(level) supplying
+    # the reference's own default 1 (AgentBase.java:1807) — Java's way of spelling
+    # ``level: int = 1``. The oracle records enable_debug_events(level=1); the
+    # fewest-param collapse picked the 0-arg convenience form, which is the ONLY
+    # reason the recorded arity was 0 vs the oracle's 1. The PORT_SIGNATURE_OMISSIONS
+    # entry that excused it claimed the method "collapses the Python kwargs into
+    # typed Builder+setters" with "optional args (meta_data/replace/ignore_case/etc.)
+    # reachable via additional fluent calls" — false of the source: there is no
+    # builder, no fluent setter, and none of those params exist on this method. Same
+    # shape (and same boilerplate rationale) as register_routing_callback.
+    ("AgentBase", "enable_debug_events"),       # +level=1
     # com.signalwire.sdk.swml.Service canonicalizes to SWMLService (see
     # JAVA_MODULE_OVERRIDES / _CLASS_RENAMES) — key on the CANONICAL name.
     ("SWMLService", "on_function_call"),        # +raw_data=None
