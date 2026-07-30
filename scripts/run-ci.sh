@@ -153,6 +153,16 @@ sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test)" \
 sched_gate SURFACE res=gradle desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM/ROUTE-COLLISION)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port java --repo "$PORT_ROOT"
 
+# SIGNATURES-FRESH: the committed port_signatures.json must match a fresh regen.
+# SURFACE-FRESH guards port_surface.json only, so nothing guarded the SIGNATURES
+# artifact — and that file is DRIFT's INPUT, so a stale one makes the parity gate
+# compare against a fiction and pass. res=gradle: java's enumerator rebuilds the JAR
+# and reads it, so this must not overlap the other Gradle-touching gates NOR the
+# SURFACE suite's own in-place regen-then-restore of the same artifacts.
+sched_gate SIGNATURES-FRESH res=gradle desc="committed port_signatures.json matches a fresh regen" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suites/_signatures_fresh.py" \
+        --port java --repo "$PORT_ROOT" --porting-sdk "$PORTING_SDK_DIR"
+
 # TYPE-EROSION: a port may not erase a type the reference DECLARES. compare_param treats
 # `any` on EITHER side as matching anything, so a port emitting `any` silently satisfies
 # every reference declaration — an unlimited opt-out. ConciergeAgent.hours_of_operation is
