@@ -31,6 +31,15 @@ java {
 // arg0/arg1/... and the diff against the Python reference loses them.
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += '-parameters'
+    // javac caps its diagnostic output at 100 warnings per compilation by
+    // default, so a source set with more findings than that reports exactly
+    // "100 warnings" and silently drops the rest. That makes the LINT gate
+    // UNDER-REPORT: the examples source set was sitting at 100-capped while its
+    // true count was higher, so a burndown driven off the log would have looked
+    // finished while findings remained. Raise the cap so the gate always prints
+    // every finding it found.
+    options.compilerArgs += '-Xmaxwarns'
+    options.compilerArgs += '100000'
 }
 
 repositories {
@@ -135,6 +144,25 @@ tasks.withType(JavaCompile).configureEach {
         //  reason — see WebhookFilterTest.Handler#invoke.)
         check('AnnotateFormatMethod', CheckSeverity.OFF)
         check('IterableAndIterator', CheckSeverity.OFF)
+        //   * DefaultPackage — the 73 example mains and scripts/SignatureDump
+        //     are default-package BY CONTRACT, in three places that would all
+        //     break together if a package were added:
+        //       1. examples/README.md:112 and docs/agent_guide.md tell users to
+        //          run an example with `java -cp "$CP:examples" SimpleAgent` —
+        //          the simple name IS the main class. A package would also force
+        //          a matching directory layout on anyone copying the single file,
+        //          which is the whole point of a one-file example.
+        //       2. build.gradle's own `runExample -PexampleClass=<ClassName>`
+        //          task resolves mainClass from that bare simple name.
+        //       3. porting-sdk/scripts/examples_run.py (the EXAMPLES-RUN gate, in
+        //          a DIFFERENT repo) hardcodes `-PexampleClass={f.stem}`, i.e.
+        //          the file stem is the fully-qualified main class.
+        //     scripts/SignatureDump.java is the same story: enumerate_signatures.py
+        //     runs it as `java -cp <cp> SignatureDump`, and it feeds
+        //     port_signatures.json — the input to the SIGNATURES and DRIFT gates.
+        //     So this is a deliberate structural choice, not undone work; the
+        //     check is OFF rather than suppressed at 74 sites.
+        check('DefaultPackage', CheckSeverity.OFF)
         // PROMOTED to ERROR. ObjectToString ships as a mere WARNING, so it did
         // not fail the gate — and it caught a real defect the moment lint first
         // reached examples/: RestDemo printed an AvailablePhoneNumbersResponse
