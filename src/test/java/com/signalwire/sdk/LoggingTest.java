@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.signalwire.sdk.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -140,13 +141,13 @@ class LoggingTest {
     PrintStream savedOut = System.out;
     ByteArrayOutputStream captured = new ByteArrayOutputStream();
     try {
-      System.setOut(new PrintStream(captured, true));
+      System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
       Logger.getLogger("inject.test").info("user\u0000said\u001b[31mRED\u0007");
     } finally {
       System.setOut(savedOut);
     }
 
-    String line = captured.toString();
+    String line = captured.toString(StandardCharsets.UTF_8);
     assertFalse(line.contains("\u0000"), "NUL survived into the emitted line: " + line);
     assertFalse(line.contains("\u001b"), "ESC survived into the emitted line: " + line);
     assertFalse(line.contains("\u0007"), "BEL survived into the emitted line: " + line);
@@ -162,11 +163,11 @@ class LoggingTest {
     PrintStream savedOut = System.out;
     ByteArrayOutputStream captured = new ByteArrayOutputStream();
     try {
-      System.setOut(new PrintStream(captured, true));
+      System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
       Logger.getLogger("inject.test").info("line1\tcol\nline2\r end");
     } finally {
       System.setOut(savedOut);
     }
-    assertTrue(captured.toString().contains("line1\tcol\nline2\r end"));
+    assertTrue(captured.toString(StandardCharsets.UTF_8).contains("line1\tcol\nline2\r end"));
   }
 }
