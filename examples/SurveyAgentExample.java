@@ -1,4 +1,4 @@
-/**
+/*
  * Pre-built survey agent with typed questions.
  *
  * <p>Uses the SurveyAgent prefab which supports rating, multiple_choice, yes_no, and open_ended

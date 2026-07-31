@@ -1,4 +1,4 @@
-/**
+/*
  * Record Call Example.
  *
  * <p>Demonstrates using the FunctionResult recording helpers to: - Start background call recording

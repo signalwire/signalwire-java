@@ -1,4 +1,4 @@
-/**
+/*
  * Kubernetes-Ready Agent.
  *
  * <p>Configured for production Kubernetes deployment with: - /health and /ready endpoints

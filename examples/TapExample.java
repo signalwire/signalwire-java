@@ -1,4 +1,4 @@
-/**
+/*
  * Tap Example.
  *
  * <p>Demonstrates using the FunctionResult tap helpers for: - WebSocket and RTP audio streaming -

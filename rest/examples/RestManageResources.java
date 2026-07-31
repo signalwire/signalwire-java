@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Create an AI agent, search phone numbers, and place a test call.
  *
  * <p>Java funnels AI-agent CRUD through the generic Fabric resources handle with {@code

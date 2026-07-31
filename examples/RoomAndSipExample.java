@@ -1,4 +1,4 @@
-/**
+/*
  * Room and SIP Example.
  *
  * <p>Demonstrates using FunctionResult helpers for: - Joining RELAY rooms for multi-party

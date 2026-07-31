@@ -1,4 +1,4 @@
-/**
+/*
  * Receptionist Agent Example -- using the ReceptionistAgent prefab.
  *
  * <p>Routes callers to the appropriate department via phone transfer.

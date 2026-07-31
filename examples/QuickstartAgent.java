@@ -1,4 +1,4 @@
-/**
+/*
  * README quickstart — the AI Agents block.
  *
  * <p>The `region: quickstart` span below is included byte-for-byte into README.md via `
@@ -13,6 +13,7 @@
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +32,8 @@ public class QuickstartAgent {
         "get_time",
         "Get the current time",
         Map.of(),
-        (toolArgs, rawData) -> new FunctionResult("The time is " + LocalTime.now()));
+        (toolArgs, rawData) ->
+            new FunctionResult("The time is " + LocalTime.now(ZoneId.systemDefault())));
 
     agent.run();
   }

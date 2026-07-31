@@ -1,4 +1,4 @@
-/**
+/*
  * Joke Skill Demo -- Using the Modular Skills System.
  *
  * <p>Demonstrates the joke skill via the skills system with DataMap for serverless execution.

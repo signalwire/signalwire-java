@@ -1,4 +1,4 @@
-/**
+/*
  * Wikipedia Search Agent.
  *
  * <p>Uses the wikipedia_search skill for factual information retrieval from Wikipedia articles.

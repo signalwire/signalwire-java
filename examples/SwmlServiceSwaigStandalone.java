@@ -1,4 +1,4 @@
-/**
+/*
  * SwmlServiceSwaigStandalone -- proves that {@link com.signalwire.sdk.swml.Service} by itself, with
  * NO {@code com.signalwire.sdk.agent.AgentBase}, can host SWAIG functions and serve them on its own
  * {@code /swaig} endpoint.

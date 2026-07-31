@@ -1,4 +1,4 @@
-/**
+/*
  * Pre-built info-gathering agent with sequential questions.
  *
  * <p>Uses the InfoGathererAgent prefab which wraps the info_gatherer skill for sequential question

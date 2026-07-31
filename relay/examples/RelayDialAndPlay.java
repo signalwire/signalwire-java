@@ -1,4 +1,4 @@
-/**
+/*
  * Dial a number and play "Welcome to SignalWire" using the RELAY client.
  *
  * <p>The Java RELAY client runs a blocking event loop inside {@link

@@ -1,4 +1,4 @@
-/**
+/*
  * Gather Info Mode Demo.
  *
  * <p>Demonstrates the contexts system's gather_info mode for structured data collection. Questions

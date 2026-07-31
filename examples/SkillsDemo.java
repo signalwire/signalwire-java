@@ -1,4 +1,4 @@
-/**
+/*
  * Adding built-in skills to an agent.
  *
  * <p>Skills are modular capabilities that auto-register tools, prompts, and hints. The SDK includes

@@ -1,4 +1,4 @@
-/**
+/*
  * SkillsAuditHarness -- runtime probe for the skills system.
  *
  * <p>Driven by porting-sdk's {@code audit_skills_dispatch.py}. Reads:
@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class SkillsAuditHarness {
@@ -167,7 +168,7 @@ public class SkillsAuditHarness {
     }
     Map<String, Object> webhook = webhooks.get(0);
     String template = (String) webhook.get("url");
-    String method = ((String) webhook.getOrDefault("method", "GET")).toUpperCase();
+    String method = ((String) webhook.getOrDefault("method", "GET")).toUpperCase(Locale.ROOT);
     Map<String, String> headers =
         (Map<String, String>) webhook.getOrDefault("headers", Collections.emptyMap());
 
@@ -273,7 +274,9 @@ public class SkillsAuditHarness {
       if (key.startsWith("lc:enc:args.")) {
         Object v = args.get(key.substring("lc:enc:args.".length()));
         value =
-            v == null ? "" : URLEncoder.encode(v.toString().toLowerCase(), StandardCharsets.UTF_8);
+            v == null
+                ? ""
+                : URLEncoder.encode(v.toString().toLowerCase(Locale.ROOT), StandardCharsets.UTF_8);
       } else if (key.startsWith("enc:args.")) {
         Object v = args.get(key.substring("enc:args.".length()));
         value = v == null ? "" : URLEncoder.encode(v.toString(), StandardCharsets.UTF_8);

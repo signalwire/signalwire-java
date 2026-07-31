@@ -1,4 +1,4 @@
-/**
+/*
  * Agent with per-request dynamic configuration.
  *
  * <p>The dynamic config callback receives query params, POST body, and headers, allowing the agent

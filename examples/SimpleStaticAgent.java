@@ -1,4 +1,4 @@
-/**
+/*
  * Simple Static Agent.
  *
  * <p>All configuration is set once during initialization and never changes. Demonstrates voice,

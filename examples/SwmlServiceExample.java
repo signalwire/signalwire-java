@@ -1,4 +1,4 @@
-/**
+/*
  * Basic SWML Service Example.
  *
  * <p>Uses the Service class directly to build and serve SWML documents without AI components --

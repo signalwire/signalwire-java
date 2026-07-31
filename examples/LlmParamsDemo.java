@@ -1,4 +1,4 @@
-/**
+/*
  * LLM Parameter Customization Demo.
  *
  * <p>Shows how to use setPromptLlmParams() and setPostPromptLlmParams() to create agents with
@@ -10,12 +10,13 @@
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class LlmParamsDemo {
 
   public static void main(String[] args) throws Exception {
-    String mode = args.length > 0 ? args[0].toLowerCase() : "support";
+    String mode = args.length > 0 ? args[0].toLowerCase(Locale.ROOT) : "support";
 
     switch (mode) {
       case "precise" -> startPrecise();

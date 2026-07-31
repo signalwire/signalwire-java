@@ -1,4 +1,4 @@
-/**
+/*
  * Step Function Inheritance Demo
  *
  * <p>This example exists to teach one specific gotcha: the per-step {@code functions} whitelist

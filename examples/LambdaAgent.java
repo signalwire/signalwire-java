@@ -1,4 +1,4 @@
-/**
+/*
  * AWS Lambda Deployment Example.
  *
  * <p>Demonstrates deploying a SignalWire agent as an AWS Lambda function using {@link
@@ -36,6 +36,7 @@ import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.lambda.LambdaAgentHandler;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,8 @@ public class LambdaAgent {
         (toolArgs, raw) ->
             new FunctionResult(
                 "Current time: "
-                    + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                    + LocalDateTime.now(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
 
     return agent;
   }

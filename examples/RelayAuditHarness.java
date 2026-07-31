@@ -1,4 +1,4 @@
-/**
+/*
  * RelayAuditHarness -- runtime probe for the RELAY transport.
  *
  * <p>This binary is what the porting-sdk's {@code audit_relay_handshake.py} drives to prove the

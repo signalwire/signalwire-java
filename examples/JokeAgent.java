@@ -1,4 +1,4 @@
-/**
+/*
  * Joke Agent -- uses a raw data_map configuration to integrate with the API Ninjas joke API.
  *
  * <p>Run with: API_NINJAS_KEY=your_key java JokeAgent

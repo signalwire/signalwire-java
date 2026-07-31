@@ -1,4 +1,4 @@
-/**
+/*
  * Live smoke driver (plan §6.5) — exercises the real SignalWire platform.
  *
  * <p>No-ops unless {@code SWSDK_LIVE_TESTS=1} AND real creds are present ({@code

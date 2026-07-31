@@ -1,4 +1,4 @@
-/**
+/*
  * Comprehensive Dynamic Agent Configuration.
  *
  * <p>Demonstrates per-request customization based on query parameters: - Tier-based features
@@ -9,6 +9,7 @@
  */
 import com.signalwire.sdk.agent.AgentBase;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ComprehensiveDynamicAgent {
@@ -24,10 +25,11 @@ public class ComprehensiveDynamicAgent {
 
     agent.setDynamicConfigCallback(
         (queryParams, bodyParams, headers, configAgent) -> {
-          String tier = queryParams.getOrDefault("tier", "standard").toLowerCase();
-          String industry = queryParams.getOrDefault("industry", "general").toLowerCase();
-          String lang = queryParams.getOrDefault("lang", "en").toLowerCase();
-          String testGroup = queryParams.getOrDefault("test_group", "A").toUpperCase();
+          String tier = queryParams.getOrDefault("tier", "standard").toLowerCase(Locale.ROOT);
+          String industry =
+              queryParams.getOrDefault("industry", "general").toLowerCase(Locale.ROOT);
+          String lang = queryParams.getOrDefault("lang", "en").toLowerCase(Locale.ROOT);
+          String testGroup = queryParams.getOrDefault("test_group", "A").toUpperCase(Locale.ROOT);
           boolean debug = "true".equals(queryParams.get("debug"));
           String customerId = queryParams.getOrDefault("customer_id", "");
 

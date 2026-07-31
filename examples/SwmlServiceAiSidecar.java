@@ -1,4 +1,4 @@
-/**
+/*
  * SwmlServiceAiSidecar -- proves that {@link com.signalwire.sdk.swml.Service} can emit the {@code
  * ai_sidecar} verb, register SWAIG tools the sidecar's LLM can call, and dispatch them end-to-end
  * -- all without any {@code com.signalwire.sdk.agent.AgentBase} code path.
@@ -135,6 +135,9 @@ public class SwmlServiceAiSidecar extends Service {
               exchange.sendResponseHeaders(500, -1);
               exchange.close();
             } catch (IOException ignored) {
+              // The client already went away, so the 500 could not be delivered.
+              // There is nothing left to report it on -- swallowing is the end of
+              // the line for this exchange.
             }
           }
         });

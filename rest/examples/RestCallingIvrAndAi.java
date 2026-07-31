@@ -1,4 +1,4 @@
-/**
+/*
  * Example: IVR with AI hand-off via REST.
  *
  * <p>Java drives REST calls through the command API on {@code client.calling()}, mirroring Python's

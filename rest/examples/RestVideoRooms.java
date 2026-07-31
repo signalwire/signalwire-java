@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Video room management -- create, list, and manage video rooms.
  *
  * <p>Set these env vars: SIGNALWIRE_PROJECT_ID - your SignalWire project ID SIGNALWIRE_API_TOKEN -

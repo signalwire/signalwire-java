@@ -1,4 +1,4 @@
-/**
+/*
  * README quickstart — the REST Client block.
  *
  * <p>The `region: quickstart` span below is included byte-for-byte into README.md via `

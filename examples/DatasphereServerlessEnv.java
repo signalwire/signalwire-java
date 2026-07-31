@@ -1,4 +1,4 @@
-/**
+/*
  * DataSphere Serverless Environment Demo.
  *
  * <p>Loads the DataSphere serverless skill with configuration from environment variables for

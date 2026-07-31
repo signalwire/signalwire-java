@@ -1,4 +1,4 @@
-/**
+/*
  * Example: SWML scripts and call flow management via the REST API.
  *
  * <p>SWML scripts live under Fabric at {@code client.fabric().swmlScripts()} (matching python/go).

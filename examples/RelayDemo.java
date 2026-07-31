@@ -1,4 +1,4 @@
-/**
+/*
  * Using the RELAY WebSocket client for real-time call control.
  *
  * <p>Requires env vars: SIGNALWIRE_PROJECT_ID SIGNALWIRE_API_TOKEN SIGNALWIRE_SPACE

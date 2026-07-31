@@ -1,4 +1,4 @@
-/**
+/*
  * Example: 10DLC campaign registration — brand and campaign management.
  *
  * <p>Java exposes 10DLC / TCR registration through {@code client.registry()} (the canonical {@code

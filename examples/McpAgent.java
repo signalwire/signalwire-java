@@ -1,4 +1,4 @@
-/**
+/*
  * Example: MCP Integration -- Client and Server
  *
  * <p>This agent demonstrates both MCP features:

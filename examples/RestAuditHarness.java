@@ -1,4 +1,4 @@
-/**
+/*
  * RestAuditHarness -- runtime probe for the REST transport.
  *
  * <p>Driven by porting-sdk's {@code audit_rest_transport.py}. Reads:

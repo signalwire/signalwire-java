@@ -1,4 +1,4 @@
-/**
+/*
  * Example: IVR menu with DTMF collection, playback, and call connect.
  *
  * <p>Answers an inbound call, plays a greeting, collects a digit, and routes the caller based on

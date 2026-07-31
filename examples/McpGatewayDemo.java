@@ -1,4 +1,4 @@
-/**
+/*
  * MCP Gateway Demo.
  *
  * <p>Connects a SignalWire AI agent to MCP (Model Context Protocol) servers through the mcp_gateway

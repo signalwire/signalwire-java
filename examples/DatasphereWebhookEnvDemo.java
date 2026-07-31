@@ -1,4 +1,4 @@
-/**
+/*
  * DataSphere Webhook Environment Demo.
  *
  * <p>Traditional webhook-based DataSphere skill configured from environment variables. Compare with

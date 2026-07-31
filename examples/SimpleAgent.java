@@ -1,4 +1,4 @@
-/**
+/*
  * Minimal agent with one tool and POM-based prompts.
  *
  * <p>Run: java SimpleAgent

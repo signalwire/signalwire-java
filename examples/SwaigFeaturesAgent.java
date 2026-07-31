@@ -1,4 +1,4 @@
-/**
+/*
  * SWAIG Features Example.
  *
  * <p>Demonstrates enhanced SWAIG features: - Properly structured tool parameters - Multiple tools
@@ -8,8 +8,10 @@
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class SwaigFeaturesAgent {
@@ -39,7 +41,9 @@ public class SwaigFeaturesAgent {
         "Get the current time",
         Map.of("type", "object", "properties", Map.of()),
         (toolArgs, raw) -> {
-          String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+          String time =
+              LocalDateTime.now(ZoneId.systemDefault())
+                  .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
           return new FunctionResult("The current time is " + time);
         });
 
@@ -55,7 +59,7 @@ public class SwaigFeaturesAgent {
             "required",
             List.of("location")),
         (toolArgs, raw) -> {
-          String loc = ((String) toolArgs.getOrDefault("location", "")).toLowerCase();
+          String loc = ((String) toolArgs.getOrDefault("location", "")).toLowerCase(Locale.ROOT);
           String weather =
               switch (loc) {
                 case "tatooine" -> "Hot and dry with twin suns at their peak.";

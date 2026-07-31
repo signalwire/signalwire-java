@@ -1,4 +1,4 @@
-/**
+/*
  * Web Search Multiple Instance Demo.
  *
  * <p>Loads the web search skill multiple times with different configurations (general, news,

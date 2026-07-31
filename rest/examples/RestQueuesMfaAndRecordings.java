@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Queue and recording management via the REST API.
  *
  * <p>The Java SDK exposes queue CRUD directly on {@code client.queues()}

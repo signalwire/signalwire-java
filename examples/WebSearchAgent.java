@@ -1,4 +1,4 @@
-/**
+/*
  * Web Search Agent.
  *
  * <p>Uses the web_search skill to give the agent internet search capabilities.

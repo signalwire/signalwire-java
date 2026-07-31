@@ -1,4 +1,4 @@
-/**
+/*
  * FAQ Bot Example -- using the FAQBotAgent prefab.
  *
  * <p>Creates a domain-specific FAQ agent with keyword-based lookup.

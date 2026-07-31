@@ -1,4 +1,4 @@
-/**
+/*
  * Custom Path Agent -- agent served at a non-root path.
  *
  * <p>Demonstrates how to create an agent at a custom route (/chat) with dynamic per-request
@@ -8,6 +8,7 @@
  */
 import com.signalwire.sdk.agent.AgentBase;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CustomPathAgent {
@@ -28,7 +29,7 @@ public class CustomPathAgent {
         (queryParams, bodyParams, headers, configAgent) -> {
           String userName = queryParams.getOrDefault("user_name", "friend");
           String topic = queryParams.getOrDefault("topic", "general conversation");
-          String mood = queryParams.getOrDefault("mood", "friendly").toLowerCase();
+          String mood = queryParams.getOrDefault("mood", "friendly").toLowerCase(Locale.ROOT);
 
           configAgent.promptAddSection(
               "Personalization",

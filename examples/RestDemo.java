@@ -1,4 +1,4 @@
-/**
+/*
  * Using the REST client to manage SignalWire resources.
  *
  * <p>Requires env vars: SIGNALWIRE_PROJECT_ID SIGNALWIRE_API_TOKEN SIGNALWIRE_SPACE

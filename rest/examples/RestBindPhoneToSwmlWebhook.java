@@ -1,4 +1,4 @@
-/**
+/*
  * Example: bind an inbound phone number to an SWML webhook (the happy path).
  *
  * <p>This is the simplest way to route a SignalWire phone number to a backend that returns an SWML

@@ -1,4 +1,4 @@
-/**
+/*
  * Structured workflows with contexts and steps.
  *
  * <p>Demonstrates a multi-step onboarding flow where each step has specific criteria, valid

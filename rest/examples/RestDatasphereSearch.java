@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Upload a document to Datasphere and run a semantic search.
  *
  * <p>Set these env vars: SIGNALWIRE_PROJECT_ID - your SignalWire project ID SIGNALWIRE_API_TOKEN -

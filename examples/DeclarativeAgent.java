@@ -1,4 +1,4 @@
-/**
+/*
  * Declarative Agent Example.
  *
  * <p>Demonstrates building an agent entirely from prompt sections defined up front, with simple
@@ -8,6 +8,7 @@
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,9 @@ public class DeclarativeAgent {
         "Get the current time",
         Map.of("type", "object", "properties", Map.of()),
         (toolArgs, raw) -> {
-          String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+          String time =
+              LocalDateTime.now(ZoneId.systemDefault())
+                  .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
           return new FunctionResult("The current time is " + time);
         });
 

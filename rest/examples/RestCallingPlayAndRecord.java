@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Place a call via the REST API and inspect the result.
  *
  * <p>The Java SDK surfaces native calling via the command API on {@code client.calling()} ({@code

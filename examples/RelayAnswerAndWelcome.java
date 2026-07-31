@@ -1,4 +1,4 @@
-/**
+/*
  * RelayAnswerAndWelcome -- answer an inbound call, play a TTS greeting, and hang up. This is the
  * canonical RELAY "hello world": the smallest SDK program that proves authenticated WebSocket
  * connection + inbound-call dispatch + TTS playback + clean hangup all work end to end.

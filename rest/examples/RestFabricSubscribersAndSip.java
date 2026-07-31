@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Subscriber and SIP endpoint management via the REST API.
  *
  * <p>Java routes Fabric subscribers through {@code client.fabric().subscribers()}; SIP endpoints

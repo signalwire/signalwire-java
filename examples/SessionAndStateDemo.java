@@ -1,4 +1,4 @@
-/**
+/*
  * Stateful agent using global data for session tracking.
  *
  * <p>Demonstrates how to use global data to maintain state across tool calls within a single

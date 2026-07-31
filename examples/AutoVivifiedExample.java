@@ -1,4 +1,4 @@
-/**
+/*
  * Auto-Vivified SWML Service Example.
  *
  * <p>Demonstrates calling verb methods directly on a Service (answer(), play(), record(), hangup(),

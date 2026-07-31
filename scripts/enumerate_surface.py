@@ -1264,7 +1264,7 @@ def _base_only_skill_hooks(
     if not base:
         return set()
     on_subclass: set[str] = set()
-    for (mod, cls), members in oracle_class_members.items():
+    for (mod, _cls), members in oracle_class_members.items():
         if mod.startswith(_SKILL_MODULE_PREFIX):
             on_subclass |= members
     return base - on_subclass

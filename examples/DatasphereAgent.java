@@ -1,4 +1,4 @@
-/**
+/*
  * DataSphere Agent with Multiple Instances.
  *
  * <p>Demonstrates loading the datasphere skill multiple times with different configurations and

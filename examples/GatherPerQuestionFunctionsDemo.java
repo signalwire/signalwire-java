@@ -1,4 +1,4 @@
-/**
+/*
  * Per-Question Function Whitelist Demo (gather_info)
  *
  * <p>This example exists to teach one specific gotcha: while a step's gather_info is asking

@@ -1,4 +1,4 @@
-/**
+/*
  * Dynamic SWML Service Example.
  *
  * <p>Demonstrates creating SWML services that generate different responses based on request data --

@@ -1,4 +1,4 @@
-/**
+/*
  * Multi-Endpoint Agent.
  *
  * <p>Demonstrates serving an AI agent alongside custom endpoints using AgentServer. The agent is at
@@ -8,6 +8,7 @@ import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.server.AgentServer;
 import com.signalwire.sdk.swaig.FunctionResult;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,8 @@ public class MultiEndpointAgent {
         (toolArgs, raw) ->
             new FunctionResult(
                 "The current time is "
-                    + LocalTime.now().format(DateTimeFormatter.ofPattern("hh:mm a"))));
+                    + LocalTime.now(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("hh:mm a"))));
 
     // Host via AgentServer so we get /health, /ready, and /swml
     var server = new AgentServer(8080);

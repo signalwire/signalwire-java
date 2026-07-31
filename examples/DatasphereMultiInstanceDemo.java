@@ -1,4 +1,4 @@
-/**
+/*
  * DataSphere Multiple Instance Demo.
  *
  * <p>Loads the datasphere skill multiple times with different knowledge bases and custom tool

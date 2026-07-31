@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Conference and call-flow resources via the Fabric API.
  *
  * <p>Fabric subresources have dedicated accessors that mirror Python's ({@code

@@ -1,4 +1,4 @@
-/**
+/*
  * Example: Search, buy, update, and release phone numbers.
  *
  * <p>Java's {@code client.phoneNumbers()} namespace exposes CRUD (list / get / create / update /

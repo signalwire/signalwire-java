@@ -1,4 +1,4 @@
-/**
+/*
  * Dynamic InfoGatherer Example.
  *
  * <p>Selects a question set from the CLI argument at agent-startup time, then spins up the

@@ -1,4 +1,4 @@
-/**
+/*
  * SWML Service Routing Example.
  *
  * <p>Demonstrates building multiple SWML document sections and serving different content based on

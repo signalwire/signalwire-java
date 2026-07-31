@@ -1,4 +1,4 @@
-/**
+/*
  * BasicSwmlService -- proves that {@link com.signalwire.sdk.swml.Service} is independently
  * runnable: a user can construct {@code Service} directly (no {@code AgentBase}), emit any SWML
  * verb, and serve the resulting document on {@code GET /<route>} with no AI components in the loop.
