@@ -241,6 +241,7 @@ public class BedrockAgent extends AgentBase {
    * @param params ignored
    * @return this
    */
+  @Override
   public BedrockAgent setPostPromptLlmParams(Map<String, Object> params) {
     log.warn(
         "set_post_prompt_llm_params() called but Bedrock post-prompt uses OpenAI configured in C"
@@ -255,6 +256,7 @@ public class BedrockAgent extends AgentBase {
    * @param params ignored
    * @return this
    */
+  @Override
   public BedrockAgent setPromptLlmParams(Map<String, Object> params) {
     log.warn("set_prompt_llm_params() called - use set_inference_params() for Bedrock");
     return this;

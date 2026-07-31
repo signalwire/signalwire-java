@@ -123,7 +123,11 @@ public class AgentBase extends Service {
   // --- Web ---
   private DynamicConfigCallback dynamicConfigCallback;
   private String webhookUrl;
-  private String proxyUrlBase;
+  // proxyUrlBase is INHERITED from Service (protected). AgentBase used to
+  // re-declare it privately, which shadowed the superclass field: overridden
+  // manualSetProxyUrl wrote the AgentBase copy while Service.manualSetProxyUrl
+  // wrote Service's, leaving the superclass field write-only dead state that no
+  // reader ever consulted. One field, one writer, one reader.
   private final Map<String, String> swaigQueryParams = new LinkedHashMap<>();
 
   // --- MCP ---
@@ -2193,6 +2197,7 @@ public class AgentBase extends Service {
    * @param url the external base URL.
    * @return this agent, for chaining.
    */
+  @Override
   public AgentBase manualSetProxyUrl(String url) {
     this.proxyUrlBase = url;
     return this;
@@ -2584,6 +2589,7 @@ public class AgentBase extends Service {
    *
    * @return the agent name.
    */
+  @Override
   public String getName() {
     return name;
   }
@@ -2593,6 +2599,7 @@ public class AgentBase extends Service {
    *
    * @return the route.
    */
+  @Override
   public String getRoute() {
     return route;
   }
@@ -2602,6 +2609,7 @@ public class AgentBase extends Service {
    *
    * @return the bind address.
    */
+  @Override
   public String getHost() {
     return host;
   }
@@ -2612,6 +2620,7 @@ public class AgentBase extends Service {
    *
    * @return the port.
    */
+  @Override
   public int getPort() {
     return port;
   }
