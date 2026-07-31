@@ -52,7 +52,7 @@ public final class TlsContext {
       ks.load(null, null);
       int i = 0;
       for (Certificate cert : certs) {
-        ks.setCertificateEntry("ca-" + (i++), cert);
+        ks.setCertificateEntry("ca-" + i++, cert);
       }
       TrustManagerFactory tmf =
           TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

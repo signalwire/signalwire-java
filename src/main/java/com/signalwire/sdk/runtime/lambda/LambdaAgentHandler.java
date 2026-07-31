@@ -439,7 +439,9 @@ public final class LambdaAgentHandler {
       return null;
     }
     String fallback = null;
-    for (String pair : raw.toString().split("&")) {
+    // limit 0 == drop trailing empties; a query ending in "&" yields no extra
+    // pair, and the eq<=0 guard below discards any empty one regardless.
+    for (String pair : raw.toString().split("&", 0)) {
       int eq = pair.indexOf('=');
       if (eq <= 0) {
         continue;

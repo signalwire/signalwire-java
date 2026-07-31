@@ -14,6 +14,7 @@ import com.signalwire.sdk.relay.RelayClient;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -123,7 +124,7 @@ final class SecretScrubDump {
     private volatile WebSocket conn;
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 

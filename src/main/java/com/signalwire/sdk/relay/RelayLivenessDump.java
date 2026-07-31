@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.logging.Logger;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.LinkedHashMap;
@@ -114,7 +115,9 @@ final class RelayLivenessDump {
           new Thread(
               () -> {
                 try {
-                  client.connect((int) WINDOW_MS);
+                  // connect takes a long; the (int) cast only narrowed WINDOW_MS
+                  // on the way to re-widening it at the call.
+                  client.connect(WINDOW_MS);
                 } catch (RelayError e) {
                   m.put("raised_after_bounded_retry", true);
                   String text = e.getMessage() == null ? "" : e.getMessage();
@@ -337,7 +340,7 @@ final class RelayLivenessDump {
     volatile boolean silentVerb; // never answer a verb RPC
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 

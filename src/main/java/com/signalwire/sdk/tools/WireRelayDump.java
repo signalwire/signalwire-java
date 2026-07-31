@@ -14,6 +14,7 @@ import com.signalwire.sdk.relay.Action;
 import com.signalwire.sdk.relay.Call;
 import com.signalwire.sdk.relay.RelayClient;
 import com.signalwire.sdk.relay.RelayEvent;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -79,7 +80,7 @@ final class WireRelayDump {
     private volatile String dialArm; // when set, resolve dial for this tag on the next calling.dial
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 
@@ -167,7 +168,7 @@ final class WireRelayDump {
           frames.put(method, params);
           reply(socket, id, map("code", "200", "message", "Dialing"));
           if (dialArm != null) {
-            pushDialAnswered(socket, dialArm);
+            pushDialAnswered(dialArm);
           }
           break;
         case "messaging.send":
@@ -209,7 +210,9 @@ final class WireRelayDump {
           map("call_id", CALL, "node_id", NODE, "direction", "inbound", "call_state", "created"));
     }
 
-    private void pushDialAnswered(WebSocket socket, String tag) {
+    // No `socket` parameter: push() broadcasts to the connection this mock is
+    // holding, so the caller's socket was never consulted.
+    private void pushDialAnswered(String tag) {
       sleep(20);
       push(
           "calling.call.dial",

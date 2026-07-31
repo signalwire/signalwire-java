@@ -8,7 +8,6 @@ package com.signalwire.sdk.web;
 
 import com.signalwire.sdk.core.ConfigLoader;
 import com.signalwire.sdk.core.SecurityConfig;
-import com.signalwire.sdk.logging.Logger;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -54,8 +53,6 @@ public class WebService {
           "__pycache__",
           ".DS_Store",
           ".swp");
-
-  private final Logger log = Logger.getLogger("web_service");
 
   private int port;
   private final Map<String, String> directories = new LinkedHashMap<>();

@@ -159,7 +159,7 @@ public class AgentServer implements AutoCloseable {
         autoMapAgentSipUsernames(agent, normalizedRoute);
       }
       if (sipRoute != null) {
-        agent.registerRoutingCallback(serverSipRoutingCallback());
+        agent.registerRoutingCallback(this::serverSipRoutingCallback);
       }
     }
 
@@ -167,20 +167,27 @@ public class AgentServer implements AutoCloseable {
     return this;
   }
 
-  /** The unified server-level SIP routing callback (resolves a SIP username to a target route). */
-  private BiFunction<Map<String, Object>, Map<String, String>, String> serverSipRoutingCallback() {
-    return (body, headers) -> {
-      String sipUsername = extractSipUsername(body);
-      if (sipUsername != null) {
-        String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
-        if (target != null) {
-          log.info("Routing SIP request to %s", target);
-          return target;
-        }
-        log.warn("No route found for SIP username: %s", sipUsername);
+  /**
+   * The unified server-level SIP routing callback (resolves a SIP username to a target route).
+   *
+   * <p>Implements the {@code BiFunction} contract directly rather than returning a lambda from a
+   * factory; the two registration sites bind it with a {@code this::} method reference.
+   *
+   * @param body the parsed request body the SIP username is extracted from
+   * @param headers the request headers (unused; present to satisfy the callback signature)
+   * @return the target route, or {@code null} when the username maps to nothing
+   */
+  private String serverSipRoutingCallback(Map<String, Object> body, Map<String, String> headers) {
+    String sipUsername = extractSipUsername(body);
+    if (sipUsername != null) {
+      String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
+      if (target != null) {
+        log.info("Routing SIP request to %s", target);
+        return target;
       }
-      return null;
-    };
+      log.warn("No route found for SIP username: %s", sipUsername);
+    }
+    return null;
   }
 
   /** Register an agent at its own configured route. */
@@ -428,7 +435,7 @@ public class AgentServer implements AutoCloseable {
 
     // Unified routing callback: resolve the SIP username in the body to a target route.
     BiFunction<Map<String, Object>, Map<String, String>, String> sipRoutingCallback =
-        serverSipRoutingCallback();
+        this::serverSipRoutingCallback;
     for (AgentBase agent : agents.values()) {
       agent.registerRoutingCallback(sipRoutingCallback);
     }
@@ -475,7 +482,10 @@ public class AgentServer implements AutoCloseable {
     }
 
     if (route != null && !route.isEmpty()) {
-      String[] parts = route.split("/");
+      // limit 0 == drop trailing empties, so "/a/b/" derives the SIP username
+      // from "b" rather than from an empty final segment. Load-bearing: the last
+      // element is what gets registered.
+      String[] parts = route.split("/", 0);
       String routePart = parts.length > 0 ? parts[parts.length - 1] : "";
       String cleanRoute = routePart.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "");
       if (!cleanRoute.isEmpty() && !cleanRoute.equals(cleanName)) {
@@ -821,7 +831,9 @@ public class AgentServer implements AutoCloseable {
       return null;
     }
     String fallback = null;
-    for (String pair : rawQuery.split("&")) {
+    // limit 0 == drop trailing empties; a query ending in "&" yields no extra
+    // pair, and the eq<=0 guard below discards any empty one regardless.
+    for (String pair : rawQuery.split("&", 0)) {
       int eq = pair.indexOf('=');
       if (eq <= 0) {
         continue;

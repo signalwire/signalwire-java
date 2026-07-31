@@ -501,7 +501,9 @@ public class SecurityConfig {
       return star;
     }
     List<String> out = new ArrayList<>();
-    for (String part : value.split(",")) {
+    // limit 0 == drop trailing empties; a trailing "," adds no entry, and the
+    // blank-trim guard below discards empties regardless.
+    for (String part : value.split(",", 0)) {
       String trimmed = part.trim();
       if (!trimmed.isEmpty()) {
         out.add(trimmed);

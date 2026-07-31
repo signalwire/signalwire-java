@@ -450,7 +450,7 @@ public class SchemaUtils {
     if (schema.has("x-sdk-widen")
         && schema.get("x-sdk-widen").isJsonPrimitive()
         && schema.get("x-sdk-widen").getAsBoolean()) {
-      validateWidened(schema, value, path, errors, depth);
+      validateWidened(schema, value, path, errors);
       return;
     }
 
@@ -655,8 +655,10 @@ public class SchemaUtils {
   // {"reason": "done"} on hangup is a legal document even though "done" is not one of
   // the three listed values. A branch's $ref is resolved so a widened field that
   // unions a primitive with, say, SWMLVar still accepts the SWMLVar object form.
+  // No `depth` parameter: unlike validateAgainst this method never recurses --
+  // it only calls the non-recursive checkType -- so there is no depth to guard.
   private void validateWidened(
-      JsonObject schema, JsonElement value, String path, List<String> errors, int depth) {
+      JsonObject schema, JsonElement value, String path, List<String> errors) {
     List<JsonObject> branches = new ArrayList<>();
     for (String key : List.of("anyOf", "oneOf")) {
       if (schema.has(key) && schema.get(key).isJsonArray()) {

@@ -74,7 +74,9 @@ public final class SkillRegistry {
     if (raw == null || raw.isEmpty()) {
       return;
     }
-    for (String path : raw.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+    // limit 0 == drop trailing empty segments (a PATH ending in the separator
+    // contributes no entry); the loop below skips empties anyway.
+    for (String path : raw.split(java.util.regex.Pattern.quote(File.pathSeparator), 0)) {
       if (path.isEmpty()) {
         continue;
       }

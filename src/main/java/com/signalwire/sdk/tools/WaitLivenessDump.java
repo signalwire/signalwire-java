@@ -15,6 +15,7 @@ import com.signalwire.sdk.relay.Call;
 import com.signalwire.sdk.relay.RelayClient;
 import com.signalwire.sdk.relay.RelayEvent;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.LinkedHashMap;
@@ -186,7 +187,7 @@ final class WaitLivenessDump {
     private volatile WebSocket conn;
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 

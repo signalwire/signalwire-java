@@ -155,7 +155,9 @@ public class ConfigLoader {
       return defaultValue;
     }
     Object value = config;
-    for (String key : keyPath.split("\\.")) {
+    // limit 0 == drop trailing empties, matching the historical behaviour: a
+    // dotted path ending in "." walks no extra (empty) key.
+    for (String key : keyPath.split("\\.", 0)) {
       if (value instanceof Map && ((Map<?, ?>) value).containsKey(key)) {
         value = ((Map<?, ?>) value).get(key);
       } else {
@@ -328,7 +330,10 @@ public class ConfigLoader {
 
   private boolean hasNestedKey(Map<String, Object> data, String keyPath) {
     Object current = data;
-    for (String key : keyPath.split("_")) {
+    // limit 0 == the historical single-arg split(): trailing empty segments are
+    // DROPPED. Stated explicitly because setNestedKey below indexes the last
+    // element, so whether "a_b_" ends at "b" or at "" is load-bearing.
+    for (String key : keyPath.split("_", 0)) {
       if (current instanceof Map && ((Map<?, ?>) current).containsKey(key)) {
         current = ((Map<?, ?>) current).get(key);
       } else {
@@ -340,7 +345,10 @@ public class ConfigLoader {
 
   @SuppressWarnings("unchecked")
   private void setNestedKey(Map<String, Object> data, String keyPath, Object value) {
-    String[] keys = keyPath.split("_");
+    // limit 0 == the historical single-arg split(): trailing empty segments are
+    // DROPPED. Load-bearing here because the last element is the key written to,
+    // so a "SWML_FOO_" env var must still target "foo", not "".
+    String[] keys = keyPath.split("_", 0);
     Map<String, Object> current = data;
     for (int i = 0; i < keys.length - 1; i++) {
       Object next = current.get(keys[i]);
