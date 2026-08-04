@@ -7387,15 +7387,6 @@
               ],
               "returns": "any"
             },
-            "context": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
             "lang": {
               "params": [
                 {
@@ -7415,24 +7406,6 @@
               "returns": "any"
             },
             "role": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "step": {
-              "params": [
-                {
-                  "name": "self",
-                  "kind": "self"
-                }
-              ],
-              "returns": "any"
-            },
-            "step_index": {
               "params": [
                 {
                   "name": "self",

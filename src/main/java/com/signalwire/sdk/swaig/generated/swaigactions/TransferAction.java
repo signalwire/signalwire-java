@@ -13,6 +13,6 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class TransferAction {
-  public java.util.Map<String, Object> dest;
+  public String dest;
   public Boolean summarize;
 }

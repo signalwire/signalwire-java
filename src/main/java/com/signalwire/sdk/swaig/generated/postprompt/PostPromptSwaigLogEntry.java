@@ -29,6 +29,6 @@ public final class PostPromptSwaigLogEntry {
   public java.util.Map<String, Object> delayed_post_response;
   public String mcp_url;
   public String mcp_tool;
-  public java.util.Map<String, Object> mcp_response;
-  public String mcp_error;
+  public String mcp_response;
+  public Boolean mcp_error;
 }

@@ -13,10 +13,10 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class ContextSwitchAction {
-  public java.util.Map<String, Object> system_prompt;
-  public java.util.Map<String, Object> user_prompt;
-  public java.util.Map<String, Object> system_pom;
-  public java.util.Map<String, Object> user_pom;
   public Boolean consolidate;
   public Boolean full_reset;
+  public java.util.Map<String, Object> system_pom;
+  public String system_prompt;
+  public java.util.Map<String, Object> user_pom;
+  public String user_prompt;
 }

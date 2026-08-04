@@ -13,5 +13,5 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class HoldAction {
-  public Long timeout;
+  public Double timeout;
 }

@@ -13,6 +13,6 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class PlaybackBgAction {
-  public java.util.Map<String, Object> file;
+  public String file;
   public Boolean wait;
 }

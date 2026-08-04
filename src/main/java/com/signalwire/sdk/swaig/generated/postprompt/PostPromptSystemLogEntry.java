@@ -22,7 +22,4 @@ public final class PostPromptSystemLogEntry {
   public Long tokens;
   public String content_type;
   public java.util.Map<String, Object> metadata;
-  public String context;
-  public String step;
-  public Long step_index;
 }
