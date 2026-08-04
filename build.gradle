@@ -76,8 +76,74 @@ dependencies {
     testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
 }
 
+// EXECUTION RECEIPT (the TEST gate's proof-of-execution).
+//
+// `gradle test` reports BUILD SUCCESSFUL for THREE different outcomes, and only
+// one of them ran any test:
+//   * `:test` executed        — tests actually ran.
+//   * `:test UP-TO-DATE`      — incremental skip; nothing ran.
+//   * `:test FROM-CACHE`      — the build cache replayed a previous run's
+//                               outputs; nothing ran.
+// Exit status cannot tell them apart, so a run-ci TEST PASS was previously ZERO
+// evidence that the suite executed. That matters most exactly when it is least
+// obvious: a commit that changes GENERATED types can be handed a replayed green
+// (measured: a SWAIG regen that changed HoldAction.timeout Long->Double reported
+// PASS off `1 from cache` in 6s, having executed nothing).
+//
+// Why a receipt and not one of the alternatives:
+//   * Requiring a fresh build/test-results/ tree DOES NOT WORK — FROM-CACHE
+//     RESTORES that tree, files and all, with a current mtime. It is a task
+//     OUTPUT, so the cache's whole job is to reproduce it. (Verified: deleting
+//     the tree and re-running printed `:test FROM-CACHE` and put all 208 XML
+//     files back.)
+//   * Parsing `> Task :test UP-TO-DATE` out of the log means the gate's
+//     correctness depends on Gradle's console formatting (log level, --console
+//     mode, rich-vs-plain output), which is presentation, not contract.
+// A doLast action, by contrast, is part of the task's ACTIONS: Gradle skips the
+// action list entirely when the task is up-to-date or served from cache, and runs
+// it exactly when the task really executed. So the receipt's presence is a
+// first-class execution signal from the build tool itself.
+//
+// The receipt lives OUTSIDE build/test-results/ and is deliberately NOT declared
+// as a task output, so it is neither cached nor restored — the cache can replay
+// the test XML but it can never forge the receipt. scripts/run-tests.sh deletes
+// it before invoking gradle and requires it afterwards.
+//
+// It also carries the COUNTS (from a TestListener, which likewise only fires on
+// real execution), so the gate can print what actually ran instead of asserting
+// against a summary line.
 test {
     useJUnitPlatform()
+
+    // Counters live on the task's extra properties so the doLast closure and the
+    // listener share state without a script-level mutable global (which would be
+    // wrong under Gradle's configuration cache).
+    ext.swExecutedTests = 0
+    ext.swFailedTests = 0
+    ext.swSkippedTests = 0
+
+    afterTest { desc, result ->
+        switch (result.resultType.toString()) {
+            case 'FAILURE': ext.swFailedTests++; break
+            case 'SKIPPED': ext.swSkippedTests++; break
+            default: break
+        }
+        ext.swExecutedTests++
+    }
+
+    doLast {
+        // Reached ONLY when the test task really executed (Gradle skips a task's
+        // actions wholesale on UP-TO-DATE / FROM-CACHE).
+        def receipt = new File(project.layout.buildDirectory.get().asFile,
+                              'sw-test-execution-receipt.txt')
+        receipt.parentFile.mkdirs()
+        receipt.text = [
+            "executed=${ext.swExecutedTests}",
+            "failed=${ext.swFailedTests}",
+            "skipped=${ext.swSkippedTests}",
+            "finished_at=${new Date().format('yyyy-MM-dd HH:mm:ss')}",
+        ].join('\n') + '\n'
+    }
 }
 
 // FMT gate — Spotless + google-java-format over EVERY Java source in the repo:
