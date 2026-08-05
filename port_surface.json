@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ 6cda630db544a67195d7d366cafa5e17975d28f6",
+  "generated_from": "signalwire-java @ 4b267d9deabb9851fca1837df0441d2ea69912a6",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -854,7 +854,9 @@
         "PostPromptEot": [],
         "PostPromptStampsUs": [],
         "PostPromptSwaigLogEntry": [
-          "post_data"
+          "delayed_post_response",
+          "post_data",
+          "post_response"
         ],
         "PostPromptSystemEntry": [],
         "PostPromptSystemLogEntry": [],
@@ -999,6 +1001,8 @@
         "ContextSwitchAction": [],
         "HoldAction": [],
         "PlaybackBgAction": [],
+        "SwaigAction": [],
+        "SwaigResponse": [],
         "TransferAction": []
       },
       "functions": []

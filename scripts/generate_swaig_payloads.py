@@ -16,13 +16,15 @@ the authoritative SWAIG wire spec):
         one class per components/schemas OBJECT schema; the ``PostPromptCallLogEntry``
         oneOf alias is NOT surfaced (the reference records it as a module-level
         TypeAlias its enumerator drops), so 15 schemas - 1 alias = 14.
-  * ``swaig-response.yaml`` -> signalwire.core.swaig_actions_generated  (4 classes)
+  * ``swaig-response.yaml`` -> signalwire.core.swaig_actions_generated  (6 classes)
         one ``<Action>`` class per action key whose value is an object-with-properties
         (a bare object OR an object variant of a oneOf): context_switch ->
         ContextSwitchAction, hold -> HoldAction, playback_bg -> PlaybackBgAction,
-        transfer -> TransferAction.
+        transfer -> TransferAction — PLUS the two ENVELOPE schemas the spec declares
+        in their own right, SwaigAction (the 27-key action object) and SwaigResponse
+        (the {response, action, post_process} handler-return body).
 
-  2 + 14 + 4 = 20 classes == the surface oracle EXACTLY (0 missing / 0 extra).
+  2 + 14 + 6 = 22 classes == the surface oracle EXACTLY (0 missing / 0 extra).
 
 Every emitted class is a method-less Java data DTO: public fields carrying the snake
 wire key, no methods. The emit/drop rule + field rendering reuse the SHARED helpers
@@ -159,10 +161,25 @@ def _pascal_verb(verb: str) -> str:
 def _build_swaig_actions(psdk: Path) -> dict[str, str]:
     """swaig-response.yaml -> one ``<Action>`` class per action key whose value is an
     object-with-properties (bare object OR the object variant(s) of a oneOf). The
-    FIRST object variant is ``<Verb>Action``; a second would be ``<Verb>Action2``."""
+    FIRST object variant is ``<Verb>Action``; a second would be ``<Verb>Action2``.
+
+    PLUS the two ENVELOPE types the spec's own ``components/schemas`` declares —
+    ``SwaigAction`` (the action object: the full 27-key vocabulary, one or more set at
+    once) and ``SwaigResponse`` (the ``{response, action, post_process}`` body a
+    handler returns). This generator previously reached THROUGH ``SwaigAction`` into
+    its ``properties`` to lift the per-verb value objects and never emitted the
+    envelope itself, so both classes were absent from the port while the reference
+    declares them (``signalwire/core/swaig_actions_generated.py``: ``class
+    SwaigAction(TypedDict)`` / ``class SwaigResponse(TypedDict)``). They are also the
+    cross-file ``$ref`` target post-prompt.yaml names for ``post_response`` /
+    ``delayed_post_response``, which porting-sdk 4ddda70 taught the reference
+    generator to resolve. Same defect, same fix as go 41a012c.
+    """
     spec_file = "swaig-response.yaml"
     spec = _load_yaml(psdk / "swaig-specs" / spec_file)
-    actions = spec["components"]["schemas"]["SwaigAction"]["properties"]
+    schemas = spec["components"]["schemas"]
+    action_envelope = schemas["SwaigAction"]
+    actions = action_envelope["properties"]
 
     def _is_obj(s: object) -> bool:
         return (
@@ -197,6 +214,27 @@ def _build_swaig_actions(psdk: Path) -> dict[str, str]:
                 {},
                 f"swaig-response action {verb!r} value object",
             )
+
+    # The two ENVELOPE types, emitted from the spec's own components/schemas (NOT
+    # lifted out of a value object). Their fields are the schema's declared keys, so
+    # SwaigAction carries all 27 action keys and SwaigResponse carries
+    # {response, action, post_process} — matching the reference TypedDicts key-for-key.
+    for env_name in ("SwaigAction", "SwaigResponse"):
+        env = schemas.get(env_name)
+        if not isinstance(env, dict) or not env.get("properties"):
+            # Fail loud: a spec revision that drops or renames an envelope must not
+            # silently shrink the emitted surface back to the pre-fix state.
+            raise SystemExit(
+                f"generate_swaig_payloads.py: {spec_file} components/schemas "
+                f"{env_name!r} missing or has no properties"
+            )
+        outs[f"{SUB_ACTIONS}/{env_name}.java"] = _emit(
+            SUB_ACTIONS,
+            env_name,
+            env["properties"],
+            schemas,
+            f"swaig-response {env_name!r} envelope schema",
+        )
     return outs
 
 
