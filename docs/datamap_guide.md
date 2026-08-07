@@ -48,7 +48,7 @@ Gson gson = new Gson();
 ### 5. Webhook Configuration and HTTP Processing
 - [5.1 Webhook Structure](#51-webhook-structure)
 - [5.2 HTTP Methods and Headers](#52-http-methods-and-headers)
-- [5.3 Request Body Construction](#53-request-body-construction)
+- [5.3 Request Params Construction](#53-request-params-construction)
 - [5.4 Sequential Webhook Processing](#54-sequential-webhook-processing)
 - [5.5 Webhook Failure Detection](#55-webhook-failure-detection)
 
@@ -1001,11 +1001,11 @@ DataMap functions can use various HTTP methods and headers to customize request 
 - **Accept**: Specifies the format of the response body
 - **X-Request-ID**: Used for request tracking and correlation
 
-### 5.3 Request Body Construction
+### 5.3 Request Params Construction
 
-DataMap functions can construct request bodies dynamically based on function arguments and context variables:
+DataMap functions can construct request params dynamically based on function arguments and context variables. Use `params(...)` — it writes the `params` webhook key, which is in the contract and is read by the engine. (There is no `body(...)`: the `body` key is not a declared webhook property and no engine reader consumes it.)
 
-**Request Body Examples:**
+**Request Params Examples:**
 - **Simple Query**: `${args.query}`
 - **Complex Query**: `${function_name(args)}`
 - **JSON Object**: `${json_object}`

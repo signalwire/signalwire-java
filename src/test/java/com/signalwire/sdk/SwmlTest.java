@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.signalwire.sdk.swml.Document;
 import com.signalwire.sdk.swml.Schema;
+import com.signalwire.sdk.swml.SchemaValidationError;
 import com.signalwire.sdk.swml.Service;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -318,43 +319,49 @@ class SwmlTest {
 
     // Call all 38 verb methods
     service.answer(Map.of());
-    service.ai(Map.of());
-    service.amazonBedrock(Map.of());
+    // `ai` / `amazon_bedrock` REQUIRE a prompt object; an empty config is not a
+    // legal verb and the validating path now says so.
+    service.ai(Map.of("prompt", Map.of("text", "hi")));
+    service.amazonBedrock(Map.of("prompt", Map.of("text", "hi")));
     service.cond(List.of());
-    service.connect(Map.of());
+    // $defs/Connect is a oneOf over four device forms; the single-device form
+    // requires `to`, so an empty config matches none of them.
+    service.connect(Map.of("to", "sip:alice@example.com"));
     service.denoise(Map.of());
     service.detectMachine(Map.of());
-    service.enterQueue(Map.of());
-    service.execute(Map.of());
-    service.gotoLabel(Map.of());
+    service.enterQueue(
+        Map.of("queue_name", "sales", "transfer_after_bridge", "https://ex.com/after"));
+    service.execute(Map.of("dest", "my_section"));
+    service.gotoLabel(Map.of("label", "start"));
     service.hangup(Map.of());
-    service.joinConference(Map.of());
-    service.joinRoom(Map.of());
-    service.label(Map.of());
-    service.liveTranscribe(Map.of());
-    service.liveTranslate(Map.of());
-    service.pay(Map.of());
-    service.play(Map.of());
-    service.prompt(Map.of());
+    service.joinConference(Map.of("name", "room1"));
+    service.joinRoom(Map.of("name", "room1"));
+    service.addVerb("label", "my_label");
+    service.liveTranscribe(Map.of("action", "stop"));
+    service.liveTranslate(Map.of("action", "stop"));
+    service.pay(Map.of("payment_connector_url", "https://ex.com/pay"));
+    service.play(Map.of("url", "say:hi"));
+    service.prompt(Map.of("play", "say:press 1"));
     service.receiveFax(Map.of());
     service.record(Map.of());
     service.recordCall(Map.of());
-    service.request(Map.of());
+    service.request(Map.of("url", "https://ex.com", "method", "GET"));
     service.returnVerb(Map.of());
-    service.sipRefer(Map.of());
-    service.sendDigits(Map.of());
-    service.sendFax(Map.of());
-    service.sendSms(Map.of());
+    service.sipRefer(Map.of("to_uri", "sip:alice@example.com"));
+    service.sendDigits(Map.of("digits", "123"));
+    service.sendFax(Map.of("document", "https://ex.com/f.pdf"));
+    service.sendSms(
+        Map.of("to_number", "+15551112222", "from_number", "+15553334444", "body", "hi"));
     service.set(Map.of());
     service.sleep(100);
     service.stopDenoise(Map.of());
     service.stopRecordCall(Map.of());
     service.stopTap(Map.of());
-    service.switchVerb(Map.of());
-    service.tap(Map.of());
-    service.transfer(Map.of());
-    service.unset(Map.of());
-    service.userEvent(Map.of());
+    service.switchVerb(Map.of("variable", "x", "case", Map.of()));
+    service.tap(Map.of("uri", "wss://ex.com/tap"));
+    service.transfer(Map.of("dest", "+15551112222"));
+    service.addVerb("unset", "temp_data");
+    service.userEvent(Map.of("event", Map.of()));
 
     assertEquals(38, service.getDocument().getVerbs().size());
   }
@@ -373,11 +380,62 @@ class SwmlTest {
   @Test
   void testServiceNullParamsHandled() {
     var service = new Service("test-service");
-    // Should not throw
+    // A null config renders an empty object, which is fine for a verb with no
+    // required properties.
     service.answer(null);
-    service.ai(null);
+    service.denoise(null);
 
     var verbs = service.getDocument().getVerbs();
     assertEquals(2, verbs.size());
+  }
+
+  /**
+   * The 38 convenience verb methods validate their config, exactly like {@code addVerb}. They used
+   * to call the raw {@code document.addVerb}, so {@code service.ai(null)} appended an {@code ai}
+   * with no {@code prompt} — a document the schema rejects — while {@code service.addVerb("ai",
+   * Map.of())} raised. A caller could not tell the two apart from the call site.
+   */
+  @Test
+  void testServiceVerbMethodsValidateLikeAddVerb() {
+    var service = new Service("test-service");
+    assertThrows(SchemaValidationError.class, () -> service.ai(null));
+    assertThrows(SchemaValidationError.class, () -> service.ai(Map.of()));
+    assertThrows(SchemaValidationError.class, () -> service.play(Map.of()));
+    assertThrows(SchemaValidationError.class, () -> service.hangup(Map.of("reasonn", "busy")));
+    assertThrows(SchemaValidationError.class, () -> service.answer(Map.of("maxduration", 5)));
+    // Valid shapes still pass.
+    assertDoesNotThrow(() -> service.ai(Map.of("prompt", Map.of("text", "hi"))));
+    assertDoesNotThrow(() -> service.play(Map.of("url", "say:hi")));
+    assertDoesNotThrow(() -> service.hangup(Map.of("reason", "busy")));
+    // reason is x-sdk-widen, so an unlisted value is legal.
+    assertDoesNotThrow(() -> service.hangup(Map.of("reason", "done")));
+  }
+
+  /**
+   * A generated typed verb config validates against the same schema view the wire carries — the
+   * typed surface must not be an unvalidated back door.
+   */
+  @Test
+  void testTypedVerbConfigIsValidated() {
+    var service = new Service("test-service");
+    var cfg = new com.signalwire.sdk.swml.generated.ConnectConfig();
+    // $defs/Connect is a oneOf over four device forms; the single-device form
+    // requires `to`. An empty typed config matches none of them.
+    assertThrows(SchemaValidationError.class, () -> service.connect(cfg));
+    cfg.to = "sip:alice@example.com";
+    assertDoesNotThrow(() -> service.connect(cfg));
+  }
+
+  /**
+   * Not every verb config is an object: {@code cond} is an ARRAY, {@code label} a STRING, {@code
+   * sleep} a bare integer. Validation must take the shape from the schema rather than requiring a
+   * Map, or it rejects legal documents.
+   */
+  @Test
+  void testNonObjectVerbConfigsValidate() {
+    var service = new Service("test-service");
+    assertDoesNotThrow(() -> service.cond(List.of()));
+    assertDoesNotThrow(() -> service.sleep(100));
+    assertDoesNotThrow(() -> service.addVerb("label", "my_label"));
   }
 }

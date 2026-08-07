@@ -47,7 +47,7 @@ public enum SkillName {
 
   /**
    * The canonical wire string for this skill — the name it registers under in {@link
-   * SkillRegistry}. Equivalent to PHP's backed-enum {@code ->value}.
+   * SkillRegistry}.
    *
    * @return the lower-case-with-underscores skill name.
    */

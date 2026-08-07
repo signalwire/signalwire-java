@@ -1648,19 +1648,6 @@ dataMap.webhook("POST",
         "Content-Type", "application/json"));
 ```
 
-##### `body(Map<String, Object> data)`
-Set the JSON body for POST/PUT requests (supports `${variable}` substitution).
-
-**Usage:**
-```java
-dataMap.body(Map.of(
-    "query", "${args.search_term}",
-    "limit", 5,
-    "filters", Map.of(
-        "category", "${args.category}",
-        "active", true)));
-```
-
 ##### `params(Map<String, Object> data)`
 Set URL query parameters (supports `${variable}` substitution).
 
@@ -1865,7 +1852,7 @@ var searchTool = new DataMap("search_knowledge")
     .parameter("query", "string", "Search query", true)
     .parameter("category", "string", "Search category", false, List.of("docs", "faq", "policies"))
     .webhook("POST", "https://api.company.com/search", Map.of("Authorization", "Bearer TOKEN"))
-    .body(Map.of(
+    .params(Map.of(
         "query", "${args.query}",
         "category", "${args.category}",
         "limit", 5))

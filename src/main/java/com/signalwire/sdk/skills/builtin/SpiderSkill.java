@@ -11,6 +11,12 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Web scraping and crawling: fetches pages and extracts their text for the model to read.
+ *
+ * <p>Registered under the name {@code spider}; load it with {@code agent.addSkill("spider",
+ * params)}.
+ */
 public class SpiderSkill implements SkillBase {
 
   private static final Logger log = Logger.getLogger(SpiderSkill.class);
@@ -21,21 +27,93 @@ public class SpiderSkill implements SkillBase {
   // Python parity: get_instance_key defaults tool_name to SKILL_NAME (spider/skill.py).
   private String toolName = "spider";
 
+  /**
+   * XPath expressions for elements dropped before text extraction, PREFILLED with the default set
+   * in the order shown. The scrape path runs no XPath engine, so {@link #removeXpathTagPattern()}
+   * compiles the tag names out of these expressions into the element-stripping regex — this list
+   * stays the single source for what gets removed, whether you keep the defaults or replace them
+   * via {@link #setRemoveXpaths(List)}.
+   */
+  private List<String> removeXpaths =
+      new ArrayList<>(
+          List.of("//script", "//style", "//nav", "//header", "//footer", "//aside", "//noscript"));
+
+  /**
+   * The XPath expressions for elements removed before text extraction.
+   *
+   * @return the removal expressions, prefilled with the defaults.
+   */
+  public List<String> getRemoveXpaths() {
+    return removeXpaths;
+  }
+
+  /**
+   * Replaces the element-removal expressions.
+   *
+   * @param removeXpaths the XPath expressions to strip before extraction.
+   */
+  public void setRemoveXpaths(List<String> removeXpaths) {
+    this.removeXpaths = removeXpaths == null ? new ArrayList<>() : new ArrayList<>(removeXpaths);
+  }
+
+  /**
+   * Builds an alternation of the bare tag names named by {@link #removeXpaths} (a leading {@code
+   * //} stripped), so a simple {@code //tag} expression drives the regex strip below. An expression
+   * that is not a plain tag step is skipped — it cannot be honored without an XPath engine.
+   *
+   * @return the tag alternation, or null when no expression yields a usable tag.
+   */
+  private String removeXpathTagPattern() {
+    List<String> tags = new ArrayList<>();
+    for (String xpath : removeXpaths) {
+      if (xpath == null) {
+        continue;
+      }
+      String tag = xpath.startsWith("//") ? xpath.substring(2) : xpath;
+      if (tag.matches("[A-Za-z][A-Za-z0-9]*")) {
+        tags.add(tag);
+      }
+    }
+    return tags.isEmpty() ? null : String.join("|", tags);
+  }
+
+  /**
+   * The registry name this skill is loaded by: {@code spider}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "spider";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Fast web scraping and crawling capabilities";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters. This skill needs no configuration, so setup always
+   * succeeds.
+   *
+   * @param params the skill's configuration (unused).
+   * @return {@code true}.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     if (params.containsKey("timeout")) this.timeout = ((Number) params.get("timeout")).intValue();
@@ -43,9 +121,21 @@ public class SpiderSkill implements SkillBase {
       this.maxTextLength = ((Number) params.get("max_text_length")).intValue();
     if (params.containsKey("user_agent")) this.userAgent = (String) params.get("user_agent");
     if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
+    if (params.get("remove_xpaths") instanceof List<?> xpaths) {
+      List<String> parsed = new ArrayList<>();
+      for (Object x : xpaths) {
+        if (x != null) parsed.add(String.valueOf(x));
+      }
+      this.removeXpaths = parsed;
+    }
     return true;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> urlParams = new LinkedHashMap<>();
@@ -100,13 +190,16 @@ public class SpiderSkill implements SkillBase {
                 HttpResponse<String> response =
                     client.send(request, HttpResponse.BodyHandlers.ofString());
                 String body = response.body();
-                // Basic HTML stripping
-                String text =
-                    body.replaceAll("<script[^>]*>[\\s\\S]*?</script>", "")
-                        .replaceAll("<style[^>]*>[\\s\\S]*?</style>", "")
-                        .replaceAll("<[^>]+>", " ")
-                        .replaceAll("\\s+", " ")
-                        .trim();
+                // Drop the removeXpaths elements (content included), then strip the
+                // remaining tags — the reference drops the same elements via lxml
+                // before calling text_content() (spider/skill.py:313-319).
+                String tagPattern = removeXpathTagPattern();
+                if (tagPattern != null) {
+                  body = body.replaceAll("(?is)<(" + tagPattern + ")\\b[^>]*>.*?</\\1\\s*>", "");
+                  // Void/unclosed occurrences of the same elements.
+                  body = body.replaceAll("(?is)<(" + tagPattern + ")\\b[^>]*/?>", "");
+                }
+                String text = body.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
                 if (text.length() > maxTextLength) {
                   text = text.substring(0, maxTextLength) + "...";
                 }
@@ -145,6 +238,12 @@ public class SpiderSkill implements SkillBase {
     return List.of(scrape, crawl, extract);
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     return List.of("scrape", "crawl", "extract", "web page", "website", "spider");

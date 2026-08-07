@@ -216,7 +216,7 @@
       ]
     }
   },
-  "generated_from": "signalwire-java @ d9527a22b8410bbf2f5b93bb9013f5c03a7286ee",
+  "generated_from": "signalwire-java @ 4b267d9deabb9851fca1837df0441d2ea69912a6",
   "language": "java",
   "modules": {
     "signalwire": {
@@ -331,15 +331,18 @@
         "AuthenticationError": [],
         "ChatInProgressError": [],
         "ChatLog": [
+          "__init__",
           "call_timeline",
           "messages"
         ],
         "ChatResponse": [
+          "__init__",
           "conversation_id",
           "text",
           "user_event"
         ],
         "ConversationInfo": [
+          "__init__",
           "id",
           "initial_message",
           "status"
@@ -488,6 +491,16 @@
           "verify_api_key",
           "verify_basic_auth",
           "verify_bearer_token"
+        ],
+        "BasicCredentials": [
+          "__init__",
+          "password",
+          "username"
+        ],
+        "BearerCredentials": [
+          "__init__",
+          "credentials",
+          "scheme"
         ]
       },
       "functions": []
@@ -595,7 +608,6 @@
       "classes": {
         "DataMap": [
           "__init__",
-          "body",
           "description",
           "error_keys",
           "expression",
@@ -842,7 +854,9 @@
         "PostPromptEot": [],
         "PostPromptStampsUs": [],
         "PostPromptSwaigLogEntry": [
-          "post_data"
+          "delayed_post_response",
+          "post_data",
+          "post_response"
         ],
         "PostPromptSystemEntry": [],
         "PostPromptSystemLogEntry": [],
@@ -987,6 +1001,8 @@
         "ContextSwitchAction": [],
         "HoldAction": [],
         "PlaybackBgAction": [],
+        "SwaigAction": [],
+        "SwaigResponse": [],
         "TransferAction": []
       },
       "functions": []
@@ -1105,10 +1121,9 @@
           "close",
           "cond",
           "connect",
-          "define_tool",
-          "define_tools",
           "denoise",
           "detect_machine",
+          "domain",
           "enter_queue",
           "execute",
           "extract_sip_username",
@@ -1135,9 +1150,7 @@
           "live_translate",
           "manual_set_proxy_url",
           "name",
-          "on_function_call",
           "on_request",
-          "on_swml_request",
           "pay",
           "play",
           "port",
@@ -1146,7 +1159,6 @@
           "record",
           "record_call",
           "register_routing_callback",
-          "register_swaig_function",
           "register_verb_handler",
           "remove_function",
           "render_document",
@@ -1164,6 +1176,9 @@
           "set",
           "sip_refer",
           "sleep",
+          "ssl_cert_path",
+          "ssl_enabled",
+          "ssl_key_path",
           "stop",
           "stop_denoise",
           "stop_record_call",
@@ -1173,7 +1188,6 @@
           "transfer",
           "unset",
           "user_event",
-          "validate_basic_auth",
           "verb_registry"
         ]
       },
@@ -1686,6 +1700,7 @@
         "Action": [
           "__init__",
           "call",
+          "completed",
           "control_id",
           "get_state",
           "is_done",
@@ -1914,6 +1929,7 @@
     "signalwire.relay.event": {
       "classes": {
         "CallReceiveEvent": [
+          "__init__",
           "call_state",
           "context",
           "device",
@@ -1926,6 +1942,7 @@
           "tag"
         ],
         "CallStateEvent": [
+          "__init__",
           "call_state",
           "device",
           "direction",
@@ -1936,12 +1953,14 @@
           "get_tag"
         ],
         "CallingErrorEvent": [
+          "__init__",
           "code",
           "from_payload",
           "get_call_id",
           "message"
         ],
         "CollectEvent": [
+          "__init__",
           "control_id",
           "final",
           "from_payload",
@@ -1951,6 +1970,7 @@
           "state"
         ],
         "ConferenceEvent": [
+          "__init__",
           "conference_id",
           "from_payload",
           "get_call_id",
@@ -1958,17 +1978,20 @@
           "status"
         ],
         "ConnectEvent": [
+          "__init__",
           "connect_state",
           "from_payload",
           "get_call_id",
           "peer"
         ],
         "DenoiseEvent": [
+          "__init__",
           "denoised",
           "from_payload",
           "get_call_id"
         ],
         "DetectEvent": [
+          "__init__",
           "control_id",
           "detect",
           "from_payload",
@@ -1976,6 +1999,7 @@
           "get_detect_event"
         ],
         "DialEvent": [
+          "__init__",
           "call",
           "dial_state",
           "from_payload",
@@ -1986,11 +2010,13 @@
           "tag"
         ],
         "EchoEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "FaxEvent": [
+          "__init__",
           "control_id",
           "fax",
           "from_payload",
@@ -1998,11 +2024,13 @@
           "get_state"
         ],
         "HoldEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "MessageReceiveEvent": [
+          "__init__",
           "body",
           "context",
           "direction",
@@ -2016,6 +2044,7 @@
           "to_number"
         ],
         "MessageStateEvent": [
+          "__init__",
           "body",
           "context",
           "direction",
@@ -2030,18 +2059,21 @@
           "to_number"
         ],
         "PayEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "PlayEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "QueueEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
@@ -2052,6 +2084,7 @@
           "status"
         ],
         "RecordEvent": [
+          "__init__",
           "control_id",
           "duration",
           "from_payload",
@@ -2062,6 +2095,7 @@
           "url"
         ],
         "ReferEvent": [
+          "__init__",
           "from_payload",
           "get_call_id",
           "get_refer_state",
@@ -2071,6 +2105,7 @@
           "state"
         ],
         "RelayEvent": [
+          "__init__",
           "call_id",
           "event_type",
           "from_payload",
@@ -2083,12 +2118,14 @@
           "timestamp"
         ],
         "SendDigitsEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
           "state"
         ],
         "StreamEvent": [
+          "__init__",
           "control_id",
           "from_payload",
           "get_call_id",
@@ -2097,6 +2134,7 @@
           "url"
         ],
         "TapEvent": [
+          "__init__",
           "control_id",
           "device",
           "from_payload",
@@ -2105,6 +2143,7 @@
           "tap"
         ],
         "TranscribeEvent": [
+          "__init__",
           "control_id",
           "duration",
           "from_payload",
@@ -2346,7 +2385,6 @@
           "__init__",
           "body",
           "get_path",
-          "get_request_id",
           "get_response_body",
           "headers",
           "is_client_error",
@@ -2354,6 +2392,7 @@
           "is_server_error",
           "is_unauthorized",
           "method",
+          "request_id",
           "status_code",
           "url"
         ],
@@ -2377,6 +2416,7 @@
     "signalwire.rest._request_options": {
       "classes": {
         "RequestOptions": [
+          "__init__",
           "abort_signal",
           "builder",
           "merge",
@@ -2401,7 +2441,6 @@
           "datasphere",
           "fabric",
           "get_http_client",
-          "get_project",
           "get_space",
           "imported_numbers",
           "logs",
@@ -3901,7 +3940,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3919,7 +3957,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3936,7 +3973,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup",
@@ -3952,7 +3988,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3967,7 +4002,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup"
         ]
@@ -3982,7 +4016,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -3998,7 +4031,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup"
@@ -4013,7 +4045,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4029,7 +4060,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_required_packages",
           "get_version",
           "register_tools",
@@ -4048,7 +4078,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "setup",
           "supports_multiple_instances"
@@ -4112,6 +4141,7 @@
           "get_name",
           "get_parameter_schema",
           "register_tools",
+          "remove_xpaths",
           "setup",
           "supports_multiple_instances"
         ]
@@ -4126,7 +4156,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_swaig_functions",
           "register_tools",
           "setup",
@@ -4158,7 +4187,6 @@
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "get_version",
           "register_tools",
           "setup",
@@ -4174,7 +4202,6 @@
           "get_hints",
           "get_name",
           "get_parameter_schema",
-          "get_prompt_sections",
           "register_tools",
           "search_wiki",
           "setup"

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
@@ -76,9 +77,8 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Full construction contract, mirroring the reference {@code AgentServer(host, port, log_level)}.
-   * The level is lower-cased and applied to the global logger, exactly as the reference does
-   * ({@code self.log_level = log_level.lower()}, agent_server.py:63) before creating its logger.
+   * Full construction contract: bind host, bind port, and log level. The level is lower-cased and
+   * applied to the global logger before the server's own logger is created.
    *
    * @param host host to bind the server to
    * @param port port to bind the server to
@@ -159,7 +159,7 @@ public class AgentServer implements AutoCloseable {
         autoMapAgentSipUsernames(agent, normalizedRoute);
       }
       if (sipRoute != null) {
-        agent.registerRoutingCallback(serverSipRoutingCallback());
+        agent.registerRoutingCallback(this::serverSipRoutingCallback);
       }
     }
 
@@ -167,20 +167,27 @@ public class AgentServer implements AutoCloseable {
     return this;
   }
 
-  /** The unified server-level SIP routing callback (resolves a SIP username to a target route). */
-  private BiFunction<Map<String, Object>, Map<String, String>, String> serverSipRoutingCallback() {
-    return (body, headers) -> {
-      String sipUsername = extractSipUsername(body);
-      if (sipUsername != null) {
-        String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
-        if (target != null) {
-          log.info("Routing SIP request to %s", target);
-          return target;
-        }
-        log.warn("No route found for SIP username: %s", sipUsername);
+  /**
+   * The unified server-level SIP routing callback (resolves a SIP username to a target route).
+   *
+   * <p>Implements the {@code BiFunction} contract directly rather than returning a lambda from a
+   * factory; the two registration sites bind it with a {@code this::} method reference.
+   *
+   * @param body the parsed request body the SIP username is extracted from
+   * @param headers the request headers (unused; present to satisfy the callback signature)
+   * @return the target route, or {@code null} when the username maps to nothing
+   */
+  private String serverSipRoutingCallback(Map<String, Object> body, Map<String, String> headers) {
+    String sipUsername = extractSipUsername(body);
+    if (sipUsername != null) {
+      String target = sipRoutes.get(sipUsername.toLowerCase(Locale.ROOT));
+      if (target != null) {
+        log.info("Routing SIP request to %s", target);
+        return target;
       }
-      return null;
-    };
+      log.warn("No route found for SIP username: %s", sipUsername);
+    }
+    return null;
   }
 
   /** Register an agent at its own configured route. */
@@ -211,8 +218,7 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Return all registered agents as {@code (route, agent)} pairs. Ported from Python
-   * AgentServer.get_agents (which returns a list of {@code (route, agent)} tuples).
+   * Return all registered agents as {@code (route, agent)} pairs.
    *
    * @return an unmodifiable list of route/agent entries
    */
@@ -239,14 +245,22 @@ public class AgentServer implements AutoCloseable {
     return this;
   }
 
+  /**
+   * Serve static files at the default route {@code "/"}.
+   *
+   * @param directory Filesystem path to the directory containing static files
+   */
+  public AgentServer serveStaticFiles(String directory) {
+    return serveStaticFiles(directory, "/");
+  }
+
   // ============================================================
   // HTTPS / TLS
   // ============================================================
 
   /**
-   * Serve over HTTPS using an explicit PEM certificate chain and PKCS#8 private key. This is the
-   * explicit-cert option that parallels Python's {@code SWMLService.serve(ssl_cert=...,
-   * ssl_key=...)}; it takes precedence over the {@code SWML_SSL_*} environment variables.
+   * Serve over HTTPS using an explicit PEM certificate chain and PKCS#8 private key. Configuring
+   * the cert and key here takes precedence over the {@code SWML_SSL_*} environment variables.
    *
    * <p>{@code certPath} must be a PEM file containing the leaf (and any intermediate) certificates;
    * {@code keyPath} must be the matching unencrypted PKCS#8 private key in PEM form. When both
@@ -274,8 +288,8 @@ public class AgentServer implements AutoCloseable {
   /**
    * Resolves the effective cert/key pair from the explicit option first, then the SWML_SSL_*
    * environment variables, returning {@code [cert, key]} when both exist on disk, or {@code null}
-   * when TLS is not configured. Mirrors the validation Python's AgentServer.run() performs (a
-   * configured path that doesn't exist disables SSL rather than crashing the server).
+   * when TLS is not configured. A configured path that doesn't exist disables SSL rather than
+   * crashing the server.
    */
   private String[] resolveTls() {
     String cert = sslCertPath;
@@ -374,9 +388,8 @@ public class AgentServer implements AutoCloseable {
 
   /**
    * Get the agent route mapped to a SIP username, or {@code null} if none. The lookup is
-   * case-insensitive — mirrors Python AgentServer._lookup_sip_route, which does
-   * self._sip_username_mapping.get(username.lower()); usernames are stored lowercased by {@link
-   * #registerSipUsername}.
+   * case-insensitive: usernames are stored lowercased by {@link #registerSipUsername} and the
+   * argument is lowercased before lookup.
    */
   public String getSipRoute(String username) {
     if (username == null) {
@@ -386,18 +399,18 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * A snapshot of the SIP-username → agent-route mapping (lowercased keys). Mirrors reading Python
-   * AgentServer._sip_username_mapping.
+   * A snapshot of the SIP-username → agent-route mapping (lowercased keys). The returned map is a
+   * copy; mutating it does not affect the server's routing table.
    */
   public Map<String, String> getSipUsernameMapping() {
     return new LinkedHashMap<>(sipRoutes);
   }
 
   /**
-   * Set up central SIP-based routing across all registered agents. Ported from Python
-   * AgentServer.setup_sip_routing: enables SIP routing at {@code route}, optionally auto-maps each
-   * registered agent's name/route to a SIP username, and installs a unified routing callback (that
-   * resolves the SIP username to a target route) on every agent at {@code route}.
+   * Set up central SIP-based routing across all registered agents: enables SIP routing at {@code
+   * route}, optionally auto-maps each registered agent's name/route to a SIP username, and installs
+   * a unified routing callback (that resolves the SIP username to a target route) on every agent at
+   * {@code route}.
    *
    * @param route the SIP routing path (default "/sip"); normalized to a leading-slash form
    * @param autoMap whether to auto-map SIP usernames from agent names/routes
@@ -422,7 +435,7 @@ public class AgentServer implements AutoCloseable {
 
     // Unified routing callback: resolve the SIP username in the body to a target route.
     BiFunction<Map<String, Object>, Map<String, String>, String> sipRoutingCallback =
-        serverSipRoutingCallback();
+        this::serverSipRoutingCallback;
     for (AgentBase agent : agents.values()) {
       agent.registerRoutingCallback(sipRoutingCallback);
     }
@@ -437,9 +450,8 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Register a mapping from a SIP username to an agent route. Ported from Python
-   * AgentServer.register_sip_username. Requires {@link #setupSipRouting} to have been called first;
-   * the username is lowercased for case-insensitive resolution.
+   * Register a mapping from a SIP username to an agent route. Requires {@link #setupSipRouting} to
+   * have been called first; the username is lowercased for case-insensitive resolution.
    *
    * @param username the SIP username
    * @param route the target agent route
@@ -470,7 +482,10 @@ public class AgentServer implements AutoCloseable {
     }
 
     if (route != null && !route.isEmpty()) {
-      String[] parts = route.split("/");
+      // limit 0 == drop trailing empties, so "/a/b/" derives the SIP username
+      // from "b" rather than from an empty final segment. Load-bearing: the last
+      // element is what gets registered.
+      String[] parts = route.split("/", 0);
       String routePart = parts.length > 0 ? parts[parts.length - 1] : "";
       String cleanRoute = routePart.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "");
       if (!cleanRoute.isEmpty() && !cleanRoute.equals(cleanName)) {
@@ -481,9 +496,8 @@ public class AgentServer implements AutoCloseable {
 
   /**
    * Extract a SIP username from a SWML/SWAIG request body for routing. SIP routing keys on the
-   * DESTINATION of the call — the {@code call.to} (or top-level {@code to}) SIP URI — mirroring the
-   * Python reference ({@code AgentServer.server_sip_routing_callback} calls {@code
-   * SWMLService.extract_sip_username}, which reads {@code to}). Delegates to the canonical {@link
+   * DESTINATION of the call — the {@code call.to} (or top-level {@code to}) SIP URI — never the
+   * caller. Delegates to the canonical {@link
    * com.signalwire.sdk.swml.Service#extractSipUsername(Map)} so the server and the framework-free
    * dispatch core agree on which field a SIP username is drawn from.
    */
@@ -492,9 +506,9 @@ public class AgentServer implements AutoCloseable {
   }
 
   /**
-   * Register a routing callback across all registered agents at a shared path. Ported from Python
-   * AgentServer.register_global_routing_callback: installs the same {@code (body, headers) ->
-   * targetRoute} callback on every agent so unified routing logic applies uniformly.
+   * Register a routing callback across all registered agents at a shared path: installs the same
+   * {@code (body, headers) -> targetRoute} callback on every agent so unified routing logic applies
+   * uniformly.
    *
    * @param callback the routing callback, {@code (body, headers) -> route-or-null}
    * @param path the routing path to register the callback at (normalized)
@@ -777,8 +791,71 @@ public class AgentServer implements AutoCloseable {
       }
     }
 
+    // Enforce the tool's `secure` flag before dispatch. Composed from the agent's published
+    // seams so this server, the in-process endpoint and the serverless adapters reach the same
+    // verdict — see AgentBase.swaigValidateToken, which the in-process path uses directly.
+    // The credential rides the query string; the call identity rides the body. An absent token
+    // and an absent call_id both fail CLOSED: a token can only be checked against a call_id, so
+    // a request carrying neither is unvalidated, never exempt.
+    ToolDefinition tool = agent.getTools().get(funcName);
+    if (tool != null && tool.isSecure()) {
+      Object rawCallId = payload.get("call_id");
+      String callId = rawCallId == null ? null : rawCallId.toString();
+      String token = swaigTokenOf(exchange.getRequestURI().getRawQuery());
+      if (!agent.validateToolToken(funcName, token, callId)) {
+        // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status: the
+        // engine has no handling for a SWAIG refusal status, so the tool reports that it
+        // cannot execute and the model relays that.
+        sendJson(
+            exchange,
+            200,
+            new FunctionResult(
+                    "I'm sorry, the security token for this function is invalid or expired. "
+                        + "I cannot execute this action.")
+                .toMap());
+        return;
+      }
+    }
+
     FunctionResult result = agent.onFunctionCall(funcName, args, payload);
     sendJson(exchange, 200, result.toMap());
+  }
+
+  /**
+   * Lift the SWAIG {@code __token} credential out of a raw {@code a=b&c=d} query string, falling
+   * back to a bare {@code token}. Returns {@code null} when neither is present or the value is
+   * empty, so a blank credential is indistinguishable from an absent one.
+   */
+  private static String swaigTokenOf(String rawQuery) {
+    if (rawQuery == null || rawQuery.isEmpty()) {
+      return null;
+    }
+    String fallback = null;
+    // limit 0 == drop trailing empties; a query ending in "&" yields no extra
+    // pair, and the eq<=0 guard below discards any empty one regardless.
+    for (String pair : rawQuery.split("&", 0)) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      String key = pair.substring(0, eq);
+      String value;
+      try {
+        value = java.net.URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      if (value.isEmpty()) {
+        continue;
+      }
+      if ("__token".equals(key)) {
+        return value;
+      }
+      if ("token".equals(key) && fallback == null) {
+        fallback = value;
+      }
+    }
+    return fallback;
   }
 
   @SuppressWarnings("unchecked")

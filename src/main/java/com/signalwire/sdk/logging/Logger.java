@@ -6,6 +6,9 @@
  */
 package com.signalwire.sdk.logging;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Simple logging system with level control via environment variables.
  *
@@ -20,6 +23,10 @@ package com.signalwire.sdk.logging;
  */
 public final class Logger {
 
+  /**
+   * Severity levels, ordered least to most severe. A message is emitted when its level is at least
+   * the global level, so {@link #OFF} — the highest — suppresses everything.
+   */
   public enum Level {
     DEBUG(0),
     INFO(1),
@@ -33,6 +40,11 @@ public final class Logger {
       this.value = value;
     }
 
+    /**
+     * The level's ordinal severity, which is what the threshold comparison uses.
+     *
+     * @return the severity value, {@code 0} for {@link #DEBUG} through {@code 4} for {@link #OFF}.
+     */
     public int getValue() {
       return value;
     }
@@ -75,14 +87,32 @@ public final class Logger {
     this.name = name;
   }
 
+  /**
+   * Obtain a logger tagged with this name. The name appears in every line the logger writes.
+   *
+   * @param name the logger name.
+   * @return a logger for that name.
+   */
   public static Logger getLogger(String name) {
     return new Logger(name);
   }
 
+  /**
+   * Obtain a logger tagged with the class's simple name.
+   *
+   * @param clazz the class to name the logger after.
+   * @return a logger for that class.
+   */
   public static Logger getLogger(Class<?> clazz) {
     return new Logger(clazz.getSimpleName());
   }
 
+  /**
+   * Set the severity threshold for every logger in the process, overriding whatever {@code
+   * SIGNALWIRE_LOG_LEVEL} / {@code SIGNALWIRE_LOG_MODE} resolved at class-load time.
+   *
+   * @param level the new threshold.
+   */
   public static void setGlobalLevel(Level level) {
     globalLevel = level;
   }
@@ -99,7 +129,7 @@ public final class Logger {
 
   /**
    * One-time global logging configuration. Idempotent — a second call is a no-op until {@link
-   * #resetLoggingConfiguration()} runs. Mirrors logging_config.configure_logging.
+   * #resetLoggingConfiguration()} runs.
    */
   public static synchronized void configureLogging() {
     if (loggingConfigured) {
@@ -116,23 +146,23 @@ public final class Logger {
     loggingConfigured = true;
   }
 
-  /**
-   * Reset the one-time configuration guard so {@link #configureLogging()} can run again. Mirrors
-   * logging_config.reset_logging_configuration.
-   */
+  /** Reset the one-time configuration guard so {@link #configureLogging()} can run again. */
   public static synchronized void resetLoggingConfiguration() {
     loggingConfigured = false;
     configureLogging();
   }
 
   /**
-   * Remove ASCII control characters (except tab/newline/carriage-return) from a log string. Mirrors
-   * logging_config.strip_control_chars (a structlog processor in Python).
+   * Remove ASCII control characters (except tab/newline/carriage-return) from a single string.
+   *
+   * <p>INTERNAL: the public contract is the event-map form ({@link #stripControlChars(Map)}); this
+   * is the per-value scrub that form is built out of, and the unit the emitter needs.
+   * Package-private, so it is not part of the SDK's public surface.
    *
    * @param value the raw log string (null-safe → returns null)
    * @return the sanitized string
    */
-  public static String stripControlChars(String value) {
+  static String stripControlCharsValue(String value) {
     if (value == null) {
       return null;
     }
@@ -146,49 +176,140 @@ public final class Logger {
     return out.toString();
   }
 
+  /**
+   * Strip control characters from log event values to prevent log injection.
+   *
+   * <p>Takes the log event map, scrubs every STRING value, and returns the map. Non-string values
+   * pass through untouched.
+   *
+   * <p>{@link #log} calls this on every emission, so the scrub sits on the real logging path rather
+   * than merely being available to callers who remember to invoke it.
+   *
+   * @param eventDict the log event map (null-safe → returns null)
+   * @return a map with every string value sanitized
+   */
+  public static Map<String, Object> stripControlChars(Map<String, Object> eventDict) {
+    if (eventDict == null) {
+      return null;
+    }
+    Map<String, Object> out = new LinkedHashMap<>(eventDict);
+    for (Map.Entry<String, Object> e : out.entrySet()) {
+      if (e.getValue() instanceof String s) {
+        e.setValue(stripControlCharsValue(s));
+      }
+    }
+    return out;
+  }
+
+  /**
+   * The current process-wide severity threshold, resolved at class-load time from {@code
+   * SIGNALWIRE_LOG_MODE} then {@code SIGNALWIRE_LOG_LEVEL}, defaulting to {@link Level#INFO}.
+   *
+   * @return the current threshold.
+   */
   public static Level getGlobalLevel() {
     return globalLevel;
   }
 
+  /**
+   * Whether a message at this level would be emitted. Worth checking before building an expensive
+   * message that would then be discarded.
+   *
+   * @param level the level to test.
+   * @return {@code true} when the level meets the global threshold.
+   */
   public boolean isEnabled(Level level) {
     return level.getValue() >= globalLevel.getValue();
   }
 
+  /**
+   * Log at {@link Level#DEBUG}. Control characters in the message are stripped before output, so a
+   * value carrying newlines or escape sequences cannot forge log lines.
+   *
+   * @param message the message.
+   */
   public void debug(String message) {
     log(Level.DEBUG, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#DEBUG}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void debug(String format, Object... args) {
     log(Level.DEBUG, format, args);
   }
 
+  /**
+   * Log at {@link Level#INFO}, the default threshold. Control characters are stripped before
+   * output.
+   *
+   * @param message the message.
+   */
   public void info(String message) {
     log(Level.INFO, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#INFO}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void info(String format, Object... args) {
     log(Level.INFO, format, args);
   }
 
+  /**
+   * Log at {@link Level#WARN}. Control characters are stripped before output.
+   *
+   * @param message the message.
+   */
   public void warn(String message) {
     log(Level.WARN, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#WARN}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void warn(String format, Object... args) {
     log(Level.WARN, format, args);
   }
 
+  /**
+   * Log at {@link Level#ERROR}. Control characters are stripped before output.
+   *
+   * @param message the message.
+   */
   public void error(String message) {
     log(Level.ERROR, message);
   }
 
+  /**
+   * Log a formatted message at {@link Level#ERROR}.
+   *
+   * @param format a {@link String#format} pattern.
+   * @param args the format arguments.
+   */
   public void error(String format, Object... args) {
     log(Level.ERROR, format, args);
   }
 
+  /**
+   * Log at {@link Level#ERROR} with a stack trace. The message is written to standard error with
+   * control characters stripped, followed by the throwable's trace.
+   *
+   * @param message the message.
+   * @param t the throwable whose stack trace to print.
+   */
   public void error(String message, Throwable t) {
     if (isEnabled(Level.ERROR)) {
-      System.err.printf("[%s] [%s] %s%n", Level.ERROR, name, message);
+      System.err.printf("[%s] [%s] %s%n", Level.ERROR, name, stripControlCharsValue(message));
       t.printStackTrace(System.err);
     }
   }
@@ -196,14 +317,15 @@ public final class Logger {
   private void log(Level level, String message) {
     if (isEnabled(level)) {
       var stream = (level == Level.ERROR || level == Level.WARN) ? System.err : System.out;
-      stream.printf("[%s] [%s] %s%n", level, name, message);
+      stream.printf("[%s] [%s] %s%n", level, name, stripControlCharsValue(message));
     }
   }
 
   private void log(Level level, String format, Object... args) {
     if (isEnabled(level)) {
       var stream = (level == Level.ERROR || level == Level.WARN) ? System.err : System.out;
-      stream.printf("[%s] [%s] %s%n", level, name, String.format(format, args));
+      stream.printf(
+          "[%s] [%s] %s%n", level, name, stripControlCharsValue(String.format(format, args)));
     }
   }
 }

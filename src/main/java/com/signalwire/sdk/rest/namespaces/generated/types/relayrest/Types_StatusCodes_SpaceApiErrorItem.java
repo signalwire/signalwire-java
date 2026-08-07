@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * Types_StatusCodes_SpaceApiErrorItem — generated wire type ('relay_rest' spec, components/schemas
  * 'Types.StatusCodes.SpaceApiErrorItem').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Types_StatusCodes_SpaceApiErrorItem {
   public String detail;

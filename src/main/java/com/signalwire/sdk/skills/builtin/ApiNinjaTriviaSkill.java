@@ -6,6 +6,12 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Trivia questions from the API Ninjas service.
+ *
+ * <p>Registered under the name {@code api_ninjas_trivia}; load it with {@code
+ * agent.addSkill("api_ninjas_trivia", params)}.
+ */
 public class ApiNinjaTriviaSkill implements SkillBase {
 
   /**
@@ -39,21 +45,43 @@ public class ApiNinjaTriviaSkill implements SkillBase {
   private String toolName = "get_trivia";
   private List<String> categories = new ArrayList<>(ALL_CATEGORIES);
 
+  /**
+   * The registry name this skill is loaded by: {@code api_ninjas_trivia}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "api_ninjas_trivia";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Get trivia questions from API Ninjas";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code api_key}; {@code false} otherwise,
+   *     which leaves the skill unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -65,6 +93,11 @@ public class ApiNinjaTriviaSkill implements SkillBase {
     return apiKey != null && !apiKey.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return Collections.emptyList();

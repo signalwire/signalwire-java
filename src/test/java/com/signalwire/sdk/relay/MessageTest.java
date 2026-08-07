@@ -165,6 +165,8 @@ class MessageTest {
   @Test
   void testAwaitWithTimeoutReturnsNullWhenNotTerminal() {
     Message msg = new Message("msg-123");
-    assertNull(msg.await(50));
+    // await(Double) takes SECONDS (reference parity: timeout: float | None); 0.05s == the 50ms
+    // this previously passed as await(long).
+    assertNull(msg.await(0.05));
   }
 }

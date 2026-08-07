@@ -60,6 +60,18 @@ class LambdaAgentHandlerTest {
     return event;
   }
 
+  /**
+   * Add the credential a {@code secure} tool requires: a genuinely minted {@code __token} on the
+   * query string and the {@code call_id} it is bound to in the body. {@code define_tool} defaults
+   * to secure, so a SWAIG event without these is refused before the handler runs — which is the
+   * point of the contract, not something these routing/decoding tests are exercising.
+   */
+  private static Map<String, Object> withToolToken(
+      Map<String, Object> event, AgentBase agent, String fn, String callId) {
+    event.put("queryStringParameters", Map.of("__token", agent.createToolToken(fn, callId)));
+    return event;
+  }
+
   private static AgentBase buildAgent(String route) {
     AgentBase agent =
         AgentBase.builder()
@@ -141,17 +153,25 @@ class LambdaAgentHandlerTest {
   @Test
   @SuppressWarnings("unchecked")
   void swaigExecutesRegisteredTool() {
+    AgentBase agent = buildAgent("/");
     var handler =
         new LambdaAgentHandler(
-            buildAgent("/"),
+            agent,
             envOf(Map.of("AWS_LAMBDA_FUNCTION_URL", "https://xyz.lambda-url.us-east-1.on.aws")));
     Map<String, String> headers =
         Map.of("Authorization", basicAuth("u", "p"), "Content-Type", "application/json");
     String payload =
         GSON.toJson(
             Map.of(
-                "function", "greet", "argument", Map.of("parsed", List.of(Map.of("name", "Ada")))));
-    LambdaResponse r = handler.handle(v2Event("POST", "/swaig", headers, payload));
+                "function",
+                "greet",
+                "call_id",
+                "c1",
+                "argument",
+                Map.of("parsed", List.of(Map.of("name", "Ada")))));
+    LambdaResponse r =
+        handler.handle(
+            withToolToken(v2Event("POST", "/swaig", headers, payload), agent, "greet", "c1"));
     assertEquals(200, r.getStatusCode());
     Map<String, Object> body = parseBody(r);
     assertEquals("Hello, Ada!", body.get("response"));
@@ -168,17 +188,21 @@ class LambdaAgentHandlerTest {
 
   @Test
   void swaigBase64BodyDecoded() {
-    var handler = new LambdaAgentHandler(buildAgent("/"), envOf(Map.of()));
+    AgentBase agent = buildAgent("/");
+    var handler = new LambdaAgentHandler(agent, envOf(Map.of()));
     Map<String, String> headers = Map.of("Authorization", basicAuth("u", "p"));
     String json =
         GSON.toJson(
             Map.of(
                 "function",
                 "greet",
+                "call_id",
+                "c1",
                 "argument",
                 Map.of("parsed", List.of(Map.of("name", "Grace")))));
     String b64 = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
-    Map<String, Object> event = v2Event("POST", "/swaig", headers, b64);
+    Map<String, Object> event =
+        withToolToken(v2Event("POST", "/swaig", headers, b64), agent, "greet", "c1");
     event.put("isBase64Encoded", true);
 
     LambdaResponse r = handler.handle(event);

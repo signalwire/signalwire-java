@@ -58,9 +58,9 @@ public class ReceptionistAgent {
   }
 
   /**
-   * Register a post-prompt summary callback. Ported from the Python ReceptionistAgent.on_summary
-   * hook (a no-op override point in Python): invoked with the parsed conversation summary and the
-   * raw post-prompt payload once the call completes. Wires through to {@link AgentBase#onSummary}.
+   * Register a post-prompt summary callback: it is invoked with the parsed conversation summary and
+   * the raw post-prompt payload once the call completes. No handler is registered by default. Wires
+   * through to {@link AgentBase#onSummary}.
    *
    * @param handler callback receiving (summary, rawData); {@code null} clears any handler
    * @return this prefab for chaining
@@ -78,14 +78,30 @@ public class ReceptionistAgent {
     return summaryHandler;
   }
 
+  /**
+   * The underlying agent this prefab configured. Use it to add tools, prompt sections, or skills
+   * beyond what the prefab sets up.
+   *
+   * @return the wrapped agent.
+   */
   public AgentBase getAgent() {
     return agent;
   }
 
+  /**
+   * Start the agent's HTTP server and serve until stopped.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void serve() throws Exception {
     agent.serve();
   }
 
+  /**
+   * Start the agent's HTTP server. Equivalent to {@link #serve()}.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void run() throws Exception {
     agent.run();
   }

@@ -26,8 +26,7 @@ public interface WireEnum {
 
   /**
    * The canonical wire string for this constant — the exact value the SignalWire platform expects
-   * (e.g. {@code "mp3"} / {@code "listen"} / {@code "PCMU"}). Equivalent to PHP's backed-enum
-   * {@code ->value}.
+   * (e.g. {@code "mp3"} / {@code "listen"} / {@code "PCMU"}).
    *
    * @return the wire string as it appears on the wire.
    */

@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * StopTapConfig — generated wire type (flattened SWMLMethod verb 'stop_tap' config).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class StopTapConfig {
   public String control_id;

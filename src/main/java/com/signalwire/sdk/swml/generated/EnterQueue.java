@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * EnterQueue — generated wire type (schema.json $defs schema 'EnterQueue').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class EnterQueue {
   public java.util.Map<String, Object> enter_queue;

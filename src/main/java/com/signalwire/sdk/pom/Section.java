@@ -10,21 +10,12 @@ import java.util.Objects;
  * Represents a section in the Prompt Object Model.
  *
  * <p>Each section contains a title, optional body text, optional bullet points, and can have any
- * number of nested subsections. Mirrors the Python reference {@code signalwire.pom.pom.Section}
- * (see signalwire-python: pom/pom.py).
+ * number of nested subsections.
  *
- * <p>Idiom mapping:
- *
- * <ul>
- *   <li>Python {@code to_dict()} ↔ Java {@link #toMap()} (returns {@code Map<String,Object>})
- *   <li>Python {@code render_markdown(level, section_number)} ↔ Java {@link #renderMarkdown(int,
- *       java.util.List)}
- *   <li>Python {@code render_xml(indent, section_number)} ↔ Java {@link #renderXml(int,
- *       java.util.List)}
- * </ul>
- *
- * <p>Output format is byte-identical to Python's renderer so cross-port POMs can round-trip through
- * markdown/XML/JSON.
+ * <p>A section can be rendered three ways: {@link #toMap()} for the JSON shape, {@link
+ * #renderMarkdown(int, java.util.List)} for markdown, and {@link #renderXml(int, java.util.List)}
+ * for XML. All three round-trip, so a POM serialized in one format can be reconstructed from
+ * another.
  */
 public class Section {
 
@@ -39,8 +30,7 @@ public class Section {
   private boolean numberedBullets;
 
   /**
-   * Construct a section. All parameters except {@code title} default to empty/null. Mirrors
-   * Python's keyword-only constructor.
+   * Construct a section. All parameters except {@code title} may be empty or {@code null}.
    *
    * @param title section title (may be {@code null} for an unnamed root)
    * @param body body text (must not be {@code null})
@@ -74,47 +64,75 @@ public class Section {
     this(title, body, bullets, null, false);
   }
 
+  /**
+   * The section heading.
+   *
+   * @return the title.
+   */
   public String getTitle() {
     return title;
   }
 
+  /**
+   * The section's prose. Empty for a bullets-only section, in which case it is dropped from the
+   * rendered output rather than emitted as an empty string.
+   *
+   * @return the body.
+   */
   public String getBody() {
     return body;
   }
 
+  /**
+   * The section's bullet points.
+   *
+   * @return the bullets, or {@code null} when the section has none.
+   */
   public List<String> getBullets() {
     return bullets;
   }
 
+  /**
+   * Sections nested under this one.
+   *
+   * @return the subsections, or {@code null} when there are none.
+   */
   public List<Section> getSubsections() {
     return subsections;
   }
 
+  /**
+   * Whether this section is numbered. Boxed so an unset value ({@code null}) stays distinct from an
+   * explicit {@code false} and is omitted from the rendered output.
+   *
+   * @return the numbering flag, or {@code null} when unset.
+   */
   public Boolean getNumbered() {
     return numbered;
   }
 
+  /**
+   * Whether this section's bullets are numbered rather than bulleted.
+   *
+   * @return the flag.
+   */
   public boolean isNumberedBullets() {
     return numberedBullets;
   }
 
-  /** Add or replace the body text for this section. Mirrors Python {@code Section.add_body}. */
+  /** Add or replace the body text for this section. */
   public void addBody(String body) {
     this.body = Objects.requireNonNull(body, "body must not be null");
   }
 
-  /**
-   * Append bullet points to this section. Mirrors Python {@code Section.add_bullets} (which
-   * extends, not replaces).
-   */
+  /** Append bullet points to this section — this extends the existing list, it does not replace. */
   public void addBullets(List<String> bullets) {
     Objects.requireNonNull(bullets, "bullets must not be null");
     this.bullets.addAll(bullets);
   }
 
   /**
-   * Add a subsection to this section. Mirrors Python {@code Section.add_subsection}. Subsections
-   * must have a title.
+   * Add a subsection to this section. Subsections must have a title.
    *
    * @return the newly created sub-{@link Section}
    * @throws IllegalArgumentException if {@code title} is {@code null}
@@ -145,9 +163,9 @@ public class Section {
   }
 
   /**
-   * Convert this section to an ordered {@link Map} for JSON / YAML serialisation. Mirrors Python
-   * {@code Section.to_dict}: keys appear in the same order (title, body, bullets, subsections,
-   * numbered, numberedBullets) and empty/false values are omitted.
+   * Convert this section to an ordered {@link Map} for JSON / YAML serialisation. Keys appear in a
+   * fixed order — title, body, bullets, subsections, numbered, numberedBullets — and empty/false
+   * values are omitted entirely.
    */
   public Map<String, Object> toMap() {
     Map<String, Object> data = new LinkedHashMap<>();
@@ -177,8 +195,7 @@ public class Section {
   }
 
   /**
-   * Render this section and its subsections as Markdown. Mirrors Python {@code
-   * Section.render_markdown}.
+   * Render this section and its subsections as Markdown.
    *
    * @param level heading level (default 2 → "##")
    * @param sectionNumber current numbering breadcrumb (may be {@code null})
@@ -250,7 +267,7 @@ public class Section {
     return renderMarkdown(2, null);
   }
 
-  /** Render this section and its subsections as XML. Mirrors Python {@code Section.render_xml}. */
+  /** Render this section and its subsections as XML. */
   public String renderXml(int indent, List<Integer> sectionNumber) {
     if (sectionNumber == null) {
       sectionNumber = new ArrayList<>();

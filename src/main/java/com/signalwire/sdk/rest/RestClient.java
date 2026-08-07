@@ -78,10 +78,19 @@ public class RestClient extends ResourceTree {
 
   // ── Builder ──────────────────────────────────────────────────────
 
+  /**
+   * Start configuring a REST client.
+   *
+   * @return a fresh {@link Builder}.
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Fluent constructor for {@link RestClient}. Each credential falls back to its environment
+   * variable at {@link #build()}, so a builder with no explicit values is supported usage.
+   */
   public static class Builder {
     private String project;
     private String token;
@@ -89,6 +98,12 @@ public class RestClient extends ResourceTree {
     private HttpClient httpClient;
     private RequestOptions requestOptions;
 
+    /**
+     * The SignalWire project UUID to authenticate as. Falls back to {@code SIGNALWIRE_PROJECT_ID}.
+     *
+     * @param project the project id.
+     * @return this builder.
+     */
     public Builder project(String project) {
       this.project = project;
       return this;
@@ -96,19 +111,32 @@ public class RestClient extends ResourceTree {
 
     /**
      * Client-default {@link RequestOptions} (timeout / retries / retry policy / abort signal)
-     * applied to every request this client makes, overridable per call. Mirrors the Python
-     * reference's {@code RestClient(request_options=...)}.
+     * applied to every request this client makes, overridable per call.
      */
     public Builder requestOptions(RequestOptions requestOptions) {
       this.requestOptions = requestOptions;
       return this;
     }
 
+    /**
+     * The API token to authenticate with. Falls back to {@code SIGNALWIRE_API_TOKEN}. This is a
+     * long-lived project credential — keep it out of source and out of logs.
+     *
+     * @param token the API token.
+     * @return this builder.
+     */
     public Builder token(String token) {
       this.token = token;
       return this;
     }
 
+    /**
+     * The space hostname requests are addressed to. Falls back to {@code SIGNALWIRE_SPACE}. Unlike
+     * the RELAY client, this has NO default — it must come from one source or the other.
+     *
+     * @param space the space hostname.
+     * @return this builder.
+     */
     public Builder space(String space) {
       this.space = space;
       return this;
@@ -123,6 +151,13 @@ public class RestClient extends ResourceTree {
       return this;
     }
 
+    /**
+     * Resolve credentials from the builder then the environment, and construct the client.
+     *
+     * @return the constructed client.
+     * @throws IllegalArgumentException when any of project, token, or space is still unset after
+     *     the environment fallback, naming all three and their variables.
+     */
     public RestClient build() {
       // Env-var fallback for any credential not set explicitly — parity with
       // Python's RestClient() (rest/client.py), which reads SIGNALWIRE_PROJECT_ID
@@ -155,14 +190,29 @@ public class RestClient extends ResourceTree {
 
   // ── Accessors ────────────────────────────────────────────────────
 
+  /**
+   * The project UUID this client authenticates as.
+   *
+   * @return the project id.
+   */
   public String getProject() {
     return project;
   }
 
+  /**
+   * The space hostname this client addresses requests to.
+   *
+   * @return the space hostname.
+   */
   public String getSpace() {
     return space;
   }
 
+  /**
+   * The HTTP client carrying this client's base URL and credentials.
+   *
+   * @return the underlying HTTP client.
+   */
   public HttpClient getHttpClient() {
     return httpClient;
   }

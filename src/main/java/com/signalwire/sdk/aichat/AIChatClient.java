@@ -32,14 +32,11 @@ import java.util.Map;
  * idle-but-live turn could trip. {@code java.net.http.HttpClient} offers a connect timeout and a
  * per-request timeout; the per-request timeout is a wall-clock cap on the WHOLE exchange (it cannot
  * be reset by a heartbeat), so imposing it would sever a slow-but-live turn — exactly what the
- * streaming note forbids. We therefore set a bounded {@code connectTimeout} and leave the
- * per-request timeout UNSET (no total cap), the closest {@code java.net.http} equivalent of the
- * python reference's {@code aiohttp.ClientTimeout(total=None, connect=10, sock_read=60)}: a live
- * turn is never capped, and a truly dead connection is caught by the OS/TCP layer. Leading
- * keepalive whitespace is valid JSON, so the buffered {@code HttpResponse.BodyHandlers.ofString()}
- * parse is unaffected.
- *
- * <p>Mirrors the python reference {@code signalwire.ai_chat.AIChatClient}.
+ * streaming note forbids. We therefore set a bounded 10-second {@code connectTimeout} and leave the
+ * per-request timeout UNSET (no total cap): a live turn is never capped, while a connection that
+ * never establishes still fails fast and a truly dead established connection is caught by the
+ * OS/TCP layer. Leading keepalive whitespace is valid JSON, so the buffered {@code
+ * HttpResponse.BodyHandlers.ofString()} parse is unaffected.
  *
  * <pre>{@code
  * AIChatClient client = new AIChatClient(AIChatClientOptions.builder().space("myspace").build());
@@ -53,7 +50,7 @@ public class AIChatClient implements AutoCloseable {
   /** Default endpoint path appended to a {@code space}-derived base URL. */
   static final String DEFAULT_PATH = "/api/ai/chat";
 
-  /** Bounded connect timeout — mirrors the python reference's {@code connect=10}. */
+  /** Bounded connect timeout: 10 seconds to establish the TCP/TLS connection. */
   private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
   private static final Gson GSON = new Gson();
@@ -162,9 +159,8 @@ public class AIChatClient implements AutoCloseable {
    * <p>The AI Chat client is built on {@link java.net.http.HttpClient}, which is sessionless — each
    * call is a self-contained request with no pooled connection state this client owns — so there is
    * nothing to tear down. {@code close()} is a well-defined no-op that completes the lifecycle
-   * contract (mirroring the Python reference's {@code close()} on its owned aiohttp session),
-   * letting callers use the client in a try-with-resources block interchangeably with the other SDK
-   * clients.
+   * contract, letting callers use the client in a try-with-resources block interchangeably with the
+   * other SDK clients.
    */
   @Override
   public void close() {
@@ -178,8 +174,8 @@ public class AIChatClient implements AutoCloseable {
    *
    * <p>Success/failure is decided by the JSON-RPC BODY, not the HTTP status: the service's
    * keepalive heartbeat commits {@code 200} before the turn's outcome is known, so a slow error can
-   * arrive as {@code 200 + {"error": …}}. Never gate on the HTTP status here (mirrors the python
-   * reference).
+   * arrive as {@code 200 + {"error": …}}. Never gate on the HTTP status here — a {@code 200} does
+   * not mean the turn succeeded.
    *
    * @throws AIChatError (or a typed subclass) when the body carries {@code error}.
    */

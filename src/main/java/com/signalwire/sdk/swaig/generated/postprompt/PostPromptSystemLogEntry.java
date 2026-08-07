@@ -10,8 +10,8 @@ package com.signalwire.sdk.swaig.generated.postprompt;
  * PostPromptSystemLogEntry — generated wire type (post-prompt components/schemas
  * 'PostPromptSystemLogEntry').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PostPromptSystemLogEntry {
   public String role;
@@ -22,7 +22,4 @@ public final class PostPromptSystemLogEntry {
   public Long tokens;
   public String content_type;
   public java.util.Map<String, Object> metadata;
-  public String context;
-  public String step;
-  public Long step_index;
 }

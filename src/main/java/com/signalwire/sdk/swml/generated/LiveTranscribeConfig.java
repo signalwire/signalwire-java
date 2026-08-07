@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * LiveTranscribeConfig — generated wire type (flattened SWMLMethod verb 'live_transcribe' config).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class LiveTranscribeConfig {
   public java.util.Map<String, Object> action;

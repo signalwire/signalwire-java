@@ -14,13 +14,12 @@ import javax.crypto.spec.SecretKeySpec;
 /**
  * Session manager for HMAC-SHA256 signed tool tokens.
  *
- * <p>Mirrors the reference {@code signalwire.core.security.session_manager.SessionManager}. Tokens
- * are self-contained (all data needed for validation is inside the signed token) so validation is
- * stateless. The Python reference additionally exposes a set of legacy session-lifecycle methods
- * ({@code create_session}/{@code activate_session}/{@code end_session}/{@code
- * get/set_session_metadata}); this port keeps a real per-call metadata store (like the Ruby and
- * TypeScript ports) so the getter/setter pair round-trips, while activation stays a stateless
- * success hook.
+ * <p>Tokens are self-contained — everything needed to validate one is inside the signed token — so
+ * validation is stateless and no server-side session store has to be consulted or replicated. The
+ * legacy session-lifecycle methods ({@code createSession} / {@code activateSession} / {@code
+ * endSession} / {@code get}/{@code setSessionMetadata}) remain: the metadata getter/setter pair is
+ * backed by a real per-call store so it round-trips, while activation is a stateless success hook
+ * that keeps no state of its own.
  *
  * <p><b>Token wire format.</b> A minted token is the URL-safe Base64 encoding of the DECODED
  * 5-field, dot-joined string {@code call_id.function_name.expiry.nonce.signature}. The HMAC-SHA256
@@ -31,12 +30,17 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public class SessionManager {
 
+  /** Seconds until a minted token expires when none is specified: 900, i.e. 15 minutes. */
+  private static final int DEFAULT_TOKEN_EXPIRY_SECS = 900;
+
   /**
-   * The signing secret as the reference models it: a STRING. The reference keys its HMAC with
-   * {@code self.secret_key.encode()} (session_manager.py:79,152) — the UTF-8 bytes of the string —
-   * and defaults it to {@code secrets.token_hex(32)}, a 64-character hex string. Keeping the string
-   * (rather than 32 raw bytes) is what makes a token minted by the Python reference validate here
-   * and vice versa: hex-string bytes and the raw bytes they decode to are DIFFERENT HMAC keys.
+   * The signing secret, held as a STRING. The HMAC is keyed with this string's UTF-8 BYTES, and the
+   * generated default is a 64-character hex string.
+   *
+   * <p>Holding the string rather than the 32 raw bytes it spells out is load-bearing for
+   * interoperability: the ASCII bytes of a hex string and the raw bytes that string decodes to are
+   * DIFFERENT HMAC keys, so hex-decoding the secret here would silently produce tokens that no
+   * other SignalWire SDK — and no other service sharing this secret — can validate.
    */
   private final String secretKey;
 
@@ -51,8 +55,16 @@ public class SessionManager {
   /** When true, {@link #debugToken(String)} decodes token internals; off by default. */
   private volatile boolean debugMode;
 
+  /**
+   * A manager whose tokens expire after the default 900 seconds (15 minutes).
+   *
+   * <p>Note this is DELIBERATELY different from {@link com.signalwire.sdk.agent.AgentBase}, whose
+   * own {@code tokenExpirySecs} default is 3600 and is passed through explicitly — an agent's
+   * tokens live for an hour, a bare {@code SessionManager}'s for fifteen minutes. Pass {@link
+   * #SessionManager(int)} to choose your own lifetime.
+   */
   public SessionManager() {
-    this(3600);
+    this(DEFAULT_TOKEN_EXPIRY_SECS);
   }
 
   public SessionManager(int defaultExpiry) {
@@ -60,13 +72,11 @@ public class SessionManager {
   }
 
   /**
-   * The reference construction contract: {@code SessionManager(token_expiry_secs, secret_key)}. A
-   * {@code null} secret is generated as a 64-character hex string, matching the reference's {@code
-   * secrets.token_hex(32)} default.
+   * Construct a manager with an explicit token lifetime and signing secret. A {@code null} secret
+   * is generated as a 64-character hex string from 32 {@link SecureRandom} bytes.
    *
-   * @param defaultExpiry seconds until minted tokens expire (the {@code token_expiry_secs} param)
-   * @param secretKey the HMAC signing secret as a string (the {@code secret_key} param); generated
-   *     when {@code null}
+   * @param defaultExpiry seconds until minted tokens expire
+   * @param secretKey the HMAC signing secret as a string; generated when {@code null}
    */
   public SessionManager(int defaultExpiry, String secretKey) {
     this.defaultExpiry = defaultExpiry;
@@ -74,7 +84,7 @@ public class SessionManager {
     this.secret = this.secretKey.getBytes(StandardCharsets.UTF_8);
   }
 
-  /** 32 random bytes rendered as 64 hex characters — the reference's {@code token_hex(32)}. */
+  /** 32 random bytes rendered as 64 lower-case hex characters. */
   private static String randomHexSecret() {
     byte[] raw = new byte[32];
     new SecureRandom().nextBytes(raw);
@@ -87,14 +97,21 @@ public class SessionManager {
   }
 
   /**
-   * The HMAC signing secret (the {@code secret_key} construction param). The reference exposes this
-   * as a public attribute, so a caller that supplied it can read it back.
+   * The HMAC signing secret. Readable so a caller that let the constructor generate one can capture
+   * it — a token minted with a generated secret is unvalidatable once the manager is discarded.
+   *
+   * @return the signing secret as a string.
    */
   public String getSecretKey() {
     return secretKey;
   }
 
-  /** Seconds until minted tokens expire (the {@code token_expiry_secs} construction param). */
+  /**
+   * Seconds until minted tokens expire, when {@link #createToken(String, String)} is called without
+   * an explicit lifetime.
+   *
+   * @return the default token lifetime in seconds.
+   */
   public int getTokenExpirySecs() {
     return defaultExpiry;
   }
@@ -102,21 +119,22 @@ public class SessionManager {
   /**
    * Construct a manager with an explicit signing secret supplied as bytes.
    *
-   * <p>The bytes are interpreted as the UTF-8 encoding of the reference's {@code secret_key}
-   * STRING, which is how the reference keys its HMAC ({@code self.secret_key.encode()},
-   * session_manager.py:79,152). Passing {@code "abc".getBytes(UTF_8)} here is therefore identical
-   * to passing {@code "abc"} to {@link #SessionManager(int, String)} — and both interoperate with a
-   * reference-minted token. Prefer the string overload; this one exists for callers already holding
-   * the encoded form.
+   * <p>The bytes are interpreted as the UTF-8 encoding of the secret STRING, which is what keys the
+   * HMAC. Passing {@code "abc".getBytes(UTF_8)} here is therefore identical to passing {@code
+   * "abc"} to {@link #SessionManager(int, String)}. Prefer the string overload; this one exists for
+   * callers already holding the encoded form.
+   *
+   * @param secretKey the UTF-8 bytes of the signing secret.
+   * @param defaultExpiry seconds until minted tokens expire.
    */
   public SessionManager(byte[] secretKey, int defaultExpiry) {
     this(defaultExpiry, new String(secretKey, StandardCharsets.UTF_8));
   }
 
   /**
-   * The raw HMAC signing secret. Package-private so the security tests can construct a token in the
-   * exact Python wire format keyed on this manager's secret and assert it validates here (the
-   * cross-port interop leg of contract #70). Not part of the public API.
+   * The raw HMAC signing secret, defensively copied. Package-private so the security tests can
+   * hand-assemble a token in the exact wire format, keyed on this manager's secret, and assert it
+   * validates here. Not part of the public API.
    */
   byte[] secretBytes() {
     return secret.clone();
@@ -124,7 +142,7 @@ public class SessionManager {
 
   /**
    * HMAC-SHA256 sign {@code data} with this manager's secret, hex-encoded. Package-private so the
-   * security tests can build a Python-format token keyed on the same secret.
+   * security tests can build a wire-format token keyed on the same secret.
    */
   String sign(String data) {
     return hmacSign(data);
@@ -135,6 +153,20 @@ public class SessionManager {
     return createToken(functionName, callId, defaultExpiry);
   }
 
+  /**
+   * Mint a signed SWAIG-function token scoped to one function and one call.
+   *
+   * <p>The token is HMAC-SHA256 over {@code call_id:function_name:expiry:nonce}, assembled as five
+   * dot-separated fields and base64url-encoded WITH its {@code =} padding intact. The padding is
+   * NOT cosmetic: a strict base64url decoder rejects input whose padding has been stripped, so a
+   * token emitted without it is undecodable by the services that consume it. Never trim the {@code
+   * =}.
+   *
+   * @param functionName the tool the token authorizes.
+   * @param callId the call the token is scoped to.
+   * @param expirySeconds lifetime from now, in seconds.
+   * @return the encoded token.
+   */
   public String createToken(String functionName, String callId, int expirySeconds) {
     long expiry = System.currentTimeMillis() / 1000 + expirySeconds;
     String nonce = randomNonce();
@@ -146,10 +178,15 @@ public class SessionManager {
     // Decoded token: call_id.function_name.expiry.nonce.signature (5 dot-fields).
     String token = callId + "." + functionName + "." + expiry + "." + nonce + "." + signature;
 
-    // Base64url-encode the whole token for URL safety.
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(token.getBytes(StandardCharsets.UTF_8));
+    // Base64url-encode the whole token for URL safety, PADDING INTACT. The reference mints with
+    // `base64.urlsafe_b64encode`, which KEEPS the '=' padding, and validates with
+    // `base64.urlsafe_b64decode`, which RAISES on a stripped '='. `.withoutPadding()` therefore
+    // made every token this port minted unusable to the reference and to any port that decodes
+    // strictly, even though the message and the HMAC were correct. Our own validateToken still
+    // accepted them because `Base64.getUrlDecoder()` tolerates missing padding — that asymmetry
+    // is why round-tripping against ourselves could not catch it, and why the TOKEN-INTEROP gate
+    // validates against the REFERENCE decoder instead.
+    return Base64.getUrlEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
   }
 
   /** Validate a signed token. */
@@ -207,21 +244,28 @@ public class SessionManager {
   // Java keeps the existing createToken/validateToken names and projects the
   // reference names onto them (matching Ruby's alias set).
 
-  /** Alias of {@link #createToken(String, String)} — Python's {@code generate_token}. */
+  /** Alias of {@link #createToken(String, String)}. */
   public String generateToken(String functionName, String callId) {
     return createToken(functionName, callId);
   }
 
-  /** Alias of {@link #createToken(String, String)} — Python's {@code create_tool_token}. */
+  /** Alias of {@link #createToken(String, String)}. */
   public String createToolToken(String functionName, String callId) {
     return createToken(functionName, callId);
   }
 
   /**
-   * Back-compat alias of {@link #validateToken(String, String, String)} — Python's {@code
-   * validate_tool_token(function_name, token, call_id)}. Note the reference's parameter order
-   * ({@code function_name, token, call_id}) differs from {@code validate_token}; this method
-   * mirrors that reference order and delegates.
+   * Back-compat alias of {@link #validateToken(String, String, String)}.
+   *
+   * <p><strong>Careful: the parameter order differs.</strong> This method takes {@code
+   * (functionName, token, callId)} whereas {@link #validateToken} takes {@code (token,
+   * functionName, callId)}. Both are {@code String}, so swapping them compiles and simply fails
+   * every validation.
+   *
+   * @param functionName the tool the token must authorize.
+   * @param token the encoded token to check.
+   * @param callId the call the token must be scoped to.
+   * @return {@code true} if the token is valid for this function and call.
    */
   public boolean validateToolToken(String functionName, String token, String callId) {
     return validateToken(token, functionName, callId);
@@ -230,9 +274,9 @@ public class SessionManager {
   // ── Session lifecycle (Python parity) ────────────────────────────
 
   /**
-   * Return the given {@code callId}, or mint a new URL-safe session identifier when none is
-   * supplied. Mirrors the reference's stateless {@code create_session}: the SDK does not persist
-   * sessions, it just resolves/creates an identifier callers thread through subsequent operations.
+   * Return the given {@code callId}, or mint a new URL-safe session identifier (16 random bytes)
+   * when none is supplied. No session is persisted by this call — it only resolves or creates the
+   * identifier that callers thread through subsequent operations.
    */
   public String createSession(String callId) {
     if (callId != null && !callId.isEmpty()) {
@@ -266,10 +310,9 @@ public class SessionManager {
   }
 
   /**
-   * Fetch the metadata stored for {@code callId}. The reference is stateless and always returns an
-   * empty map; this port keeps a real per-session store so the getter/setter pair round-trips, but
-   * still returns an empty (never null) map for unknown sessions. Returns a copy so callers cannot
-   * mutate the internal store.
+   * Fetch the metadata stored for {@code callId} by {@link #setSessionMetadata}. Returns an empty
+   * (never {@code null}) map for an unknown session, and always a COPY — mutating the returned map
+   * does not change what is stored.
    */
   public Map<String, Object> getSessionMetadata(String callId) {
     Map<String, Object> stored = callId == null ? null : sessionMetadata.get(callId);
@@ -278,8 +321,8 @@ public class SessionManager {
 
   /**
    * Store a single {@code key}/{@code value} pair in {@code callId}'s metadata, merging with
-   * anything already recorded for that session. Signature mirrors the reference's {@code
-   * set_session_metadata(call_id, key, value)}.
+   * anything already recorded for that session. A {@code null} {@code callId} is a no-op that still
+   * reports success. {@link #endSession} discards the whole store for a session.
    */
   public boolean setSessionMetadata(String callId, String key, Object value) {
     if (callId == null) {
@@ -297,8 +340,8 @@ public class SessionManager {
   /**
    * Decode a token's components for inspection WITHOUT validating it. Requires {@link
    * #setDebugMode(boolean)} to have been set {@code true}; otherwise returns {@code {"error":
-   * "debug mode not enabled"}}, matching the reference. Decodes this port's token format ({@code
-   * base64url(call_id.function_name.expiry.nonce.signature)}).
+   * "debug mode not enabled"}} and decodes nothing. Splits the token format {@code
+   * base64url(call_id.function_name.expiry.nonce.signature)} back into its five fields.
    */
   public Map<String, Object> debugToken(String token) {
     if (!debugMode) {
@@ -377,7 +420,7 @@ public class SessionManager {
     return s.length() > 8 ? s.substring(0, 8) + "..." : s;
   }
 
-  /** 16 hex characters (8 random bytes), matching Python's {@code secrets.token_hex(8)}. */
+  /** 16 lower-case hex characters (8 {@link SecureRandom} bytes). */
   private String randomNonce() {
     byte[] buf = new byte[8];
     random.nextBytes(buf);

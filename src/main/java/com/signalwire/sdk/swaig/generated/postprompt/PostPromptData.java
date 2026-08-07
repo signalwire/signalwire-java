@@ -9,8 +9,8 @@ package com.signalwire.sdk.swaig.generated.postprompt;
 /**
  * PostPromptData — generated wire type (post-prompt components/schemas 'PostPromptData').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PostPromptData {
   public java.util.List<Object> parsed;

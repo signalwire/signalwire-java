@@ -17,16 +17,14 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Top-level convenience entry points — mirror Python's {@code signalwire/__init__.py} package-level
- * helpers ({@code RestClient}, {@code register_skill}, {@code add_skill_directory}, {@code
- * list_skills_with_params}).
+ * Top-level convenience entry points for the SDK: {@link #RestClient(List, Map) RestClient}, {@link
+ * #registerSkill}, {@link #addSkillDirectory}, {@link #listSkills}, and {@link
+ * #listSkillsWithParams}.
  *
- * <p>This is a static-only utility class; it cannot be instantiated. The helpers delegate to the
- * underlying classes (RestClient, SkillRegistry) so they're a strict thin layer.
- *
- * <p>The audit projects each method onto the canonical Python {@code signalwire.<name>}
- * free-function path via a per-port {@code FREE_FUNCTION_PROJECTIONS} entry in {@code
- * scripts/enumerate_signatures.py}.
+ * <p>This is a static-only utility class; it cannot be instantiated. Every helper delegates to the
+ * underlying class ({@link RestClient}, {@link SkillRegistry}), so it is a strict thin layer that
+ * adds no behaviour of its own — reach for the underlying class directly whenever you need more
+ * control than the one-line form gives you.
  */
 public final class Signalwire {
 
@@ -55,26 +53,21 @@ public final class Signalwire {
   }
 
   /**
-   * Construct a {@link RestClient} from positional or keyword credentials.
+   * Construct a {@link RestClient} from positional or named credentials.
    *
-   * <p>Mirrors Python's top-level {@code signalwire.RestClient(*args, **kwargs)} factory. Supports
-   * two call shapes:
+   * <p>Each credential is resolved independently, in this order: the positional {@code args} slot
+   * (project, token, space), then the matching {@code kwargs} key, then the environment variable
+   * ({@code SIGNALWIRE_PROJECT_ID} / {@code SIGNALWIRE_API_TOKEN} / {@code SIGNALWIRE_SPACE}). So
+   * {@code args} may be empty, partial, or complete, and the remaining fields fall through. Both
+   * arguments accept {@code null} as "not supplied".
    *
-   * <ul>
-   *   <li>{@code RestClient(project, token, space)} — three positional strings, mapping straight
-   *       onto the Java builder.
-   *   <li>{@code RestClient(args, kwargs)} — variadic-shaped form matching Python's signature
-   *       exactly. {@code args} is an array of three strings (project/token/space) or empty; {@code
-   *       kwargs} carries the same fields by name.
-   * </ul>
-   *
-   * <p>The audit projects this method onto Python's {@code signalwire.RestClient(*args, **kwargs)}
-   * via {@code FREE_FUNCTION_PROJECTIONS}.
-   *
-   * @param args positional credentials — empty or {@code [project, token, space]}
-   * @param kwargs keyword credentials — recognised keys are {@code project} / {@code project_id},
+   * @param args positional credentials in the order {@code [project, token, space]}; may be empty,
+   *     shorter than three entries, or {@code null}
+   * @param kwargs named credentials — recognised keys are {@code project} / {@code project_id},
    *     {@code token}, and {@code space} / {@code host}
    * @return a fully wired {@link RestClient} instance
+   * @throws IllegalArgumentException if project, token, or space is still missing or empty after
+   *     all three sources have been consulted
    */
   public static RestClient RestClient(List<String> args, Map<String, String> kwargs) {
     if (args == null) args = java.util.Collections.emptyList();
@@ -111,13 +104,14 @@ public final class Signalwire {
   /**
    * Register a custom skill class with the global {@link SkillRegistry}.
    *
-   * <p>Mirrors Python's {@code signalwire.register_skill(skill_class)}. Java skills are constructed
-   * via a no-arg constructor (the registry stores {@code Supplier<SkillBase>} factories), so we
-   * adapt the supplied class reference into a factory using reflection. Throws {@link
-   * IllegalArgumentException} when the class can't be instantiated reflectively or when its skill
-   * name cannot be derived.
+   * <p>Skills are constructed via a no-arg constructor (the registry stores {@code
+   * Supplier<SkillBase>} factories), so the supplied class reference is adapted into a factory
+   * using reflection. The registration name comes from a public static {@code SKILL_NAME} field,
+   * else a static {@code getSkillName()}, else the lower-cased simple class name.
    *
    * @param skillClass a {@link SkillBase} subclass
+   * @throws IllegalArgumentException if {@code skillClass} is {@code null}. Instantiation failure
+   *     is reported later, from the registered factory, as the same exception type.
    */
   public static void registerSkill(Class<? extends SkillBase> skillClass) {
     if (skillClass == null) {
@@ -157,9 +151,9 @@ public final class Signalwire {
   /**
    * Add a directory to search for skills.
    *
-   * <p>Mirrors Python's {@code signalwire.add_skill_directory(path)} — delegates to the singleton
-   * {@link SkillRegistry} instance so third-party skill collections can be registered by path.
-   * Subsequent calls accumulate (de-duplicated) into a shared external paths list.
+   * <p>Delegates to the singleton {@link SkillRegistry} instance so third-party skill collections
+   * can be registered by path. Subsequent calls accumulate (de-duplicated) into a shared external
+   * paths list.
    *
    * @param path absolute or relative path to a directory containing skill subdirectories
    * @throws IllegalArgumentException when the path doesn't exist or isn't a directory
@@ -171,13 +165,13 @@ public final class Signalwire {
   /**
    * Get complete schema for all available skills.
    *
-   * <p>Mirrors Python's {@code signalwire.list_skills_with_params()}. Returns a map keyed by skill
-   * name where each value contains parameter metadata. Useful for GUI configuration tools, API
-   * documentation, or programmatic skill discovery.
+   * <p>Returns a map keyed by skill name where each value carries that skill's metadata. Useful for
+   * GUI configuration tools, API documentation, or programmatic skill discovery.
    *
-   * <p>Java skills don't carry rich Python-style parameter introspection in v1, so each entry
-   * contains the skill name and an empty parameter map; built-in skills that expose {@code
-   * parameterSchema()} get richer detail.
+   * <p>Every entry carries {@code name} and a {@code parameters} map, plus {@code description} and
+   * {@code version} for skills that expose {@code getSkillDescription()} / {@code
+   * getSkillVersion()}. The {@code parameters} map is currently empty for every skill; built-in
+   * skills that expose {@code parameterSchema()} are the place to read a real schema from.
    *
    * @return map of skill name to schema metadata
    */
@@ -215,9 +209,8 @@ public final class Signalwire {
   }
 
   /**
-   * List all registered skills as a flat list of metadata maps. Mirrors the top-level Python free
-   * function {@code signalwire.list_skills()} (the list form; {@link #listSkillsWithParams()} is
-   * the keyed form).
+   * List all registered skills as a flat list of metadata maps — the same entries {@link
+   * #listSkillsWithParams()} returns, without the skill-name keys.
    *
    * @return one metadata map ({@code name} + optional {@code description}/{@code version}) per
    *     skill

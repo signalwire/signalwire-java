@@ -3,8 +3,7 @@ package com.signalwire.sdk.runtime;
 /**
  * Runtime deployment environments the SDK knows about.
  *
- * <p>Detected from well-known environment variables set by the hosting platform. Mirrors {@code
- * get_execution_mode()} in the Python SDK and {@code detectPlatform()} in the TypeScript SDK.
+ * <p>Detected from well-known environment variables set by the hosting platform.
  *
  * <p>Use {@link #detect()} to read the actual process environment, or {@link #detect(EnvProvider)}
  * to pass a test double.
@@ -38,9 +37,9 @@ public enum ExecutionMode {
   /**
    * Detect the execution mode from the given {@link EnvProvider}.
    *
-   * <p>Detection order matches the Python reference: CGI, Lambda, Google Cloud Functions, Azure
-   * Functions, then fall back to {@link #SERVER}. Order matters because some environments set
-   * overlapping variables (e.g. a container running under API Gateway in "Lambda container mode").
+   * <p>Detection order is CGI, Lambda, Google Cloud Functions, Azure Functions, then fall back to
+   * {@link #SERVER}. Order matters because some environments set overlapping variables (e.g. a
+   * container running under API Gateway in "Lambda container mode").
    *
    * @param env environment variable source (injectable for tests).
    * @return the detected mode.
@@ -67,8 +66,7 @@ public enum ExecutionMode {
 
   /**
    * Cross-language SDK contract: return the execution mode as the canonical
-   * lower-case-with-underscores string used by every port. Mirrors {@code
-   * signalwire.core.logging_config.get_execution_mode} in Python: one of {@code "cgi"}, {@code
+   * lower-case-with-underscores string every SignalWire SDK uses: one of {@code "cgi"}, {@code
    * "lambda"}, {@code "google_cloud_function"}, {@code "azure_function"}, or {@code "server"}.
    *
    * @return canonical mode string detected from the process environment
@@ -102,8 +100,7 @@ public enum ExecutionMode {
 
   /**
    * Cross-language SDK contract: true when the process is running inside any serverless /
-   * short-lived environment (i.e. anything other than {@code "server"}). Mirrors {@code
-   * signalwire.utils.is_serverless_mode} in Python.
+   * short-lived environment (i.e. anything other than {@code "server"}).
    *
    * @return {@code true} unless the detected mode is {@code "server"}.
    */

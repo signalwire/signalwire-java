@@ -57,8 +57,7 @@ public class VerbHandlerRegistry {
   }
 
   /**
-   * The registered verb names, sorted. Mirrors reading {@code sorted(self._handlers.keys())} on the
-   * Python VerbHandlerRegistry.
+   * The registered verb names, sorted.
    *
    * @return a sorted list of registered verb names
    */

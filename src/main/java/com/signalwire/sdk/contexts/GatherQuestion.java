@@ -51,6 +51,11 @@ public class GatherQuestion {
     this(key, question, "string", false, null, null, null);
   }
 
+  /**
+   * The field name this question's answer is stored under.
+   *
+   * @return the answer key.
+   */
   public String getKey() {
     return key;
   }

@@ -47,12 +47,11 @@ public interface SkillBase {
   /**
    * Bind the owning agent and the configuration params to this skill.
    *
-   * <p>The reference passes both to the skill CONSTRUCTOR ({@code SkillBase(agent, params)},
-   * skill_base.py:33) and keeps them as public {@code self.agent} / {@code self.params}. A Java
-   * interface cannot mandate a constructor, so {@link SkillManager} calls this immediately before
-   * {@link #setup(Map)} — the same ordering the reference gets from construction-then-setup. The
-   * default is a no-op so existing implementors keep compiling; a skill that needs the back
-   * reference overrides this together with {@link #getAgent()} / {@link #getParams()}.
+   * <p>A Java interface cannot mandate a constructor, so {@link SkillManager} calls this
+   * immediately BEFORE {@link #setup(Map)} — a skill can therefore rely on the agent and params
+   * being available by the time {@code setup} runs. The default is a no-op so existing implementors
+   * keep compiling; a skill that needs the back reference overrides this together with {@link
+   * #getAgent()} / {@link #getParams()}.
    *
    * @param agent the agent loading this skill
    * @param params the configuration parameters (never {@code null})
@@ -62,16 +61,20 @@ public interface SkillBase {
   }
 
   /**
-   * The agent this skill was loaded into (the reference's public {@code self.agent}), or {@code
-   * null} when the skill has not been bound / does not retain it.
+   * The agent this skill was loaded into, or {@code null} when the skill has not been bound / does
+   * not retain it.
+   *
+   * @return the owning agent, or {@code null}.
    */
   default com.signalwire.sdk.agent.AgentBase getAgent() {
     return null;
   }
 
   /**
-   * The configuration params this skill was loaded with (the reference's public {@code
-   * self.params}), or an empty map when the skill has not been bound / does not retain them.
+   * The configuration params this skill was loaded with, or an empty map when the skill has not
+   * been bound / does not retain them.
+   *
+   * @return the configuration params, never {@code null}.
    */
   default Map<String, Object> getParams() {
     return Collections.emptyMap();
@@ -130,10 +133,9 @@ public interface SkillBase {
    * (swaig_fields) into the definition. Skills should use this helper instead of constructing a
    * {@code ToolDefinition} directly so the configured swaig_fields are always applied.
    *
-   * <p>Mirrors Python {@code SkillBase.define_tool(**kwargs)}, which delegates to {@code
-   * agent.define_tool} after merging {@code self.swaig_fields}. Java skills build their tools in
-   * {@link #registerTools()} and return them for the {@link SkillManager} to register with the
-   * agent, so this helper returns the merged definition rather than registering it directly.
+   * <p>Skills build their tools in {@link #registerTools()} and return them for the {@link
+   * SkillManager} to register with the agent, so this helper RETURNS the merged definition rather
+   * than registering it itself.
    *
    * @param name tool name
    * @param description tool description
@@ -157,9 +159,8 @@ public interface SkillBase {
   /**
    * The namespaced key under which this skill instance stores state in the agent's global_data.
    *
-   * <p>Mirrors Python {@code SkillBase._get_skill_namespace}: {@code "skill:" + getInstanceKey()}.
-   * Kept private (not part of the public surface) so {@link #getSkillData} / {@link
-   * #updateSkillData} agree on the key.
+   * <p>The key is {@code "skill:" + getInstanceKey()}. Kept private (not part of the public
+   * surface) so {@link #getSkillData} / {@link #updateSkillData} cannot disagree on it.
    *
    * @return the namespace key, e.g. {@code "skill:math"}
    */
@@ -170,8 +171,8 @@ public interface SkillBase {
   /**
    * Read this skill instance's namespaced state out of the raw_data passed to a SWAIG handler.
    *
-   * <p>Mirrors Python {@code SkillBase.get_skill_data(raw_data)}: reads {@code
-   * raw_data["global_data"][namespace]} and returns it, or an empty map when absent.
+   * <p>Reads {@code rawData["global_data"][namespace]} and returns it, or an empty map when {@code
+   * rawData}, {@code global_data}, or the namespaced slice is absent or is not a map.
    *
    * @param rawData the raw_data map a SWAIG function handler receives
    * @return the skill's namespaced state, or an empty map if not present
@@ -195,9 +196,8 @@ public interface SkillBase {
   /**
    * Write this skill instance's namespaced state into a {@link FunctionResult}.
    *
-   * <p>Mirrors Python {@code SkillBase.update_skill_data(result, data)}: wraps {@code data} under
-   * the skill namespace and calls {@code result.update_global_data}. Returns {@code result} for
-   * chaining.
+   * <p>Wraps {@code data} under this skill's namespace and adds it to the result's global-data
+   * update, so one skill's state can never clobber another's.
    *
    * @param result the FunctionResult to add the global_data update to
    * @param data the skill state to persist under the namespace
@@ -213,8 +213,8 @@ public interface SkillBase {
   /**
    * Check that every required environment variable ({@link #getRequiredEnvVars()}) is set.
    *
-   * <p>Mirrors Python {@code SkillBase.validate_env_vars}: returns {@code false} when any required
-   * variable is unset (or empty), otherwise {@code true}.
+   * <p>Returns {@code false} as soon as any required variable is unset OR set to the empty string;
+   * {@code true} when all of them carry a value.
    *
    * @return true if all required env vars are present
    */
@@ -232,10 +232,11 @@ public interface SkillBase {
    * Check that every required package ({@link #getRequiredPackages()}) is available on the
    * classpath.
    *
-   * <p>Mirrors Python {@code SkillBase.validate_packages}, which imports each required module. Java
-   * dependencies are resolved at build time, so a listed package name is treated as a classpath
-   * probe: if it resolves to a loadable class it is present. Package names that are not fully
-   * qualified class names (the common informational case) are treated as satisfied.
+   * <p>Java dependencies are resolved at build time and there is no runtime import, so a listed
+   * name is treated as a classpath probe only when it LOOKS like a fully-qualified class name (a
+   * dotted name whose last segment starts with an upper-case letter): such a name must resolve, or
+   * this returns {@code false}. Bare package/module names — the common informational case — are
+   * treated as satisfied.
    *
    * @return true if all required packages are available
    */

@@ -16,8 +16,7 @@ import java.util.Set;
  * Handler for the SWML 'ai' verb.
  *
  * <p>The 'ai' verb is complex and requires specialized handling, particularly for managing prompts,
- * SWAIG functions, and AI configurations. Mirrors the Python reference {@code
- * signalwire.core.swml_handler.AIVerbHandler} and the Ruby {@code SignalWire::SWML::AIVerbHandler}.
+ * SWAIG functions, and AI configurations.
  */
 public class AIVerbHandler extends SWMLVerbHandler {
 
@@ -25,6 +24,11 @@ public class AIVerbHandler extends SWMLVerbHandler {
   private static final Set<String> TOP_LEVEL_AI_KEYS =
       Set.of("languages", "hints", "pronounce", "global_data");
 
+  /**
+   * The SWML verb this handler validates and renders: {@code ai}.
+   *
+   * @return the verb name.
+   */
   @Override
   public String getVerbName() {
     return "ai";
@@ -34,8 +38,9 @@ public class AIVerbHandler extends SWMLVerbHandler {
    * Validate the configuration for the AI verb.
    *
    * <p>Checks that {@code prompt} is present and an object, contains exactly one of {@code text} /
-   * {@code pom} (mutually exclusive), that {@code prompt.contexts} (if present) is an object, and
-   * that {@code SWAIG} (if present) is an object.
+   * {@code pom} (mutually exclusive), that {@code prompt.contexts} (if present) is an object, that
+   * {@code post_prompt} (if present) is an object, and that {@code SWAIG} (if present) is an
+   * object.
    *
    * @param config the AI verb configuration
    * @return a {@link ValidationResult} of (isValid, errorMessages)
@@ -68,6 +73,19 @@ public class AIVerbHandler extends SWMLVerbHandler {
 
     if (prompt.containsKey("contexts") && !(prompt.get("contexts") instanceof Map)) {
       errors.add("'prompt.contexts' must be an object");
+    }
+
+    // post_prompt is OPTIONAL, but when present the engine holds it to the SAME
+    // contract as prompt: mod_openai/app_config.c checks
+    // !cJSON_IsObject(assistant_prompt) at :3193 and !cJSON_IsObject(post_prompt) at
+    // :3219 — same structure, same fatal:true calling.error, and both error payloads
+    // read "must be an object with 'text' or 'pom' field". Validating one and not the
+    // other reported configs VALID that abort the call on the wire; buildConfig has
+    // always emitted the right shape, so the hole was only reachable by a caller
+    // hand-assembling a config — which is exactly how signalwire-go shipped a
+    // bare-string post_prompt (go 51934ec).
+    if (config.containsKey("post_prompt") && !(config.get("post_prompt") instanceof Map)) {
+      errors.add("'post_prompt' must be an object");
     }
 
     if (config.containsKey("SWAIG") && !(config.get("SWAIG") instanceof Map)) {

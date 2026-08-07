@@ -12,10 +12,10 @@ package com.signalwire.sdk.relay;
  *
  * <p>A dial progresses {@code dialing} → {@code answered} (a leg won) or {@code dialing} → {@code
  * failed} (every leg gave up). The RELAY server reports it as the bare {@code dial_state} field on
- * each {@code calling.call.dial} event. This enum mirrors the three values the Java port declares
- * in {@code Constants} as {@code DIAL_STATE_*} ({@link Constants#DIAL_STATE_DIALING} / {@link
- * Constants#DIAL_STATE_ANSWERED} / {@link Constants#DIAL_STATE_FAILED}), which back the
- * dial-completion logic in {@code RelayClient.handleDialEvent}.
+ * each {@code calling.call.dial} event. Each constant is backed by the corresponding {@code
+ * DIAL_STATE_*} constant ({@link Constants#DIAL_STATE_DIALING} / {@link
+ * Constants#DIAL_STATE_ANSWERED} / {@link Constants#DIAL_STATE_FAILED}), the same values that drive
+ * the dial-completion logic in {@code RelayClient.handleDialEvent}.
  *
  * <p>It is exposed <em>alongside</em> the existing string getter, never instead of it: {@link
  * RelayEvent.CallDialEvent#getDialState()} keeps returning the raw wire string
@@ -36,9 +36,9 @@ package com.signalwire.sdk.relay;
  *      .ifPresent(s -> ...);
  * }</pre>
  *
- * <p><strong>Server-emitted, growable</strong> — {@link #fromWire(String)} returns {@code null} for
- * an unrecognised value rather than throwing (the Java analog of Rust's {@code #[non_exhaustive]} +
- * fallible {@code from_str}); an unknown dial state must never crash event dispatch.
+ * <p><strong>Server-emitted, growable</strong> — treat the set as open: {@link #fromWire(String)}
+ * returns {@code null} for an unrecognised value rather than throwing, because a dial state the
+ * server adds later must never crash event dispatch.
  *
  * <p><strong>This is a DISTINCT vocabulary from {@link CallState} and {@link
  * MessageState}.</strong> A dial outcome ({@code dialing/answered/failed}) is not a call lifecycle
@@ -64,7 +64,7 @@ public enum DialState {
   /**
    * The canonical wire string for this dial outcome ({@code "dialing"} / {@code "answered"} /
    * {@code "failed"}) — exactly the {@code dial_state} value the server sends on {@code
-   * calling.call.dial}. Equivalent to PHP's backed-enum {@code ->value}.
+   * calling.call.dial}.
    *
    * @return the lower-case dial-state name as it appears on the wire.
    */

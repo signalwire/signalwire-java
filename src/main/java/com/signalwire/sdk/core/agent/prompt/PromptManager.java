@@ -16,10 +16,8 @@ import java.util.Map;
 /**
  * Manages prompt building and configuration for an agent.
  *
- * <p>Mirrors Python's {@code signalwire.core.agent.prompt.manager.PromptManager} and the Ruby
- * {@code SignalWire::Core::Agent::Prompt::PromptManager}. It manages a POM-backed prompt (via
- * {@link PromptObjectModel}), an optional raw prompt text, a post-prompt, and a contexts
- * configuration (via {@link ContextBuilder}).
+ * <p>It manages a POM-backed prompt (via {@link PromptObjectModel}), an optional raw prompt text, a
+ * post-prompt, and a contexts configuration (via {@link ContextBuilder}).
  *
  * <p>The prompt has two mutually exclusive modes: raw text ({@link #setPromptText}) OR POM sections
  * (the {@code promptAdd*} methods). Mixing the two throws. Contexts, when defined, take precedence
@@ -52,7 +50,9 @@ public class PromptManager {
 
   /**
    * The agent this manager belongs to (the {@code agent} construction param), or {@code null} for
-   * standalone use. The reference keeps it as a public back reference ({@code self.agent}).
+   * standalone use. It is a plain back-reference: the manager never calls into it.
+   *
+   * @return the parent agent, or {@code null}.
    */
   public Object getAgent() {
     return agent;
@@ -90,8 +90,8 @@ public class PromptManager {
   }
 
   /**
-   * Set the prompt from a POM array (list of section maps). Mirrors Python's {@code
-   * set_prompt_pom(pom)}.
+   * Set the prompt from a POM array (list of section maps). This REPLACES the whole POM and clears
+   * any raw prompt text previously set via {@link #setPromptText}.
    *
    * @param pomList POM section descriptors
    * @return this
@@ -103,12 +103,12 @@ public class PromptManager {
   }
 
   /**
-   * Add a section to the prompt. Mirrors Python's {@code prompt_add_section(title, body="",
-   * bullets=None, numbered=False, numbered_bullets=False, subsections=None)}.
+   * Add a section to the prompt. A {@code null} {@code body} or {@code bullets} is treated as
+   * empty.
    *
    * @param title section title
-   * @param body optional body text
-   * @param bullets optional bullet points
+   * @param body optional body text ({@code null} means empty)
+   * @param bullets optional bullet points ({@code null} means none)
    * @param numbered number this section
    * @param numberedBullets number the bullets
    * @param subsections optional subsection maps
@@ -139,8 +139,8 @@ public class PromptManager {
   }
 
   /**
-   * Add content to an existing section (creating it if needed). Mirrors Python's {@code
-   * prompt_add_to_section(title, body=None, bullet=None, bullets=None)}.
+   * Add content to an existing section, creating an empty one first if no section carries that
+   * title.
    *
    * @param title section title
    * @param body text to append to the section body (may be {@code null})
@@ -157,8 +157,8 @@ public class PromptManager {
   }
 
   /**
-   * Add a subsection to an existing section (creating the parent if needed). Mirrors Python's
-   * {@code prompt_add_subsection(parent_title, title, body="", bullets=None)}.
+   * Add a subsection to an existing section, creating an empty parent first if no section carries
+   * {@code parentTitle}.
    *
    * @param parentTitle parent section title
    * @param title subsection title
@@ -189,8 +189,8 @@ public class PromptManager {
   }
 
   /**
-   * Define contexts for the agent. Mirrors Python's {@code define_contexts(contexts)} which accepts
-   * a {@link ContextBuilder} (materialised via {@code toMap}) or a raw Map.
+   * Define contexts for the agent. Accepts either a {@link ContextBuilder} (materialised via {@code
+   * toMap}) or an already-built raw {@code Map}.
    *
    * @param contexts a {@link ContextBuilder} or a {@code Map}
    * @return this

@@ -39,6 +39,11 @@ public class DataMap {
     this.topLevelErrorKeys = new ArrayList<>();
   }
 
+  /**
+   * The tool name this DataMap registers as — what the model calls it by.
+   *
+   * @return the function name.
+   */
   public String getName() {
     return functionName;
   }
@@ -114,10 +119,27 @@ public class DataMap {
     return this;
   }
 
+  /**
+   * Declare a tool parameter with no enum restriction.
+   *
+   * @param name the parameter name.
+   * @param paramType the JSON-schema type, e.g. {@code "string"}.
+   * @param description LLM-facing description the model fills this argument from.
+   * @param required whether the model must supply it.
+   * @return this DataMap, for chaining.
+   */
   public DataMap parameter(String name, String paramType, String description, boolean required) {
     return parameter(name, paramType, description, required, null);
   }
 
+  /**
+   * Declare an OPTIONAL tool parameter with no enum restriction.
+   *
+   * @param name the parameter name.
+   * @param paramType the JSON-schema type, e.g. {@code "string"}.
+   * @param description LLM-facing description the model fills this argument from.
+   * @return this DataMap, for chaining.
+   */
   public DataMap parameter(String name, String paramType, String description) {
     return parameter(name, paramType, description, false, null);
   }
@@ -136,6 +158,15 @@ public class DataMap {
     return this;
   }
 
+  /**
+   * Add a pattern-matched response with no no-match branch — when the pattern does not match,
+   * nothing is emitted for this expression.
+   *
+   * @param testValue the value to test, typically a {@code ${args.x}} template.
+   * @param pattern the pattern to match it against.
+   * @param output the result to return on a match.
+   * @return this DataMap, for chaining.
+   */
   public DataMap expression(String testValue, String pattern, FunctionResult output) {
     return expression(testValue, pattern, output, null);
   }
@@ -152,6 +183,15 @@ public class DataMap {
     return this;
   }
 
+  /**
+   * Add an API call the platform makes server-side for this tool, with no extra headers. The method
+   * is upper-cased. The URL is rendered into the SWML, so anything embedded in it — a key in a
+   * query string — is visible wherever that document is.
+   *
+   * @param method the HTTP method.
+   * @param url the endpoint, which may contain {@code ${args.x}} templates.
+   * @return this DataMap, for chaining.
+   */
   public DataMap webhook(String method, String url) {
     return webhook(method, url, null);
   }
@@ -173,15 +213,6 @@ public class DataMap {
       throw new IllegalStateException("Must add webhook before setting webhook expressions");
     }
     webhooks.getLast().put("expressions", expressions);
-    return this;
-  }
-
-  /** Set request body for the last added webhook (POST/PUT requests). */
-  public DataMap body(Map<String, Object> data) {
-    if (webhooks.isEmpty()) {
-      throw new IllegalStateException("Must add webhook before setting body");
-    }
-    webhooks.getLast().put("body", data);
     return this;
   }
 

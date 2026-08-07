@@ -16,13 +16,12 @@ import java.util.Map;
 /**
  * Agent implementation for the Amazon Bedrock voice-to-voice model.
  *
- * <p>Mirrors Python's {@code signalwire.agents.bedrock.BedrockAgent} and the Ruby {@code
- * SignalWire::Agents::BedrockAgent}. It extends {@link AgentBase} to keep full compatibility with
- * all SignalWire agent features (skills, POM, SWAIG functions, post-prompt) and renders the same
- * base SWML as {@link AgentBase}, then transforms the {@code ai} verb into an {@code
- * amazon_bedrock} verb whose object carries voice + inference parameters inside its prompt config,
- * per the SWML {@code amazon_bedrock} schema (keys: {@code prompt}, {@code SWAIG}, {@code params},
- * {@code global_data}, {@code post_prompt}, {@code post_prompt_url}).
+ * <p>Extends {@link AgentBase} to keep full compatibility with all SignalWire agent features
+ * (skills, POM, SWAIG functions, post-prompt) and renders the same base SWML as {@link AgentBase},
+ * then transforms the {@code ai} verb into an {@code amazon_bedrock} verb whose object carries
+ * voice + inference parameters inside its prompt config, per the SWML {@code amazon_bedrock} schema
+ * (keys: {@code prompt}, {@code SWAIG}, {@code params}, {@code global_data}, {@code post_prompt},
+ * {@code post_prompt_url}).
  */
 public class BedrockAgent extends AgentBase {
 
@@ -119,8 +118,8 @@ public class BedrockAgent extends AgentBase {
 
   /**
    * Build the {@code amazon_bedrock} verb object from the base {@code ai} config. Voice + inference
-   * params live inside the prompt config; only non-null keys are emitted (matches the Python
-   * reference and the {@code amazon_bedrock} schema).
+   * params live inside the prompt config; only non-null keys are emitted, per the {@code
+   * amazon_bedrock} schema.
    */
   @SuppressWarnings("unchecked")
   private Map<String, Object> buildBedrockObject(Map<String, Object> aiConfig) {
@@ -168,6 +167,24 @@ public class BedrockAgent extends AgentBase {
     this.voiceId = voiceId;
     log.debug("Voice set to: %s", voiceId);
     return this;
+  }
+
+  /**
+   * Update inference params leaving {@code temperature}, {@code topP} and {@code maxTokens} all
+   * unchanged.
+   */
+  public BedrockAgent setInferenceParams() {
+    return setInferenceParams(null, null, null);
+  }
+
+  /** Update only {@code temperature}, leaving {@code topP} and {@code maxTokens} unchanged. */
+  public BedrockAgent setInferenceParams(Double temperature) {
+    return setInferenceParams(temperature, null, null);
+  }
+
+  /** Update {@code temperature} and {@code topP}, leaving {@code maxTokens} unchanged. */
+  public BedrockAgent setInferenceParams(Double temperature, Double topP) {
+    return setInferenceParams(temperature, topP, null);
   }
 
   /**
@@ -224,6 +241,7 @@ public class BedrockAgent extends AgentBase {
    * @param params ignored
    * @return this
    */
+  @Override
   public BedrockAgent setPostPromptLlmParams(Map<String, Object> params) {
     log.warn(
         "set_post_prompt_llm_params() called but Bedrock post-prompt uses OpenAI configured in C"
@@ -238,23 +256,44 @@ public class BedrockAgent extends AgentBase {
    * @param params ignored
    * @return this
    */
+  @Override
   public BedrockAgent setPromptLlmParams(Map<String, Object> params) {
     log.warn("set_prompt_llm_params() called - use set_inference_params() for Bedrock");
     return this;
   }
 
+  /**
+   * The Amazon Polly voice the Bedrock agent speaks with.
+   *
+   * @return the voice id.
+   */
   public String getVoiceId() {
     return voiceId;
   }
 
+  /**
+   * Sampling temperature for the Bedrock model — higher is more varied, lower more deterministic.
+   *
+   * @return the temperature.
+   */
   public double getTemperature() {
     return temperature;
   }
 
+  /**
+   * Nucleus-sampling cutoff for the Bedrock model.
+   *
+   * @return the top-p value.
+   */
   public double getTopP() {
     return topP;
   }
 
+  /**
+   * Ceiling on tokens the Bedrock model may generate per response.
+   *
+   * @return the token limit.
+   */
   public int getMaxTokens() {
     return maxTokens;
   }

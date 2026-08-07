@@ -47,36 +47,31 @@ Each agent is a self-contained microservice that generates [SWML](docs/swml_serv
 ```java
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.swaig.FunctionResult;
-
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
 public class QuickstartAgent {
-    public static void main(String[] args) throws Exception {
-        var agent = AgentBase.builder()
-                .name("my-agent")
-                .route("/")
-                .port(3000)
-                .build();
+  public static void main(String[] args) throws Exception {
+    var agent = AgentBase.builder().name("my-agent").route("/").port(3000).build();
 
-        agent.addLanguage("English", "en-US", "inworld.Mark");
-        agent.promptAddSection("Role", "You are a helpful assistant.");
-        agent.promptAddSection("Rules", "", List.of(
-                "Always answer concisely",
-                "Use the get_time tool when asked about the time"
-        ));
+    agent.addLanguage("English", "en-US", "inworld.Mark");
+    agent.promptAddSection("Role", "You are a helpful assistant.");
+    agent.promptAddSection(
+        "Rules",
+        "",
+        List.of("Always answer concisely", "Use the get_time tool when asked about the time"));
 
-        agent.defineTool(
-                "get_time",
-                "Get the current time",
-                Map.of(),
-                (toolArgs, rawData) ->
-                        new FunctionResult("The time is " + LocalTime.now())
-        );
+    agent.defineTool(
+        "get_time",
+        "Get the current time",
+        Map.of(),
+        (toolArgs, rawData) ->
+            new FunctionResult("The time is " + LocalTime.now(ZoneId.systemDefault())));
 
-        agent.run();
-    }
+    agent.run();
+  }
 }
 ```
 
@@ -131,31 +126,32 @@ Real-time call control and messaging over WebSocket. The RELAY client connects t
 <!-- include: examples/QuickstartRelay.java#quickstart -->
 ```java
 import com.signalwire.sdk.relay.RelayClient;
-
 import java.util.List;
 import java.util.Map;
 
 public class QuickstartRelay {
-    public static void main(String[] args) throws Exception {
-        var client = RelayClient.builder()
-                .project("your-project-id")
-                .token("your-api-token")
-                .space("example.signalwire.com")
-                .contexts(List.of("default"))
-                .build();
+  public static void main(String[] args) throws Exception {
+    var client =
+        RelayClient.builder()
+            .project("your-project-id")
+            .token("your-api-token")
+            .space("example.signalwire.com")
+            .contexts(List.of("default"))
+            .build();
 
-        client.onCall(call -> {
-            call.answer();
-            var action = call.play(List.of(Map.of(
-                    "type", "tts",
-                    "params", Map.of("text", "Welcome to SignalWire!")
-            )));
-            action.waitForCompletion();
-            call.hangup();
+    client.onCall(
+        call -> {
+          call.answer();
+          var action =
+              call.play(
+                  List.of(
+                      Map.of("type", "tts", "params", Map.of("text", "Welcome to SignalWire!"))));
+          action.waitForCompletion();
+          call.hangup();
         });
 
-        client.run();
-    }
+    client.run();
+  }
 }
 ```
 
@@ -177,37 +173,47 @@ Synchronous REST client for managing SignalWire resources and controlling calls 
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.namespaces.generated.Calling;
 import com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments;
-
 import java.util.List;
 import java.util.Map;
 
 public class QuickstartRest {
-    public static void main(String[] args) throws Exception {
-        var client = RestClient.builder()
-                .project("your-project-id")
-                .token("your-api-token")
-                .space("example.signalwire.com")
-                .build();
+  public static void main(String[] args) throws Exception {
+    var client =
+        RestClient.builder()
+            .project("your-project-id")
+            .token("your-api-token")
+            .space("example.signalwire.com")
+            .build();
 
-        // Create an AI agent
-        client.fabric().aiAgents().create(Map.of(
-                "name", "Support Bot",
-                "prompt", Map.of("text", "You are a helpful support agent.")
-        ));
+    // Create an AI agent
+    client
+        .fabric()
+        .aiAgents()
+        .create(
+            Map.of(
+                "name",
+                "Support Bot",
+                "prompt",
+                Map.of("text", "You are a helpful support agent.")));
 
-        // Control a live call
-        client.calling().play("call-id", Calling.PlayRequest.builder()
+    // Control a live call
+    client
+        .calling()
+        .play(
+            "call-id",
+            Calling.PlayRequest.builder()
                 .play(List.of(Map.of("type", "tts", "params", Map.of("text", "Hello!"))))
                 .build());
 
-        // Search for phone numbers
-        client.phoneNumbers().search(Map.of("areacode", "512"));
+    // Search for phone numbers
+    client.phoneNumbers().search(Map.of("areacode", "512"));
 
-        // Semantic search across documents
-        client.datasphere().documents().search(DatasphereDocuments.SearchRequest.builder()
-                .queryString("billing policy")
-                .build());
-    }
+    // Semantic search across documents
+    client
+        .datasphere()
+        .documents()
+        .search(DatasphereDocuments.SearchRequest.builder().queryString("billing policy").build());
+  }
 }
 ```
 

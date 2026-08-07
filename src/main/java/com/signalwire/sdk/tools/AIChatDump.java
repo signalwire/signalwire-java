@@ -21,17 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * AIChatDump — the Java port's AI-CHAT dump program for the cross-port wire-behavioral gate ({@code
- * porting-sdk/scripts/diff_port_ai_chat.py}, on the {@code ai-chat-client} branch — a COORDINATED
- * pass).
+ * AI-CHAT dump program for the wire-behavioral gate.
  *
  * <p>The gate boots the in-process {@code mock_ai_chat} server, exports {@code MOCK_AI_CHAT_URL} +
  * {@code SIGNALWIRE_PROJECT_ID} / {@code SIGNALWIRE_API_TOKEN} into this program's env, runs it,
  * and asserts the JSON it prints (plus the wire requests the mock recorded) speak the AI Chat
  * protocol per the vendored spec ({@code ai-chat-specs/ai-chat.yaml}).
  *
- * <p>This mirrors {@code porting-sdk/scripts/ai_chat_dump_reference.py} EXACTLY: it drives the Java
- * {@link AIChatClient} through the shared {@code ai_chat_corpus} and emits ONE JSON object to
+ * <p>It drives {@link AIChatClient} through the shared AI-Chat corpus and emits ONE JSON object to
  * stdout (nothing else), keyed by corpus step:
  *
  * <ul>
@@ -42,8 +39,8 @@ import java.util.Map;
  *       {raised:true, error_code, error_type}}
  * </ul>
  *
- * <p>The corpus (steps + SUMMARIZE_ERROR_ID + ERROR_STEPS + force_error_id) is data, identical for
- * every language; it is mirrored inline here from {@code ai_chat_corpus.py}.
+ * <p>The corpus (steps + SUMMARIZE_ERROR_ID + ERROR_STEPS + force_error_id) is data, held inline
+ * here.
  *
  * <p>Run via the {@code aiChatDump} Gradle task against a running mock:
  *
@@ -62,9 +59,7 @@ final class AIChatDump {
   /** The sentinel conversation id that makes summarize return its {@code {error}} branch. */
   private static final String SUMMARIZE_ERROR_ID = "__summarize_error";
 
-  /**
-   * error-step id → the JSON-RPC code the port's raised error MUST carry (call order preserved).
-   */
+  /** error-step id → the JSON-RPC code the raised error MUST carry (call order preserved). */
   private static final Map<String, Integer> ERROR_STEPS = new LinkedHashMap<>();
 
   static {

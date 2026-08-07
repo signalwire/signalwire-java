@@ -337,6 +337,12 @@ class WebhookFilterTest {
       this.stream = new ByteArrayInputStream(req.body);
     }
 
+    // JdkObsolete: the servlet contract declares
+    // HttpServletRequest.getRequestURL() as returning StringBuffer, and this is a
+    // dynamic proxy for that interface — the JDK reflects the declared return type
+    // and would ClassCastException on a StringBuilder. The obsolete type is forced
+    // by the interface we are implementing, not chosen.
+    @SuppressWarnings("JdkObsolete")
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       String name = method.getName();

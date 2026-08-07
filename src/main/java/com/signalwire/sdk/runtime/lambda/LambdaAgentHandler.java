@@ -7,7 +7,9 @@ import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.runtime.LambdaUrlResolver;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -206,6 +208,29 @@ public final class LambdaAgentHandler {
           404, gson.toJson(Map.of("error", "Function not found: " + funcName)));
     }
 
+    // Enforce the tool's `secure` flag before dispatch. Composed from the agent's published
+    // seams so this adapter reaches the same verdict as the in-process endpoint — see
+    // AgentBase.swaigValidateToken, which that path uses directly. Serverless is not a weaker
+    // transport, just a different envelope: the credential still rides the query string and the
+    // call identity still rides the body. An absent token and an absent call_id both fail
+    // CLOSED — a token can only be checked against a call_id.
+    ToolDefinition tool = agent.getTools().get(funcName);
+    if (tool != null && tool.isSecure()) {
+      Object rawCallId = payload.get("call_id");
+      String callId = rawCallId == null ? null : rawCallId.toString();
+      if (!agent.validateToolToken(funcName, swaigTokenOf(event), callId)) {
+        // A refusal is a 200 carrying a FunctionResult body, never an HTTP error status: the
+        // engine has no handling for a SWAIG refusal status, so the tool reports that it
+        // cannot execute and the model relays that.
+        return LambdaResponse.json(
+            gson.toJson(
+                new FunctionResult(
+                        "I'm sorry, the security token for this function is invalid or expired. "
+                            + "I cannot execute this action.")
+                    .toMap()));
+      }
+    }
+
     Map<String, Object> args = extractParsedArgs(payload);
     FunctionResult result = agent.onFunctionCall(funcName, args, payload);
     return LambdaResponse.json(gson.toJson(result.toMap()));
@@ -389,6 +414,56 @@ public final class LambdaAgentHandler {
       return out;
     }
     return new LinkedHashMap<>();
+  }
+
+  /**
+   * Lift the SWAIG {@code __token} credential out of a lambda event's query string.
+   *
+   * <p>Reads the PARSED {@code queryStringParameters} mapping first — both the REST API v1 and HTTP
+   * API v2 payload shapes provide it — and falls back to the raw {@code rawQueryString} for
+   * payloads that carry only that. A bare {@code token} is accepted as an alias of {@code __token},
+   * matching the pair the rendered webhook URL may carry.
+   */
+  private static String swaigTokenOf(Map<String, Object> event) {
+    Map<String, String> params = extractQuery(event);
+    String direct = params.get("__token");
+    if (direct != null && !direct.isEmpty()) {
+      return direct;
+    }
+    String alias = params.get("token");
+    if (alias != null && !alias.isEmpty()) {
+      return alias;
+    }
+    Object raw = event.get("rawQueryString");
+    if (raw == null) {
+      return null;
+    }
+    String fallback = null;
+    // limit 0 == drop trailing empties; a query ending in "&" yields no extra
+    // pair, and the eq<=0 guard below discards any empty one regardless.
+    for (String pair : raw.toString().split("&", 0)) {
+      int eq = pair.indexOf('=');
+      if (eq <= 0) {
+        continue;
+      }
+      String key = pair.substring(0, eq);
+      String value;
+      try {
+        value = URLDecoder.decode(pair.substring(eq + 1), StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException e) {
+        continue;
+      }
+      if (value.isEmpty()) {
+        continue;
+      }
+      if ("__token".equals(key)) {
+        return value;
+      }
+      if ("token".equals(key) && fallback == null) {
+        fallback = value;
+      }
+    }
+    return fallback;
   }
 
   @SuppressWarnings("unchecked")

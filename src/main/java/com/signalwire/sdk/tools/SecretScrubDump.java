@@ -14,6 +14,7 @@ import com.signalwire.sdk.relay.RelayClient;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
@@ -24,16 +25,15 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * SecretScrubDump — the Java port's SECRET-SCRUB-LIVE dump program for the cross-port secret-scrub
- * differ (porting-sdk/scripts/diff_port_secret_scrub.py, PSDK-5).
+ * SecretScrubDump — the SECRET-SCRUB-LIVE dump program.
  *
  * <p>Drives the RelayClient through a real connect + an inbound {@code
  * signalwire.authorization.state} event at {@code SIGNALWIRE_LOG_LEVEL=debug} with the fixture
  * sentinel credentials (project= {@code PJ-TESTLEAK}, token={@code PT-TESTLEAK},
  * authorization_state={@code AENC-TESTLEAK}), captures its OWN stdout+stderr, and reports
  * per-sentinel {@code {leaked: bool}} — True iff the sentinel string appears verbatim in the
- * captured output. All must be False: a port that logs the raw connect frame ({@code >>}) or the
- * raw inbound frame ({@code <<}) at debug leaks the sentinel and reds.
+ * captured output. All must be False: logging the raw connect frame ({@code >>}) or the raw inbound
+ * frame ({@code <<}) at debug leaks the sentinel and fails the check.
  *
  * <p>Prints ONE JSON object mapping sentinel-id -&gt; classification to stdout (on the RESTORED
  * stdout, after capture ends).
@@ -50,6 +50,12 @@ final class SecretScrubDump {
   private static final String TOKEN = "PT-TESTLEAK";
   private static final String AUTHORIZATION_STATE = "AENC-TESTLEAK";
 
+  /**
+   * Entry point: emits the SECRET-SCRUB-LIVE dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   * @throws Exception if the run fails; the gate reads the non-zero exit.
+   */
   public static void main(String[] args) throws Exception {
     // Capture this process's OWN stdout+stderr while the client runs at debug.
     PrintStream realOut = System.out;
@@ -118,24 +124,51 @@ final class SecretScrubDump {
     private volatile WebSocket conn;
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {}
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {}
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {}
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     public void onMessage(WebSocket socket, String raw) {
       Map<String, Object> msg;

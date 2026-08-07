@@ -15,8 +15,7 @@ package com.signalwire.sdk.aichat;
  * {@link #getCode()} or the subclass type.
  *
  * <p>Unchecked (extends {@link RuntimeException}), matching the SDK's existing error style ({@code
- * com.signalwire.sdk.rest.RestError}). Mirrors the python reference {@code
- * signalwire.ai_chat.AIChatError}.
+ * com.signalwire.sdk.rest.RestError}).
  */
 public class AIChatError extends RuntimeException {
 

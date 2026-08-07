@@ -30,10 +30,9 @@ import java.util.Optional;
  *
  * <p>Transport behavior — per-attempt timeout, opt-in idempotency-aware retries with exponential
  * backoff (honoring {@code Retry-After}), and cooperative cancellation — is governed by the {@link
- * RequestOptions} envelope (plan 4.2), supplied at two levels: a client default (stored on this
- * client) and an optional per-request override on each verb. An unset field on either resolves to
- * the next level down and finally the built-in floor. Mirrors the Python reference's {@code
- * HttpClient}.
+ * RequestOptions} envelope, supplied at two levels: a client default (stored on this client) and an
+ * optional per-request override on each verb. An unset field on either resolves to the next level
+ * down and finally the built-in floor.
  */
 public class HttpClient {
 
@@ -83,8 +82,7 @@ public class HttpClient {
    * True if {@code host} (a bare host or {@code host:port}) is a local loopback address — a local
    * mock/dev server that speaks plain HTTP. Used to pick http:// vs https:// so a shipped example
    * runs verbatim against the local mock. A real SignalWire space ({@code <name>.signalwire.com})
-   * is never loopback, so production is unaffected. Mirrors the Python reference {@code
-   * rest/_base.py::_is_loopback_host}.
+   * is never loopback, so production is unaffected.
    */
   static boolean isLoopbackHost(String host) {
     if (host == null) {
@@ -192,6 +190,13 @@ public class HttpClient {
     return execute("POST", path, url, json, requestOptions);
   }
 
+  /**
+   * PUT request with no body and no per-request options — the body is sent as an empty JSON object.
+   */
+  public Map<String, Object> put(String path) {
+    return put(path, null, null);
+  }
+
   /** PUT request with JSON body. */
   public Map<String, Object> put(String path, Map<String, Object> body) {
     return put(path, body, null);
@@ -211,6 +216,14 @@ public class HttpClient {
    */
   public Map<String, Object> patch(String path, Map<String, Object> body) {
     return patch(path, body, null);
+  }
+
+  /**
+   * PATCH request with no body and no per-request options — the body is sent as an empty JSON
+   * object.
+   */
+  public Map<String, Object> patch(String path) {
+    return patch(path, null, null);
   }
 
   /** PATCH request with JSON body and a per-request {@link RequestOptions} override. */
@@ -272,7 +285,6 @@ public class HttpClient {
    * Drive the request with the resolved {@link RequestOptions} envelope: cooperative-cancellation
    * check before each attempt, per-attempt timeout, and opt-in idempotency-aware retry with
    * exponential backoff (honoring {@code Retry-After}). Total attempts = {@code retries + 1}.
-   * Mirrors the Python reference's {@code HttpClient._request}.
    */
   private Map<String, Object> execute(
       String method, String path, String url, String jsonBody, RequestOptions perRequest) {

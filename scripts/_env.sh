@@ -127,3 +127,70 @@ sw_gradle() {
     # shellcheck disable=SC2086
     (cd "$REPO_ROOT" && "$GRADLEW" $GRADLE_DAEMON_FLAG --build-cache "$@")
 }
+
+# ---------------------------------------------------------------------------
+# Python toolchain (ruff) — this repo is a Java SDK, but scripts/ holds
+# hand-written Python that is fully load-bearing: the enumerators that produce
+# port_signatures.json / port_surface.json (the inputs to the SIGNATURES, SURFACE
+# and DRIFT gates) and the generators that emit the committed REST/RELAY/SWML/
+# SWAIG trees. It is linted + formatted at the same bar as everything else, via
+# ruff, configured in the repo-root ruff.toml.
+# ---------------------------------------------------------------------------
+
+# sw_ruff <ruff-args…> — run ruff from the repo root with the repo's config.
+#
+# The config lives at eng/ruff.toml, NOT the repo root: every other port keeps its
+# linter config at the root (.golangci.yml, .rubocop.yml, phpstan.neon,
+# clippy.toml, .clang-tidy), but porting-sdk's ROOT-HYGIENE gate has no entry for
+# `ruff.toml` and reds on it as root clutter. Since ruff takes --config, filing it
+# under eng/ is the honest fix rather than an allowlist entry for a file that can
+# perfectly well move. --config is passed HERE, once, so no call site can forget
+# it and silently lint under ruff's defaults instead (which would drop the whole
+# rule selection and every per-file exemption).
+#
+# --- PINNED ruff VERSION (local MUST match CI) -------------------------------
+# A floating linter version is a green-locally/red-in-CI generator: CI installs
+# fresh (newest release at run time) while local runs whatever was installed
+# months ago, so a ruff release that adds a rule or changes a format heuristic
+# fails FMT/LINT on code that never changed. The Java half of this repo is
+# already fully pinned (spotless 6.25.0, googleJavaFormat 1.22.0, checkstyle
+# 10.17.0, errorprone 2.27.1); the Python half was the one hole.
+#
+# Keep in lockstep with `pip install "ruff==…"` in .github/workflows/{test,
+# nightly,publish}.yml. 0.15.21 is the fleet-wide ruff (signalwire-python/perl/
+# php/typescript pin the same). Bump every port at once, with the resulting
+# fixes in the same commit.
+SW_RUFF_VERSION="0.15.21"
+export SW_RUFF_VERSION
+
+# Fails LOUD with an install hint when ruff is absent, rather than skipping the
+# Python half of the gate silently — a gate that quietly does nothing is worse
+# than no gate. Also fails loud when the ruff on PATH is not the PINNED version,
+# because a local run that disagrees with CI about what passes is exactly the
+# failure the pin exists to prevent. SW_ALLOW_TOOL_VERSION_DRIFT=1 downgrades
+# the mismatch to a warning, for a deliberate bump-and-reformat run only.
+sw_ruff() {
+    local ver
+    if ! command -v ruff >/dev/null 2>&1; then
+        echo "FATAL: ruff not found on PATH — the Python half of FMT/LINT cannot run." >&2
+        echo "       Install the PINNED version, e.g.:" >&2
+        echo "         pip install ruff==$SW_RUFF_VERSION" >&2
+        echo "         pipx install ruff==$SW_RUFF_VERSION" >&2
+        return 1
+    fi
+    ver="$(ruff --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+    if [ "$ver" != "$SW_RUFF_VERSION" ]; then
+        if [ "${SW_ALLOW_TOOL_VERSION_DRIFT:-0}" = "1" ]; then
+            echo "WARNING: ruff is '${ver:-unknown}', not the pinned $SW_RUFF_VERSION (drift allowed)." >&2
+        else
+            echo "FATAL: ruff on PATH is '${ver:-unknown}', not the pinned $SW_RUFF_VERSION." >&2
+            echo "       CI installs exactly $SW_RUFF_VERSION, so a different version here" >&2
+            echo "       means local and CI disagree about what passes FMT/LINT." >&2
+            echo "       Install the pin:  pip install ruff==$SW_RUFF_VERSION" >&2
+            echo "       Or set SW_ALLOW_TOOL_VERSION_DRIFT=1 for a deliberate bump run" >&2
+            echo "       (then update scripts/_env.sh + .github/workflows/*.yml together)." >&2
+            return 1
+        fi
+    fi
+    (cd "$REPO_ROOT" && ruff "$@" --config eng/ruff.toml)
+}

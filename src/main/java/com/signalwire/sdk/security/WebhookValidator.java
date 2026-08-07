@@ -39,8 +39,8 @@ import javax.crypto.spec.SecretKeySpec;
  *
  * <ul>
  *   <li>{@link #validate(String, String, java.util.Map, String, String)} — the framework-free
- *       decomposed decision core (cross-port contract). Returns a {@code (status, headers, body)}
- *       reject triple, or {@code null} to let the handler run.
+ *       decomposed decision core. Returns a {@code (status, headers, body)} reject triple, or
+ *       {@code null} to let the handler run.
  *   <li>{@link #validateWebhookSignature(String, String, String, String)} — combined signature
  *       entry point.
  *   <li>{@link #validateRequest(String, String, String, Object)} — legacy
@@ -67,10 +67,9 @@ public final class WebhookValidator {
 
   /**
    * Framework-free reject response returned by {@link #validate}: an HTTP {@code status}, response
-   * {@code headers}, and {@code body} string. This is the language-neutral primitive shape every
-   * port's decomposed webhook-validation core returns (the cross-port analog of Python's {@code
-   * (int, dict[str, str], str)} tuple, .NET's {@code (int, Dictionary, string)} value-tuple, and a
-   * Rack/PSGI {@code [status, headers, body]} array).
+   * {@code headers}, and {@code body} string. Carrying only primitives keeps the validation core
+   * independent of any web framework — a caller translates this record into whatever its server
+   * layer expects.
    *
    * @param status HTTP status code (always {@code 403} on rejection).
    * @param headers response headers (empty — no detail is leaked).
@@ -79,14 +78,12 @@ public final class WebhookValidator {
   public record WebhookRejection(int status, Map<String, String> headers, String body) {}
 
   /**
-   * Framework-free webhook-validation decision — the cross-port decomposed core.
+   * Framework-free webhook-validation decision — the decomposed validation core.
    *
-   * <p>Takes a request decomposed into language-neutral primitives and returns either a {@code
-   * (403, {}, "")} reject triple to short-circuit with, or {@code null} to let the handler run.
-   * Every port implements this same shape (.NET {@code WebhookValidationMiddleware.Validate}, a
-   * Rack/PSGI middleware {@code [status, headers, body]}, a Hono handler, …); the framework wrapper
-   * on top of it (Java's {@link WebhookFilter} servlet filter) is the only idiom. This mirrors
-   * {@code signalwire.core.security.webhook_middleware.validate} in the Python reference.
+   * <p>Takes a request decomposed into primitives and returns either a {@code (403, {}, "")} reject
+   * triple to short-circuit with, or {@code null} to let the handler run. Because it touches no
+   * servlet or framework type, it can be driven from any server layer; {@link WebhookFilter} is the
+   * servlet-filter wrapper around this method.
    *
    * <p>The {@code headers} map is consulted for the signature header ({@code
    * X-SignalWire-Signature} or the {@code X-Twilio-Signature} alias); lookup is case-insensitive.
@@ -341,7 +338,7 @@ public final class WebhookValidator {
    *   <li>Sort by key (ASCII ascending) using a <b>stable</b> sort so repeated keys preserve
    *       original submission order.
    *   <li>Emit {@code key + value} once per (key, value) pair.
-   *   <li>{@code null} value emits as the empty string (matches JS reference).
+   *   <li>A {@code null} value emits as the empty string, so it still contributes its key.
    * </ul>
    */
   private static String sortedConcatParams(List<Map.Entry<String, String>> items) {

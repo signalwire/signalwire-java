@@ -37,6 +37,7 @@ Usage:
     python3 scripts/generate_rest.py               # write into the repo tree
     python3 scripts/generate_rest.py --check       # GEN-FRESH: fail if stale
 """
+
 from __future__ import annotations
 
 import argparse
@@ -72,13 +73,20 @@ except ImportError:  # pragma: no cover
 # --add-exports needed on JDK 16+ for gjf to reach jdk.compiler internals
 # (the same flags spotless passes when it runs gjf out-of-process).
 _GJF_ADD_EXPORTS = [
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
 ]
-_GJF_VERSION = "1.22.0"  # must match the spotless googleJavaFormat() version in build.gradle
+_GJF_VERSION = (
+    "1.22.0"  # must match the spotless googleJavaFormat() version in build.gradle
+)
 
 
 def _resolve_gjf_classpath() -> str:
@@ -90,7 +98,8 @@ def _resolve_gjf_classpath() -> str:
             f"{cache}; run ./gradlew build once so spotless resolves it into the cache."
         )
     guavas = [
-        p for p in cache.rglob("guava-*.jar")
+        p
+        for p in cache.rglob("guava-*.jar")
         if "sources" not in p.name and "android" not in p.name
     ]
     if not guavas:
@@ -110,9 +119,17 @@ def gjf_format(source: str) -> str:
     if _GJF_CP is None:
         _GJF_CP = _resolve_gjf_classpath()
     proc = subprocess.run(
-        ["java", *_GJF_ADD_EXPORTS, "-cp", _GJF_CP,
-         "com.google.googlejavaformat.java.Main", "-"],
-        input=source, capture_output=True, text=True,
+        [
+            "java",
+            *_GJF_ADD_EXPORTS,
+            "-cp",
+            _GJF_CP,
+            "com.google.googlejavaformat.java.Main",
+            "-",
+        ],
+        input=source,
+        capture_output=True,
+        text=True,
     )
     if proc.returncode != 0:
         raise SystemExit(f"generate_rest.py: google-java-format failed:\n{proc.stderr}")
@@ -144,13 +161,22 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
         # gjf caps its own arg list fine for ~1000 files; if it ever grows past
         # the OS argv limit, chunk here. Today (~1000) it is well under.
         proc = subprocess.run(
-            ["java", *_GJF_ADD_EXPORTS, "-cp", _GJF_CP,
-             "com.google.googlejavaformat.java.Main", "-i", *paths],
-            capture_output=True, text=True,
+            [
+                "java",
+                *_GJF_ADD_EXPORTS,
+                "-cp",
+                _GJF_CP,
+                "com.google.googlejavaformat.java.Main",
+                "-i",
+                *paths,
+            ],
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
             raise SystemExit(
-                f"generate_rest.py: batch google-java-format failed:\n{proc.stderr}")
+                f"generate_rest.py: batch google-java-format failed:\n{proc.stderr}"
+            )
         return {idx_to_key[p]: Path(p).read_text() for p in paths}
 
 
@@ -200,8 +226,20 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
 # is identical regardless), pinned so the generated tree stays byte-stable; a
 # newly-discovered spec not listed here is appended in sorted-glob order.
 _PRESENTATION_ORDER = (
-    "relay-rest", "fabric", "calling", "video", "datasphere",
-    "logs", "message", "messages", "voice", "fax", "project", "projects", "chat", "pubsub",
+    "relay-rest",
+    "fabric",
+    "calling",
+    "video",
+    "datasphere",
+    "logs",
+    "message",
+    "messages",
+    "voice",
+    "fax",
+    "project",
+    "projects",
+    "chat",
+    "pubsub",
     "swml-webhooks",
 )
 
@@ -244,10 +282,14 @@ def discover_specs(psdk: Path) -> tuple[list[str], list[tuple[str, str, str]]]:
         if has_resource or types_only:
             type_set.append(ns)
     if not resource_set:
-        raise SystemExit("discover_specs: no REST resource specs found under rest-apis/")
+        raise SystemExit(
+            "discover_specs: no REST resource specs found under rest-apis/"
+        )
     resource_dirs = _in_presentation_order(resource_set)
-    type_ns = [(ns, ns.replace("-", ""), ns.replace("-", "_"))
-               for ns in _in_presentation_order(type_set)]
+    type_ns = [
+        (ns, ns.replace("-", ""), ns.replace("-", "_"))
+        for ns in _in_presentation_order(type_set)
+    ]
     return resource_dirs, type_ns
 
 
@@ -258,20 +300,69 @@ GEN_DIR = "com/signalwire/sdk/rest/namespaces/generated"
 REST_PACKAGE = "com.signalwire.sdk.rest"
 
 JAVA_KEYWORDS = {
-    "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
-    "class", "const", "continue", "default", "do", "double", "else", "enum",
-    "extends", "final", "finally", "float", "for", "goto", "if", "implements",
-    "import", "instanceof", "int", "interface", "long", "native", "new",
-    "package", "private", "protected", "public", "return", "short", "static",
-    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
-    "transient", "try", "void", "volatile", "while", "true", "false", "null",
-    "var", "record", "yield",
+    "abstract",
+    "assert",
+    "boolean",
+    "break",
+    "byte",
+    "case",
+    "catch",
+    "char",
+    "class",
+    "const",
+    "continue",
+    "default",
+    "do",
+    "double",
+    "else",
+    "enum",
+    "extends",
+    "final",
+    "finally",
+    "float",
+    "for",
+    "goto",
+    "if",
+    "implements",
+    "import",
+    "instanceof",
+    "int",
+    "interface",
+    "long",
+    "native",
+    "new",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "return",
+    "short",
+    "static",
+    "strictfp",
+    "super",
+    "switch",
+    "synchronized",
+    "this",
+    "throw",
+    "throws",
+    "transient",
+    "try",
+    "void",
+    "volatile",
+    "while",
+    "true",
+    "false",
+    "null",
+    "var",
+    "record",
+    "yield",
 }
 
 
 # ---------------------------------------------------------------------------
 # Resolution.
 # ---------------------------------------------------------------------------
+
 
 def resolve_porting_sdk() -> Path:
     env = os.environ.get("PORTING_SDK")
@@ -282,7 +373,9 @@ def resolve_porting_sdk() -> Path:
         cand = parent.parent / "porting-sdk"
         if (cand / "rest-apis").is_dir():
             return cand.resolve()
-    raise SystemExit("generate_rest.py: porting-sdk not found (set $PORTING_SDK or clone adjacent)")
+    raise SystemExit(
+        "generate_rest.py: porting-sdk not found (set $PORTING_SDK or clone adjacent)"
+    )
 
 
 def repo_root() -> Path:
@@ -302,31 +395,38 @@ def repo_root() -> Path:
 # emit), so the scope value is identical across all ports.
 # ---------------------------------------------------------------------------
 
-_overlay_cache: "dict[str, set[tuple[str, str | None]]] | None" = None
+_overlay_cache: dict[str, set[tuple[str, str | None]]] | None = None
 
 
 def _overlay_path() -> Path:
     return resolve_porting_sdk() / "rest-apis" / "x-sdk-overlay.yaml"
 
 
-def _load_overlay() -> "dict[str, set[tuple[str, str | None]]]":
+def _load_overlay() -> dict[str, set[tuple[str, str | None]]]:
     global _overlay_cache
     if _overlay_cache is None:
-        def rules(key: str, data: dict) -> "set[tuple[str, str | None]]":
+
+        def rules(key: str, data: dict) -> set[tuple[str, str | None]]:
             out: set[tuple[str, str | None]] = set()
             for entry in data.get(key) or []:
                 if isinstance(entry, dict) and entry.get("field"):
                     out.add((entry["field"], entry.get("scope")))
             return out
+
         data = {}
         path = _overlay_path()
         if path.is_file():
             data = yaml.safe_load(path.read_text()) or {}
-        _overlay_cache = {"hidden": rules("hidden", data), "deprecated": rules("deprecated", data)}
+        _overlay_cache = {
+            "hidden": rules("hidden", data),
+            "deprecated": rules("deprecated", data),
+        }
     return _overlay_cache
 
 
-def _overlay_match(rules: "set[tuple[str, str | None]]", field: str, schema_name: str | None) -> bool:
+def _overlay_match(
+    rules: set[tuple[str, str | None]], field: str, schema_name: str | None
+) -> bool:
     # A rule matches when its field equals `field` AND (it is unscoped OR its scope
     # equals the containing SPEC schema name). `schema_name` is the schema's name as it
     # appears in the spec (the $defs / components.schemas key) — NOT the java type name.
@@ -348,12 +448,13 @@ def overlay_deprecated(field: str, schema_name: str | None = None) -> bool:
 # Base loading (x-sdk-bases; §2) — fail-loud on cyclic/undefined extends.
 # ---------------------------------------------------------------------------
 
+
 def load_bases(psdk: Path) -> dict[str, list[str]]:
     raw = yaml.safe_load((psdk / "rest-apis" / "x-sdk-bases.yaml").read_text())
     bases = dict(raw.get("x-sdk-bases") or {})
     fab = psdk / "rest-apis" / "fabric" / "x-sdk-bases.yaml"
     if fab.is_file():
-        bases.update((yaml.safe_load(fab.read_text()).get("x-sdk-bases") or {}))
+        bases.update(yaml.safe_load(fab.read_text()).get("x-sdk-bases") or {})
 
     def resolve(name: str, seen: set[str]) -> list[str]:
         if name in seen:
@@ -375,6 +476,7 @@ def load_bases(psdk: Path) -> dict[str, list[str]]:
 # Spec model.
 # ---------------------------------------------------------------------------
 
+
 class Spec:
     def __init__(self, name: str, doc: dict):
         self.name = name
@@ -382,7 +484,9 @@ class Spec:
         self.server_path = _strip_api(_url_path(doc["servers"][0]["url"]))
         raw_path = _url_path(doc["servers"][0]["url"])
         if raw_path != "/" and raw_path.endswith("/"):
-            raise SystemExit(f"{name}: servers[0].url path {raw_path!r} has a trailing slash")
+            raise SystemExit(
+                f"{name}: servers[0].url path {raw_path!r} has a trailing slash"
+            )
         self.namespace_attr = (doc.get("x-sdk-namespace") or {}).get("attr") or ""
         self.ops: dict[str, tuple[str, str, bool]] = {}
         self.op_body: dict[str, dict] = {}
@@ -392,16 +496,31 @@ class Spec:
             for verb in ("get", "post", "put", "patch", "delete"):
                 o = item.get(verb)
                 if o and o.get("operationId"):
-                    self.ops[o["operationId"]] = (verb, path, bool(o.get("requestBody")))
+                    self.ops[o["operationId"]] = (
+                        verb,
+                        path,
+                        bool(o.get("requestBody")),
+                    )
                     body = o.get("requestBody") or {}
                     content = body.get("content") or {}
-                    media = content.get("application/json") or (next(iter(content.values())) if content else {})
+                    media = content.get("application/json") or (
+                        next(iter(content.values())) if content else {}
+                    )
                     self.op_body[o["operationId"]] = (media or {}).get("schema") or {}
                     responses = o.get("responses") or {}
-                    ok = responses.get("200") or responses.get("201") or responses.get("2XX") or {}
-                    rc = (ok.get("content") or {})
-                    rmedia = rc.get("application/json") or (next(iter(rc.values())) if rc else {})
-                    self.op_response[o["operationId"]] = (rmedia or {}).get("schema") or {}
+                    ok = (
+                        responses.get("200")
+                        or responses.get("201")
+                        or responses.get("2XX")
+                        or {}
+                    )
+                    rc = ok.get("content") or {}
+                    rmedia = rc.get("application/json") or (
+                        next(iter(rc.values())) if rc else {}
+                    )
+                    self.op_response[o["operationId"]] = (rmedia or {}).get(
+                        "schema"
+                    ) or {}
         self.schemas = ((doc.get("components") or {}).get("schemas")) or {}
 
     def resources(self) -> list[tuple[str, dict]]:
@@ -426,17 +545,20 @@ def _strip_api(path: str) -> str:
     if path == "/api":
         return ""
     if path.startswith("/api/"):
-        return path[len("/api"):]
+        return path[len("/api") :]
     return path
 
 
 def load_spec(psdk: Path, ns: str) -> Spec:
-    return Spec(ns, yaml.safe_load((psdk / "rest-apis" / ns / "openapi.yaml").read_text()))
+    return Spec(
+        ns, yaml.safe_load((psdk / "rest-apis" / ns / "openapi.yaml").read_text())
+    )
 
 
 # ---------------------------------------------------------------------------
 # Path composition (§4).
 # ---------------------------------------------------------------------------
+
 
 def join_path(a: str, b: str) -> str:
     if not b:
@@ -463,7 +585,7 @@ def relative_tail(spec: Spec, anchor: str, markup: dict, op_path: str):
     full = join_path(spec.server_path, coll)
     absp = join_path(spec.server_path, op_path)
     if coll and absp.startswith(full + "/"):
-        return ([s for s in absp[len(full) + 1:].split("/") if s], False)
+        return ([s for s in absp[len(full) + 1 :].split("/") if s], False)
     if coll and absp == full:
         return ([], False)
     return ([s for s in absp.lstrip("/").split("/") if s], True)
@@ -472,6 +594,7 @@ def relative_tail(spec: Spec, anchor: str, markup: dict, op_path: str):
 # ---------------------------------------------------------------------------
 # Naming.
 # ---------------------------------------------------------------------------
+
 
 def snake_to_lower_camel(snake: str) -> str:
     parts = [p for p in snake.replace("-", "_").replace(".", "_").split("_") if p]
@@ -491,11 +614,20 @@ def escape_ident(field: str) -> str:
 
 
 PARAM_ARG_NAME = {
-    "id": "id", "queue_id": "queueId", "NumberGroupId": "groupId",
-    "documentId": "documentId", "chunkId": "chunkId", "mfa_request_id": "requestId",
-    "e164_number": "e164", "fabric_subscriber_id": "subscriberId",
-    "ai_agent_id": "id", "cxml_webhook_id": "id", "swml_webhook_id": "id",
-    "token_id": "tokenId", "room_id": "roomId", "resource_id": "resourceId",
+    "id": "id",
+    "queue_id": "queueId",
+    "NumberGroupId": "groupId",
+    "documentId": "documentId",
+    "chunkId": "chunkId",
+    "mfa_request_id": "requestId",
+    "e164_number": "e164",
+    "fabric_subscriber_id": "subscriberId",
+    "ai_agent_id": "id",
+    "cxml_webhook_id": "id",
+    "swml_webhook_id": "id",
+    "token_id": "tokenId",
+    "room_id": "roomId",
+    "resource_id": "resourceId",
     "sip_endpoint_id": "sipEndpointId",
 }
 
@@ -536,6 +668,7 @@ EXTENDS = {
 # Command-dispatch (§6).
 # ---------------------------------------------------------------------------
 
+
 def command_method_name(cmd: str) -> str:
     s = cmd
     if "." in s:
@@ -545,23 +678,28 @@ def command_method_name(cmd: str) -> str:
 
 
 def command_py_name(cmd: str) -> str:
-    s = cmd[len("calling."):] if cmd.startswith("calling.") else cmd
+    s = cmd[len("calling.") :] if cmd.startswith("calling.") else cmd
     return s.replace(".", "_")
 
 
 def discriminator_mapping(spec: Spec, schema_name: str) -> list[str]:
     sch = spec.schemas.get(schema_name)
     if sch is None:
-        raise SystemExit(f"command-dispatch request {schema_name!r} not in components.schemas")
+        raise SystemExit(
+            f"command-dispatch request {schema_name!r} not in components.schemas"
+        )
     mapping = (sch.get("discriminator") or {}).get("mapping")
     if not mapping:
-        raise SystemExit(f"command-dispatch request {schema_name!r} has no discriminator.mapping")
+        raise SystemExit(
+            f"command-dispatch request {schema_name!r} has no discriminator.mapping"
+        )
     return list(mapping.keys())
 
 
 # ---------------------------------------------------------------------------
 # Typed inputs (§5) — schema → Java native type + canonical audit type.
 # ---------------------------------------------------------------------------
+
 
 def resolve_schema(spec: Spec, schema: dict | None, seen=None) -> dict:
     if not schema:
@@ -576,7 +714,12 @@ def resolve_schema(spec: Spec, schema: dict | None, seen=None) -> dict:
         seen.add(leaf)
         return resolve_schema(spec, spec.schemas.get(leaf), seen)
     allof = schema.get("allOf")
-    if allof and len(allof) == 1 and not schema.get("properties") and not schema.get("type"):
+    if (
+        allof
+        and len(allof) == 1
+        and not schema.get("properties")
+        and not schema.get("type")
+    ):
         return resolve_schema(spec, allof[0], seen)
     return schema
 
@@ -587,7 +730,12 @@ def _is_named_ref(schema: dict) -> bool:
     if schema.get("$ref"):
         return True
     allof = schema.get("allOf")
-    if allof and len(allof) == 1 and not schema.get("properties") and not schema.get("type"):
+    if (
+        allof
+        and len(allof) == 1
+        and not schema.get("properties")
+        and not schema.get("type")
+    ):
         return _is_named_ref(allof[0])
     return False
 
@@ -601,10 +749,20 @@ def _json_type(schema: dict) -> str | None:
 
 
 # Java native scalar (boxed types — nullability + Map<String,Object> uniformity).
-_SCALAR_JAVA = {"string": "String", "integer": "Long", "number": "Double", "boolean": "Boolean"}
+_SCALAR_JAVA = {
+    "string": "String",
+    "integer": "Long",
+    "number": "Double",
+    "boolean": "Boolean",
+}
 # Canonical audit type (the oracle records int/float; java has distinct int/long
 # /float/double so it is NOT numeric-monotype — integer→int, number→float).
-_SCALAR_CANON = {"string": "string", "integer": "int", "number": "float", "boolean": "bool"}
+_SCALAR_CANON = {
+    "string": "string",
+    "integer": "int",
+    "number": "float",
+    "boolean": "bool",
+}
 
 
 def java_field_type(spec: Spec, schema: dict) -> str:
@@ -648,7 +806,9 @@ def object_body_fields(spec: Spec, body_schema: dict) -> list[tuple[str, dict, b
     return [(name, psc, name in required) for name, psc in props.items()]
 
 
-def command_param_fields(spec: Spec, command_schema: dict) -> tuple[list[tuple[str, dict, bool]], bool]:
+def command_param_fields(
+    spec: Spec, command_schema: dict
+) -> tuple[list[tuple[str, dict, bool]], bool]:
     """§6 union-flatten: union of all variants' fields; required iff EVERY variant
     requires it. has_id = command schema declares an ``id`` property."""
     cs = resolve_schema(spec, command_schema)
@@ -740,8 +900,10 @@ def _register_sidecar(cls: str, java_method: str, records: list[dict]) -> None:
 # Builder emission (§5 / L13) — a closed <Method>Request builder + extras door.
 # ---------------------------------------------------------------------------
 
-def emit_request_builder(cls: str, method: str,
-                         fields: list[tuple[str, str, bool, str]]) -> str:
+
+def emit_request_builder(
+    cls: str, method: str, fields: list[tuple[str, str, bool, str]]
+) -> str:
     """Emit a nested static <Method>Request builder class.
 
     fields: list of (wireName, javaFieldType, required, ident). Produces:
@@ -752,39 +914,47 @@ def emit_request_builder(cls: str, method: str,
     """
     req_cls = snake_to_pascal(method) + "Request"
     lines = []
-    lines.append(f"  /** Closed typed request for {{@link #{snake_to_lower_camel(method)}}} (builder + extras door). */")
+    lines.append(
+        f"  /** Closed typed request for {{@link #{snake_to_lower_camel(method)}}} (builder + extras door). */"
+    )
     lines.append(f"  public static final class {req_cls} {{")
-    for wire, jtype, required, ident in fields:
+    for _wire, jtype, _required, ident in fields:
         lines.append(f"    private final {jtype} {ident};")
     lines.append("    private final java.util.Map<String, Object> extras;")
     lines.append("")
     # private ctor from builder
     ctor_args = ", ".join(f"{jtype} {ident}" for wire, jtype, required, ident in fields)
     sep = ", " if fields else ""
-    lines.append(f"    private {req_cls}({ctor_args}{sep}java.util.Map<String, Object> extras) {{")
-    for wire, jtype, required, ident in fields:
+    lines.append(
+        f"    private {req_cls}({ctor_args}{sep}java.util.Map<String, Object> extras) {{"
+    )
+    for _wire, _jtype, _required, ident in fields:
         lines.append(f"      this.{ident} = {ident};")
     lines.append("      this.extras = extras;")
     lines.append("    }")
     lines.append("")
-    lines.append(f"    public static Builder builder() {{ return new Builder(); }}")
+    lines.append("    public static Builder builder() { return new Builder(); }")
     lines.append("")
     # toBody
     lines.append("    java.util.Map<String, Object> toBody() {")
-    lines.append("      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();")
-    for wire, jtype, required, ident in fields:
-        lines.append(f"      if (this.{ident} != null) {{ body.put({java_str(wire)}, this.{ident}); }}")
+    lines.append(
+        "      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();"
+    )
+    for wire, _jtype, _required, ident in fields:
+        lines.append(
+            f"      if (this.{ident} != null) {{ body.put({java_str(wire)}, this.{ident}); }}"
+        )
     lines.append("      if (this.extras != null) { body.putAll(this.extras); }")
     lines.append("      return body;")
     lines.append("    }")
     lines.append("")
     # Builder
-    lines.append(f"    public static final class Builder {{")
-    for wire, jtype, required, ident in fields:
+    lines.append("    public static final class Builder {")
+    for _wire, jtype, _required, ident in fields:
         lines.append(f"      private {jtype} {ident};")
     lines.append("      private java.util.Map<String, Object> extras;")
     lines.append("")
-    for wire, jtype, required, ident in fields:
+    for _wire, jtype, _required, ident in fields:
         lines.append(f"      public Builder {ident}({jtype} {ident}) {{")
         lines.append(f"        this.{ident} = {ident};")
         lines.append("        return this;")
@@ -796,7 +966,9 @@ def emit_request_builder(cls: str, method: str,
     lines.append("")
     call = ", ".join(ident for wire, jtype, required, ident in fields)
     csep = ", " if fields else ""
-    lines.append(f"      public {req_cls} build() {{ return new {req_cls}({call}{csep}extras); }}")
+    lines.append(
+        f"      public {req_cls} build() {{ return new {req_cls}({call}{csep}extras); }}"
+    )
     lines.append("    }")
     lines.append("  }")
     return "\n".join(lines)
@@ -813,17 +985,31 @@ def build_field_tuples(spec, fields):
 def sidecar_records_for_fields(spec, fields, leading, door_name="extras"):
     records: list[dict] = list(leading)
     for wire, schema, required in ordered_fields(fields):
-        records.append({"name": wire, "kind": "keyword",
-                        "type": canonical_type(spec, schema, required),
-                        "required": required, **({"default": None} if not required else {})})
-    records.append({"name": door_name, "kind": "keyword",
-                    "type": "optional<dict<string,any>>", "required": False, "default": None})
+        records.append(
+            {
+                "name": wire,
+                "kind": "keyword",
+                "type": canonical_type(spec, schema, required),
+                "required": required,
+                **({"default": None} if not required else {}),
+            }
+        )
+    records.append(
+        {
+            "name": door_name,
+            "kind": "keyword",
+            "type": "optional<dict<string,any>>",
+            "required": False,
+            "default": None,
+        }
+    )
     return records
 
 
 # ---------------------------------------------------------------------------
 # Method emitters.
 # ---------------------------------------------------------------------------
+
 
 def method_call_path(spec: Spec, anchor: str, markup: dict, op_path: str):
     """Return (id_args, java_path_expr) — a Java string expression for the path."""
@@ -892,6 +1078,7 @@ def abs_java_path(full: str, id_args: list[str]) -> str:
 # reference's ``dict[str, Any]``.
 # ---------------------------------------------------------------------------
 
+
 # The DTO java sub-package for a spec dir (strips '-', matching emit_types' `sub`).
 def _types_subpackage(spec_name: str) -> str:
     return spec_name.replace("-", "")
@@ -942,7 +1129,11 @@ def item_java_type(spec: Spec, anchor: str, markup: dict) -> str:
     of create/update and the set_* helpers. Falls back to Map when absent."""
     coll = collection_segment(anchor, markup)
     for path, item in (spec.doc.get("paths") or {}).items():
-        if path.startswith(coll + "/{") and path.count("/{") == 1 and path.endswith("}"):
+        if (
+            path.startswith(coll + "/{")
+            and path.count("/{") == 1
+            and path.endswith("}")
+        ):
             op = item.get("get")
             if op and op.get("operationId"):
                 return response_java_type(spec, op["operationId"])
@@ -975,7 +1166,11 @@ def _collection_roles(spec: Spec, anchor: str, markup: dict) -> dict[str, dict]:
     coll = collection_segment(anchor, markup)
     roles: dict[str, dict] = {}
     for path, item in (spec.doc.get("paths") or {}).items():
-        is_item = path.startswith(coll + "/{") and path.count("/{") == 1 and path.endswith("}")
+        is_item = (
+            path.startswith(coll + "/{")
+            and path.count("/{") == 1
+            and path.endswith("}")
+        )
         is_coll = path == coll
         if not (is_item or is_coll):
             continue
@@ -999,14 +1194,22 @@ def _crud_bind(spec: Spec, anchor: str, markup: dict, base: str) -> list[str]:
     """The crud_base bind token list for a resource — ``class:<Leaf>`` for each bound
     generated type, in the reference's order. Returns [] when the base takes no bind."""
     roles = _collection_roles(spec, anchor, markup)
-    item_leaf = _response_bind_leaf(spec.op_response.get((roles.get("get") or {}).get("op", ""), {}) or {})
-    list_leaf = _response_bind_leaf(spec.op_response.get((roles.get("list") or {}).get("op", ""), {}) or {})
+    item_leaf = _response_bind_leaf(
+        spec.op_response.get((roles.get("get") or {}).get("op", ""), {}) or {}
+    )
+    list_leaf = _response_bind_leaf(
+        spec.op_response.get((roles.get("list") or {}).get("op", ""), {}) or {}
+    )
     binds: list[str] = []
     if base == "ReadResource":
         binds = [list_leaf or item_leaf, item_leaf]
     elif base in ("CrudResource", "FabricResource"):
-        create_leaf = _request_ref_leaf(spec.op_body.get((roles.get("create") or {}).get("op", ""), {}) or {})
-        update_leaf = _request_ref_leaf(spec.op_body.get((roles.get("update") or {}).get("op", ""), {}) or {})
+        create_leaf = _request_ref_leaf(
+            spec.op_body.get((roles.get("create") or {}).get("op", ""), {}) or {}
+        )
+        update_leaf = _request_ref_leaf(
+            spec.op_body.get((roles.get("update") or {}).get("op", ""), {}) or {}
+        )
         binds = [list_leaf or item_leaf, item_leaf, create_leaf, update_leaf]
     return [f"class:{b}" if b else "any" for b in binds]
 
@@ -1023,8 +1226,15 @@ def _wrap_return(java_type: str, map_expr: str) -> str:
     return f"asType({map_expr}, {java_type}.class)"
 
 
-def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
-                method_snake: str, op_id: str, is_override: bool = False) -> tuple[str, str]:
+def emit_method(
+    spec: Spec,
+    anchor: str,
+    markup: dict,
+    base: str,
+    method_snake: str,
+    op_id: str,
+    is_override: bool = False,
+) -> tuple[str, str]:
     """Return (method_java, builder_java_or_empty)."""
     if op_id not in spec.ops:
         raise SystemExit(f"{markup['name']}.{method_snake}: op {op_id!r} not in spec")
@@ -1033,8 +1243,10 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
     name = snake_to_lower_camel(method_snake)
     cls = markup["name"]
 
-    id_records = [{"name": a, "kind": "positional", "type": "string", "required": True}
-                  for a in id_args]
+    id_records = [
+        {"name": a, "kind": "positional", "type": "string", "required": True}
+        for a in id_args
+    ]
     id_params = ["String " + a for a in id_args]
     write_verb = verb in ("post", "put", "patch")
     builder_src = ""
@@ -1063,28 +1275,55 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
             ftuples = build_field_tuples(spec, fields)
             req_cls = snake_to_pascal(method_snake) + "Request"
             builder_src = emit_request_builder(cls, method_snake, ftuples)
-            _register_sidecar(cls, name, sidecar_records_for_fields(spec, fields, id_records))
-            base_params = id_params + [f"{req_cls} request"]
-            call_args = id_args + ["request"]
+            _register_sidecar(
+                cls, name, sidecar_records_for_fields(spec, fields, id_records)
+            )
+            base_params = [*id_params, f"{req_cls} request"]
+            call_args = [*id_args, "request"]
             map_expr = f"{verb_fn}({path_expr}, request.toBody(), requestOptions)"
         else:
             # §5.2 union body → a single Map body param.
-            base_params = id_params + ["java.util.Map<String, Object> body"]
-            call_args = id_args + ["body"]
-            _register_sidecar(cls, name, id_records + [
-                {"name": "body", "kind": "positional", "type": "dict<string,any>", "required": True}])
+            base_params = [*id_params, "java.util.Map<String, Object> body"]
+            call_args = [*id_args, "body"]
+            _register_sidecar(
+                cls,
+                name,
+                [
+                    *id_records,
+                    {
+                        "name": "body",
+                        "kind": "positional",
+                        "type": "dict<string,any>",
+                        "required": True,
+                    },
+                ],
+            )
             map_expr = f"{verb_fn}({path_expr}, body, requestOptions)"
     elif write_verb:
         base_params = list(id_params)
         call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
-        map_expr = f"{verb_fn}({path_expr}, new java.util.LinkedHashMap<>(), requestOptions)"
+        map_expr = (
+            f"{verb_fn}({path_expr}, new java.util.LinkedHashMap<>(), requestOptions)"
+        )
     elif verb == "get":
         # §5.3 GET query door → a trailing query-params map (var_keyword).
-        base_params = id_params + ["java.util.Map<String, String> params"]
-        call_args = id_args + ["params"]
-        _register_sidecar(cls, name, id_records + [
-            {"name": "params", "kind": "var_keyword", "type": "any", "required": False, "default": {}}])
+        base_params = [*id_params, "java.util.Map<String, String> params"]
+        call_args = [*id_args, "params"]
+        _register_sidecar(
+            cls,
+            name,
+            [
+                *id_records,
+                {
+                    "name": "params",
+                    "kind": "var_keyword",
+                    "type": "any",
+                    "required": False,
+                    "default": {},
+                },
+            ],
+        )
         map_expr = f"restGet({path_expr}, params, requestOptions)"
     else:  # delete
         base_params = list(id_params)
@@ -1094,9 +1333,9 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
 
     call = f"    return {_wrap_return(ret_type, map_expr)};"
     override = "  @Override\n" if is_override else ""
-    full_sig = ", ".join(base_params + [ro_param])
+    full_sig = ", ".join([*base_params, ro_param])
     conv_sig = ", ".join(base_params)
-    conv_call_args = ", ".join(call_args + ["(RequestOptions) null"])
+    conv_call_args = ", ".join([*call_args, "(RequestOptions) null"])
     method = (
         f"  /** {name} (generated from operation {op_id!r}). */\n"
         f"{override}  public {ret_type} {name}({conv_sig}) {{\n"
@@ -1108,9 +1347,15 @@ def emit_method(spec: Spec, anchor: str, markup: dict, base: str,
     return method, builder_src
 
 
-def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
-                    update_schema_fields: set[str], field_schemas: dict[str, dict],
-                    item_type: str = "java.util.Map<String, Object>") -> tuple[str, str]:
+def emit_set_method(
+    spec: Spec,
+    markup: dict,
+    sm_name: str,
+    sm: dict,
+    update_schema_fields: set[str],
+    field_schemas: dict[str, dict],
+    item_type: str = "java.util.Map<String, Object>",
+) -> tuple[str, str]:
     handler = sm.get("handler")
     if not handler:
         raise SystemExit(f"{markup['name']}.{sm_name}: set_method missing handler")
@@ -1119,50 +1364,76 @@ def emit_set_method(spec: Spec, markup: dict, sm_name: str, sm: dict,
     args = sm.get("args") or {}
     params = ["String resourceId"]
     call_idents = ["resourceId"]
-    records: list[dict] = [{"name": "resource_id", "kind": "positional", "type": "string", "required": True}]
-    build = ["    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();",
-             f"    body.put(\"call_handler\", {java_str(handler)});"]
+    records: list[dict] = [
+        {
+            "name": "resource_id",
+            "kind": "positional",
+            "type": "string",
+            "required": True,
+        }
+    ]
+    build = [
+        "    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();",
+        f'    body.put("call_handler", {java_str(handler)});',
+    ]
     for arg_name, arg in args.items():
         field = arg.get("field")
         if not field:
-            raise SystemExit(f"{markup['name']}.{sm_name}: arg {arg_name!r} missing field")
+            raise SystemExit(
+                f"{markup['name']}.{sm_name}: arg {arg_name!r} missing field"
+            )
         if field not in update_schema_fields:
             raise SystemExit(
-                f"{markup['name']}.{sm_name}: arg field {field!r} not in update request schema")
+                f"{markup['name']}.{sm_name}: arg field {field!r} not in update request schema"
+            )
         ident = escape_ident(arg_name)
         required = bool(arg.get("required"))
         jtype = java_field_type(spec, field_schemas.get(field, {}))
         params.append(f"{jtype} {ident}")
         call_idents.append(ident)
-        rec: dict = {"name": arg_name, "kind": "positional",
-                     "type": canonical_type(spec, field_schemas.get(field, {}), required),
-                     "required": required}
+        rec: dict = {
+            "name": arg_name,
+            "kind": "positional",
+            "type": canonical_type(spec, field_schemas.get(field, {}), required),
+            "required": required,
+        }
         if not required:
             rec["default"] = None
-            build.append(f"    if ({ident} != null) {{ body.put({java_str(field)}, {ident}); }}")
+            build.append(
+                f"    if ({ident} != null) {{ body.put({java_str(field)}, {ident}); }}"
+            )
         else:
             build.append(f"    body.put({java_str(field)}, {ident});")
         records.append(rec)
     params.append("java.util.Map<String, Object> extra")
     call_idents.append("extra")
-    records.append({"name": "extra", "kind": "var_keyword", "type": "any", "required": False, "default": {}})
+    records.append(
+        {
+            "name": "extra",
+            "kind": "var_keyword",
+            "type": "any",
+            "required": False,
+            "default": {},
+        }
+    )
     _register_sidecar(cls, name, records)
     build.append("    if (extra != null) { body.putAll(extra); }")
     # set_* wraps update() and returns the resource item DTO (JAVA-1), mirroring the
     # reference whose set_* return the resource item type.
     build.append(
-        f"    return {_wrap_return(item_type, 'update(resourceId, body, requestOptions)')};")
+        f"    return {_wrap_return(item_type, 'update(resourceId, body, requestOptions)')};"
+    )
     conv_sig = ", ".join(params)
-    full_sig = ", ".join(params + [_REQUEST_OPTIONS_JAVA_PARAM])
-    conv_delegate = ", ".join(call_idents + ["(RequestOptions) null"])
+    full_sig = ", ".join([*params, _REQUEST_OPTIONS_JAVA_PARAM])
+    conv_delegate = ", ".join([*call_idents, "(RequestOptions) null"])
     method = (
         f"  /** {name} — sets call_handler={handler!r} + bound update fields (§7). */\n"
         f"  public {item_type} {name}({conv_sig}) {{\n"
         f"    return {name}({conv_delegate});\n"
         f"  }}\n"
         f"  /** {name} with a per-request {{@link RequestOptions}} override. */\n"
-        f"  public {item_type} {name}({full_sig}) {{\n"
-        + "\n".join(build) + "\n  }")
+        f"  public {item_type} {name}({full_sig}) {{\n" + "\n".join(build) + "\n  }"
+    )
     return method, ""
 
 
@@ -1220,6 +1491,7 @@ def update_field_schemas(spec: Spec, anchor: str, markup: dict) -> dict[str, dic
 # File header.
 # ---------------------------------------------------------------------------
 
+
 def gen_header(desc: str) -> str:
     return (
         "// Code generated by scripts/generate_rest.py; DO NOT EDIT.\n"
@@ -1239,6 +1511,7 @@ def gen_header(desc: str) -> str:
 # Command-dispatch resource emitter (§6).
 # ---------------------------------------------------------------------------
 
+
 def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
     name = markup["name"]
     request = markup.get("request")
@@ -1254,24 +1527,36 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
     # resolved once from the command op's response — matching the reference (JAVA-1).
     ret_type = response_java_type(spec, "call-commands")
 
-    lines = [gen_header(f"Generated command-dispatch resource for the {spec.name!r} namespace.")]
-    lines.append(f"/**\n * {name} — command-dispatch resource ({spec.name} spec). Each method POSTs\n"
-                 f" * {{command, params, id?}} to {base}.\n */")
+    lines = [
+        gen_header(
+            f"Generated command-dispatch resource for the {spec.name!r} namespace."
+        )
+    ]
+    lines.append(
+        f"/**\n * {name} — command-dispatch resource ({spec.name} spec). Each method POSTs\n"
+        f" * {{command, params, id?}} to {base}.\n */"
+    )
     lines.append(f"public final class {name} {{")
     lines.append("  private final HttpClient httpClient;")
     lines.append(f"  private static final String BASE_PATH = {java_str(base)};")
     lines.append("")
-    lines.append(f"  public {name}(HttpClient httpClient) {{ this.httpClient = httpClient; }}")
+    lines.append(
+        f"  public {name}(HttpClient httpClient) {{ this.httpClient = httpClient; }}"
+    )
     lines.append("")
     lines.append("  public String getBasePath() { return BASE_PATH; }")
     lines.append("")
-    lines.append("  private java.util.Map<String, Object> execute("
-                 "String command, String callId, java.util.Map<String, Object> params, "
-                 "RequestOptions requestOptions) {")
-    lines.append("    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();")
-    lines.append("    body.put(\"command\", command);")
-    lines.append("    body.put(\"params\", params);")
-    lines.append("    if (callId != null) { body.put(\"id\", callId); }")
+    lines.append(
+        "  private java.util.Map<String, Object> execute("
+        "String command, String callId, java.util.Map<String, Object> params, "
+        "RequestOptions requestOptions) {"
+    )
+    lines.append(
+        "    java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();"
+    )
+    lines.append('    body.put("command", command);')
+    lines.append('    body.put("params", params);')
+    lines.append('    if (callId != null) { body.put("id", callId); }')
     lines.append("    return httpClient.post(BASE_PATH, body, requestOptions);")
     lines.append("  }")
     if not _is_map_type(ret_type):
@@ -1279,18 +1564,26 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         # decoded wire Map onto the typed response DTO with a local Gson (same lenient,
         # non-validating view BaseResource.asType gives the CRUD resources).
         lines.append("")
-        lines.append("  private static final com.google.gson.Gson RESPONSE_GSON ="
-                     " new com.google.gson.Gson();")
+        lines.append(
+            "  private static final com.google.gson.Gson RESPONSE_GSON ="
+            " new com.google.gson.Gson();"
+        )
         lines.append("")
-        lines.append("  private static <T> T asType(java.util.Map<String, Object> raw,"
-                     " Class<T> type) {")
+        lines.append(
+            "  private static <T> T asType(java.util.Map<String, Object> raw,"
+            " Class<T> type) {"
+        )
         lines.append("    if (raw == null) {")
         lines.append("      return null;")
         lines.append("    }")
-        lines.append("    return RESPONSE_GSON.fromJson(RESPONSE_GSON.toJsonTree(raw), type);")
+        lines.append(
+            "    return RESPONSE_GSON.fromJson(RESPONSE_GSON.toJsonTree(raw), type);"
+        )
         lines.append("  }")
 
-    mapping = (spec.schemas.get(request).get("discriminator") or {}).get("mapping") or {}
+    mapping = (spec.schemas.get(request).get("discriminator") or {}).get(
+        "mapping"
+    ) or {}
     builders: list[str] = []
     for cmd in commands:
         mname = command_method_name(cmd)
@@ -1303,24 +1596,38 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
 
         records: list[dict] = []
         if with_id:
-            records.append({"name": "call_id", "kind": "positional", "type": "string", "required": True})
+            records.append(
+                {
+                    "name": "call_id",
+                    "kind": "positional",
+                    "type": "string",
+                    "required": True,
+                }
+            )
         records = sidecar_records_for_fields(spec, fields, records)
         _register_sidecar(name, mname, records)
 
         id_param = ["String callId"] if with_id else []
-        base_params = id_param + [f"{req_cls} request"]
-        full_params = base_params + [_REQUEST_OPTIONS_JAVA_PARAM]
-        conv_delegate = (["callId"] if with_id else []) + ["request", "(RequestOptions) null"]
+        base_params = [*id_param, f"{req_cls} request"]
+        full_params = [*base_params, _REQUEST_OPTIONS_JAVA_PARAM]
+        conv_delegate = (["callId"] if with_id else []) + [
+            "request",
+            "(RequestOptions) null",
+        ]
         call_arg = "callId" if with_id else "null"
         lines.append("")
         # Convenience overload (no requestOptions) delegating to the full form so existing
         # callers keep compiling; the full form is the parity surface (request_options).
-        exec_expr = f"execute({java_str(cmd)}, {call_arg}, request.toBody(), requestOptions)"
+        exec_expr = (
+            f"execute({java_str(cmd)}, {call_arg}, request.toBody(), requestOptions)"
+        )
         lines.append(f"  /** {mname} — command {cmd!r}. */")
         lines.append(f"  public {ret_type} {mname}({', '.join(base_params)}) {{")
         lines.append(f"    return {mname}({', '.join(conv_delegate)});")
         lines.append("  }")
-        lines.append(f"  /** {mname} — command {cmd!r} with a per-request {{@link RequestOptions}} override. */")
+        lines.append(
+            f"  /** {mname} — command {cmd!r} with a per-request {{@link RequestOptions}} override. */"
+        )
         lines.append(f"  public {ret_type} {mname}({', '.join(full_params)}) {{")
         lines.append(f"    return {_wrap_return(ret_type, exec_expr)};")
         lines.append("  }")
@@ -1335,6 +1642,7 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
 # ---------------------------------------------------------------------------
 # Standard resource emitter.
 # ---------------------------------------------------------------------------
+
 
 def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
     name = markup["name"]
@@ -1357,7 +1665,11 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
         spec_verb = None
         for path, item in (spec.doc.get("paths") or {}).items():
             coll = collection_segment(anchor, markup)
-            if path.startswith(coll + "/{") and path.count("/{") == 1 and path.endswith("}"):
+            if (
+                path.startswith(coll + "/{")
+                and path.count("/{") == 1
+                and path.endswith("}")
+            ):
                 if item.get("put"):
                     spec_verb = "PUT"
                 elif item.get("patch"):
@@ -1366,13 +1678,21 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
                     break
         if spec_verb is None:
             item = spec.doc["paths"][anchor]
-            spec_verb = "PUT" if item.get("put") else ("PATCH" if item.get("patch") else None)
+            spec_verb = (
+                "PUT" if item.get("put") else ("PATCH" if item.get("patch") else None)
+            )
         if spec_verb and upd != spec_verb:
-            raise SystemExit(f"{name}: update_method {upd} != spec update verb {spec_verb}")
+            raise SystemExit(
+                f"{name}: update_method {upd} != spec update verb {spec_verb}"
+            )
 
     extends = EXTENDS[base]
     if base == "FabricResource":
-        extends = "FabricResourcePUT" if markup.get("update_method") == "PUT" else "FabricResource"
+        extends = (
+            "FabricResourcePUT"
+            if markup.get("update_method") == "PUT"
+            else "FabricResource"
+        )
     bp = base_path(spec, anchor, markup)
 
     # Register the structural CRUD contract (crud_base) for a method-contract base — the
@@ -1387,7 +1707,9 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
     lines = [header]
     lines.append(f"import {REST_PACKAGE}.{extends};")
     lines.append("")
-    lines.append(f"/**\n * {name} — REST resource client for the {spec.name!r} API namespace.\n */")
+    lines.append(
+        f"/**\n * {name} — REST resource client for the {spec.name!r} API namespace.\n */"
+    )
     lines.append(f"public class {name} extends {extends} {{")
 
     # Constructor bakes the base path (§4).
@@ -1413,7 +1735,7 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
         is_override = False
         if method_snake in provided:
             if method_snake == "list_addresses":
-                verb, op_path, _ = spec.ops[op_id]
+                _verb, op_path, _ = spec.ops[op_id]
                 _, sibling = relative_tail(spec, anchor, markup, op_path)
                 if not sibling:
                     continue
@@ -1424,8 +1746,9 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
                 is_override = True
             else:
                 continue
-        method_src, builder_src = emit_method(spec, anchor, markup, base, method_snake, op_id,
-                                              is_override=is_override)
+        method_src, builder_src = emit_method(
+            spec, anchor, markup, base, method_snake, op_id, is_override=is_override
+        )
         lines.append("")
         lines.append(method_src)
         if builder_src:
@@ -1440,7 +1763,8 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
         sm_item_type = item_java_type(spec, anchor, markup)
         for sm_name, sm in set_methods.items():
             method_src, _ = emit_set_method(
-                spec, markup, sm_name, sm, upd_fields, upd_field_schemas, sm_item_type)
+                spec, markup, sm_name, sm, upd_fields, upd_field_schemas, sm_item_type
+            )
             lines.append("")
             lines.append(method_src)
 
@@ -1465,10 +1789,15 @@ CONTAINERS = {
 }
 
 ATTR_OVERRIDE = {
-    "GenericResources": "resources", "FabricAddresses": "addresses",
-    "FabricTokens": "tokens", "DatasphereDocuments": "documents",
-    "ProjectTokens": "tokens", "PubSub": "pubsub",
-    "MessageLogs": "messages", "VoiceLogs": "voice", "FaxLogs": "fax",
+    "GenericResources": "resources",
+    "FabricAddresses": "addresses",
+    "FabricTokens": "tokens",
+    "DatasphereDocuments": "documents",
+    "ProjectTokens": "tokens",
+    "PubSub": "pubsub",
+    "MessageLogs": "messages",
+    "VoiceLogs": "voice",
+    "FaxLogs": "fax",
     "ConferenceLogs": "conferences",
 }
 
@@ -1479,7 +1808,7 @@ def container_accessor(markup: dict, name: str, container: str) -> str:
     if name in ATTR_OVERRIDE:
         return snake_to_lower_camel(ATTR_OVERRIDE[name])
     lead = container[:1].upper() + container[1:]
-    stem = name[len(lead):] if name.startswith(lead) else name
+    stem = name[len(lead) :] if name.startswith(lead) else name
     return stem[:1].lower() + stem[1:] if stem else name[:1].lower() + name[1:]
 
 
@@ -1500,18 +1829,28 @@ def resolve_placement(specs: list[Spec]):
 
 def emit_container(container: str, members: list[tuple[str, str]]) -> str:
     cls, _ = CONTAINERS[container]
-    lines = [gen_header(f"Generated REST client container for the {container} namespace (§8).")]
-    lines.append(f"/**\n * {cls} — generated container grouping the {container} namespace resources (§8).\n */")
+    lines = [
+        gen_header(
+            f"Generated REST client container for the {container} namespace (§8)."
+        )
+    ]
+    lines.append(
+        f"/**\n * {cls} — generated container grouping the {container} namespace resources (§8).\n */"
+    )
     lines.append(f"public final class {cls} {{")
     lines.append("  private final HttpClient httpClient;")
     for accessor, class_name in members:
         lines.append(f"  private {class_name} {accessor};")
     lines.append("")
-    lines.append(f"  public {cls}(HttpClient httpClient) {{ this.httpClient = httpClient; }}")
+    lines.append(
+        f"  public {cls}(HttpClient httpClient) {{ this.httpClient = httpClient; }}"
+    )
     for accessor, class_name in members:
         lines.append("")
         lines.append(f"  public {class_name} {accessor}() {{")
-        lines.append(f"    if ({accessor} == null) {{ {accessor} = new {class_name}(httpClient); }}")
+        lines.append(
+            f"    if ({accessor} == null) {{ {accessor} = new {class_name}(httpClient); }}"
+        )
         lines.append(f"    return {accessor};")
         lines.append("  }")
     lines.append("}")
@@ -1524,7 +1863,7 @@ def emit_resource_tree(placed) -> str:
     flats = []
     containers_seen = []
     seen_c = set()
-    for spec, anchor, markup, container in placed:
+    for _spec, _anchor, markup, container in placed:
         name = markup["name"]
         if not container:
             flats.append((flat_accessor(name), name))
@@ -1533,10 +1872,14 @@ def emit_resource_tree(placed) -> str:
                 seen_c.add(container)
                 containers_seen.append(container)
 
-    lines = [gen_header("Generated REST resource tree the hand RestClient composes (§8).")]
-    lines.append("/**\n * ResourceTree — generated lazy accessors for every flat REST resource plus\n"
-                 " * the namespace containers (§8). The hand RestClient extends this and supplies\n"
-                 " * the HttpClient via generatedHttpClient().\n */")
+    lines = [
+        gen_header("Generated REST resource tree the hand RestClient composes (§8).")
+    ]
+    lines.append(
+        "/**\n * ResourceTree — generated lazy accessors for every flat REST resource plus\n"
+        " * the namespace containers (§8). The hand RestClient extends this and supplies\n"
+        " * the HttpClient via generatedHttpClient().\n */"
+    )
     lines.append("public abstract class ResourceTree {")
     for accessor, cls in flats:
         lines.append(f"  private {cls} {accessor};")
@@ -1548,14 +1891,18 @@ def emit_resource_tree(placed) -> str:
     for accessor, cls in flats:
         lines.append("")
         lines.append(f"  public {cls} {accessor}() {{")
-        lines.append(f"    if ({accessor} == null) {{ {accessor} = new {cls}(generatedHttpClient()); }}")
+        lines.append(
+            f"    if ({accessor} == null) {{ {accessor} = new {cls}(generatedHttpClient()); }}"
+        )
         lines.append(f"    return {accessor};")
         lines.append("  }")
     for c in containers_seen:
         clsname, acc = CONTAINERS[c]
         lines.append("")
         lines.append(f"  public {clsname} {acc}() {{")
-        lines.append(f"    if ({acc} == null) {{ {acc} = new {clsname}(generatedHttpClient()); }}")
+        lines.append(
+            f"    if ({acc} == null) {{ {acc} = new {clsname}(generatedHttpClient()); }}"
+        )
         lines.append(f"    return {acc};")
         lines.append("  }")
     lines.append("}")
@@ -1599,11 +1946,39 @@ JAVA_TYPE_RESERVED = JAVA_KEYWORDS
 # java.lang types (always in scope) need this; java.util (List/Map/Set) is
 # fully-qualified at every use so those names don't clash.
 JAVA_BUILTIN_COLLISION = {
-    "Record", "String", "Integer", "Long", "Double", "Boolean", "Object", "Void",
-    "Number", "Character", "Byte", "Short", "Float", "System", "Thread", "Runnable",
-    "Comparable", "Cloneable", "Iterable", "Error", "Exception", "Class", "Enum",
-    "Math", "Process", "Runtime", "Package", "Module", "Thread", "Override",
-    "Deprecated", "SuppressWarnings", "FunctionalInterface", "SafeVarargs",
+    "Record",
+    "String",
+    "Integer",
+    "Long",
+    "Double",
+    "Boolean",
+    "Object",
+    "Void",
+    "Number",
+    "Character",
+    "Byte",
+    "Short",
+    "Float",
+    "System",
+    "Thread",
+    "Runnable",
+    "Comparable",
+    "Cloneable",
+    "Iterable",
+    "Error",
+    "Exception",
+    "Class",
+    "Enum",
+    "Math",
+    "Process",
+    "Runtime",
+    "Package",
+    "Module",
+    "Override",
+    "Deprecated",
+    "SuppressWarnings",
+    "FunctionalInterface",
+    "SafeVarargs",
 }
 
 
@@ -1642,7 +2017,11 @@ def is_object_schema(node: dict) -> bool:
         return False
     props = node.get("properties")
     t = _schema_type(node)
-    return (t == "object" or (t is None and props)) and isinstance(props, dict) and len(props) > 0
+    return (
+        (t == "object" or (t is None and props))
+        and isinstance(props, dict)
+        and len(props) > 0
+    )
 
 
 def _resolve_type_ref(schema: dict, schemas: dict, seen: set | None = None) -> dict:
@@ -1664,7 +2043,12 @@ def _resolve_type_ref(schema: dict, schemas: dict, seen: set | None = None) -> d
         seen.add(leaf)
         return _resolve_type_ref(schemas.get(leaf) or {}, schemas, seen)
     allof = schema.get("allOf")
-    if allof and len(allof) == 1 and not schema.get("properties") and not schema.get("type"):
+    if (
+        allof
+        and len(allof) == 1
+        and not schema.get("properties")
+        and not schema.get("type")
+    ):
         return _resolve_type_ref(allof[0], schemas, seen)
     return schema
 
@@ -1688,8 +2072,10 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
     """
     schemas = schemas or {}
     if schema.get("$ref") or (
-        schema.get("allOf") and len(schema["allOf"]) == 1
-        and not schema.get("properties") and not schema.get("type")
+        schema.get("allOf")
+        and len(schema["allOf"]) == 1
+        and not schema.get("properties")
+        and not schema.get("type")
     ):
         schema = _resolve_type_ref(schema, schemas)
     # Nullable-scalar idiom: OpenAPI-3.1 spells ``X | null`` as
@@ -1702,11 +2088,20 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
     for comb in ("anyOf", "oneOf"):
         variants = schema.get(comb)
         if variants:
-            non_null = [v for v in variants if _resolve_type_ref(v, schemas).get("type") != "null"
-                        and v.get("type") != "null"]
+            non_null = [
+                v
+                for v in variants
+                if _resolve_type_ref(v, schemas).get("type") != "null"
+                and v.get("type") != "null"
+            ]
             if len(non_null) == 1:
                 return type_field_type(non_null[0], schemas)
-    if schema.get("allOf") or schema.get("oneOf") or schema.get("anyOf") or schema.get("$ref"):
+    if (
+        schema.get("allOf")
+        or schema.get("oneOf")
+        or schema.get("anyOf")
+        or schema.get("$ref")
+    ):
         return "java.util.Map<String, Object>"
     t = _schema_type(schema)
     if t is None and "const" in schema:
@@ -1795,8 +2190,14 @@ def type_gen_header(package: str, desc: str) -> str:
     )
 
 
-def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
-                    schemas: dict | None = None, class_name: str | None = None) -> str:
+def emit_type_class(
+    package: str,
+    raw_name: str,
+    node: dict,
+    source_desc: str,
+    schemas: dict | None = None,
+    class_name: str | None = None,
+) -> str:
     """Emit one method-less Java data class for an object schema. Returns RAW java
     (not gjf-formatted — the caller batch-formats). ``class_name`` overrides the
     derived name when a generator computes the class name itself (relay-protocol
@@ -1806,8 +2207,10 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
     lines.append("/**")
     lines.append(f" * {java_name} — generated wire type ({source_desc}).")
     lines.append(" *")
-    lines.append(" * Pure data DTO: public fields carrying the snake wire key; no methods (the")
-    lines.append(" * reference records this as a method-less type definition).")
+    lines.append(
+        " * Pure data DTO: public fields carrying the snake wire key, and no methods —"
+    )
+    lines.append(" * read and write the fields directly.")
     lines.append(" */")
     lines.append(f"public final class {java_name} {{")
     props = node.get("properties") or {}
@@ -1830,12 +2233,16 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
             # collision). Gson matches by field name by default, so bind the exact
             # wire key explicitly — else the typed-return projection would silently
             # leave this field null.
-            lines.append(f"  @com.google.gson.annotations.SerializedName({java_str(wire_key)})")
+            lines.append(
+                f"  @com.google.gson.annotations.SerializedName({java_str(wire_key)})"
+            )
         if overlay_deprecated(wire_key, raw_name):
             # deprecated: still emitted (back-compat), flagged idiomatically so tooling
             # and IDEs surface it. javadoc @deprecated + the @Deprecated annotation.
             lines.append("  /**")
-            lines.append(f"   * @deprecated {wire_key} — superseded; retained for back-compat.")
+            lines.append(
+                f"   * @deprecated {wire_key} — superseded; retained for back-compat."
+            )
             lines.append("   */")
             lines.append("  @Deprecated")
         lines.append(f"  public {jtype} {field};")
@@ -1843,7 +2250,9 @@ def emit_type_class(package: str, raw_name: str, node: dict, source_desc: str,
     return type_gen_header(package, source_desc) + "\n".join(lines) + "\n"
 
 
-def emit_type_enum(package: str, enum_name: str, values: list[str], source_desc: str) -> str:
+def emit_type_enum(
+    package: str, enum_name: str, values: list[str], source_desc: str
+) -> str:
     """Emit a Java enum for an x-sdk-enum public enum (only PhoneCallHandler today).
     Each constant carries its exact wire string. Surfaced as a class by the
     reference. Returns RAW java (caller batch-formats)."""
@@ -1890,7 +2299,9 @@ def _load_types_schemas(psdk: Path, spec_dir: str) -> dict:
     return ((doc.get("components") or {}).get("schemas")) or {}
 
 
-def emit_types(psdk: Path, outs: dict[str, str], type_ns: list[tuple[str, str, str]]) -> None:
+def emit_types(
+    psdk: Path, outs: dict[str, str], type_ns: list[tuple[str, str, str]]
+) -> None:
     """Emit every <ns>_types_generated Java data class / enum into
     ``types/<sub>/<TypeName>.java`` keys of ``outs`` (relative to the generated dir).
     Values are RAW java (build_outputs batch-formats)."""
@@ -1906,20 +2317,28 @@ def emit_types(psdk: Path, outs: dict[str, str], type_ns: list[tuple[str, str, s
                 fn = f"types/{sub}/{enum_name}.java"
                 if fn not in outs:
                     outs[fn] = emit_type_enum(
-                        pkg, enum_name, list(node.get("enum") or []),
-                        f"x-sdk-enum on {ns_key!r} components/schemas {raw_name!r}")
+                        pkg,
+                        enum_name,
+                        list(node.get("enum") or []),
+                        f"x-sdk-enum on {ns_key!r} components/schemas {raw_name!r}",
+                    )
             if is_object_schema(node):
                 java_name = type_name(raw_name)
                 fn = f"types/{sub}/{java_name}.java"
                 if fn not in outs:
                     outs[fn] = emit_type_class(
-                        pkg, raw_name, node,
-                        f"{ns_key!r} spec, components/schemas {raw_name!r}", schemas)
+                        pkg,
+                        raw_name,
+                        node,
+                        f"{ns_key!r} spec, components/schemas {raw_name!r}",
+                        schemas,
+                    )
 
 
 # ---------------------------------------------------------------------------
 # Driver.
 # ---------------------------------------------------------------------------
+
 
 def build_outputs(psdk: Path) -> dict[str, str]:
     load_bases(psdk)  # validate x-sdk-bases (fail loud)
@@ -1935,7 +2354,7 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     placed = resolve_placement(specs)
     by_container: dict[str, list[tuple[str, str]]] = {}
     order: list[str] = []
-    for spec, anchor, markup, container in placed:
+    for _spec, _anchor, markup, container in placed:
         if not container:
             continue
         if container not in by_container:
@@ -1945,7 +2364,9 @@ def build_outputs(psdk: Path) -> dict[str, str]:
         by_container[container].append((acc, markup["name"]))
     for container in order:
         if container not in CONTAINERS:
-            raise SystemExit(f"container attr {container!r} has no java container class (add to CONTAINERS)")
+            raise SystemExit(
+                f"container attr {container!r} has no java container class (add to CONTAINERS)"
+            )
         cls, _ = CONTAINERS[container]
         outs[cls + ".java"] = emit_container(container, by_container[container])
     outs["ResourceTree.java"] = emit_resource_tree(placed)
@@ -1956,23 +2377,28 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     emit_types(psdk, outs, type_ns)
 
     import json as _json
+
     sidecar: dict[str, list[dict]] = {}
-    for (cls, java_method) in sorted(_SIDECAR.keys()):
+    for cls, java_method in sorted(_SIDECAR.keys()):
         sidecar[f"{cls}::{java_method}"] = _SIDECAR[(cls, java_method)]
     crud_bases = {name: _CRUD_BASES[name] for name in sorted(_CRUD_BASES.keys())}
-    outs["rest_signatures.json"] = _json.dumps(
-        {
-            "_comment": "Code generated by scripts/generate_rest.py; DO NOT EDIT. "
-                        "Canonical typed-param records for generated REST operation/"
-                        "command/set methods; consumed by scripts/enumerate_signatures.py "
-                        "to unfold the reflected Java builder params onto the oracle shape. "
-                        "``crud_bases`` publishes each CRUD/Read/Fabric resource's structural "
-                        "typed bind (the enumerator emits it as the class's ``crud_base``).",
-            "methods": sidecar,
-            "crud_bases": crud_bases,
-        },
-        indent=2, sort_keys=False,
-    ) + "\n"
+    outs["rest_signatures.json"] = (
+        _json.dumps(
+            {
+                "_comment": "Code generated by scripts/generate_rest.py; DO NOT EDIT. "
+                "Canonical typed-param records for generated REST operation/"
+                "command/set methods; consumed by scripts/enumerate_signatures.py "
+                "to unfold the reflected Java builder params onto the oracle shape. "
+                "``crud_bases`` publishes each CRUD/Read/Fabric resource's structural "
+                "typed bind (the enumerator emits it as the class's ``crud_base``).",
+                "methods": sidecar,
+                "crud_bases": crud_bases,
+            },
+            indent=2,
+            sort_keys=False,
+        )
+        + "\n"
+    )
 
     # Format every emitted .java through google-java-format so the on-disk files
     # are byte-identical to what the FMT gate (spotless) would produce and clean
@@ -1980,14 +2406,15 @@ def build_outputs(psdk: Path) -> dict[str, str]:
     # gjf invocation (not per-file) — the ~700 generated wire-type files make
     # per-file JVM spawns prohibitively slow.
     java_srcs = {fn: outs[fn] for fn in outs if fn.endswith(".java")}
-    for fn, formatted in gjf_format_many(java_srcs).items():
-        outs[fn] = formatted
+    outs.update(gjf_format_many(java_srcs))
     return outs
 
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit flat into this dir")
     args = ap.parse_args(argv)
 
@@ -2011,9 +2438,11 @@ def main(argv: list[str]) -> int:
             if rel not in expected:
                 stale.append(f"{p} (leftover — not in generator output)")
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated REST file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated REST file(s) stale:\n"
+            )
             for s in stale:
-                sys.stderr.write("  - %s\n" % s)
+                sys.stderr.write(f"  - {s}\n")
             return 1
         print("GEN-FRESH: generated REST files match the canonical specs.")
         return 0

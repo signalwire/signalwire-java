@@ -147,4 +147,62 @@ class BedrockAgentTest {
         new BedrockAgent("b", "/bedrock", "Seed prompt", "matthew", 0.7, 0.9, 1024);
     assertEquals("Seed prompt", agent.getRawPrompt());
   }
+
+  // ------------------------------------------------------------------
+  // Post-render document REWRITE — BedrockAgent.renderSwml takes the already
+  // rendered document and rebuilds the verb against a fixed key allowlist.
+  // A key the rebuild does not know about vanishes with no error, so what the
+  // allowlist contains is load-bearing and needs pinning.
+  // ------------------------------------------------------------------
+
+  /**
+   * {@code $defs/AmazonBedrockObject} is CLOSED over exactly six keys — {@code prompt}, {@code
+   * SWAIG}, {@code params}, {@code global_data}, {@code post_prompt}, {@code post_prompt_url}. The
+   * rebuild's allowlist must match that set: dropping {@code hints}/{@code languages}/{@code
+   * pronounce} is CORRECT here (unlike on the {@code ai} verb, where they are legal), because
+   * amazon_bedrock does not accept them and carrying them over would invalidate the document.
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testBedrockRewriteKeepsExactlyTheSchemasSixKeys() {
+    BedrockAgent agent = new BedrockAgent();
+    agent.setPromptText("hi");
+    agent.setPostPrompt("summarize");
+    agent.addHint("SignalWire");
+    agent.addLanguage("English", "en-US", "rachel");
+    agent.addPronunciation("SW", "SignalWire", true);
+    agent.updateGlobalData(Map.of("k", "v"));
+
+    Map<String, Object> verb =
+        findVerb(mainSection(agent.renderSwml("http://localhost:3000")), "amazon_bedrock");
+    assertNotNull(verb);
+    Map<String, Object> bedrock = (Map<String, Object>) verb.get("amazon_bedrock");
+    assertTrue(
+        List.of("prompt", "SWAIG", "params", "global_data", "post_prompt", "post_prompt_url")
+            .containsAll(bedrock.keySet()),
+        "amazon_bedrock carries keys its closed schema rejects: " + bedrock.keySet());
+    assertTrue(bedrock.containsKey("prompt"));
+  }
+
+  /**
+   * Debug events are configured through {@code params.debug_webhook_*}, and {@code params} IS in
+   * the rewrite's allowlist — so the stream survives the transform. (In the TypeScript port the
+   * equivalent rewrite dropped the debug keys silently, making debug events unreachable on every
+   * Bedrock agent.)
+   */
+  @Test
+  @SuppressWarnings("unchecked")
+  void testBedrockRewritePreservesDebugWebhookKeys() {
+    BedrockAgent agent = new BedrockAgent();
+    agent.setPromptText("hi");
+    agent.enableDebugEvents(2);
+
+    Map<String, Object> verb =
+        findVerb(mainSection(agent.renderSwml("http://localhost:3000")), "amazon_bedrock");
+    Map<String, Object> bedrock = (Map<String, Object>) verb.get("amazon_bedrock");
+    Map<String, Object> params = (Map<String, Object>) bedrock.get("params");
+    assertNotNull(params, "params must survive the amazon_bedrock rewrite");
+    assertNotNull(params.get("debug_webhook_url"));
+    assertEquals(2, params.get("debug_webhook_level"));
+  }
 }

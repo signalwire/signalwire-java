@@ -16,23 +16,16 @@ import java.util.function.Function;
 /**
  * SSRF-prevention guard for user-supplied URLs.
  *
- * <p>Mirrors Python's <code>signalwire.utils.url_validator.validate_url</code>: rejects non-http(s)
- * schemes, missing hostnames, and any URL whose hostname resolves to a private / loopback /
- * link-local / cloud-metadata IP. The {@code allowPrivate} parameter (or the {@code
- * SWML_ALLOW_PRIVATE_URLS} env var with value "1", "true" or "yes", case-insensitive) bypasses the
- * IP-blocklist check.
- *
- * <p>Projected onto the Python free function name {@code validate_url} via
- * scripts/enumerate_signatures.py.
+ * <p>Rejects non-http(s) schemes, missing hostnames, and any URL whose hostname resolves to a
+ * private / loopback / link-local / cloud-metadata IP. The {@code allowPrivate} parameter (or the
+ * {@code SWML_ALLOW_PRIVATE_URLS} env var with value "1", "true" or "yes", case-insensitive)
+ * bypasses the IP-blocklist check.
  */
 public final class UrlValidator {
 
   private static final Logger LOG = Logger.getLogger("signalwire.url_validator");
 
-  /**
-   * The cross-port SSRF block list. Order matches the Python reference for ease of cross-language
-   * review.
-   */
+  /** The SSRF block list — every CIDR range a validated URL's hostname must not resolve into. */
   private static final String[] BLOCKED_NETWORKS = {
     "10.0.0.0/8",
     "172.16.0.0/12",
@@ -60,6 +53,17 @@ public final class UrlValidator {
 
   private UrlValidator() {
     // utility class
+  }
+
+  /**
+   * Validate that a URL is safe to fetch, with {@code allowPrivate} defaulted to {@code false} —
+   * i.e. the IP block list is enforced.
+   *
+   * @param url URL string to validate.
+   * @return true when the URL is safe to fetch, false otherwise.
+   */
+  public static boolean validateUrl(String url) {
+    return validateUrl(url, false);
   }
 
   /**

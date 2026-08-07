@@ -50,6 +50,12 @@ public class Context {
     this.promptSections = new ArrayList<>();
   }
 
+  /**
+   * The context's name — how {@code change_context} and {@link #setValidContexts(List)} refer to
+   * it.
+   *
+   * @return the context name.
+   */
   public String getName() {
     return name;
   }
@@ -87,10 +93,23 @@ public class Context {
     return step;
   }
 
+  /**
+   * Look up a step already added to this context.
+   *
+   * @param stepName the step name.
+   * @return the step, or {@code null} when this context has no step by that name.
+   */
   public Step getStep(String stepName) {
     return steps.get(stepName);
   }
 
+  /**
+   * Remove a step from this context, dropping it from the flow order too. A name that is not
+   * present is silently ignored.
+   *
+   * @param stepName the step name.
+   * @return this context, for chaining.
+   */
   public Context removeStep(String stepName) {
     if (steps.containsKey(stepName)) {
       steps.remove(stepName);
@@ -99,6 +118,15 @@ public class Context {
     return this;
   }
 
+  /**
+   * Move an existing step to a new place in the flow order, which is what {@code next_step}
+   * follows.
+   *
+   * @param stepName the step name; must already exist in this context.
+   * @param position the target index in the flow order.
+   * @return this context, for chaining.
+   * @throws IllegalStateException if this context has no step by that name.
+   */
   public Context moveStep(String stepName, int position) {
     if (!steps.containsKey(stepName)) {
       throw new IllegalStateException(
@@ -128,36 +156,86 @@ public class Context {
     return initialStep;
   }
 
+  /**
+   * Which contexts the model may move to from here. Declaring them is what makes the native {@code
+   * change_context} tool available — the model cannot leave for a context not listed.
+   *
+   * @param contexts the reachable context names.
+   * @return this context, for chaining.
+   */
   public Context setValidContexts(List<String> contexts) {
     this.validContexts = contexts;
     return this;
   }
 
+  /**
+   * Default set of steps reachable from any step in this context. A step's own {@link
+   * Step#setValidSteps(List)} overrides it.
+   *
+   * @param steps the reachable step names.
+   * @return this context, for chaining.
+   */
   public Context setValidSteps(List<String> steps) {
     this.validSteps = steps;
     return this;
   }
 
+  /**
+   * Post-prompt used for this context's summary, overriding the agent-level one.
+   *
+   * @param postPrompt the post-prompt text.
+   * @return this context, for chaining.
+   */
   public Context setPostPrompt(String postPrompt) {
     this.postPrompt = postPrompt;
     return this;
   }
 
+  /**
+   * System prompt installed when this context is entered, replacing the agent's for as long as the
+   * context is active. This is what makes a context a distinct persona rather than a step group.
+   *
+   * @param systemPrompt the system prompt.
+   * @return this context, for chaining.
+   */
   public Context setSystemPrompt(String systemPrompt) {
     this.systemPrompt = systemPrompt;
     return this;
   }
 
+  /**
+   * On entry, summarise the prior conversation into a single message instead of carrying it forward
+   * in full. Note that configuring a reset this way also SUPPRESSES the history wipe {@link
+   * #setIsolated(boolean)} would otherwise do.
+   *
+   * @param consolidate whether to consolidate history on entry.
+   * @return this context, for chaining.
+   */
   public Context setConsolidate(boolean consolidate) {
     this.consolidate = consolidate;
     return this;
   }
 
+  /**
+   * On entry, reset the conversation completely rather than continuing it. Like {@link
+   * #setConsolidate(boolean)}, configuring a reset suppresses the {@link #setIsolated(boolean)}
+   * wipe in favour of this behaviour.
+   *
+   * @param fullReset whether to fully reset on entry.
+   * @return this context, for chaining.
+   */
   public Context setFullReset(boolean fullReset) {
     this.fullReset = fullReset;
     return this;
   }
 
+  /**
+   * A user-role message injected when this context is entered, seeding the new context with an
+   * opening turn.
+   *
+   * @param userPrompt the user prompt.
+   * @return this context, for chaining.
+   */
   public Context setUserPrompt(String userPrompt) {
     this.userPrompt = userPrompt;
     return this;
@@ -187,6 +265,15 @@ public class Context {
     return this;
   }
 
+  /**
+   * Set this context's prompt as raw text. Mutually exclusive with the POM section methods — pick
+   * one shape per context.
+   *
+   * @param prompt the raw prompt text.
+   * @return this context, for chaining.
+   * @throws IllegalStateException if {@link #addSection(String, String)} or {@link
+   *     #addBullets(String, List)} has already been called on this context.
+   */
   public Context setPrompt(String prompt) {
     if (!promptSections.isEmpty()) {
       throw new IllegalStateException("Cannot use setPrompt() when POM sections have been added.");
@@ -195,6 +282,15 @@ public class Context {
     return this;
   }
 
+  /**
+   * Append a prose POM section to this context's prompt. Mutually exclusive with {@link
+   * #setPrompt(String)}.
+   *
+   * @param title the section heading.
+   * @param body the section prose.
+   * @return this context, for chaining.
+   * @throws IllegalStateException if {@link #setPrompt(String)} has already been called.
+   */
   public Context addSection(String title, String body) {
     if (promptText != null) {
       throw new IllegalStateException("Cannot add POM sections when setPrompt() has been used.");
@@ -206,6 +302,15 @@ public class Context {
     return this;
   }
 
+  /**
+   * Append a bulleted POM section to this context's prompt. Mutually exclusive with {@link
+   * #setPrompt(String)}.
+   *
+   * @param title the section heading.
+   * @param bullets the bullet points.
+   * @return this context, for chaining.
+   * @throws IllegalStateException if {@link #setPrompt(String)} has already been called.
+   */
   public Context addBullets(String title, List<String> bullets) {
     if (promptText != null) {
       throw new IllegalStateException("Cannot add POM sections when setPrompt() has been used.");
@@ -217,6 +322,13 @@ public class Context {
     return this;
   }
 
+  /**
+   * Replace the phrases spoken on entering this context, keyed by language code, so the transition
+   * is not silent. A {@code null} map leaves the existing fillers alone rather than clearing them.
+   *
+   * @param fillers language code to phrases.
+   * @return this context, for chaining.
+   */
   public Context setEnterFillers(Map<String, List<String>> fillers) {
     if (fillers != null) {
       this.enterFillers = new LinkedHashMap<>(fillers);
@@ -224,6 +336,13 @@ public class Context {
     return this;
   }
 
+  /**
+   * Replace the phrases spoken on leaving this context, keyed by language code. A {@code null} map
+   * leaves the existing fillers alone rather than clearing them.
+   *
+   * @param fillers language code to phrases.
+   * @return this context, for chaining.
+   */
   public Context setExitFillers(Map<String, List<String>> fillers) {
     if (fillers != null) {
       this.exitFillers = new LinkedHashMap<>(fillers);
@@ -231,6 +350,14 @@ public class Context {
     return this;
   }
 
+  /**
+   * Set the entry phrases for one language, leaving other languages untouched. A {@code null}
+   * language code or phrase list makes the call a no-op.
+   *
+   * @param languageCode BCP-47 language code, e.g. {@code "en-US"}.
+   * @param fillers the phrases for that language.
+   * @return this context, for chaining.
+   */
   public Context addEnterFiller(String languageCode, List<String> fillers) {
     if (languageCode != null && fillers != null) {
       if (enterFillers == null) enterFillers = new LinkedHashMap<>();
@@ -239,6 +366,14 @@ public class Context {
     return this;
   }
 
+  /**
+   * Set the exit phrases for one language, leaving other languages untouched. A {@code null}
+   * language code or phrase list makes the call a no-op.
+   *
+   * @param languageCode BCP-47 language code, e.g. {@code "en-US"}.
+   * @param fillers the phrases for that language.
+   * @return this context, for chaining.
+   */
   public Context addExitFiller(String languageCode, List<String> fillers) {
     if (languageCode != null && fillers != null) {
       if (exitFillers == null) exitFillers = new LinkedHashMap<>();

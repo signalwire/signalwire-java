@@ -19,9 +19,7 @@ import java.util.Map;
 /**
  * Manages SWAIG function registration.
  *
- * <p>Mirrors Python's {@code signalwire.core.agent.tools.registry.ToolRegistry} and the Ruby {@code
- * SignalWire::Core::Agent::Tools::ToolRegistry}. A registry holds SWAIG function definitions keyed
- * by name. Two kinds of entries are supported:
+ * <p>A registry holds SWAIG function definitions keyed by name. Two kinds of entries are supported:
  *
  * <ul>
  *   <li>definitions created via {@link #defineTool} (carry a {@code handler}), and
@@ -29,8 +27,8 @@ import java.util.Map;
  *       {@code toSwaigFunction}) which execute on SignalWire's server and carry no handler.
  * </ul>
  *
- * <p>Like the Ruby port, the registry stores the built definition Map with string keys, matching
- * the wire shape (the Java SDK's AgentBase also stores plain Maps on the wire).
+ * <p>The registry stores each built definition as a string-keyed {@code Map}, which is the shape
+ * that goes on the wire — so no conversion step sits between what is registered and what is sent.
  */
 public class ToolRegistry {
 
@@ -46,8 +44,8 @@ public class ToolRegistry {
   }
 
   /**
-   * @param agent optional parent agent instance (kept as a back-reference for parity with the
-   *     Python/Ruby registries; may be {@code null} for standalone use).
+   * @param agent optional parent agent instance, kept as a back-reference so registered tools can
+   *     reach the agent that owns them; may be {@code null} for standalone use.
    */
   public ToolRegistry(Object agent) {
     this.agent = agent;
@@ -55,7 +53,7 @@ public class ToolRegistry {
 
   /**
    * The agent this registry belongs to (the {@code agent} construction param), or {@code null} for
-   * standalone use. The reference keeps it as a public back reference ({@code self.agent}).
+   * standalone use.
    */
   public Object getAgent() {
     return agent;
@@ -64,9 +62,9 @@ public class ToolRegistry {
   /**
    * Define a SWAIG function that the AI can call.
    *
-   * <p>Python parity: {@code define_tool(name, description, parameters, handler, secure=True,
-   * fillers=None, wait_file=None, wait_file_loops=None, webhook_url=None, required=None,
-   * is_typed_handler=False, **swaig_fields)}.
+   * <p>Accepts the tool's name, description, parameter schema and handler, plus the optional {@code
+   * secure}, {@code fillers}, {@code waitFile}, {@code waitFileLoops}, {@code webhookUrl}, {@code
+   * required}, {@code isTypedHandler} settings and any extra SWAIG fields.
    *
    * @param name function name (must be unique)
    * @param description LLM-facing description
@@ -119,7 +117,7 @@ public class ToolRegistry {
   }
 
   /**
-   * Convenience overload with Python defaults ({@code secure=true}, all optionals {@code null}).
+   * Convenience overload using the defaults: {@code secure=true} and all optionals {@code null}.
    */
   public Map<String, Object> defineTool(
       String name, String description, Map<String, Object> parameters, Object handler) {
@@ -130,9 +128,8 @@ public class ToolRegistry {
   /**
    * Register a raw SWAIG function dictionary (e.g. from a DataMap's {@code toSwaigFunction}).
    *
-   * <p>Python parity: {@code register_swaig_function(function_dict)} — requires a {@code function}
-   * field and rejects duplicates. These entries carry no handler (they execute on SignalWire's
-   * server).
+   * <p>Requires a {@code function} field and rejects duplicates. These entries carry no handler —
+   * they execute on SignalWire's server.
    *
    * @param functionDict complete SWAIG function definition
    * @return the stored definition
@@ -157,17 +154,13 @@ public class ToolRegistry {
   /**
    * Register tools defined via method annotations on the parent agent's class.
    *
-   * <p>Python parity: {@code register_class_decorated_tools()} scans the agent class for methods
-   * decorated with {@code @AgentBase.tool} (marked with {@code _is_tool}) and registers each one.
-   * Java has no method-decorator mechanism that mutates a function object, so the closest faithful
-   * analog is a reflective scan of the parent agent's class for methods annotated with {@link
-   * Tool}: for each such method, a tool is registered whose name/description come from the
-   * annotation (falling back to the method name) and whose handler invokes the method reflectively.
+   * <p>Reflectively scans the parent agent's class for methods annotated with {@link Tool}. For
+   * each such method a tool is registered whose name and description come from the annotation
+   * (falling back to the method name) and whose handler invokes the method reflectively.
    *
-   * <p>Agents built imperatively via {@link #defineTool} (the common Java idiom, since the Java SDK
-   * has no class-decorator tool-definition style) declare no {@link Tool}-annotated methods, so
-   * this is a no-op for them — mirroring a Python class with no {@code _is_tool} methods. If there
-   * is no parent agent, nothing is scanned.
+   * <p>Agents built imperatively via {@link #defineTool} — the common Java idiom — declare no
+   * {@link Tool}-annotated methods, so this is a no-op for them. If there is no parent agent,
+   * nothing is scanned.
    */
   public void registerClassDecoratedTools() {
     if (agent == null) {
@@ -335,9 +328,9 @@ public class ToolRegistry {
   }
 
   /**
-   * Marker annotation — the Java analog of Python's {@code @AgentBase.tool} decorator. Annotate a
-   * public method on an agent subclass so {@link #registerClassDecoratedTools()} auto-registers it.
-   * The method must accept {@code (Map<String,Object> args, Map<String,Object> rawData)}.
+   * Marker annotation for declaring a tool on the agent class itself. Annotate a public method on
+   * an agent subclass so {@link #registerClassDecoratedTools()} auto-registers it. The method must
+   * accept {@code (Map<String,Object> args, Map<String,Object> rawData)}.
    */
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)

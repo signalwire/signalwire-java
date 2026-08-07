@@ -325,43 +325,76 @@ class AiConfigTest {
 
   // ======== Internal Fillers ========
 
+  /**
+   * {@code internal_fillers} renders under {@code ai.SWAIG} as an OBJECT keyed by internal-function
+   * name ({@code $defs/SWAIGInternalFiller}), NOT as a list at the {@code ai} top level. The old
+   * shape was wrong in both container and structure and could never have been honoured; it only
+   * survived because the render path bypassed the schema validator.
+   */
   @Test
   @SuppressWarnings("unchecked")
-  void testAddInternalFiller() {
-    agent.addInternalFiller("Thinking...", null);
+  void testAddInternalFillerRendersUnderSwaigKeyedByFunction() {
+    agent.addInternalFiller("next_step", "en-US", List.of("Thinking..."));
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
-    List<Map<String, Object>> fillers = (List<Map<String, Object>>) ai.get("internal_fillers");
+    assertFalse(ai.containsKey("internal_fillers"), "must NOT sit at the ai top level");
+    Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
+    assertNotNull(swaig);
+    Map<String, Object> fillers = (Map<String, Object>) swaig.get("internal_fillers");
     assertNotNull(fillers);
-    assertEquals("Thinking...", fillers.get(0).get("text"));
+    assertEquals(Map.of("en-US", List.of("Thinking...")), fillers.get("next_step"));
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  void testSetInternalFillersReplacesAll() {
-    agent.addInternalFiller("First", null);
-    agent.setInternalFillers(List.of(Map.of("text", "Second")));
+  void testSetInternalFillersMapReplacesAll() {
+    agent.addInternalFiller("next_step", "en-US", List.of("First"));
+    agent.setInternalFillersMap(Map.of("check_time", Map.of("en-US", List.of("Second"))));
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
-    List<Map<String, Object>> fillers = (List<Map<String, Object>>) ai.get("internal_fillers");
+    Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
+    Map<String, Object> fillers = (Map<String, Object>) swaig.get("internal_fillers");
     assertEquals(1, fillers.size());
-    assertEquals("Second", fillers.get(0).get("text"));
+    assertEquals(Map.of("en-US", List.of("Second")), fillers.get("check_time"));
   }
 
   // ======== Debug Events ========
 
+  /**
+   * The debug stream is configured through {@code ai.params.debug_webhook_url} + {@code
+   * ai.params.debug_webhook_level} — both declared {@code AIParams} keys. A top-level {@code
+   * ai.debug} object (the old shape) is rejected by the closed {@code AIObject}, so it invalidated
+   * the whole document and the platform never enabled the stream.
+   */
   @Test
   @SuppressWarnings("unchecked")
-  void testEnableDebugEvents() {
+  void testEnableDebugEventsRendersWebhookIntoParams() {
     agent.enableDebugEvents();
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
-    Map<String, Object> debug = (Map<String, Object>) ai.get("debug");
-    assertNotNull(debug);
-    assertEquals(true, debug.get("events"));
+    assertFalse(ai.containsKey("debug"), "no top-level ai.debug — AIObject is closed");
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    assertNotNull(params);
+    assertEquals(1, params.get("debug_webhook_level"));
+    assertTrue(((String) params.get("debug_webhook_url")).endsWith("/debug_events"));
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  void testEnableDebugEventsHonoursLevel() {
+    agent.enableDebugEvents(3);
+    Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    assertEquals(3, params.get("debug_webhook_level"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
   void testDebugEventsOffByDefault() {
     Map<String, Object> ai = extractAi(agent.renderSwml("http://localhost:3000"));
     assertFalse(ai.containsKey("debug"));
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    if (params != null) {
+      assertFalse(params.containsKey("debug_webhook_url"));
+      assertFalse(params.containsKey("debug_webhook_level"));
+    }
   }
 
   // ======== Function Includes ========
@@ -427,7 +460,7 @@ class AiConfigTest {
             .setGlobalData(Map.of("k", "v"))
             .updateGlobalData(Map.of("k2", "v2"))
             .setNativeFunctions(List.of("check_for_input"))
-            .addInternalFiller("Hold on", null)
+            .addInternalFiller("next_step", "en-US", List.of("Hold on"))
             .enableDebugEvents()
             .addFunctionInclude("https://example.com", null)
             .setPromptLlmParams(Map.of("temperature", 0.3))

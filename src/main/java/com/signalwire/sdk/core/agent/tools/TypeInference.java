@@ -15,29 +15,14 @@ import java.util.Map;
 /**
  * Typed-handler schema inference and typed-handler wrapping for SWAIG tools.
  *
- * <p>Parity with the Python reference module {@code signalwire.core.agent.tools.type_inference}
- * ({@code infer_schema} / {@code create_typed_handler_wrapper}). Where Python inspects a handler's
- * {@code inspect.signature} + type hints at runtime (and Ruby/.NET reflect the delegate's parameter
- * list), Java erases lambda parameter names and types at runtime, so the typed-parameter contract
- * is supplied EXPLICITLY via the {@link com.signalwire.sdk.swaig.ParameterSchema} typed-params
- * builder — the idiomatic "typed tool" declaration in this port. {@link #inferSchema} decomposes
- * that built schema into the same {@code (parameters, required, description, isTyped, hasRawData)}
- * tuple Python's {@code infer_schema} returns; the schema is BUILT from the typed params-builder
- * rather than reflected off the callable, which is the static-port idiom (mirrors .NET/Ruby taking
- * a {@code types} override map and building from it).
+ * <p>Java erases lambda parameter names and types at runtime, so a typed tool's parameter contract
+ * cannot be reflected off the handler itself. It is instead supplied EXPLICITLY via the {@link
+ * com.signalwire.sdk.swaig.ParameterSchema} typed-params builder — the idiomatic way to declare a
+ * typed tool in this SDK. {@link #inferSchema} decomposes that built schema into its {@code
+ * (parameters, required, description, isTyped, hasRawData)} components.
  *
- * <p>Java has no module-level free functions; the two capabilities are hosted as static methods
- * here and projected onto the Python module-level names
- *
- * <ul>
- *   <li>{@code signalwire.core.agent.tools.type_inference.infer_schema}
- *   <li>{@code signalwire.core.agent.tools.type_inference.create_typed_handler_wrapper}
- * </ul>
- *
- * via {@code scripts/enumerate_signatures.py} FREE_FUNCTION_PROJECTIONS (mirrors the {@code
- * url_validator.validate_url} / {@code security_utils} host precedent). The reflected native
- * signatures (a {@code ParameterSchema}/{@code ToolHandler} in, a record out) are recorded as the
- * canonical oracle shapes via FREE_FUNCTION_SIGNATURE_OVERRIDES.
+ * <p>Both capabilities are exposed as static methods on this final utility class; it is never
+ * instantiated.
  */
 public final class TypeInference {
 
@@ -47,7 +32,7 @@ public final class TypeInference {
 
   /**
    * The inferred-schema tuple returned by {@link #inferSchema}: {@code (parameters, required,
-   * description, isTyped, hasRawData)}. Mirrors Python's {@code infer_schema} return contract.
+   * description, isTyped, hasRawData)}.
    *
    * @param parameters name → JSON-Schema property map (string keys, per-property {type,
    *     description, …} maps).
@@ -70,10 +55,10 @@ public final class TypeInference {
    * com.signalwire.sdk.swaig.ParameterSchema} Map — the {@code {type, properties[, required]}}
    * envelope — from which the per-parameter property maps and the required list are read.
    *
-   * <p>Parity with Python's {@code infer_schema}: an empty/absent schema is a valid zero-param
-   * typed tool ({@code isTyped=true}, no parameters); a schema with properties is typed and its
-   * property maps + required list are surfaced. A {@code raw_data} property is treated as the SWAIG
-   * raw-payload channel, excluded from the schema, and flagged in {@code hasRawData}.
+   * <p>An empty or absent schema is a valid zero-param typed tool ({@code isTyped=true}, no
+   * parameters); a schema with properties is typed and its property maps and required list are
+   * surfaced. A {@code raw_data} property is treated as the SWAIG raw-payload channel, excluded
+   * from the schema, and flagged in {@code hasRawData}.
    *
    * @param schema the built ParameterSchema envelope, or {@code null} for a zero-param typed tool.
    * @param description the tool description (or {@code null}).
@@ -127,9 +112,9 @@ public final class TypeInference {
 
   /**
    * Wrap a typed handler so it can be invoked with the standard SWAIG calling convention {@code
-   * (args, rawData)}. Mirrors Python's {@code create_typed_handler_wrapper}: the wrapper passes the
-   * raw SWAIG payload to the wrapped handler only when it declared it ({@code hasRawData}),
-   * otherwise it is dropped (the wrapped handler sees {@code null} raw data).
+   * (args, rawData)}. The wrapper passes the raw SWAIG payload to the wrapped handler only when it
+   * declared it ({@code hasRawData}), otherwise it is dropped (the wrapped handler sees {@code
+   * null} raw data).
    *
    * @param func the typed handler.
    * @param hasRawData pass the raw SWAIG payload through when {@code true}.

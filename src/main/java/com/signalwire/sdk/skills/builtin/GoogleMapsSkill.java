@@ -14,22 +14,45 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Address validation and driving-route computation via the Google Maps API.
+ *
+ * <p>Registered under the name {@code google_maps}; load it with {@code
+ * agent.addSkill("google_maps", params)}.
+ */
 public class GoogleMapsSkill implements SkillBase {
 
   private String apiKey;
   private String lookupToolName = "lookup_address";
   private String routeToolName = "compute_route";
 
+  /**
+   * The registry name this skill is loaded by: {@code google_maps}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "google_maps";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Validate addresses and compute driving routes using Google Maps";
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code api_key}; {@code false} otherwise,
+   *     which leaves the skill unloaded.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     this.apiKey = (String) params.get("api_key");
@@ -40,6 +63,11 @@ public class GoogleMapsSkill implements SkillBase {
     return apiKey != null && !apiKey.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public List<ToolDefinition> registerTools() {
@@ -165,6 +193,12 @@ public class GoogleMapsSkill implements SkillBase {
     return List.of(lookup, route);
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     return List.of("address", "location", "route", "directions", "miles", "distance");

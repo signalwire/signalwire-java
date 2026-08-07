@@ -25,7 +25,7 @@ The assertion oracle is INDEPENDENT of the resource generator (RULES §1):
     generator self-snapshot.
 
 Inputs joined by (METHOD, normalized-path) (RULES §2): the registry's deduped
-routes (path params already {id}) × the spec operationIds (spec path normalized
+routes (path params already {id}) CROSS the spec operationIds (spec path normalized
 the SAME way before the join). Routing collisions are resolved
 longest-template-wins (RULES §7) so the asserted route is the one the mock
 ACTUALLY journals (e.g. GET /rooms/{id} vs GET /rooms/{name}).
@@ -43,6 +43,7 @@ Usage:
     python3 scripts/generate_rest_tests.py           # (re)write the test files
     python3 scripts/generate_rest_tests.py --check   # GEN-FRESH: fail if stale
 """
+
 from __future__ import annotations
 
 import argparse
@@ -64,6 +65,7 @@ except ImportError:  # pragma: no cover
 # ---------------------------------------------------------------------------
 # Resolution.
 # ---------------------------------------------------------------------------
+
 
 def resolve_porting_sdk() -> Path:
     env = os.environ.get("PORTING_SDK")
@@ -99,13 +101,20 @@ def gradlew() -> str:
 # ---------------------------------------------------------------------------
 
 _GJF_ADD_EXPORTS = [
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-    "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+    "--add-exports",
+    "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
 ]
-_GJF_VERSION = "1.22.0"  # must match the spotless googleJavaFormat() version in build.gradle
+_GJF_VERSION = (
+    "1.22.0"  # must match the spotless googleJavaFormat() version in build.gradle
+)
 _GJF_CP: str | None = None
 
 
@@ -118,11 +127,14 @@ def _resolve_gjf_classpath() -> str:
             f"{cache}; run ./gradlew build once so spotless resolves it into the cache."
         )
     guavas = [
-        p for p in cache.rglob("guava-*.jar")
+        p
+        for p in cache.rglob("guava-*.jar")
         if "sources" not in p.name and "android" not in p.name
     ]
     if not guavas:
-        raise SystemExit("generate_rest_tests.py: guava jar not found in the gradle cache")
+        raise SystemExit(
+            "generate_rest_tests.py: guava jar not found in the gradle cache"
+        )
     guava = sorted(guavas, key=lambda p: p.name)[-1]
     return ":".join([str(gjf[0]), str(guava)])
 
@@ -145,13 +157,22 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
             idx_to_key[str(p)] = key
             paths.append(str(p))
         proc = subprocess.run(
-            ["java", *_GJF_ADD_EXPORTS, "-cp", _GJF_CP,
-             "com.google.googlejavaformat.java.Main", "-i", *paths],
-            capture_output=True, text=True,
+            [
+                "java",
+                *_GJF_ADD_EXPORTS,
+                "-cp",
+                _GJF_CP,
+                "com.google.googlejavaformat.java.Main",
+                "-i",
+                *paths,
+            ],
+            capture_output=True,
+            text=True,
         )
         if proc.returncode != 0:
             raise SystemExit(
-                f"generate_rest_tests.py: batch google-java-format failed:\n{proc.stderr}")
+                f"generate_rest_tests.py: batch google-java-format failed:\n{proc.stderr}"
+            )
         return {idx_to_key[p]: Path(p).read_text() for p in paths}
 
 
@@ -160,6 +181,7 @@ def gjf_format_many(sources: dict[str, str]) -> dict[str, str]:
 #    RouteRegistry: the SDK's deduped routes (via-merged, {id}-normalized).
 #    RouteTestPlan: per-via call plan (chain, member, typed literal args).
 # ---------------------------------------------------------------------------
+
 
 def _run_gradle_json(task: str) -> dict:
     proc = subprocess.run(
@@ -205,7 +227,7 @@ def load_plan() -> dict[str, list[dict]]:
 
 
 # ---------------------------------------------------------------------------
-# 2. The join — registry routes × spec operationIds by (method, normalized-path).
+# 2. The join — registry routes CROSS spec operationIds by (method, normalized-path).
 # ---------------------------------------------------------------------------
 
 _BRACE = re.compile(r"\{[^}]+\}")
@@ -225,15 +247,13 @@ def wire_key(p: str) -> str:
 def spec_prefix(doc: dict) -> str:
     url = ((doc.get("servers") or [{}])[0]).get("url", "")
     i = url.find("signalwire.com")
-    return url[i + len("signalwire.com"):] if i >= 0 else ""
+    return url[i + len("signalwire.com") :] if i >= 0 else ""
 
 
 def spec_dirs_with_openapi(psdk: Path) -> list[str]:
     root = psdk / "rest-apis"
     out = [
-        d.name
-        for d in root.iterdir()
-        if d.is_dir() and (d / "openapi.yaml").is_file()
+        d.name for d in root.iterdir() if d.is_dir() and (d / "openapi.yaml").is_file()
     ]
     return sorted(out)
 
@@ -284,13 +304,15 @@ def build_join(routes: list[dict], psdk: Path, spec_dirs: list[str]) -> list[dic
             continue
         op_id = winner[1]
         spec = op_id[: op_id.index(".")]
-        rows.append({
-            "method": method,
-            "path": np,
-            "op_id": op_id,
-            "via": via_list[0],
-            "spec": spec,
-        })
+        rows.append(
+            {
+                "method": method,
+                "path": np,
+                "op_id": op_id,
+                "via": via_list[0],
+                "spec": spec,
+            }
+        )
     return rows
 
 
@@ -313,9 +335,12 @@ def pick_plan_entry(entries: list[dict], method: str, path: str) -> dict | None:
 # 3. Emit — one <Spec>GeneratedTest.java per spec namespace.
 # ---------------------------------------------------------------------------
 
+
 def pascal_spec(spec: str) -> str:
     """spec dir name → PascalCase class-name fragment (relay-rest → RelayRest)."""
-    return "".join(part[:1].upper() + part[1:] for part in re.split(r"[-_]", spec) if part)
+    return "".join(
+        part[:1].upper() + part[1:] for part in re.split(r"[-_]", spec) if part
+    )
 
 
 def slug(via: str) -> str:
@@ -327,7 +352,7 @@ def method_ident(slug_str: str) -> str:
     """A Java test-method identifier fragment from a slug (camelCase, stable)."""
     parts = [p for p in slug_str.split("_") if p]
     if not parts:
-        return "route";
+        return "route"
     head, *rest = parts
     head = head[:1].lower() + head[1:]
     return head + "".join(p[:1].upper() + p[1:] for p in rest)
@@ -441,6 +466,7 @@ def emit_spec_file(spec: str, rows: list[dict]) -> str:
 # Driver.
 # ---------------------------------------------------------------------------
 
+
 def build_outputs(psdk: Path) -> tuple[dict[str, str], list[str], int]:
     """Return ({filename: source}, uncovered_vias, n_routes_covered)."""
     routes = load_routes()
@@ -495,7 +521,9 @@ def build_outputs(psdk: Path) -> tuple[dict[str, str], list[str], int]:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -530,11 +558,15 @@ def main(argv: list[str]) -> int:
                 stale.append(str(p))
         expected = set(outs.keys())
         if out_dir.is_dir():
-            for p in sorted(out_dir.glob("*.java")):
-                if p.name not in expected:
-                    stale.append(f"{p} (leftover — not in generator output)")
+            stale.extend(
+                f"{p} (leftover — not in generator output)"
+                for p in sorted(out_dir.glob("*.java"))
+                if p.name not in expected
+            )
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated REST test file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated REST test file(s) stale:\n"
+            )
             for s in stale:
                 sys.stderr.write(f"  - {s}\n")
             return 1

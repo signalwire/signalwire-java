@@ -8,7 +8,6 @@ package com.signalwire.sdk.web;
 
 import com.signalwire.sdk.core.ConfigLoader;
 import com.signalwire.sdk.core.SecurityConfig;
-import com.signalwire.sdk.logging.Logger;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -32,14 +31,13 @@ import java.util.Map;
 /**
  * Static file serving service with an HTTP API.
  *
- * <p>Java port of the Python reference {@code signalwire.web.web_service.WebService}. Maps URL
- * route prefixes to local directories and serves their files over HTTP with security headers,
- * extension filtering, path-traversal protection, and optional basic auth.
+ * <p>Maps URL route prefixes to local directories and serves their files over HTTP with security
+ * headers, extension filtering, path-traversal protection, and optional basic auth.
  *
- * <p>Java idiom note: Python builds a FastAPI/uvicorn app; Java uses the JDK built-in {@link
- * HttpServer}. {@link #start(String, Integer)} launches the server (non-blocking) and returns the
- * bound port, so it is safe to start and {@link #stop()} in tests without hanging. Pass port 0 to
- * bind an ephemeral port.
+ * <p>It runs on the JDK built-in {@link HttpServer} — no external web framework is required. {@link
+ * #start(String, Integer)} launches the server (non-blocking) and returns the bound port, so it is
+ * safe to start and {@link #stop()} in tests without hanging. Pass port 0 to bind an ephemeral
+ * port.
  */
 public class WebService {
 
@@ -55,8 +53,6 @@ public class WebService {
           "__pycache__",
           ".DS_Store",
           ".swp");
-
-  private final Logger log = Logger.getLogger("web_service");
 
   private int port;
   private final Map<String, String> directories = new LinkedHashMap<>();
@@ -118,6 +114,11 @@ public class WebService {
     this.server = null;
   }
 
+  /**
+   * The TCP port this static-file service binds.
+   *
+   * @return the port.
+   */
   public int getPort() {
     return port;
   }
@@ -126,6 +127,11 @@ public class WebService {
     return directories;
   }
 
+  /**
+   * The security configuration governing this service — TLS, allowed hosts, CORS, and basic auth.
+   *
+   * @return the security config.
+   */
   public SecurityConfig getSecurity() {
     return security;
   }
@@ -150,8 +156,8 @@ public class WebService {
   }
 
   /**
-   * Extension allow-list (the {@code allowed_extensions} param), or {@code null} when every
-   * extension not blocked is permitted — the reference's {@code None} default.
+   * Extension allow-list (the {@code allowed_extensions} param), or {@code null} — the default —
+   * when every extension not blocked is permitted.
    */
   public List<String> getAllowedExtensions() {
     return allowedExtensions == null ? null : Collections.unmodifiableList(allowedExtensions);

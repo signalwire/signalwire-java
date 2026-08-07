@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.pubsub;
 /**
  * NewPubSubToken — generated wire type ('pubsub' spec, components/schemas 'NewPubSubToken').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class NewPubSubToken {
   public Long ttl;

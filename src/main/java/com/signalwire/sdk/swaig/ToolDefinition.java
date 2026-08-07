@@ -22,10 +22,20 @@ public class ToolDefinition {
     this.handler = handler;
   }
 
+  /**
+   * The function name the model calls this tool by.
+   *
+   * @return the tool name.
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * The LLM-facing description of when to call this tool — prompt text the model reasons over.
+   *
+   * @return the description.
+   */
   public String getDescription() {
     return description;
   }
@@ -34,19 +44,44 @@ public class ToolDefinition {
     return Collections.unmodifiableMap(parameters);
   }
 
+  /**
+   * The Java callable invoked when the model calls this tool.
+   *
+   * @return the handler.
+   */
   public ToolHandler getHandler() {
     return handler;
   }
 
+  /**
+   * Whether the rendered webhook URL carries a signed {@code __token} the {@code /swaig} handler
+   * validates. Defaults to {@code true}.
+   *
+   * @return whether the tool is secure.
+   */
   public boolean isSecure() {
     return secure;
   }
 
+  /**
+   * Turn the signed-token requirement on or off. Passing {@code false} publishes a webhook anyone
+   * who can see the rendered SWML can invoke.
+   *
+   * @param secure whether the tool is secure.
+   * @return this definition, for chaining.
+   */
   public ToolDefinition setSecure(boolean secure) {
     this.secure = secure;
     return this;
   }
 
+  /**
+   * Extra SWAIG-only fields to render alongside the standard ones ({@code meta_data_token}, {@code
+   * web_hook_auth_*}, and the like).
+   *
+   * @param extraFields the additional fields.
+   * @return this definition, for chaining.
+   */
   public ToolDefinition setExtraFields(Map<String, Object> extraFields) {
     this.extraFields = extraFields;
     return this;
@@ -57,12 +92,10 @@ public class ToolDefinition {
   }
 
   /**
-   * Serialize to SWAIG function format for SWML. Mirrors the Python reference ({@code
-   * SWAIGFunction.to_swaig} / {@code AgentBase._render_swaig_functions}): the function definition
-   * carries {@code function} (name), {@code description}, and {@code parameters} — the latter
-   * passed through {@link #ensureParameterStructure()} so a complete {@code {type,properties}}
-   * schema renders FLAT (not double-wrapped) and a bare property map is wrapped in {@code
-   * {type:object,properties:…}}.
+   * Serialize to SWAIG function format for SWML. The function definition carries {@code function}
+   * (name), {@code description}, and {@code parameters} — the latter passed through {@link
+   * #ensureParameterStructure()} so a complete {@code {type,properties}} schema renders FLAT (not
+   * double-wrapped) and a bare property map is wrapped in {@code {type:object,properties:…}}.
    */
   public Map<String, Object> toSwaigFunction(String webhookUrl, String metaDataToken) {
     Map<String, Object> func = new LinkedHashMap<>();
@@ -82,8 +115,7 @@ public class ToolDefinition {
   }
 
   /**
-   * Structure the parameters for the SWML wire — the Java mirror of Python's {@code
-   * SWAIGFunction._ensure_parameter_structure}: an empty map becomes {@code
+   * Structure the parameters for the SWML wire: an empty map becomes {@code
    * {type:object,properties:{}}}; a map already carrying {@code type} + {@code properties} passes
    * through unchanged (a complete schema is NOT double-wrapped); otherwise the map is treated as a
    * bare property set and wrapped in {@code {type:object,properties:…}}.

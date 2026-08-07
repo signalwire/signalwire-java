@@ -38,6 +38,7 @@ java.lang#java: a package/literal reference in test scaffolding (not a method ca
 ### java.util / java.util.function
 
 DateTimeFormatter#ofPattern: DateTimeFormatter.ofPattern (java.time) — example formatters
+ZoneId#systemDefault: ZoneId.systemDefault (java.time) — the explicit zone the example clock tools pass to LocalTime/LocalDateTime.now()
 Arrays#asList: Arrays.asList (JDK) — list construction in examples
 Map#getOrDefault: Map#getOrDefault (JDK) — safe-get pattern in examples
 Collections#emptyMap: Collections.emptyMap (JDK) — empty-map literal in examples

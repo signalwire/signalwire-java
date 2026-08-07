@@ -9,8 +9,8 @@ package com.signalwire.sdk.swml.generated;
 /**
  * InjectAction — generated wire type (schema.json $defs schema 'InjectAction').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class InjectAction {
   public java.util.Map<String, Object> inject;

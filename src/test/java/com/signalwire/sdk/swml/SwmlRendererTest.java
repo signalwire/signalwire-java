@@ -132,14 +132,22 @@ class SwmlRendererTest {
     assertEquals(Map.of("pom", pom), ai.get("prompt"));
   }
 
+  /**
+   * {@code params(...)} merges at the {@code ai} TOP level (the reference's {@code **params}
+   * splat), so its keys must be ones the closed {@code AIObject} declares. {@code temperature} is
+   * an {@code AIParams} key, so it travels under the {@code params} key — the previous fixture
+   * asserted it at the top level, which is a document the schema rejects.
+   */
   @Test
   @SuppressWarnings("unchecked")
   void testRenderSwmlParamsMergedIntoAi() {
     String json =
         SwmlRenderer.renderSwml(
-            SwmlRenderer.RenderOptions.of("hi", newService()).params(Map.of("temperature", 0.3)));
+            SwmlRenderer.RenderOptions.of("hi", newService())
+                .params(Map.of("params", Map.of("temperature", 0.3))));
     Map<String, Object> ai = (Map<String, Object>) mainOf(json).get(0).get("ai");
-    assertEquals(0.3, (Double) ai.get("temperature"), 1e-9);
+    Map<String, Object> params = (Map<String, Object>) ai.get("params");
+    assertEquals(0.3, (Double) params.get("temperature"), 1e-9);
   }
 
   @Test
@@ -155,13 +163,39 @@ class SwmlRendererTest {
 
   // ---- renderFunctionResponseSwml ----
 
+  /**
+   * The SWML {@code play} verb has NO {@code text} key — its config is PlayWithURL/PlayWithURLS and
+   * spoken text travels through the {@code say:} URL scheme. Emitting {@code {"text": ...}}
+   * produced a document the SWML schema rejects, and Java shipped it silently (the renderer wrote
+   * through the RAW {@code document.addVerb}, bypassing the validating {@code Service.addVerb}
+   * choke point). Mirrors the reference's {@code service.add_verb("play", {"url":
+   * f"say:{response_text}"})}.
+   */
   @Test
   @SuppressWarnings("unchecked")
-  void testFunctionResponsePlaysText() {
+  void testFunctionResponsePlaysTextAsSayUrl() {
     String out = SwmlRenderer.renderFunctionResponseSwml("All done", newService());
     List<Map<String, Object>> main = mainOf(out);
     Map<String, Object> play = (Map<String, Object>) main.get(0).get("play");
-    assertEquals(Map.of("text", "All done"), play);
+    assertEquals(Map.of("url", "say:All done"), play);
+    assertFalse(play.containsKey("text"), "play has no 'text' key in the SWML schema");
+  }
+
+  /**
+   * The response play must survive schema validation — it is routed through the validating {@code
+   * Service.addVerb}, so a config the schema rejects raises instead of shipping.
+   */
+  @Test
+  void testFunctionResponsePlayIsSchemaValid() {
+    Service svc = newService();
+    String out = SwmlRenderer.renderFunctionResponseSwml("hello there", svc);
+    assertTrue(out.contains("\"url\":\"say:hello there\""), out);
+    // The same config, offered to the validating choke point, is accepted.
+    assertDoesNotThrow(() -> svc.addVerb("play", Map.of("url", "say:hello there")));
+    // ... and the shape the port used to emit is REJECTED by that same choke point,
+    // which is why the silent raw-document write was a wire defect.
+    assertThrows(
+        SchemaValidationError.class, () -> svc.addVerb("play", Map.of("text", "hello there")));
   }
 
   @Test
@@ -171,13 +205,46 @@ class SwmlRendererTest {
             "bye",
             newService(),
             List.of(
-                Map.of("hangup", Map.of("reason", "done")),
+                // `reason` is a CLOSED enum (hangup|busy|decline) — routing response
+                // actions through the validating Service.addVerb is what makes an
+                // out-of-enum value raise instead of shipping.
+                Map.of("hangup", Map.of("reason", "busy")),
                 Map.of("transfer", Map.of("dest", "sip:x@y"))),
             "json");
     List<Map<String, Object>> main = mainOf(out);
-    assertEquals(Map.of("text", "bye"), main.get(0).get("play"));
-    assertEquals(Map.of("reason", "done"), main.get(1).get("hangup"));
+    assertEquals(Map.of("url", "say:bye"), main.get(0).get("play"));
+    assertEquals(Map.of("reason", "busy"), main.get(1).get("hangup"));
     assertEquals(Map.of("dest", "sip:x@y"), main.get(2).get("transfer"));
+  }
+
+  /**
+   * Response actions are routed through the validating {@link Service#addVerb}, not the raw
+   * document — so a caller-supplied action config the SWML schema rejects (here a misspelled key on
+   * the closed {@code hangup} verb) raises instead of being appended silently.
+   *
+   * <p>This originally used an out-of-enum {@code hangup.reason}, which is NOT a rejection case:
+   * {@code $defs/Hangup.reason} carries {@code x-sdk-widen: true}, so its {@code
+   * hangup|busy|decline} union is a hint and the platform accepts any string.
+   */
+  @Test
+  void testFunctionResponseActionIsSchemaValidated() {
+    assertThrows(
+        SchemaValidationError.class,
+        () ->
+            SwmlRenderer.renderFunctionResponseSwml(
+                "bye", newService(), List.of(Map.of("hangup", Map.of("reasonn", "busy"))), "json"));
+  }
+
+  /** A widened reason is accepted by that same path. */
+  @Test
+  void testFunctionResponseActionAcceptsWidenedHangupReason() {
+    assertDoesNotThrow(
+        () ->
+            SwmlRenderer.renderFunctionResponseSwml(
+                "bye",
+                newService(),
+                List.of(Map.of("hangup", Map.of("reason", "not-a-listed-reason"))),
+                "json"));
   }
 
   @Test

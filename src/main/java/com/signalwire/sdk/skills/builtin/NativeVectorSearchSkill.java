@@ -38,21 +38,43 @@ public class NativeVectorSearchSkill implements SkillBase {
   // (native_vector_search/skill.py).
   private String indexFile = "default";
 
+  /**
+   * The registry name this skill is loaded by: {@code native_vector_search}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "native_vector_search";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Search document indexes using vector similarity and keyword search (local or remote)";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code remote_url}; {@code false}
+   *     otherwise, which leaves the skill unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -88,6 +110,11 @@ public class NativeVectorSearchSkill implements SkillBase {
     return remoteUrl != null && !remoteUrl.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public List<ToolDefinition> registerTools() {
@@ -169,6 +196,12 @@ public class NativeVectorSearchSkill implements SkillBase {
             }));
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     List<String> hints =

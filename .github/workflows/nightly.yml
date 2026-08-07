@@ -123,6 +123,20 @@ jobs:
           pip install -e porting-sdk/test_harness/mock_relay
           pip install -e porting-sdk/test_harness/mock_signalwire
 
+      # ruff is the Python half of the FMT and LINT gates (scripts/ enumerators +
+      # generators). scripts/_env.sh fails LOUD without it. Config: ./ruff.toml.
+      - name: Install ruff (Python half of FMT + LINT)
+        run: |
+          # PINNED EXACT: an unbounded `pip install ruff` resolves the newest release
+          # at CI time, so a ruff release that adds a rule or changes a format
+          # heuristic reds FMT/LINT on a commit that was green locally. Keep in
+          # lockstep with SW_RUFF_VERSION in scripts/_env.sh.
+          pip install "ruff==0.15.21"
+          # Assert the pin took — pip can satisfy a spec from an unexpected
+          # index or cache, so verify rather than assume.
+          ruff --version
+          ruff --version | grep -qw '0\.15\.21' || { echo "FATAL: ruff is not the pinned 0.15.21" >&2; exit 1; }
+
       # The EMISSION gate needs `import signalwire` (the oracle). Install it from
       # the adjacent checkout only if it isn't already importable — so a runner
       # that already has it (or a future shared setup) isn't reinstalled.

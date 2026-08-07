@@ -80,24 +80,39 @@ public class RestError extends RuntimeException {
     this.requestId = extractRequestId(headers);
   }
 
+  /**
+   * HTTP status of the failing response, or {@code 0} when the request never got one (a transport
+   * error).
+   *
+   * @return the status code.
+   */
   public int getStatusCode() {
     return statusCode;
   }
 
   /**
    * The response body of the failing request — the {@code body} envelope field. Alias of {@link
-   * #getResponseBody()} under the reference's field name ({@code SignalWireRestError.body},
-   * _base.py) so the error envelope (status / body / url / method) is reachable under the reference
-   * spelling.
+   * #getResponseBody()}, so the whole error envelope (status / body / url / method) is reachable
+   * under its wire field names.
    */
   public String getBody() {
     return responseBody;
   }
 
+  /**
+   * HTTP method of the failing request.
+   *
+   * @return the method.
+   */
   public String getMethod() {
     return method;
   }
 
+  /**
+   * Path of the failing request, without the space host or query string.
+   *
+   * @return the path.
+   */
   public String getPath() {
     return path;
   }
@@ -107,6 +122,12 @@ public class RestError extends RuntimeException {
     return url;
   }
 
+  /**
+   * Raw body of the failing response. It is server-supplied content that may echo request data, so
+   * treat it as untrusted when surfacing it to a user.
+   *
+   * @return the response body, or {@code null} for a transport error.
+   */
   public String getResponseBody() {
     return responseBody;
   }
@@ -131,8 +152,7 @@ public class RestError extends RuntimeException {
 
   /**
    * Response header names SignalWire (and common proxies) use for the platform request id, in
-   * preference order. Matched case-insensitively. Mirrors the reference's {@code
-   * _REQUEST_ID_HEADERS} (_base.py).
+   * preference order. Matched case-insensitively.
    */
   private static final List<String> REQUEST_ID_HEADERS =
       List.of("x-request-id", "x-signalwire-request-id", "request-id", "x-amzn-requestid");

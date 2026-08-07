@@ -22,11 +22,10 @@ import java.util.Map;
  * subclass that inherits a public {@code delete(id)}) neither recurses into itself nor shadows the
  * raw receiver — the semantic CRUD verbs and the raw path receivers are distinct methods.
  *
- * <p>Mirrors Python's {@code signalwire.rest.namespaces._base.BaseResource}: a base that carries
- * the HTTP plumbing and base path, over which the CRUD / read / fabric bases and the per-resource
- * classes are layered. The base contributes no public route surface of its own — every route is
- * declared by the concrete resource (explicitly, for {@code BaseResource} subclasses) or by the
- * CRUD / read / fabric bases below.
+ * <p>This base carries only the HTTP plumbing and the base path; the CRUD / read / fabric bases and
+ * the per-resource classes are layered over it. It contributes no public route surface of its own —
+ * every route is declared by the concrete resource (explicitly, for {@code BaseResource}
+ * subclasses) or by the CRUD / read / fabric bases below.
  */
 public class BaseResource {
 
@@ -34,9 +33,8 @@ public class BaseResource {
    * Shared JSON codec used to project a decoded wire {@code Map<String,Object>} onto a generated
    * typed response DTO. The generated resource methods return the closed spec-typed {@code
    * *Response} DTOs (JAVA-1 typed-returns flip); each still hits the {@code rest*} verb receiver
-   * (which decodes the body to a {@code Map}) and then re-projects that Map onto the DTO here.
-   * Mirrors the Python reference, whose typed methods {@code cast(...)} the same runtime dict to
-   * the response type — a static view over the wire JSON, never a validating parse.
+   * (which decodes the body to a {@code Map}) and then re-projects that Map onto the DTO here. The
+   * DTO is a static view over the wire JSON, never a validating parse.
    */
   private static final Gson RESPONSE_GSON = new Gson();
 
@@ -46,9 +44,8 @@ public class BaseResource {
   /**
    * Project a decoded wire {@code Map} onto a generated response DTO of type {@code T}. A {@code
    * null} raw (e.g. a bodyless DELETE) yields {@code null}. Unknown wire keys are ignored and
-   * absent DTO fields stay {@code null} — the same lenient, non-validating view the Python
-   * reference's {@code cast()} gives (the server response shape is never asserted at the SDK
-   * boundary).
+   * absent DTO fields stay {@code null} — the projection is lenient and non-validating, so the
+   * server response shape is never asserted at the SDK boundary.
    */
   protected static <T> T asType(Map<String, Object> raw, Class<T> type) {
     if (raw == null) {

@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 2b848d283a2d33e7b177be4e430b6af8c9c87a78",
+  "generated_from": "signalwire-java @ 97b2e51c9cb408dab9f4fc5923c7ff412a0f9cf2",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -556,6 +556,14 @@
           "verify_api_key",
           "verify_basic_auth",
           "verify_bearer_token"
+        ],
+        "BasicCredentials": [
+          "password",
+          "username"
+        ],
+        "BearerCredentials": [
+          "credentials",
+          "scheme"
         ]
       },
       "functions": []
@@ -737,7 +745,6 @@
       "classes": {
         "DataMap": [
           "DataMap",
-          "body",
           "data_map",
           "description",
           "errorKeys",
@@ -1282,6 +1289,8 @@
         "AIPostPromptText": [],
         "AIPromptPom": [],
         "AIPromptText": [],
+        "AiSidecar": [],
+        "AiSidecarConfig": [],
         "AllOfProperty": [],
         "AmazonBedrock": [],
         "AmazonBedrockObject": [],
@@ -1381,6 +1390,7 @@
         "Request": [],
         "RequestConfig": [],
         "Return": [],
+        "RingbackConfig": [],
         "SIPRefer": [],
         "SMSWithBody": [],
         "SMSWithMedia": [],
@@ -1683,10 +1693,12 @@
           "action",
           "await",
           "getCall",
+          "getCompleted",
           "getControlId",
           "getResult",
           "getState",
           "get_call",
+          "get_completed",
           "get_control_id",
           "get_result",
           "get_state",
@@ -4397,7 +4409,11 @@
     },
     "signalwire.runtime.serverless_adapter_response": {
       "classes": {
-        "ServerlessAdapterResponse": []
+        "ServerlessAdapterResponse": [
+          "body",
+          "headers",
+          "status"
+        ]
       },
       "functions": []
     },
@@ -4857,13 +4873,17 @@
           "getInstanceKey",
           "getName",
           "getParameterSchema",
+          "getRemoveXpaths",
           "get_description",
           "get_hints",
           "get_instance_key",
           "get_name",
           "get_parameter_schema",
+          "get_remove_xpaths",
           "registerTools",
           "register_tools",
+          "setRemoveXpaths",
+          "set_remove_xpaths",
           "setup",
           "supportsMultipleInstances",
           "supports_multiple_instances"
@@ -5092,6 +5112,7 @@
           "getBasicAuthCredentialsWithSource",
           "getConfigFile",
           "getDocument",
+          "getDomain",
           "getFunction",
           "getHost",
           "getName",
@@ -5102,6 +5123,8 @@
           "getSchemaPath",
           "getSchemaUtils",
           "getSecurity",
+          "getSslCertPath",
+          "getSslKeyPath",
           "get_all_functions",
           "get_auth_password",
           "get_auth_user",
@@ -5109,6 +5132,7 @@
           "get_basic_auth_credentials_with_source",
           "get_config_file",
           "get_document",
+          "get_domain",
           "get_function",
           "get_host",
           "get_name",
@@ -5118,6 +5142,8 @@
           "get_route",
           "get_schema_path",
           "get_security",
+          "get_ssl_cert_path",
+          "get_ssl_key_path",
           "gotoLabel",
           "goto_label",
           "handleRequest",
@@ -5126,7 +5152,9 @@
           "hasFunction",
           "has_function",
           "isSchemaValidation",
+          "isSslEnabled",
           "is_schema_validation",
+          "is_ssl_enabled",
           "joinConference",
           "joinRoom",
           "join_conference",
@@ -5208,7 +5236,11 @@
     },
     "signalwire.swml.service_http_result": {
       "classes": {
-        "ServiceHttpResult": []
+        "ServiceHttpResult": [
+          "body",
+          "headers",
+          "status"
+        ]
       },
       "functions": []
     },

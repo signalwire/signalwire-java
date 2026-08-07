@@ -17,13 +17,10 @@ import org.yaml.snakeyaml.Yaml;
  * Renders SWML documents for SignalWire AI Agents with AI and SWAIG components, built on top of the
  * {@link Service} document model.
  *
- * <p>Mirrors the Python reference {@code signalwire.core.swml_renderer.SwmlRenderer} (two
- * static-method helpers) and the Ruby {@code SignalWire::SWML::SwmlRenderer}. Both helpers are
- * static.
+ * <p>Both helpers are static; there is nothing to instantiate.
  *
  * <p>{@link #renderSwml(RenderOptions)} has many optional inputs, so it takes a {@link
- * RenderOptions} builder object (the Java named-parameter idiom); convenience overloads cover the
- * common minimal calls.
+ * RenderOptions} builder object; convenience overloads cover the common minimal calls.
  */
 public final class SwmlRenderer {
 
@@ -37,9 +34,8 @@ public final class SwmlRenderer {
   private SwmlRenderer() {}
 
   /**
-   * Options for {@link #renderSwml(RenderOptions)} — the Java named-parameter idiom for the many
-   * optional inputs of the reference {@code render_swml} static method. Build with {@link
-   * #of(Object, Service)} then chain setters.
+   * Options for {@link #renderSwml(RenderOptions)}, which has too many optional inputs for a
+   * positional signature. Build with {@link #of(Object, Service)} then chain setters.
    */
   public static final class RenderOptions {
     private Object prompt;
@@ -75,66 +71,158 @@ public final class SwmlRenderer {
       return o;
     }
 
+    /**
+     * The prompt run after the conversation ends, whose output becomes the call summary.
+     *
+     * @param v the post-prompt text.
+     * @return these options, for chaining.
+     */
     public RenderOptions postPrompt(String v) {
       this.postPrompt = v;
       return this;
     }
 
+    /**
+     * Where the platform POSTs the post-prompt summary. That endpoint receives conversation
+     * content.
+     *
+     * @param v the post-prompt URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions postPromptUrl(String v) {
       this.postPromptUrl = v;
       return this;
     }
 
+    /**
+     * The SWAIG function definitions to render into the AI verb — the tools the model may call.
+     *
+     * @param v the function objects as they should appear on the wire.
+     * @return these options, for chaining.
+     */
     public RenderOptions swaigFunctions(List<Map<String, Object>> v) {
       this.swaigFunctions = v;
       return this;
     }
 
+    /**
+     * Endpoint called when the AI session starts.
+     *
+     * @param v the startup hook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions startupHookUrl(String v) {
       this.startupHookUrl = v;
       return this;
     }
 
+    /**
+     * Endpoint called when the call hangs up.
+     *
+     * @param v the hangup hook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions hangupHookUrl(String v) {
       this.hangupHookUrl = v;
       return this;
     }
 
+    /**
+     * Whether the prompt passed to {@code of(...)} is a POM structure rather than a plain string.
+     * This governs how it is rendered, so it must match what was actually supplied.
+     *
+     * @param v {@code true} when the prompt is a POM.
+     * @return these options, for chaining.
+     */
     public RenderOptions promptIsPom(boolean v) {
       this.promptIsPom = v;
       return this;
     }
 
+    /**
+     * Extra keys merged at the {@code ai} verb's TOP level — they land beside {@code prompt} and
+     * {@code SWAIG}, NOT inside {@code ai.params}.
+     *
+     * <p>{@code AIObject} is CLOSED ({@code unevaluatedProperties: {"not": {}}}), so only keys it
+     * declares are legal here — {@code prompt}, {@code post_prompt}, {@code post_prompt_url},
+     * {@code SWAIG}, {@code params}, {@code global_data}, {@code hints}, {@code languages}, {@code
+     * pronounce}. LLM tuning knobs such as {@code temperature} are {@code AIParams} keys: pass them
+     * as {@code params(Map.of("params", Map.of("temperature", 0.4)))}. (This javadoc previously
+     * claimed the map rendered into {@code ai.params}; it does not, and the mismatch shipped
+     * invalid documents because this path bypassed the validator.)
+     *
+     * @param v the top-level ai keys.
+     * @return these options, for chaining.
+     */
     public RenderOptions params(Map<String, Object> v) {
       this.params = v;
       return this;
     }
 
+    /**
+     * Whether the rendered document answers the call before the AI verb runs.
+     *
+     * @param v whether to emit an answer verb.
+     * @return these options, for chaining.
+     */
     public RenderOptions addAnswer(boolean v) {
       this.addAnswer = v;
       return this;
     }
 
+    /**
+     * Whether the rendered document starts background call recording. Recording call audio carries
+     * consent and retention obligations in most jurisdictions.
+     *
+     * @param v whether to record.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordCall(boolean v) {
       this.recordCall = v;
       return this;
     }
 
+    /**
+     * Container format for the recording; defaults to {@code mp4}. Only meaningful when {@link
+     * #recordCall(boolean)} is on.
+     *
+     * @param v the container format.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordFormat(String v) {
       this.recordFormat = v;
       return this;
     }
 
+    /**
+     * Whether the recording keeps each leg on its own channel; defaults to {@code true}, which is
+     * what makes per-speaker transcription possible afterwards.
+     *
+     * @param v whether to record in stereo.
+     * @return these options, for chaining.
+     */
     public RenderOptions recordStereo(boolean v) {
       this.recordStereo = v;
       return this;
     }
 
+    /**
+     * Output format for the rendered document; defaults to {@code json}.
+     *
+     * @param v the output format.
+     * @return these options, for chaining.
+     */
     public RenderOptions format(String v) {
       this.format = v;
       return this;
     }
 
+    /**
+     * Webhook URL applied to SWAIG functions that do not carry one of their own.
+     *
+     * @param v the default webhook URL.
+     * @return these options, for chaining.
+     */
     public RenderOptions defaultWebhookUrl(String v) {
       this.defaultWebhookUrl = v;
       return this;
@@ -169,7 +257,10 @@ public final class SwmlRenderer {
       Map<String, Object> rc = new LinkedHashMap<>();
       rc.put("format", opts.recordFormat);
       rc.put("stereo", opts.recordStereo);
-      opts.service.getDocument().addVerb("record_call", rc);
+      // Through the validating Service.addVerb choke point, as the reference does
+      // (swml_renderer.py routes every verb through service.add_verb) — the raw
+      // Document entry point accepts any shape, which is how invalid configs ship.
+      opts.service.addVerb("record_call", rc);
     }
 
     List<Map<String, Object>> functions =
@@ -220,9 +311,14 @@ public final class SwmlRenderer {
       String responseText, Service service, List<Map<String, Object>> actions, String format) {
     service.getDocument().reset();
     if (responseText != null && !responseText.isEmpty()) {
+      // Text is played via the `say:` URL scheme — the SWML `play` verb has no `text`
+      // key (its config is PlayWithURL/PlayWithURLS, url matching `...|say: ?.*|...`).
+      // Emitting `{"text": ...}` produced a document the SWML schema rejects, and it
+      // shipped silently because this wrote through the RAW document. Route through the
+      // validating Service.addVerb choke point, as the reference does.
       Map<String, Object> play = new LinkedHashMap<>();
-      play.put("text", responseText);
-      service.getDocument().addVerb("play", play);
+      play.put("url", "say:" + responseText);
+      service.addVerb("play", play);
     }
     if (actions != null) {
       for (Map<String, Object> action : actions) {
@@ -240,11 +336,15 @@ public final class SwmlRenderer {
   // Helpers
   // ------------------------------------------------------------------
 
-  /** Add the first recognised action verb from an action map to the document. */
+  /**
+   * Add the first recognised action verb from an action map to the document, through the validating
+   * {@link Service#addVerb} choke point — a caller-supplied action config that the SWML schema
+   * rejects must raise, not ship.
+   */
   private static void addResponseAction(Service service, Map<String, Object> action) {
     for (String v : RESPONSE_ACTION_VERBS) {
       if (action.containsKey(v)) {
-        service.getDocument().addVerb(v, action.get(v));
+        service.addVerb(v, action.get(v));
         return;
       }
     }

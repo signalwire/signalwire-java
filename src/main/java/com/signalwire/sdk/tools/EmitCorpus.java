@@ -17,28 +17,25 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * EmitCorpus — the Java port's EMISSION-DUMP program for the cross-port emission differ
- * (porting-sdk/scripts/diff_port_emission.py).
+ * EmitCorpus — the EMISSION-DUMP program consumed by the SDK's emission-conformance differ.
  *
- * <p>It builds the shared {@code FunctionResult} corpus (porting-sdk/scripts/emission_corpus.py —
- * the single source of truth) using the Java SDK's native {@link FunctionResult} API, serialises
- * each entry the same way the SDK serialises on the wire ({@link FunctionResult#toMap()}), and
- * prints ONE JSON object mapping
+ * <p>It builds the shared {@code FunctionResult} corpus using this SDK's native {@link
+ * FunctionResult} API, serialises each entry the same way the SDK serialises on the wire ({@link
+ * FunctionResult#toMap()}), and prints ONE JSON object mapping
  *
  * <pre>
  *   corpus-id -&gt; emission
  * </pre>
  *
  * to stdout. The differ runs this program, parses that object, and byte-compares each entry against
- * Python's {@code to_dict()}. See the "per-port dump contract" in the differ's {@code --help} and
- * porting-sdk/IDIOM_PASS_JOURNAL.md §4 Tier-0. This mirrors Go's {@code cmd/emit-corpus/main.go}.
+ * the expected emission. See the "dump contract" in the differ's {@code --help}.
  *
  * <p>CONTRACT (why this file looks the way it does):
  *
  * <ul>
- *   <li>Every corpus id in {@code emission_corpus.corpus_ids()} MUST appear here exactly once (the
- *       differ rejects an id-set mismatch as a setup error — a skewed set would mask real diffs).
- *       When the shared corpus grows, add the new id here.
+ *   <li>Every id in the shared corpus MUST appear here exactly once (the differ rejects an id-set
+ *       mismatch as a setup error — a skewed set would mask real diffs). When the shared corpus
+ *       grows, add the new id here.
  *   <li>The argument VALUES are the WIRE values (plain strings/numbers/bools/maps). Where the Java
  *       API types a closed set ({@code RecordFormat}, {@code RecordDirection}, {@code
  *       TapDirection}, {@code Codec}) the bare-string overload is exercised so the emitted SWML is
@@ -63,8 +60,8 @@ final class EmitCorpus {
   private EmitCorpus() {}
 
   /**
-   * The Python default {@code ai_response} for {@code pay()} — pinned so the full-arity pay
-   * emission is deterministic (mirrors the corpus).
+   * The default {@code ai_response} for {@code pay()} — pinned so the full-arity pay emission is
+   * deterministic.
    */
   private static final String PAY_AI_RESPONSE =
       "The payment status is ${pay_result}, do not mention anything else about "
@@ -84,7 +81,7 @@ final class EmitCorpus {
     return new ArrayList<>(Arrays.asList(items));
   }
 
-  /** Ordered map helper that preserves insertion order (Python dict order). */
+  /** Ordered map helper that preserves insertion order (the wire's key order). */
   private static Map<String, Object> map(Object... kv) {
     Map<String, Object> m = new LinkedHashMap<>();
     for (int i = 0; i < kv.length; i += 2) {
@@ -94,9 +91,9 @@ final class EmitCorpus {
   }
 
   /**
-   * The Java-native mirror of porting-sdk/scripts/emission_corpus.py. The ids and the resulting
-   * emission must match the Python oracle exactly (modulo the whole-float artifact the differ
-   * normalises: Python {@code 44.0} == Java {@code 44.0} both fold to {@code 44}).
+   * The Java-native build of the shared emission corpus. The ids and the resulting emission must
+   * match the expected emission exactly, modulo the whole-float artifact the differ normalises
+   * ({@code 44.0} and {@code 44} both fold to {@code 44}).
    */
   private static List<Entry> corpus() {
     List<Entry> c = new ArrayList<>();
@@ -496,6 +493,11 @@ final class EmitCorpus {
     return m;
   }
 
+  /**
+   * Entry point: emits the EMISSION-DUMP corpus this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     // disableHtmlEscaping mirrors Go's enc.SetEscapeHTML(false): keep '+'/'&'/
     // '<' etc. literal so the JSON matches Python's json.dumps output.

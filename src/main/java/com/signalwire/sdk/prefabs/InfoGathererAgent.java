@@ -15,9 +15,8 @@ import java.util.*;
 public class InfoGathererAgent {
 
   /**
-   * Callback that produces the question list per-request in dynamic mode. Mirrors the Python
-   * InfoGathererAgent question callback signature {@code (query_params, body_params, headers) ->
-   * questions}.
+   * Callback that produces the question list per-request in dynamic mode. It receives the request's
+   * query params, body params, and headers, and returns the questions to ask.
    */
   @FunctionalInterface
   public interface QuestionCallback {
@@ -96,9 +95,9 @@ public class InfoGathererAgent {
   }
 
   /**
-   * Set a callback that produces the question list per-request (dynamic mode). Ported from Python
-   * InfoGathererAgent.set_question_callback: when set and no static questions were supplied, {@link
-   * #onSwmlRequest} invokes it and seeds global_data with the returned questions.
+   * Set a callback that produces the question list per-request (dynamic mode). When set and no
+   * static questions were supplied, {@link #onSwmlRequest} invokes it and seeds global_data with
+   * the returned questions.
    *
    * @param callback the per-request question producer
    * @return this prefab for chaining
@@ -108,12 +107,33 @@ public class InfoGathererAgent {
     return this;
   }
 
+  /** Dynamic-configuration hook with every optional param defaulted to {@code null}. */
+  public Map<String, Object> onSwmlRequest() {
+    return onSwmlRequest(null, null, null);
+  }
+
   /**
-   * Dynamic-configuration hook invoked when SWML is requested. Ported from Python
-   * InfoGathererAgent.on_swml_request: in static mode returns {@code null} (no override); in
-   * dynamic mode it calls the registered {@link QuestionCallback} (or a name/message fallback if
-   * none is set) and returns a {@code {"global_data": {questions, question_index, answers}}}
-   * override map.
+   * Dynamic-configuration hook supplying the request body, with the remaining params defaulted to
+   * {@code null}.
+   */
+  public Map<String, Object> onSwmlRequest(Map<String, Object> requestData) {
+    return onSwmlRequest(requestData, null, null);
+  }
+
+  /**
+   * Dynamic-configuration hook supplying the request body and query params, with the last param
+   * defaulted to {@code null}.
+   */
+  public Map<String, Object> onSwmlRequest(
+      Map<String, Object> requestData, Map<String, Object> queryParams) {
+    return onSwmlRequest(requestData, queryParams, null);
+  }
+
+  /**
+   * Dynamic-configuration hook invoked when SWML is requested. In static mode it returns {@code
+   * null} (no override); in dynamic mode it calls the registered {@link QuestionCallback} (or a
+   * name/message fallback if none is set) and returns a {@code {"global_data": {questions,
+   * question_index, answers}}} override map.
    *
    * @param requestData parsed request body (body params), or {@code null}
    * @param queryParams request query parameters, or {@code null}
@@ -201,9 +221,8 @@ public class InfoGathererAgent {
   }
 
   /**
-   * SWAIG tool handler: return the first question. Ported from Python
-   * InfoGathererAgent.start_questions -- reads {@code questions} / {@code question_index} from
-   * global_data and returns the instruction to ask the current question.
+   * SWAIG tool handler: return the first question. Reads {@code questions} / {@code question_index}
+   * from global_data and returns the instruction to ask the current question.
    */
   @SuppressWarnings("unchecked")
   public FunctionResult startQuestions(Map<String, Object> args, Map<String, Object> rawData) {
@@ -228,10 +247,9 @@ public class InfoGathererAgent {
   }
 
   /**
-   * SWAIG tool handler: record the current answer and advance. Ported from Python
-   * InfoGathererAgent.submit_answer -- stores {@code {key_name, answer}} into the answers list,
-   * increments question_index, and returns either the next question instruction or a completion
-   * message, updating global_data accordingly.
+   * SWAIG tool handler: record the current answer and advance. Stores {@code {key_name, answer}}
+   * into the answers list, increments question_index, and returns either the next question
+   * instruction or a completion message, updating global_data accordingly.
    */
   @SuppressWarnings("unchecked")
   public FunctionResult submitAnswer(Map<String, Object> args, Map<String, Object> rawData) {
@@ -287,14 +305,30 @@ public class InfoGathererAgent {
     return result;
   }
 
+  /**
+   * The underlying agent this prefab configured. Use it to add tools, prompt sections, or skills
+   * beyond what the prefab sets up.
+   *
+   * @return the wrapped agent.
+   */
   public AgentBase getAgent() {
     return agent;
   }
 
+  /**
+   * Start the agent's HTTP server and serve until stopped.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void serve() throws Exception {
     agent.serve();
   }
 
+  /**
+   * Start the agent's HTTP server. Equivalent to {@link #serve()}.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void run() throws Exception {
     agent.run();
   }

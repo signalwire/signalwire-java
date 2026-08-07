@@ -28,9 +28,19 @@ Two emission modes:
   ``audit_docs.py``, which extracts method-call patterns from
   ``docs/`` and ``examples/*.java`` in their natural Java form.
 
+An output destination is MANDATORY — ``--output PATH`` (write the file) or
+``--stdout`` (pipe it). A bare run FAILS LOUD with a usage error. It used to
+default to stdout, and that default was a silent wrong-green: a bare run printed
+the snapshot to a stdout the caller discarded, wrote NOTHING, and exited 0 — so a
+clean ``git status`` afterwards read as "no change was needed" when it actually
+meant "nothing was written" (it cost a 7-port surface-audit red). php / rust /
+cpp / dotnet / perl / ts / go all write the file rather than defaulting to a pipe;
+this makes Java's enumerator stop being the fleet's one exception.
+
 Usage::
 
-    python3 scripts/enumerate_surface.py                      # stdout
+    python3 scripts/enumerate_surface.py                      # ERROR: names no destination
+    python3 scripts/enumerate_surface.py --stdout             # explicit pipe
     python3 scripts/enumerate_surface.py --output port_surface.json
     python3 scripts/enumerate_surface.py --check --output port_surface.json
     python3 scripts/enumerate_surface.py --native --output port_surface_native.json
@@ -51,6 +61,7 @@ from pathlib import Path
 # Python-reference module lookup, seeded from porting-sdk/python_surface.json.
 # A Java class translates to the Python module that owns the same class name.
 # ---------------------------------------------------------------------------
+
 
 def build_class_to_module_map(reference_json: Path) -> dict[str, str]:
     """Return {ClassName: python.module} from the reference surface."""
@@ -115,10 +126,17 @@ _ACCESSOR_PREFIX_RE = re.compile(r"^(?:get|set|is|has|with)_(?P<field>.+)$")
 # Ctor / dunder names — never a surface CAPABILITY difference. Excluded from
 # emission when they would be a port-only ADDITION (idiom_reaudit_brief cat3);
 # kept only where the reference records the same dunder on that class.
-_CTOR_DUNDER_NAMES = frozenset({
-    "__init__", "__repr__", "__str__", "__eq__", "__hash__",
-    "__enter__", "__exit__",
-})
+_CTOR_DUNDER_NAMES = frozenset(
+    {
+        "__init__",
+        "__repr__",
+        "__str__",
+        "__eq__",
+        "__hash__",
+        "__enter__",
+        "__exit__",
+    }
+)
 
 
 def exclude_ctor_dunder(
@@ -132,7 +150,8 @@ def exclude_ctor_dunder(
         for cls, methods in entry.get("classes", {}).items():
             ref_members = oracle_class_members.get((mod, cls), set())
             entry["classes"][cls] = [
-                m for m in methods
+                m
+                for m in methods
                 if not (m in _CTOR_DUNDER_NAMES and m not in ref_members)
             ]
 
@@ -170,8 +189,7 @@ def fold_accessors_to_members(
                 # the reference deliberately records both the attribute AND its
                 # accessor (e.g. AgentServer records both ``agents`` and
                 # ``get_agents``), so ``get_agents`` must stay to match its twin.
-                if (m and m.group("field") in ref_members
-                        and name not in twin_names):
+                if m and m.group("field") in ref_members and name not in twin_names:
                     folded.add(m.group("field"))
                 else:
                     folded.add(name)
@@ -232,10 +250,10 @@ def load_oracle_generated_members(
 _PUBLIC_FIELD_RE = re.compile(
     r"(?:@com\.google\.gson\.annotations\.SerializedName\(\s*\"(?P<wire>[^\"]*)\"\s*\)"
     r"|@SerializedName\(\s*\"(?P<wire2>[^\"]*)\"\s*\)\s*)?"  # optional wire-key annotation
-    r"\s*\bpublic\s+(?:static\s+|final\s+)*"       # modifiers (not a method: no '(')
-    r"[\w.$]+(?:\s*<[^;{}()]*>)?(?:\s*\[\s*\])*"    # type (generics / arrays)
-    r"\s+(?P<name>[A-Za-z_$][\w$]*)\s*"            # field name
-    r"(?:=[^;{}()]*)?;",                            # optional initializer, ';'
+    r"\s*\bpublic\s+(?:static\s+|final\s+)*"  # modifiers (not a method: no '(')
+    r"[\w.$]+(?:\s*<[^;{}()]*>)?(?:\s*\[\s*\])*"  # type (generics / arrays)
+    r"\s+(?P<name>[A-Za-z_$][\w$]*)\s*"  # field name
+    r"(?:=[^;{}()]*)?;",  # optional initializer, ';'
 )
 
 
@@ -356,8 +374,12 @@ _CLASS_RENAMES: dict[str, str] = {
 # records these with ONLY ``__init__``; their Java lazy-accessor methods are the
 # client-tree wiring the oracle does not compare. Restrict them to ``__init__``.
 _GENERATED_CONTAINERS = {
-    "FabricNamespace", "VideoNamespace", "LogsNamespace",
-    "RegistryNamespace", "ProjectNamespace", "DatasphereNamespace",
+    "FabricNamespace",
+    "VideoNamespace",
+    "LogsNamespace",
+    "RegistryNamespace",
+    "ProjectNamespace",
+    "DatasphereNamespace",
 }
 
 # Generated-resource bases whose subclasses inherit create + update (the oracle
@@ -420,11 +442,39 @@ _GEN_TYPE_PKG_TO_MODULE = {
 _GEN_TYPE_COLLISION_NAMES = {
     # java.lang built-ins that clash (PascalCase class names never hit a lowercase
     # keyword, so this set is the java.lang collision set generate_rest suffixes).
-    "Record", "String", "Integer", "Long", "Double", "Boolean", "Object", "Void",
-    "Number", "Character", "Byte", "Short", "Float", "System", "Thread", "Runnable",
-    "Comparable", "Cloneable", "Iterable", "Error", "Exception", "Class", "Enum",
-    "Math", "Process", "Runtime", "Package", "Module", "Override", "Deprecated",
-    "SuppressWarnings", "FunctionalInterface", "SafeVarargs",
+    "Record",
+    "String",
+    "Integer",
+    "Long",
+    "Double",
+    "Boolean",
+    "Object",
+    "Void",
+    "Number",
+    "Character",
+    "Byte",
+    "Short",
+    "Float",
+    "System",
+    "Thread",
+    "Runnable",
+    "Comparable",
+    "Cloneable",
+    "Iterable",
+    "Error",
+    "Exception",
+    "Class",
+    "Enum",
+    "Math",
+    "Process",
+    "Runtime",
+    "Package",
+    "Module",
+    "Override",
+    "Deprecated",
+    "SuppressWarnings",
+    "FunctionalInterface",
+    "SafeVarargs",
 }
 
 
@@ -442,9 +492,10 @@ def _gen_type_module(java_package: str) -> str | None:
     if java_package in _GEN_TYPE_PKG_TO_MODULE:
         return _GEN_TYPE_PKG_TO_MODULE[java_package]
     if java_package.startswith(_GEN_TYPE_PKG_PREFIX):
-        sub = java_package[len(_GEN_TYPE_PKG_PREFIX):].split(".", 1)[0]
+        sub = java_package[len(_GEN_TYPE_PKG_PREFIX) :].split(".", 1)[0]
         return _GEN_TYPE_REST_SUB_TO_MODULE.get(sub)
     return None
+
 
 # ``public class Foo extends Bar {`` header of a generated resource. Read from
 # the RAW source (comments/imports already name ``BaseResource`` etc., so match
@@ -461,10 +512,25 @@ def _generated_extends(raw_src: str) -> str | None:
     m = _GENERATED_EXTENDS_RE.search(raw_src)
     return m.group(1) if m else None
 
+
 _CAMEL_RE_1 = re.compile(r"(.)([A-Z][a-z]+)")
 _CAMEL_RE_2 = re.compile(r"([a-z0-9])([A-Z])")
-_PY_KEYWORDS = {"pass", "class", "def", "from", "import", "return", "yield",
-                "global", "lambda", "raise", "try", "with", "async", "await"}
+_PY_KEYWORDS = {
+    "pass",
+    "class",
+    "def",
+    "from",
+    "import",
+    "return",
+    "yield",
+    "global",
+    "lambda",
+    "raise",
+    "try",
+    "with",
+    "async",
+    "await",
+}
 
 # Java method name → Python-reference method name. Applied after the usual
 # camel→snake translation to bridge idiomatic naming gaps (Java's
@@ -535,34 +601,133 @@ _METHOD_RENAMES: dict[str, str] = {
 # are deliberately absent here — they remain annotated PORT_ADDITIONS (extra Java
 # accessor surface the reference lacks).
 _EVENT_METHOD_RENAMES_BY_CLASS: dict[str, dict[str, str]] = {
-    "CallCollectEvent": {"get_control_id": "control_id", "get_final": "final", "get_result": "result", "get_state": "state"},
+    "CallCollectEvent": {
+        "get_control_id": "control_id",
+        "get_final": "final",
+        "get_result": "result",
+        "get_state": "state",
+    },
     "CallConnectEvent": {"get_connect_state": "connect_state", "get_peer": "peer"},
     "CallDetectEvent": {"get_control_id": "control_id", "get_detect": "detect"},
-    "CallDialEvent": {"get_call": "call", "get_dial_state": "dial_state", "get_tag": "tag"},
+    "CallDialEvent": {
+        "get_call": "call",
+        "get_dial_state": "dial_state",
+        "get_tag": "tag",
+    },
     "CallFaxEvent": {"get_control_id": "control_id", "get_fax": "fax"},
     "CallPayEvent": {"get_control_id": "control_id", "get_state": "state"},
     "CallPlayEvent": {"get_control_id": "control_id", "get_state": "state"},
-    "CallReceiveEvent": {"get_call_state": "call_state", "get_context": "context", "get_device": "device", "get_direction": "direction", "get_node_id": "node_id", "get_project_id": "project_id", "get_segment_id": "segment_id", "get_tag": "tag"},
-    "CallRecordEvent": {"get_control_id": "control_id", "get_duration": "duration", "get_record": "record", "get_size": "size", "get_state": "state", "get_url": "url"},
-    "CallReferEvent": {"get_sip_notify_response_code": "sip_notify_response_code", "get_sip_refer_response_code": "sip_refer_response_code", "get_sip_refer_to": "sip_refer_to", "get_state": "state"},
+    "CallReceiveEvent": {
+        "get_call_state": "call_state",
+        "get_context": "context",
+        "get_device": "device",
+        "get_direction": "direction",
+        "get_node_id": "node_id",
+        "get_project_id": "project_id",
+        "get_segment_id": "segment_id",
+        "get_tag": "tag",
+    },
+    "CallRecordEvent": {
+        "get_control_id": "control_id",
+        "get_duration": "duration",
+        "get_record": "record",
+        "get_size": "size",
+        "get_state": "state",
+        "get_url": "url",
+    },
+    "CallReferEvent": {
+        "get_sip_notify_response_code": "sip_notify_response_code",
+        "get_sip_refer_response_code": "sip_refer_response_code",
+        "get_sip_refer_to": "sip_refer_to",
+        "get_state": "state",
+    },
     "CallSendDigitsEvent": {"get_control_id": "control_id", "get_state": "state"},
-    "CallStateEvent": {"get_call_state": "call_state", "get_device": "device", "get_direction": "direction", "get_end_reason": "end_reason"},
-    "CallStreamEvent": {"get_control_id": "control_id", "get_name": "name", "get_state": "state", "get_url": "url"},
-    "CallTapEvent": {"get_control_id": "control_id", "get_device": "device", "get_state": "state", "get_tap": "tap"},
-    "CallTranscribeEvent": {"get_control_id": "control_id", "get_duration": "duration", "get_recording_id": "recording_id", "get_size": "size", "get_state": "state", "get_url": "url"},
+    "CallStateEvent": {
+        "get_call_state": "call_state",
+        "get_device": "device",
+        "get_direction": "direction",
+        "get_end_reason": "end_reason",
+    },
+    "CallStreamEvent": {
+        "get_control_id": "control_id",
+        "get_name": "name",
+        "get_state": "state",
+        "get_url": "url",
+    },
+    "CallTapEvent": {
+        "get_control_id": "control_id",
+        "get_device": "device",
+        "get_state": "state",
+        "get_tap": "tap",
+    },
+    "CallTranscribeEvent": {
+        "get_control_id": "control_id",
+        "get_duration": "duration",
+        "get_recording_id": "recording_id",
+        "get_size": "size",
+        "get_state": "state",
+        "get_url": "url",
+    },
     "CallingErrorEvent": {"get_code": "code", "get_message": "message"},
-    "ConferenceEvent": {"get_conference_id": "conference_id", "get_name": "name", "get_status": "status"},
+    "ConferenceEvent": {
+        "get_conference_id": "conference_id",
+        "get_name": "name",
+        "get_status": "status",
+    },
     "DenoiseEvent": {"is_denoised": "denoised"},
     "EchoEvent": {"get_state": "state"},
     "HoldEvent": {"get_state": "state"},
-    "MessagingReceiveEvent": {"get_body": "body", "get_context": "context", "get_direction": "direction", "get_from_number": "from_number", "get_media": "media", "get_message_id": "message_id", "get_message_state": "message_state", "get_segments": "segments", "get_tags": "tags", "get_to_number": "to_number"},
-    "MessagingStateEvent": {"get_body": "body", "get_context": "context", "get_direction": "direction", "get_from_number": "from_number", "get_media": "media", "get_message_id": "message_id", "get_message_state": "message_state", "get_reason": "reason", "get_segments": "segments", "get_tags": "tags", "get_to_number": "to_number"},
-    "QueueEvent": {"get_control_id": "control_id", "get_position": "position", "get_queue_id": "queue_id", "get_queue_name": "queue_name", "get_size": "size", "get_status": "status"},
-    "RelayEvent": {"get_call_id": "call_id", "get_event_type": "event_type", "get_params": "params", "get_timestamp": "timestamp"},
+    "MessagingReceiveEvent": {
+        "get_body": "body",
+        "get_context": "context",
+        "get_direction": "direction",
+        "get_from_number": "from_number",
+        "get_media": "media",
+        "get_message_id": "message_id",
+        "get_message_state": "message_state",
+        "get_segments": "segments",
+        "get_tags": "tags",
+        "get_to_number": "to_number",
+    },
+    "MessagingStateEvent": {
+        "get_body": "body",
+        "get_context": "context",
+        "get_direction": "direction",
+        "get_from_number": "from_number",
+        "get_media": "media",
+        "get_message_id": "message_id",
+        "get_message_state": "message_state",
+        "get_reason": "reason",
+        "get_segments": "segments",
+        "get_tags": "tags",
+        "get_to_number": "to_number",
+    },
+    "QueueEvent": {
+        "get_control_id": "control_id",
+        "get_position": "position",
+        "get_queue_id": "queue_id",
+        "get_queue_name": "queue_name",
+        "get_size": "size",
+        "get_status": "status",
+    },
+    "RelayEvent": {
+        "get_call_id": "call_id",
+        "get_event_type": "event_type",
+        "get_params": "params",
+        "get_timestamp": "timestamp",
+    },
     # AI-Chat response @dataclass DTOs (java source class names == reference names).
     "ChatLog": {"get_call_timeline": "call_timeline", "get_messages": "messages"},
-    "ChatResponse": {"get_conversation_id": "conversation_id", "get_text": "text", "get_user_event": "user_event"},
-    "ConversationInfo": {"get_id": "id", "get_initial_message": "initial_message", "get_status": "status"},
+    "ChatResponse": {
+        "get_conversation_id": "conversation_id",
+        "get_text": "text",
+        "get_user_event": "user_event",
+    },
+    "ConversationInfo": {
+        "get_id": "id",
+        "get_initial_message": "initial_message",
+        "get_status": "status",
+    },
     # AI-Chat class-B2 attributes: the oracle records ``AIChatError.code``/``.message``
     # and ``AIChatClient.url`` as members (public __init__ attributes that are also
     # ctor params). Java's read side is getCode()/getServerMessage()/getUrl() — fold
@@ -627,10 +792,8 @@ _JAVA_SURFACE_MODULE_OVERRIDES: dict[str, str] = {
     # leaf verbatim, but these packages differ from the natural fallback).
     "com.signalwire.sdk.swaig.SWAIGFunction": "signalwire.core.swaig_function",
     "com.signalwire.sdk.agents.BedrockAgent": "signalwire.agents.bedrock",
-    "com.signalwire.sdk.core.agent.prompt.PromptManager":
-        "signalwire.core.agent.prompt.manager",
-    "com.signalwire.sdk.core.agent.tools.ToolRegistry":
-        "signalwire.core.agent.tools.registry",
+    "com.signalwire.sdk.core.agent.prompt.PromptManager": "signalwire.core.agent.prompt.manager",
+    "com.signalwire.sdk.core.agent.tools.ToolRegistry": "signalwire.core.agent.tools.registry",
     "com.signalwire.sdk.swml.SWMLBuilder": "signalwire.core.swml_builder",
     "com.signalwire.sdk.swml.SwmlRenderer": "signalwire.core.swml_renderer",
     "com.signalwire.sdk.swml.SWMLVerbHandler": "signalwire.core.swml_handler",
@@ -663,15 +826,26 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     ("Signalwire", "listSkillsWithParams"): ("signalwire", "list_skills_with_params"),
     ("Signalwire", "listSkills"): ("signalwire", "list_skills"),
     # ExecutionMode helpers
-    ("ExecutionMode", "getExecutionMode"): ("signalwire.core.logging_config", "get_execution_mode"),
+    ("ExecutionMode", "getExecutionMode"): (
+        "signalwire.core.logging_config",
+        "get_execution_mode",
+    ),
     # logging_config module-level free functions — Java groups them on the
     # Logger static-helper class; project back to the reference free-function
     # names (mirrors enumerate_signatures.py's FREE_FUNCTION_PROJECTIONS).
     ("Logger", "getLogger"): ("signalwire.core.logging_config", "get_logger"),
-    ("Logger", "configureLogging"): ("signalwire.core.logging_config", "configure_logging"),
-    ("Logger", "resetLoggingConfiguration"):
-        ("signalwire.core.logging_config", "reset_logging_configuration"),
-    ("Logger", "stripControlChars"): ("signalwire.core.logging_config", "strip_control_chars"),
+    ("Logger", "configureLogging"): (
+        "signalwire.core.logging_config",
+        "configure_logging",
+    ),
+    ("Logger", "resetLoggingConfiguration"): (
+        "signalwire.core.logging_config",
+        "reset_logging_configuration",
+    ),
+    ("Logger", "stripControlChars"): (
+        "signalwire.core.logging_config",
+        "strip_control_chars",
+    ),
     ("ExecutionMode", "isServerlessMode"): ("signalwire.utils", "is_serverless_mode"),
     # UrlValidator
     ("UrlValidator", "validateUrl"): ("signalwire.utils.url_validator", "validate_url"),
@@ -681,41 +855,61 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     # SecurityUtils static helpers → signalwire.core.security.security_utils
     # free functions (the Python reference exports them as bare module
     # functions; Java groups them on a static-only utility class).
-    ("SecurityUtils", "filterSensitiveHeaders"):
-        ("signalwire.core.security.security_utils", "filter_sensitive_headers"),
-    ("SecurityUtils", "redactUrl"):
-        ("signalwire.core.security.security_utils", "redact_url"),
-    ("SecurityUtils", "isValidHostname"):
-        ("signalwire.core.security.security_utils", "is_valid_hostname"),
+    ("SecurityUtils", "filterSensitiveHeaders"): (
+        "signalwire.core.security.security_utils",
+        "filter_sensitive_headers",
+    ),
+    ("SecurityUtils", "redactUrl"): (
+        "signalwire.core.security.security_utils",
+        "redact_url",
+    ),
+    ("SecurityUtils", "isValidHostname"): (
+        "signalwire.core.security.security_utils",
+        "is_valid_hostname",
+    ),
     # WebhookValidator static helpers → signalwire.core.security.webhook_validator
     # free functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py).
-    ("WebhookValidator", "validateWebhookSignature"):
-        ("signalwire.core.security.webhook_validator", "validate_webhook_signature"),
-    ("WebhookValidator", "validateRequest"):
-        ("signalwire.core.security.webhook_validator", "validate_request"),
+    ("WebhookValidator", "validateWebhookSignature"): (
+        "signalwire.core.security.webhook_validator",
+        "validate_webhook_signature",
+    ),
+    ("WebhookValidator", "validateRequest"): (
+        "signalwire.core.security.webhook_validator",
+        "validate_request",
+    ),
     # WebhookValidator.validate → the framework-free decomposed webhook-validation
     # core in signalwire.core.security.webhook_middleware (mirrors the same
     # projection in enumerate_signatures.py). The WebhookFilter servlet wrapper on
     # top of it stays a PORT_ADDITION idiom.
-    ("WebhookValidator", "validate"):
-        ("signalwire.core.security.webhook_middleware", "validate"),
+    ("WebhookValidator", "validate"): (
+        "signalwire.core.security.webhook_middleware",
+        "validate",
+    ),
     # TypeInference static helpers → signalwire.core.agent.tools.type_inference
     # free functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py).
     # Java has no runtime lambda reflection; the typed params come from the
     # ParameterSchema builder and inferSchema decomposes that built schema.
-    ("TypeInference", "inferSchema"):
-        ("signalwire.core.agent.tools.type_inference", "infer_schema"),
-    ("TypeInference", "createTypedHandlerWrapper"):
-        ("signalwire.core.agent.tools.type_inference", "create_typed_handler_wrapper"),
+    ("TypeInference", "inferSchema"): (
+        "signalwire.core.agent.tools.type_inference",
+        "infer_schema",
+    ),
+    ("TypeInference", "createTypedHandlerWrapper"): (
+        "signalwire.core.agent.tools.type_inference",
+        "create_typed_handler_wrapper",
+    ),
     # RequestOptionsSupport static helpers → signalwire.rest._request_options free
     # functions (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py). The
     # reference exports resolve / status_is_retryable as bare module functions; Java
     # has no module-level free functions, so they live on a static-only facade and
     # are lifted back to the canonical free-function home.
-    ("RequestOptionsSupport", "resolve"):
-        ("signalwire.rest._request_options", "resolve"),
-    ("RequestOptionsSupport", "statusIsRetryable"):
-        ("signalwire.rest._request_options", "status_is_retryable"),
+    ("RequestOptionsSupport", "resolve"): (
+        "signalwire.rest._request_options",
+        "resolve",
+    ),
+    ("RequestOptionsSupport", "statusIsRetryable"): (
+        "signalwire.rest._request_options",
+        "status_is_retryable",
+    ),
 }
 
 
@@ -742,36 +936,73 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
 # does not flag a port-side extra.
 _MIXIN_SURFACE_PROJECTIONS: dict[tuple[str, str], list[str]] = {
     ("signalwire.core.mixins.ai_config_mixin", "AIConfigMixin"): [
-        "add_function_include", "add_hint", "add_hints", "add_internal_filler",
-        "add_language", "add_mcp_server", "add_pattern_hint", "add_pronunciation",
-        "enable_debug_events", "enable_mcp_server", "get_language_params",
-        "set_function_includes", "set_global_data", "set_internal_fillers",
-        "set_language_params", "set_languages", "set_multilingual",
-        "set_native_functions", "set_param", "set_params",
-        "set_post_prompt_llm_params", "set_prompt_llm_params",
-        "set_pronunciations", "update_global_data",
+        "add_function_include",
+        "add_hint",
+        "add_hints",
+        "add_internal_filler",
+        "add_language",
+        "add_mcp_server",
+        "add_pattern_hint",
+        "add_pronunciation",
+        "enable_debug_events",
+        "enable_mcp_server",
+        "get_language_params",
+        "set_function_includes",
+        "set_global_data",
+        "set_internal_fillers",
+        "set_language_params",
+        "set_languages",
+        "set_multilingual",
+        "set_native_functions",
+        "set_param",
+        "set_params",
+        "set_post_prompt_llm_params",
+        "set_prompt_llm_params",
+        "set_pronunciations",
+        "update_global_data",
     ],
     ("signalwire.core.mixins.prompt_mixin", "PromptMixin"): [
-        "contexts", "define_contexts", "get_post_prompt", "get_prompt",
+        "contexts",
+        "define_contexts",
+        "get_post_prompt",
+        "get_prompt",
         "prompt_add_section",
-        "prompt_add_subsection", "prompt_add_to_section",
-        "prompt_has_section", "reset_contexts", "set_post_prompt",
-        "set_prompt_pom", "set_prompt_text",
+        "prompt_add_subsection",
+        "prompt_add_to_section",
+        "prompt_has_section",
+        "reset_contexts",
+        "set_post_prompt",
+        "set_prompt_pom",
+        "set_prompt_text",
     ],
     ("signalwire.core.mixins.skill_mixin", "SkillMixin"): [
-        "add_skill", "has_skill", "list_skills", "remove_skill",
+        "add_skill",
+        "has_skill",
+        "list_skills",
+        "remove_skill",
     ],
     ("signalwire.core.mixins.tool_mixin", "ToolMixin"): [
-        "define_tool", "define_tools", "on_function_call",
+        "define_tool",
+        "define_tools",
+        "on_function_call",
         "register_swaig_function",
     ],
     ("signalwire.core.mixins.auth_mixin", "AuthMixin"): [
-        "validate_basic_auth", "get_basic_auth_credentials",
+        "validate_basic_auth",
+        "get_basic_auth_credentials",
     ],
     ("signalwire.core.mixins.web_mixin", "WebMixin"): [
-        "as_router", "enable_debug_routes", "get_app", "manual_set_proxy_url",
-        "on_request", "on_swml_request", "register_routing_callback", "run",
-        "serve", "set_dynamic_config_callback", "setup_graceful_shutdown",
+        "as_router",
+        "enable_debug_routes",
+        "get_app",
+        "manual_set_proxy_url",
+        "on_request",
+        "on_swml_request",
+        "register_routing_callback",
+        "run",
+        "serve",
+        "set_dynamic_config_callback",
+        "setup_graceful_shutdown",
     ],
     ("signalwire.core.mixins.state_mixin", "StateMixin"): [
         "validate_tool_token",
@@ -899,27 +1130,33 @@ _SURFACE_METHOD_ALIASES: dict[tuple[str, str], dict[str, str]] = {
 # computed, not hand-maintained: if a later oracle revision starts recording one of
 # these fields, the strip stops applying to it automatically.
 _CONSTRUCTION_PARAM_ACCESSORS: dict[tuple[str, str], frozenset[str]] = {
-    ("signalwire.core.agent_base", "AgentBase"): frozenset({
-        "get_agent_id",                    # agent_id
-        "get_default_webhook_url",         # default_webhook_url
-        "get_native_functions",            # native_functions
-        "get_token_expiry_secs",           # token_expiry_secs
-        "is_check_for_input_override",     # check_for_input_override
-        "is_enable_post_prompt_override",  # enable_post_prompt_override
-        "is_suppress_logs",                # suppress_logs
-        "is_use_pom",                      # use_pom
-    }),
-    ("signalwire.core.swml_service", "SWMLService"): frozenset({
-        "get_config_file",                 # config_file
-        "get_schema_path",                 # schema_path
-        "is_schema_validation",            # schema_validation
-    }),
+    ("signalwire.core.agent_base", "AgentBase"): frozenset(
+        {
+            "get_agent_id",  # agent_id
+            "get_default_webhook_url",  # default_webhook_url
+            "get_native_functions",  # native_functions
+            "get_token_expiry_secs",  # token_expiry_secs
+            "is_check_for_input_override",  # check_for_input_override
+            "is_enable_post_prompt_override",  # enable_post_prompt_override
+            "is_suppress_logs",  # suppress_logs
+            "is_use_pom",  # use_pom
+        }
+    ),
+    ("signalwire.core.swml_service", "SWMLService"): frozenset(
+        {
+            "get_config_file",  # config_file
+            "get_schema_path",  # schema_path
+            "is_schema_validation",  # schema_validation
+        }
+    ),
     # SchemaUtils.__init__(schema_path, schema_validation) — ``getSchemaPath()`` is
     # the read side of its own ``schema_path`` construction param (the reference
     # reads it as ``self.schema_utils.schema_path`` at agent_base.py:210).
-    ("signalwire.utils.schema_utils", "SchemaUtils"): frozenset({
-        "get_schema_path",                 # schema_path
-    }),
+    ("signalwire.utils.schema_utils", "SchemaUtils"): frozenset(
+        {
+            "get_schema_path",  # schema_path
+        }
+    ),
     # The WRITE side of the same contract. AgentBaseBuilder's setters ARE
     # AgentBase's construction parameter set — ``_BUILDER_CONSTRUCTS`` in
     # enumerate_signatures.py binds them to the ``construction`` node for
@@ -929,19 +1166,21 @@ _CONSTRUCTION_PARAM_ACCESSORS: dict[tuple[str, str], frozenset[str]] = {
     # independent surface. (The pre-existing builder setters are still carried in
     # PORT_ADDITIONS.md as self-declared idiom; that whole block is slated for the
     # fold-to-zero campaign — this table is where they land when it runs.)
-    ("signalwire.agent.agent_base_builder", "AgentBaseBuilder"): frozenset({
-        "agent_id",
-        "check_for_input_override",
-        "config_file",
-        "default_webhook_url",
-        "enable_post_prompt_override",
-        "native_functions",
-        "schema_path",
-        "schema_validation",
-        "suppress_logs",
-        "token_expiry_secs",
-        "use_pom",
-    }),
+    ("signalwire.agent.agent_base_builder", "AgentBaseBuilder"): frozenset(
+        {
+            "agent_id",
+            "check_for_input_override",
+            "config_file",
+            "default_webhook_url",
+            "enable_post_prompt_override",
+            "native_functions",
+            "schema_path",
+            "schema_validation",
+            "suppress_logs",
+            "token_expiry_secs",
+            "use_pom",
+        }
+    ),
 }
 
 
@@ -978,7 +1217,8 @@ def strip_construction_param_accessors(
             continue
         ref_members = oracle_class_members.get((mod, cls), set())
         drop = {
-            name for name in names
+            name
+            for name in names
             if _construction_accessor_field(name) not in ref_members
         }
         entry["classes"][cls] = [m for m in methods if m not in drop]
@@ -989,8 +1229,83 @@ def _construction_accessor_field(accessor: str) -> str:
     builder-setter name (``schema_path``) is already the field name."""
     for prefix in ("get_", "is_", "has_"):
         if accessor.startswith(prefix):
-            return accessor[len(prefix):]
+            return accessor[len(prefix) :]
     return accessor
+
+
+# The built-in skill classes' reference modules. Keyed on the module PREFIX, not
+# a hand list of class names, so a new built-in skill is covered the day it lands
+# with no table edit. ``signalwire.skills.registry`` / ``.skill_name`` also live
+# under this prefix; they are not SkillBase subclasses and carry none of the base
+# hooks, so the strip below is inert on them.
+_SKILL_MODULE_PREFIX = "signalwire.skills."
+_SKILL_BASE_KEY = ("signalwire.core.skill_base", "SkillBase")
+
+
+def _base_only_skill_hooks(
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> set[str]:
+    """Hooks the reference records on ``SkillBase`` and on ZERO skill subclass.
+
+    That shape is exactly a FINAL template method: the reference exposes the
+    public member on the base and routes subclass specialization through a
+    separate, non-recorded hook. ``get_prompt_sections`` became one when the
+    reference wrapped it around the ``skip_prompt`` guard and delegated to a
+    PROTECTED ``_get_prompt_sections()`` (signalwire-python
+    ``core/skill_base.py``), which no oracle records; the same is true of
+    ``validate_env_vars`` / ``validate_packages`` / ``update_skill_data`` and the
+    ``agent`` / ``params`` attributes.
+
+    Derived from the oracle at CALL time, never hand-kept: if the reference ever
+    starts recording one of these on a subclass, it drops out of this set on the
+    next regen and the port's override is emitted again with no code edit.
+    """
+    base = oracle_class_members.get(_SKILL_BASE_KEY, set())
+    if not base:
+        return set()
+    on_subclass: set[str] = set()
+    for (mod, _cls), members in oracle_class_members.items():
+        if mod.startswith(_SKILL_MODULE_PREFIX):
+            on_subclass |= members
+    return base - on_subclass
+
+
+def strip_base_only_skill_hooks(
+    modules: dict[str, dict],
+    oracle_class_members: dict[tuple[str, str], set[str]],
+) -> None:
+    """In-place: drop a base-only ``SkillBase`` hook from a concrete skill class.
+
+    ORACLE-KEYED, never a hand list (see ``_base_only_skill_hooks``). Java's
+    ``SkillBase`` is an interface whose ``default getPromptSections()`` IS the
+    override point — it has no protected-hook twin, and the ``skip_prompt`` guard
+    the reference put in the template method lives in Java's CALLER instead
+    (``SkillManager.java:116-118``), so the WIRE behaviour matches. But emitting
+    each subclass override as public surface claims 11 public members the
+    reference does not expose, which is a phantom ``missing-reference`` addition
+    on every built-in skill.
+
+    This cannot hide a real member: a hook the reference DOES record on any
+    subclass (``setup``, ``register_tools``, ``get_hints``, ``get_global_data``,
+    ``get_parameter_schema``, ``get_instance_key``, ``cleanup``) never enters the
+    base-only set, and ``SkillBase``'s own copy is out of scope (it lives in
+    ``signalwire.core.skill_base``, not under the skills prefix).
+
+    Fail-safe: an unresolvable oracle yields an EMPTY hook set and strips
+    nothing, rather than emptying every skill class — a mass false deletion would
+    read as a real regression.
+    """
+    hooks = _base_only_skill_hooks(oracle_class_members)
+    if not hooks:
+        return
+    for mod, entry in modules.items():
+        if not mod.startswith(_SKILL_MODULE_PREFIX):
+            continue
+        for cls, methods in entry.get("classes", {}).items():
+            ref_members = oracle_class_members.get((mod, cls), set())
+            entry["classes"][cls] = [
+                m for m in methods if not (m in hooks and m not in ref_members)
+            ]
 
 
 # Idiom-scaffolding classes to DROP from the compared surface. These are the
@@ -1111,13 +1426,63 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
 # are INJECTED into the surface (see the injection at the override apply site below) —
 # target ZERO ai_chat omissions, exactly as .NET folds IDisposable/``using`` (its
 # SURFACE_METHOD_INJECTIONS injects the same names).
+# Java RECORDS whose components are reference-recorded surface. A record declares
+# its state in the HEADER — `record BasicCredentials(String username, String password)`
+# — and javac generates the canonical constructor plus one public accessor per
+# component. This enumerator reads the class BODY (empty for these), so it saw nothing
+# and the members read as missing-port once porting-sdk 8828dd2 made `__init__`
+# mandatory. The reference counterparts are @dataclasses whose `__init__` is likewise
+# decorator-generated, so both sides synthesize construction the same way.
+# {simple_class_name: [reference member names]} — every non-`__init__` name is checked
+# against the PARSED record header before emission, so a stale entry emits nothing
+# rather than inventing surface.
+_RECORD_SURFACE_MEMBERS: dict[str, list[str]] = {
+    "BasicCredentials": ["__init__", "username", "password"],
+    "BearerCredentials": ["__init__", "scheme", "credentials"],
+}
+
+# Java classes whose only constructor is PRIVATE but which are still constructible
+# through a public factory — the capability is real, the ctor is simply not the entry
+# point. RequestOptions has `private RequestOptions(Builder)` plus a public
+# `builder()`; the reference records a plain `__init__`, so emit it. Same doctrine the
+# .NET port applies to its private-ctor singletons (SkillRegistry / SchemaUtils).
+# Gated on the factory actually being present, so a class that loses its builder stops
+# emitting `__init__` instead of silently claiming construction it no longer offers.
+_PRIVATE_CTOR_PUBLIC_FACTORY: dict[str, str] = {
+    "RequestOptions": "builder",
+}
+
+# A named record's parenthesised component list: `record X(A a, B b)`.
+_RECORD_HEADER_RE = re.compile(
+    r"\brecord\s+(?P<name>[A-Za-z_$][\w$]*)\s*\((?P<components>[^)]*)\)"
+)
+_RECORD_COMPONENT_RE = re.compile(r"[\w.$<>\[\], ]*?\s+(?P<name>[A-Za-z_$][\w$]*)\s*$")
+
+
+def _record_components(source: str, cls: str) -> set[str]:
+    """Component names of `record <cls>(...)`, snake_cased; empty if not a record."""
+    for m in _RECORD_HEADER_RE.finditer(source):
+        if m.group("name") != cls:
+            continue
+        out: set[str] = set()
+        for part in m.group("components").split(","):
+            part = part.strip()
+            if not part:
+                continue
+            cm = _RECORD_COMPONENT_RE.match(part)
+            if cm:
+                out.add(camel_to_snake(cm.group("name")))
+        return out
+    return set()
+
+
 _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     # Response @dataclasses — the oracle now records their @dataclass FIELDS as members;
     # Java's getters fold onto those field names via _EVENT_METHOD_RENAMES_BY_CLASS, so
     # keep exactly the reference field set here.
-    "ConversationInfo": ["id", "initial_message", "status"],
-    "ChatResponse": ["conversation_id", "text", "user_event"],
-    "ChatLog": ["call_timeline", "messages"],
+    "ConversationInfo": ["__init__", "id", "initial_message", "status"],
+    "ChatResponse": ["__init__", "conversation_id", "text", "user_event"],
+    "ChatLog": ["__init__", "call_timeline", "messages"],
     # Error hierarchy — AIChatError keeps its explicit __init__ (oracle records it)
     # PLUS the two class-B2 attributes the oracle now records (``code``/``message``
     # are public __init__ attributes that are also ctor params). Java's getCode() /
@@ -1140,8 +1505,17 @@ _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
     # onto it, so the MEMBER name is kept here — dropping it would take the read-back
     # away from Java callers that the reference gives Python callers.
     "AIChatClient": [
-        "__aenter__", "__aexit__", "__init__", "chat", "close", "create_conversation",
-        "delete", "end", "log", "summarize", "url",
+        "__aenter__",
+        "__aexit__",
+        "__init__",
+        "chat",
+        "close",
+        "create_conversation",
+        "delete",
+        "end",
+        "log",
+        "summarize",
+        "url",
     ],
 }
 
@@ -1156,8 +1530,9 @@ def camel_to_snake(name: str) -> str:
     return s2
 
 
-def translate_method_name(java_name: str, class_name: str,
-                           native: bool = False) -> str | list[str] | None:
+def translate_method_name(
+    java_name: str, class_name: str, native: bool = False
+) -> str | list[str] | None:
     """Java method → Python-reference method name, or None if skipped.
 
     - Constructors (``ClassName``) map to ``__init__``.
@@ -1318,14 +1693,92 @@ _NONPUBLIC_TYPE_HEADER = re.compile(
     r"(?P<name>[A-Za-z_$][\w$]*)"
 )
 
+
+def record_component_accessors(src: str, header_end: int) -> list[str]:
+    """Return the accessor names a compact ``record`` header declares.
+
+    A Java ``record Foo(int status, Map<String,String> headers, String body) {}``
+    implicitly declares a public accessor per component — ``status()``,
+    ``headers()``, ``body()`` — which are REAL public API even though no method
+    body appears in the source. The walker only ever matched explicit method
+    headers, so these 30 accessors across the SDK's 10 public records were
+    invisible to the NATIVE surface, and therefore to DOC-AUDIT, which resolves
+    every identifier a doc snippet writes against that file.
+
+    ``src`` must be the comment/string-stripped source and ``header_end`` the end
+    of the ``_TYPE_HEADER`` match, i.e. just past the record's NAME. Returns []
+    for a non-compact header (``record Foo {`` — no parameter list) and for the
+    empty component list ``record Foo() {}``.
+
+    Generic parameters are depth-tracked, so ``Map<String, String> headers``
+    contributes one accessor (``headers``), not two.
+    """
+    j = header_end
+    while j < len(src) and src[j].isspace():
+        j += 1
+    # A generic record header (``record Box<T>(T value)``) puts the type
+    # parameters before the component list; step over them.
+    if j < len(src) and src[j] == "<":
+        depth = 0
+        while j < len(src):
+            if src[j] == "<":
+                depth += 1
+            elif src[j] == ">":
+                depth -= 1
+                if depth == 0:
+                    j += 1
+                    break
+            j += 1
+        while j < len(src) and src[j].isspace():
+            j += 1
+    if j >= len(src) or src[j] != "(":
+        return []
+    depth = 0
+    close = -1
+    for k in range(j, len(src)):
+        if src[k] == "(":
+            depth += 1
+        elif src[k] == ")":
+            depth -= 1
+            if depth == 0:
+                close = k
+                break
+    if close < 0:
+        return []
+    params = src[j + 1 : close]
+    out: list[str] = []
+    depth = 0
+    current = ""
+    for ch in params:
+        if ch in "<([":
+            depth += 1
+        elif ch in ">)]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(current)
+            current = ""
+        else:
+            current += ch
+    if current.strip():
+        out.append(current)
+    names: list[str] = []
+    for comp in out:
+        tokens = comp.replace("\n", " ").split()
+        # The component NAME is the last token; everything before it is the
+        # (possibly annotated, possibly generic) type.
+        if tokens and re.fullmatch(r"[A-Za-z_$][\w$]*", tokens[-1]):
+            names.append(tokens[-1])
+    return names
+
+
 # Matches a ``public ... methodName(...)`` or constructor signature. The type
 # can be arbitrarily complex (generics, arrays, qualified names), so we allow
 # any run of non-special characters up to the identifier + ``(``.
 _METHOD_HEADER = re.compile(
     r"\bpublic\s+"
     r"(?:static\s+|final\s+|abstract\s+|synchronized\s+|native\s+|default\s+|strictfp\s+)*"
-    r"(?:<[^>]+>\s+)?"                                  # generic params
-    r"(?:[\w.$<>,\[\]\s?]+\s+)?"                        # return type (omitted for ctors)
+    r"(?:<[^>]+>\s+)?"  # generic params
+    r"(?:[\w.$<>,\[\]\s?]+\s+)?"  # return type (omitted for ctors)
     r"(?P<name>[A-Za-z_$][\w$]*)"
     r"\s*\("
 )
@@ -1341,8 +1794,8 @@ _METHOD_HEADER = re.compile(
 _INTERFACE_METHOD_HEADER = re.compile(
     r"(?:^|[{};])\s*"
     r"(?P<mods>(?:default\s+|static\s+|abstract\s+|strictfp\s+|final\s+)*)"
-    r"(?:<[^>]+>\s+)?"                                  # generic params
-    r"(?P<rtype>[A-Za-z_$][\w.$<>,\[\]?\s]*?\s+)"       # return type (required)
+    r"(?:<[^>]+>\s+)?"  # generic params
+    r"(?P<rtype>[A-Za-z_$][\w.$<>,\[\]?\s]*?\s+)"  # return type (required)
     r"(?P<name>[A-Za-z_$][\w$]*)"
     r"\s*\(",
     re.MULTILINE,
@@ -1366,7 +1819,8 @@ def find_matching_brace(src: str, open_idx: int) -> int:
 
 
 def parse_type_body(
-    src: str, outer_name: str,
+    src: str,
+    outer_name: str,
     known_python_classes: set[str] | None = None,
     java_outer_name: str | None = None,
     native: bool = False,
@@ -1413,7 +1867,11 @@ def parse_type_body(
         # A non-public nested type reached before the next public type/method:
         # skip its ENTIRE body so its members (which may be ``@Override public``,
         # e.g. a private HttpServer-decorator) don't leak up to this class.
-        if m_priv is not None and next_priv_pos < next_type_pos and next_priv_pos < next_meth_pos:
+        if (
+            m_priv is not None
+            and next_priv_pos < next_type_pos
+            and next_priv_pos < next_meth_pos
+        ):
             body_open = src.find("{", m_priv.end())
             if body_open < 0:
                 i = m_priv.end()
@@ -1431,10 +1889,20 @@ def parse_type_body(
             # Qualify port-only nested class names with their outer class
             # to avoid collisions across files (multiple ``Builder``s).
             effective_name = (
-                renamed if renamed in known_python_classes
-                else outer_name + renamed
+                renamed if renamed in known_python_classes else outer_name + renamed
             )
-            # Skip compact record headers (record Foo(...) {}) — still treat body.
+            # A compact record header declares an implicit public accessor per
+            # component; harvest them BEFORE stepping over the header into the
+            # body (the body holds only the explicitly-written members).
+            # NATIVE ONLY: the native surface answers "does this identifier exist
+            # in the Java API", which DOC-AUDIT resolves doc snippets against, and
+            # these accessors demonstrably do. The parity surface is oracle-keyed
+            # and already carries the components the reference records
+            # (BasicCredentials/BearerCredentials), so adding them there would
+            # emit members the reference does not expose.
+            record_members: list[str] = []
+            if native and m_type.group("kind") == "record":
+                record_members = record_component_accessors(src, m_type.end())
             body_open = src.find("{", m_type.end())
             if body_open < 0:
                 i = m_type.end()
@@ -1443,10 +1911,15 @@ def parse_type_body(
             inner_body = src[body_open + 1 : body_close]
             inner_is_interface = m_type.group("kind") == "interface"
             inner_classes = parse_type_body(
-                inner_body, effective_name, known_python_classes,
-                java_outer_name=name, native=native,
+                inner_body,
+                effective_name,
+                known_python_classes,
+                java_outer_name=name,
+                native=native,
                 is_interface=inner_is_interface,
             )
+            if record_members:
+                inner_classes.setdefault(effective_name, []).extend(record_members)
             for cls_name, cls_methods in inner_classes.items():
                 if cls_name in classes:
                     classes[cls_name].extend(cls_methods)
@@ -1461,9 +1934,22 @@ def parse_type_body(
             if is_interface:
                 rtype = (m_meth.groupdict().get("rtype") or "").strip()
                 first = rtype.split()[0] if rtype.split() else ""
-                if first in ("private", "protected", "return", "if", "for",
-                             "while", "switch", "catch", "new", "throw", "else",
-                             "do", "synchronized", "assert"):
+                if first in (
+                    "private",
+                    "protected",
+                    "return",
+                    "if",
+                    "for",
+                    "while",
+                    "switch",
+                    "catch",
+                    "new",
+                    "throw",
+                    "else",
+                    "do",
+                    "synchronized",
+                    "assert",
+                ):
                     i = m_meth.end()
                     continue
             # Skip if this identifier is actually a type header (we saw
@@ -1472,7 +1958,6 @@ def parse_type_body(
             # parens; filter those out by checking the word before ``name``).
             # Also skip method headers inside the body of a nested type: the
             # walker above routes to ``parse_type_body`` for those.
-            head_start = m_meth.start()
             # Ensure we don't treat "public SomeClass foo" inside a nested
             # body — but since we only reach here when we didn't see a nested
             # type header closer, this is safe.
@@ -1520,8 +2005,10 @@ def parse_type_body(
 # Module-path derivation.
 # ---------------------------------------------------------------------------
 
-def java_to_python_module(java_package: str, class_name: str,
-                          class_to_module: dict[str, str]) -> str:
+
+def java_to_python_module(
+    java_package: str, class_name: str, class_to_module: dict[str, str]
+) -> str:
     """Pick the Python module path to emit a class under.
 
     Priority:
@@ -1547,11 +2034,11 @@ def java_to_python_module(java_package: str, class_name: str,
     # Strip com.signalwire.sdk. prefix.
     pkg = java_package
     if pkg.startswith("com.signalwire.sdk"):
-        pkg = pkg[len("com.signalwire.sdk"):].lstrip(".")
+        pkg = pkg[len("com.signalwire.sdk") :].lstrip(".")
 
     parts = [p for p in pkg.split(".") if p]
     # Each package segment is already lowercase by convention; pass through.
-    segments = ["signalwire"] + parts
+    segments = ["signalwire", *parts]
     # Append a snake-cased class-name segment so we get a unique module per
     # class — mirrors the Python reference style (one .py per class).
     segments.append(camel_to_snake(class_name))
@@ -1565,11 +2052,12 @@ def java_to_python_module(java_package: str, class_name: str,
 _PACKAGE_RE = re.compile(r"^\s*package\s+([\w.]+)\s*;", re.MULTILINE)
 
 
-def enumerate_file(path: Path, class_to_module: dict[str, str],
-                   native: bool = False,
-                   oracle_generated_members:
-                       dict[tuple[str, str], set[str]] | None = None,
-                   ) -> dict[str, dict]:
+def enumerate_file(
+    path: Path,
+    class_to_module: dict[str, str],
+    native: bool = False,
+    oracle_generated_members: dict[tuple[str, str], set[str]] | None = None,
+) -> dict[str, dict]:
     """Return {module: {"classes": {Name: [methods]}, "functions": []}}."""
     oracle_generated_members = oracle_generated_members or {}
     raw = path.read_text(encoding="utf-8", errors="replace")
@@ -1586,8 +2074,9 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     outer_name_raw = m_type.group("name")
     # In native mode we skip the Python-reference class renames — Java docs
     # reference Java names like CallDialEvent, not DialEvent.
-    outer_name = (outer_name_raw if native
-                  else _CLASS_RENAMES.get(outer_name_raw, outer_name_raw))
+    outer_name = (
+        outer_name_raw if native else _CLASS_RENAMES.get(outer_name_raw, outer_name_raw)
+    )
     body_open = stripped.find("{", m_type.end())
     if body_open < 0:
         return {}
@@ -1596,10 +2085,18 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
 
     known_python_classes = set(class_to_module.keys())
     classes = parse_type_body(
-        body, outer_name, known_python_classes,
-        java_outer_name=outer_name_raw, native=native,
+        body,
+        outer_name,
+        known_python_classes,
+        java_outer_name=outer_name_raw,
+        native=native,
         is_interface=(m_type.group("kind") == "interface"),
     )
+    # Top-level compact record (see the nested-type site for the rationale).
+    if native and m_type.group("kind") == "record":
+        top_components = record_component_accessors(stripped, m_type.end())
+        if top_components:
+            classes.setdefault(outer_name, []).extend(top_components)
 
     # Generated wire-type / read-side-payload files (item A/H + D): a method-less
     # DTO class (or a public enum) per components/schemas / $defs OBJECT. Route the
@@ -1621,7 +2118,10 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         # literals are blanked in ``stripped``, indices are length-preserved.
         raw_body = raw[body_open + 1 : body_close]
         members = oracle_gated_field_accessors(
-            raw_body, gen_type_mod, canonical, oracle_generated_members,
+            raw_body,
+            gen_type_mod,
+            canonical,
+            oracle_generated_members,
         )
         return {gen_type_mod: {"classes": {canonical: members}, "functions": []}}
 
@@ -1670,11 +2170,13 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         #    spellings and any ``__init__``/``generated_http_client`` plumbing
         #    (``generatedHttpClient`` is protected+abstract, not public API).
         if outer_name == "ResourceTree":
-            ctor_names = {outer_name, camel_to_snake(outer_name), "__init__",
-                          "generated_http_client"}
-            accessors = sorted(
-                {m for m in classes[outer_name] if m not in ctor_names}
-            )
+            ctor_names = {
+                outer_name,
+                camel_to_snake(outer_name),
+                "__init__",
+                "generated_http_client",
+            }
+            accessors = sorted({m for m in classes[outer_name] if m not in ctor_names})
             return {
                 "signalwire.rest.client": {
                     "classes": {"RestClient": accessors},
@@ -1691,8 +2193,9 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
         #    oracle records these containers with only ``__init__``).
         if outer_name in _GENERATED_CONTAINERS:
             ctor_names = {outer_name, camel_to_snake(outer_name)}
-            classes[outer_name] = [m for m in classes[outer_name]
-                                   if m not in ctor_names]
+            classes[outer_name] = [
+                m for m in classes[outer_name] if m not in ctor_names
+            ]
         else:
             # 4. Implicit-base projection. SignatureDump/the text parser only see
             #    DECLARED methods, so a generated resource that INHERITS
@@ -1718,9 +2221,10 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     # at the source-file level, one Java type per file.
     projected_free_fns: list[tuple[str, str]] = []  # (target_mod, target_fn)
     if not native:
-        for (java_cls, java_method), (target_mod, target_fn) in (
-            _FREE_FUNCTION_SURFACE_PROJECTIONS.items()
-        ):
+        for (java_cls, java_method), (
+            target_mod,
+            target_fn,
+        ) in _FREE_FUNCTION_SURFACE_PROJECTIONS.items():
             if java_cls != outer_name_raw:
                 continue
             cls_methods = classes.get(outer_name, [])
@@ -1766,6 +2270,29 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
             for injected in ("__aenter__", "__aexit__"):
                 if injected in keep and "close" in methods:
                     methods.append(injected)
+        # RECORD components + canonical ctor. A Java `record X(A a, B b)` declares its
+        # state in the HEADER and javac generates the canonical constructor plus one
+        # public accessor per component — none of which this text-based enumerator can
+        # see, because it reads the class BODY (empty for these records). The reference
+        # counterparts are Python @dataclasses, so porting-sdk 8828dd2's mandatory
+        # `__init__` plus the recorded fields both went missing at once.
+        #
+        # EMISSION of a real capability, not an omission (RULES.md §2): the components
+        # ARE public API. Gated on _RECORD_SURFACE_MEMBERS, whose keys are checked
+        # against the parsed record header below — a class that is not actually a
+        # record with those components emits nothing, so this cannot invent surface.
+        if (
+            not native
+            and cls_name in _PRIVATE_CTOR_PUBLIC_FACTORY
+            and _PRIVATE_CTOR_PUBLIC_FACTORY[cls_name] in methods
+        ):
+            methods.append("__init__")
+        if not native and cls_name in _RECORD_SURFACE_MEMBERS:
+            components = _record_components(raw, cls_name)
+            if components:
+                for member in _RECORD_SURFACE_MEMBERS[cls_name]:
+                    if member == "__init__" or member in components:
+                        methods.append(member)
         # Deduplicate overloaded methods; stable ordering.
         unique_sorted = sorted(set(methods))
         entry = out.setdefault(mod, {"classes": {}, "functions": []})
@@ -1786,18 +2313,20 @@ def enumerate_file(path: Path, class_to_module: dict[str, str],
     return out
 
 
-def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
-                  native: bool = False,
-                  oracle_generated_members:
-                      dict[tuple[str, str], set[str]] | None = None,
-                  oracle_class_members:
-                      dict[tuple[str, str], set[str]] | None = None,
-                  ) -> dict[str, dict]:
+def enumerate_sdk(
+    java_src_root: Path,
+    class_to_module: dict[str, str],
+    native: bool = False,
+    oracle_generated_members: dict[tuple[str, str], set[str]] | None = None,
+    oracle_class_members: dict[tuple[str, str], set[str]] | None = None,
+) -> dict[str, dict]:
     """Walk ``java_src_root/com/signalwire/sdk`` and collect all classes."""
     merged: dict[str, dict] = {}
     for path in sorted(java_src_root.rglob("*.java")):
         per_file = enumerate_file(
-            path, class_to_module, native=native,
+            path,
+            class_to_module,
+            native=native,
             oracle_generated_members=oracle_generated_members,
         )
         for mod, entry in per_file.items():
@@ -1809,9 +2338,7 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
                     )
                 else:
                     dest["classes"][cls_name] = methods
-            dest["functions"] = sorted(
-                set(dest["functions"]) | set(entry["functions"])
-            )
+            dest["functions"] = sorted(set(dest["functions"]) | set(entry["functions"]))
 
     # Accessor→member fold (RULES.md §2): collapse each class's getX/setX/isX/
     # hasX/withX onto the reference member X it re-expresses. Reference-keyed, so
@@ -1820,6 +2347,12 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
     if not native and oracle_class_members:
         fold_accessors_to_members(merged, oracle_class_members)
         exclude_ctor_dunder(merged, oracle_class_members)
+        # Base-only SkillBase-hook strip: a hook the reference exposes on
+        # SkillBase alone (final template method + protected hook) is not
+        # subclass surface, however each built-in skill overrides Java's
+        # interface default. Runs AFTER the accessor fold so it sees the
+        # snake-cased member names the oracle is keyed by.
+        strip_base_only_skill_hooks(merged, oracle_class_members)
 
     # Construction-param accessor strip (RULES.md §2 / ALLOWLIST_DISCIPLINE.md §0):
     # the read+write accessors for params already compared by the ``construction``
@@ -1845,15 +2378,30 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
         # detecting which mixin methods are "present on AgentBase" so the
         # WebMixin/AuthMixin projections fire for inherited methods too. The
         # signature enumerator sees these via JAR reflection; this restores
-        # parity for the source-based surface enumerator. Inherited methods are
-        # ADDED to the mixin path but NOT removed from SWMLService (they
-        # legitimately belong to both — the reference records them on both).
-        svc_methods = (
-            merged.get("signalwire.core.swml_service", {})
-            .get("classes", {})
-            .get("SWMLService", [])
+        # parity for the source-based surface enumerator.
+        #
+        # A projected method is ALSO stripped from SWMLService when the
+        # reference does not record it there. The previous premise here —
+        # "inherited methods legitimately belong to both, the reference records
+        # them on both" — is FALSE and was measured so: of the nine mixin
+        # methods Java declares on Service (define_tool, define_tools,
+        # on_function_call, register_swaig_function, has_function, get_function,
+        # remove_function, validate_basic_auth, on_swml_request), the surface
+        # oracle records ZERO on SWMLService. Java flattens Python's composed
+        # mixins/ToolRegistry onto its Service base; the projection is what
+        # re-files them, so leaving the Service copy behind emits a duplicate
+        # port-only symbol that then needs a PORT_ADDITIONS excuse. The strip is
+        # ORACLE-KEYED, never a hardcoded list: a method the reference genuinely
+        # DOES record on SWMLService (get_basic_auth_credentials, serve,
+        # on_request …) stays, so this cannot hide a real member.
+        svc_entry_cls = merged.get("signalwire.core.swml_service", {}).get(
+            "classes", {}
         )
+        svc_methods = svc_entry_cls.get("SWMLService", [])
         ab_visible = set(ab_methods) | set(svc_methods)
+        _ref_svc_members = oracle_class_members.get(
+            ("signalwire.core.swml_service", "SWMLService"), set()
+        )
         # Composition-delegate strip (§4c.1): drop the flattened pass-through copy
         # of a helper-object method from AgentBase when the SAME method is already
         # emitted on its canonical helper class (so the reference's helper filing is
@@ -1862,9 +2410,7 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
         for _dm, (_hmod, _hcls) in _COMPOSITION_DELEGATE_STRIP.items():
             if _dm not in ab_methods:
                 continue
-            helper_members = (
-                merged.get(_hmod, {}).get("classes", {}).get(_hcls, [])
-            )
+            helper_members = merged.get(_hmod, {}).get("classes", {}).get(_hcls, [])
             if _dm in helper_members:
                 ab_methods = [m for m in ab_methods if m != _dm]
         for (target_mod, target_cls), expected in _MIXIN_SURFACE_PROJECTIONS.items():
@@ -1874,9 +2420,16 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
             target = merged.setdefault(target_mod, {"classes": {}, "functions": []})
             existing = target["classes"].get(target_cls, [])
             target["classes"][target_cls] = sorted(set(existing) | set(present))
-            # Only strip the projected methods from AgentBase's OWN declared
-            # list (never from the inherited SWMLService copy).
+            # Strip the projected methods from AgentBase's OWN declared list,
+            # and from the inherited SWMLService copy when the reference does
+            # not record them on SWMLService (see the premise correction above).
             ab_methods = [m for m in ab_methods if m not in present]
+            _strip_svc = [
+                m for m in present if m in svc_methods and m not in _ref_svc_members
+            ]
+            if _strip_svc:
+                svc_methods = [m for m in svc_methods if m not in _strip_svc]
+                svc_entry_cls["SWMLService"] = sorted(set(svc_methods))
         if ab_entry:
             if ab_methods:
                 ab_entry["classes"]["AgentBase"] = sorted(set(ab_methods))
@@ -1900,16 +2453,21 @@ def enumerate_sdk(java_src_root: Path, class_to_module: dict[str, str],
 
 def git_sha(repo: Path) -> str:
     try:
-        return subprocess.check_output(
-            ["git", "-C", str(repo), "rev-parse", "HEAD"],
-            stderr=subprocess.DEVNULL,
-        ).decode().strip()
+        return (
+            subprocess.check_output(
+                ["git", "-C", str(repo), "rev-parse", "HEAD"],
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
     except Exception:
         return "N/A"
 
 
-def _collect_crud_bases(repo_root: Path,
-                        class_to_module: dict[str, str]) -> dict[str, dict]:
+def _collect_crud_bases(
+    repo_root: Path, class_to_module: dict[str, str]
+) -> dict[str, dict]:
     """Emit the top-level ``crud_bases`` map (spec-driven REST parity, class D1).
 
     ``scripts/generate_rest.py`` already records each generated REST resource's
@@ -1930,8 +2488,17 @@ def _collect_crud_bases(repo_root: Path,
     resource) is skipped rather than emitted under a degraded path.
     """
     sidecar = (
-        repo_root / "src" / "main" / "java" / "com" / "signalwire" / "sdk"
-        / "rest" / "namespaces" / "generated" / "rest_signatures.json"
+        repo_root
+        / "src"
+        / "main"
+        / "java"
+        / "com"
+        / "signalwire"
+        / "sdk"
+        / "rest"
+        / "namespaces"
+        / "generated"
+        / "rest_signatures.json"
     )
     if not sidecar.is_file():
         return {}
@@ -1949,8 +2516,7 @@ def _collect_crud_bases(repo_root: Path,
     return out
 
 
-def build_snapshot(repo_root: Path, reference_json: Path,
-                   native: bool = False) -> dict:
+def build_snapshot(repo_root: Path, reference_json: Path, native: bool = False) -> dict:
     class_to_module = build_class_to_module_map(reference_json)
     # In native mode the class names stay Java-spelled and don't line up with the
     # oracle's reference class keys, so the field-accessor emission (which is
@@ -1958,14 +2524,14 @@ def build_snapshot(repo_root: Path, reference_json: Path,
     oracle_generated_members = (
         {} if native else load_oracle_generated_members(reference_json)
     )
-    oracle_class_members = (
-        {} if native else load_oracle_class_members(reference_json)
-    )
+    oracle_class_members = {} if native else load_oracle_class_members(reference_json)
     java_src = repo_root / "src" / "main" / "java"
     if not java_src.is_dir():
         raise SystemExit(f"error: java source not found at {java_src}")
     modules = enumerate_sdk(
-        java_src, class_to_module, native=native,
+        java_src,
+        class_to_module,
+        native=native,
         oracle_generated_members=oracle_generated_members,
         oracle_class_members=oracle_class_members,
     )
@@ -1997,8 +2563,8 @@ def _default_reference() -> Path:
     repo_root = Path(__file__).resolve().parent.parent
     candidates = [
         Path(os.environ["PORTING_SDK"]) if os.environ.get("PORTING_SDK") else None,
-        repo_root.parent / "porting-sdk",          # adjacency (CI + local)
-        Path.home() / "src" / "porting-sdk",        # legacy local fallback
+        repo_root.parent / "porting-sdk",  # adjacency (CI + local)
+        Path.home() / "src" / "porting-sdk",  # legacy local fallback
     ]
     for base in candidates:
         if base is not None and (base / "python_surface.json").is_file():
@@ -2010,33 +2576,65 @@ def _default_reference() -> Path:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--repo", type=Path, default=Path(__file__).resolve().parent.parent,
+        "--repo",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent,
         help="Path to the signalwire-java repo root (default: script's repo)",
     )
     parser.add_argument(
-        "--reference", type=Path,
+        "--reference",
+        type=Path,
         default=_default_reference(),
         help="Path to porting-sdk/python_surface.json for class→module lookup "
-             "(default: $PORTING_SDK or porting-sdk adjacent to this repo)",
+        "(default: $PORTING_SDK or porting-sdk adjacent to this repo)",
     )
     parser.add_argument(
-        "--output", type=Path, default=None,
-        help="Write JSON to this path (default: stdout)",
+        "--output",
+        type=Path,
+        default=None,
+        help="Write JSON to this path. Required unless --stdout is given.",
     )
     parser.add_argument(
-        "--check", action="store_true",
+        "--stdout",
+        action="store_true",
+        help="Print JSON to stdout instead of writing --output. Explicit opt-in: "
+        "there is no stdout DEFAULT (see the fail-loud check below).",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
         help="Compare against file at --output; exit 1 on drift",
     )
     parser.add_argument(
-        "--native", action="store_true",
+        "--native",
+        action="store_true",
         help="Emit Java-native method names (camelCase) instead of "
-             "Python-reference snake_case. Used for Layer C doc↔code "
-             "alignment auditing via audit_docs.py.",
+        "Python-reference snake_case. Used for Layer C doc↔code "
+        "alignment auditing via audit_docs.py.",
     )
     args = parser.parse_args(argv)
 
     if args.check and not args.output:
         parser.error("--check requires --output")
+    if args.stdout and args.output:
+        parser.error("--stdout and --output are mutually exclusive")
+    if args.check and args.stdout:
+        parser.error(
+            "--check compares against --output; it cannot be used with --stdout"
+        )
+    # FAIL LOUD on a bare run. This used to default to stdout, which made a bare
+    # invocation a silent WRONG-GREEN: it printed the snapshot to a stdout the caller
+    # discarded, wrote NOTHING, and exited 0 — so a clean `git status` afterwards read
+    # as "no change was needed" when it actually meant "nothing was written". That cost
+    # a 7-port surface-audit red. Writing the file is now never implicit and neither is
+    # piping: state one.
+    if not args.output and not args.stdout:
+        parser.error(
+            "no output destination: pass --output PATH to write the surface JSON, or "
+            "--stdout to pipe it. There is deliberately no default — a bare run used "
+            "to print to stdout and write nothing while exiting 0, which reads as "
+            "'no change was needed' when it means 'nothing was written'."
+        )
     if not args.reference.is_file():
         print(f"error: reference {args.reference} not found", file=sys.stderr)
         return 1
@@ -2066,10 +2664,11 @@ def main(argv: list[str]) -> int:
             return 1
         return 0
 
-    if args.output:
-        args.output.write_text(rendered, encoding="utf-8")
-    else:
+    if args.stdout:
         sys.stdout.write(rendered)
+    else:
+        args.output.write_text(rendered, encoding="utf-8")
+        print(f"wrote {args.output}", file=sys.stderr)
     return 0
 
 

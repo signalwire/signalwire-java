@@ -7,6 +7,13 @@ import com.signalwire.sdk.swaig.ToolDefinition;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ * Knowledge search over SignalWire DataSphere, executed serverlessly through DataMap so no webhook
+ * round-trip is needed.
+ *
+ * <p>Registered under the name {@code datasphere_serverless}; load it with {@code
+ * agent.addSkill("datasphere_serverless", params)}.
+ */
 public class DatasphereServerlessSkill implements SkillBase {
 
   private String spaceName;
@@ -17,21 +24,44 @@ public class DatasphereServerlessSkill implements SkillBase {
   private double distance = 3.0;
   private String toolName = "search_knowledge";
 
+  /**
+   * The registry name this skill is loaded by: {@code datasphere_serverless}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "datasphere_serverless";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Search knowledge using SignalWire DataSphere with serverless DataMap execution";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied all four of {@code space_name}, {@code project_id},
+   *     {@code token}, and {@code document_id}; {@code false} otherwise, which leaves the skill
+   *     unloaded.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     this.spaceName = (String) params.get("space_name");
@@ -45,6 +75,11 @@ public class DatasphereServerlessSkill implements SkillBase {
     return spaceName != null && projectId != null && token != null && documentId != null;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return Collections.emptyList();
@@ -66,12 +101,22 @@ public class DatasphereServerlessSkill implements SkillBase {
                 "POST",
                 url,
                 Map.of("Content-Type", "application/json", "Authorization", "Basic " + authEncoded))
-            .body(
+            .params(
                 Map.of(
                     "query_string", "${args.query}",
                     "document_id", documentId,
                     "count", count,
                     "distance", distance))
+            .foreach(
+                Map.of(
+                    "input_key",
+                    "chunks",
+                    "output_key",
+                    "formatted_results",
+                    "max",
+                    count,
+                    "append",
+                    "=== RESULT ===\n${this.text}\n" + "=".repeat(50) + "\n\n"))
             .output(
                 new FunctionResult(
                     "I found results for \"${args.query}\":\n\n${formatted_results}"));

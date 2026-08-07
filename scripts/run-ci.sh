@@ -153,14 +153,54 @@ sched_gate TEST res=gradle defer=1 desc="run-tests.sh (gradle test)" \
 sched_gate SURFACE res=gradle desc="surface parity suite (SIGNATURES/DRIFT/SURFACE-FRESH/SURFACE-DIFF/SEMVER-DIFF/GEN-TYPE-DEGENERACY/GEN-IDIOM/ROUTE-COLLISION)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/surface.py" --port java --repo "$PORT_ROOT"
 
+# SIGNATURES-FRESH: the committed port_signatures.json must match a fresh regen.
+# SURFACE-FRESH guards port_surface.json only, so nothing guarded the SIGNATURES
+# artifact — and that file is DRIFT's INPUT, so a stale one makes the parity gate
+# compare against a fiction and pass. res=gradle: java's enumerator rebuilds the JAR
+# and reads it, so this must not overlap the other Gradle-touching gates NOR the
+# SURFACE suite's own in-place regen-then-restore of the same artifacts.
+sched_gate SIGNATURES-FRESH res=gradle desc="committed port_signatures.json matches a fresh regen" \
+    -- python3 "$PORTING_SDK_DIR/scripts/suites/_signatures_fresh.py" \
+        --port java --repo "$PORT_ROOT" --porting-sdk "$PORTING_SDK_DIR"
+
 # TYPE-EROSION: a port may not erase a type the reference DECLARES. compare_param treats
 # `any` on EITHER side as matching anything, so a port emitting `any` silently satisfies
 # every reference declaration — an unlimited opt-out. ConciergeAgent.hours_of_operation is
 # declared optional<dict<string,string>> and go still shipped a bare string, with no gate
 # red. RATCHET, not a hard gate: dynamic languages cannot always express a type, so this
 # banks the current count and fails only on REGRESSION. Drive the number DOWN; never up.
-sched_gate TYPE-EROSION res=gradle desc="port did not erase a reference-declared param type (ratchet 13)" \
-    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port java --repo "$PORT_ROOT" --max 13
+# The ratchet moved 12 -> 14 when the trailing-delegate overload union landed, and
+# the 2 added slots are MEASUREMENT, not erosion. The union stopped collapsing
+# overloads to their fewest-param form, so 44 methods whose arity previously
+# differed from the reference became measurable (unmeasured 226 -> 182) — and 2 of
+# them were already-eroded slots that the short overload had been hiding:
+#
+#   FunctionResult.execute_swml(swml_content)  already `any` in the PREVIOUS
+#       committed artifact; it was skipped only because the port recorded arity 1
+#       against the reference's 2. Not a new erosion — a newly VISIBLE one. (The
+#       reference declares `str | dict[str, Any] | Any`, whose trailing `Any`
+#       makes it accept anything, so Java's `Object` is the exact equivalent; see
+#       the itemised checker note below.)
+#   Context.add_step(functions)  the `Object functions` param has been in
+#       Context.java all along on the 6-arg overload; the 1-arg convenience form
+#       the collapse used to pick simply did not carry it. It is the SAME accepted
+#       class as the three `union<string,list<string>>` slots already inside the
+#       ratchet (FunctionResult.remove_metadata / remove_global_data /
+#       Step.set_functions) — Java has no union type, so the whitelist that is
+#       "a List<String> or the string "none"" can only be typed `Object`.
+#
+# Neither is a regression introduced by that commit; both are pre-existing source
+# facts the wider measurement exposed. Widening what a gate can SEE must not read
+# as the port getting worse.
+#
+# ITEMISED, not silenced (needs a porting-sdk decision, not a java change):
+# diff_port_type_erosion counts a slot eroded when the port says `any` and the
+# reference does not, using `_VACUOUS = {"any", "", None}`. A union that CONTAINS
+# `any` is equally vacuous — it admits every value — but is not in that set, so
+# `union<union<string,dict<string,any>>,any>` counts as a discarded type when the
+# port cannot express anything narrower. execute_swml is that case.
+sched_gate TYPE-EROSION res=gradle desc="port did not erase a reference-declared param type (ratchet 14)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_type_erosion.py" --port java --repo "$PORT_ROOT" --max 14
 
 # GEN (regen-from-specs family): the 5 GEN-FRESH rules. Most are pure-python
 # (--check against the on-disk generated tree), but GEN-FRESH-TESTS's
@@ -176,13 +216,28 @@ sched_gate GEN res=gradle defer=1 desc="generated-code freshness suite (GEN-FRES
 # BEHAVIORAL (one Layer-D pass per rule): the per-PR rules. WAIT-LIVENESS (nightly)
 # is the separate line below. res=gradle: the *Dump tasks + REST-COVERAGE test run
 # shell to ./gradlew. NOTE java's hyphen spelling BEHAVIORAL-WIRE-RELAY.
-sched_gate BEHAVIORAL res=gradle defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI/SECURE-DEFAULT/CA-VAR/SECRET-SCRUB)" \
+sched_gate BEHAVIORAL res=gradle defer=1 desc="behavioral suite (BEHAVIORAL-*/EMISSION/ERROR-ENVELOPE/PAGINATION-WIRED/PAGINATION-CORPUS/DOC-WIRE/REST-COVERAGE/SPEC-PARITY/SKILL-CONTRACT/SWAIG-COVERAGE/SWAIG-CLI/SECURE-DEFAULT/CA-VAR/TLS-VERIFY/SECRET-SCRUB)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
-        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI,SECURE-DEFAULT,CA-VAR,SECRET-SCRUB
+        --rules BEHAVIORAL-WIRE,BEHAVIORAL-SWML,BEHAVIORAL-STRICT-RENDER,BEHAVIORAL-STATE,BEHAVIORAL-HTTP,BEHAVIORAL-WIRE-RELAY,EMISSION,ERROR-ENVELOPE,PAGINATION-WIRED,PAGINATION-CORPUS,DOC-WIRE,REST-COVERAGE,SPEC-PARITY,SKILL-CONTRACT,SWAIG-COVERAGE,SWAIG-CLI,SECURE-DEFAULT,CA-VAR,TLS-VERIFY,SECRET-SCRUB
 
 sched_gate BEHAVIORAL-NIGHTLY tier=nightly res=gradle defer=1 desc="behavioral suite, nightly rules (WAIT-LIVENESS/RELAY-LIVENESS/SECRET-SCRUB-LIVE)" \
     -- python3 "$PORTING_SDK_DIR/scripts/suites/behavioral.py" --port java --repo "$PORT_ROOT" \
         --rules WAIT-LIVENESS,RELAY-LIVENESS,SECRET-SCRUB-LIVE
+
+# TOKEN-INTEROP — property 3 of the SWAIG tool-token contract: a token this port MINTS
+# must validate under the REFERENCE's own decoder. SECURE-DEFAULT proves a token is
+# minted and the fleet keying check proves the HMAC key; NEITHER sees the base64
+# ENVELOPE, so a port can ship correct-key correct-HMAC tokens that no other
+# implementation accepts — in production every secure tool call then fails auth. Six of
+# the ten ports shipped exactly that (an unpadded envelope), invisible to their own tests
+# because each port's DECODER tolerates missing padding while the reference's
+# urlsafe_b64decode RAISES on it — so round-tripping against ourselves could never catch
+# it. One mint + a pure-python validation → cheap, per-PR (a security property must not
+# wait for nightly). Its OWN line rather than a member of the BEHAVIORAL suite line,
+# which is defer=1 (heavy wave).
+sched_gate TOKEN-INTEROP res=gradle desc="a token this port mints validates under the reference's decoder (padded urlsafe base64, ':'-signed / '.'-enveloped, hex HMAC keyed by the secret_key string)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/diff_port_token_interop.py" --port java \
+        --mint-cmd "./gradlew --console=plain -q tokenInteropMint"
 
 # DOC-TRUTH (one markdown walk): DOC-AUDIT/DOC-LINKS/DOC-LANG-PURITY/DOC-ENV/
 # COUNT-CLAIM/ACCESSOR-TRUTH/STATUS-CLAIM/README-INCLUDE. res=gradle: DOC-AUDIT +
@@ -272,15 +327,15 @@ sched_gate ROOT-HYGIENE res=dayone desc="no audit/scratch clutter tracked at rep
 sched_gate PUBLIC-JARGON res=dayone desc="no internal porting jargon in public doc comments" \
     -- python3 "$PORTING_SDK_DIR/scripts/public_jargon.py" --port java --repo .
 
-# DOC-SURFACE (plan §6.3): javadoc /** coverage floor on the public API surface.
-# The floor is pinned in .doc_surface_floor (51.8% today) and ratchets up via
-# --write-floor; report-only at graduation, so a doc regression is visible without
-# failing the run yet (never-regress is enforced once the floor flips blocking).
-# GUARDED: doc_surface.py ships on the porting-sdk plan branch; until it merges to
-# porting-sdk main (which CI clones), skip-with-pass rather than red on a not-yet-
-# landed sibling script. Remove the guard once it's on porting-sdk main.
-sched_gate DOC-SURFACE res=dayone desc="javadoc coverage floor on the public API surface (report-only, ratchets via .doc_surface_floor)" \
-    -- bash -c 'if [ -f "$1/scripts/doc_surface.py" ]; then python3 "$1/scripts/doc_surface.py" --port java --repo "$2" --report-only; else echo "[doc-surface] doc_surface.py not on porting-sdk main yet — skip-pass (plan-branch dep)"; fi' _ "$PORTING_SDK_DIR" "$PORT_ROOT"
+# DOC-SURFACE (plan §6.3): javadoc coverage floor on the public API surface.
+# BLOCKING. The port is at 100.0% (1631/1631) as of the 2026-07-29 burn and the floor in
+# .doc_surface_floor is pinned there, so a newly-undocumented public symbol is a real
+# regression with a pinned number to prove it — it must red the run, not print a note.
+# Was report-only at graduation, and previously wrapped in a skip-with-pass guard for
+# when doc_surface.py still lived only on the porting-sdk plan branch. Both are gone: the
+# script is on the pinned PORTING_SDK_REF, and a MISSING gate script must fail, not pass.
+sched_gate DOC-SURFACE res=dayone desc="javadoc coverage floor on the public API surface (100% — blocking; ratchets via .doc_surface_floor)" \
+    -- python3 "$PORTING_SDK_DIR/scripts/doc_surface.py" --port java --repo "$PORT_ROOT"
 
 # WIRED-MODES (Part 1.6 / D7): the merge-coherence guard — greps this run-ci.sh for
 # every load-bearing env/mode line declared in WIRED_MODES.md (the strict-mocks
