@@ -26,10 +26,10 @@ import org.junit.jupiter.api.Test;
  * and {@code internal_fillers} / {@code contexts} / {@code debug} / {@code temperature} emitted as
  * top-level keys on the CLOSED {@code AIObject}, which declares exactly nine.
  *
- * <p>The reverse failure matters too: {@code $defs/Hangup.reason} carries {@code x-sdk-widen:
- * true}, so its const union is a hint rather than a closed set — the validator must NOT reject a
- * reason outside it, or routing these paths through validation would start rejecting documents the
- * platform accepts.
+ * <p>The reverse failure matters too: {@code $defs/Hangup.reason} publishes the engine's six-value
+ * set ({@code relay_apis.c:1105}), and the validator must accept every one of them — three of the
+ * six were absent from the schema's earlier three-const union, so routing these paths through
+ * validation would otherwise start rejecting documents the platform accepts.
  *
  * <p>These tests assert THROUGH the validator — they push an invalid shape at each entry point and
  * require it to raise. A test that compared emitted JSON to a hand-written expected blob would
@@ -56,26 +56,35 @@ class ValidatorRoutingTest {
   // ------------------------------------------------------------------
 
   /**
-   * {@code $defs/Hangup.reason} carries {@code x-sdk-widen: true} — a declared ruling that its
-   * {@code hangup|busy|decline} union is a HINT and the platform accepts any string. The validator
-   * must keep the TYPE constraint and drop the const-membership one; enforcing the union would
-   * invent a constraint the server does not have and reject documents that work on the wire.
+   * {@code $defs/Hangup.reason} is the engine's closed six-value set. {@code
+   * mod_infrastructure/relay_apis.c:1105} states {@code JSON_CHECK_STRING_MATCHES_OPTIONAL(reason,
+   * "hangup,cancel,busy,noAnswer,decline,error")} and a non-match is a hard reject, so every one of
+   * the six must validate here. {@code cancel}, {@code noAnswer} and {@code error} were absent from
+   * the schema's earlier three-const union.
    */
   @Test
-  void builderHangupAcceptsAnyReasonBecauseTheFieldIsWidened() {
-    // The last two are legitimate platform values that sit outside the listed union —
-    // the case widening exists for.
-    for (String reason :
-        List.of("hangup", "busy", "decline", "done", "completed", "user_hangup", "no_answer")) {
+  void builderHangupAcceptsEveryEngineReason() {
+    for (String reason : List.of("hangup", "cancel", "busy", "noAnswer", "decline", "error")) {
       assertDoesNotThrow(() -> new SWMLBuilder(svc()).hangup(reason), reason);
     }
   }
 
   /**
-   * Widening drops the const/enum MEMBERSHIP constraint and nothing else — the underlying TYPE
-   * still holds. A widened string field that accepted a number, a boolean, an object or an array
-   * would have been widened into an untyped field, which is a different (and wrong) contract.
+   * The reasons the engine refuses must be rejected here. This previously passed for all of them,
+   * because the schema carried {@code x-sdk-widen} and the validator dropped the value set. Note
+   * the engine spells it camelCase {@code noAnswer}; {@code no_answer} is not an engine value in
+   * any spelling.
    */
+  @Test
+  void builderHangupRejectsAReasonTheEngineRefuses() {
+    SWMLBuilder b = new SWMLBuilder(svc());
+    for (String reason : List.of("done", "completed", "user_hangup", "no_answer")) {
+      assertThrows(
+          SchemaValidationError.class, () -> b.verb("hangup", Map.of("reason", reason)), reason);
+    }
+  }
+
+  /** The base type still holds, so the enum did not become the only check. */
   @Test
   void builderHangupStillRejectsAWrongTypedReason() {
     SWMLBuilder b = new SWMLBuilder(svc());
@@ -83,7 +92,7 @@ class ValidatorRoutingTest {
       assertThrows(
           SchemaValidationError.class,
           () -> b.verb("hangup", Map.of("reason", wrong)),
-          "a widened string field must still reject " + wrong.getClass().getSimpleName());
+          "a string field must still reject " + wrong.getClass().getSimpleName());
     }
   }
 
@@ -198,14 +207,15 @@ class ValidatorRoutingTest {
   }
 
   /**
-   * A widened field survives the agent render path too — {@code x-sdk-widen} must be honoured
-   * everywhere validation now runs, not just at the builder.
+   * An engine-valid reason survives the agent render path too. {@code noAnswer} is one of the six
+   * {@code relay_apis.c:1105} accepts and was absent from the schema's earlier three-const union,
+   * so this row would have failed before the value set was corrected.
    */
   @Test
-  void agentRenderAcceptsAWidenedHangupReason() {
+  void agentRenderAcceptsAnEngineHangupReason() {
     AgentBase a = agent();
     a.setPromptText("hi");
-    a.addPostAiVerb("hangup", Map.of("reason", "done"));
+    a.addPostAiVerb("hangup", Map.of("reason", "noAnswer"));
     assertDoesNotThrow(() -> a.renderSwml("http://localhost:3000"));
   }
 

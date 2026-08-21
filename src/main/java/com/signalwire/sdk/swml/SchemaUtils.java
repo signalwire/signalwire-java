@@ -439,21 +439,6 @@ public class SchemaUtils {
     }
     JsonObject schema = schemaEl.getAsJsonObject();
 
-    // x-sdk-widen — a DECLARED ruling that this field's const/enum union is a
-    // documentation HINT, not a closed set: the platform accepts values outside
-    // it. Enforcing the union anyway invents a constraint the server does not
-    // have and makes the SDK reject documents that work on the wire. Honour the
-    // flag by checking only the underlying TYPE of each branch, never the const.
-    //
-    // Exactly one field carries it today — $defs/Hangup.reason, whose
-    // hangup|busy|decline union this validator was rejecting anything outside of.
-    if (schema.has("x-sdk-widen")
-        && schema.get("x-sdk-widen").isJsonPrimitive()
-        && schema.get("x-sdk-widen").getAsBoolean()) {
-      validateWidened(schema, value, path, errors);
-      return;
-    }
-
     // $ref — resolve and validate against the referenced def.
     if (schema.has("$ref") && schema.get("$ref").isJsonPrimitive()) {
       JsonObject resolved = resolveRef(schema.get("$ref").getAsString());
@@ -647,53 +632,6 @@ public class SchemaUtils {
     List<String> local = new ArrayList<>();
     validateAgainst(schemaEl, value, "$", local, depth);
     return local.isEmpty();
-  }
-
-  // Validate a field the schema marks as widened: keep the TYPE constraint, drop the
-  // const/enum membership constraint. For such a field the listed values are a hint
-  // about what it usually carries, not a closed set the platform enforces — so
-  // {"reason": "done"} on hangup is a legal document even though "done" is not one of
-  // the three listed values. A branch's $ref is resolved so a widened field that
-  // unions a primitive with, say, SWMLVar still accepts the SWMLVar object form.
-  // No `depth` parameter: unlike validateAgainst this method never recurses --
-  // it only calls the non-recursive checkType -- so there is no depth to guard.
-  private void validateWidened(
-      JsonObject schema, JsonElement value, String path, List<String> errors) {
-    List<JsonObject> branches = new ArrayList<>();
-    for (String key : List.of("anyOf", "oneOf")) {
-      if (schema.has(key) && schema.get(key).isJsonArray()) {
-        for (JsonElement sub : schema.getAsJsonArray(key)) {
-          if (sub.isJsonObject()) {
-            JsonObject o = sub.getAsJsonObject();
-            if (o.has("$ref") && o.get("$ref").isJsonPrimitive()) {
-              JsonObject resolved = resolveRef(o.get("$ref").getAsString());
-              if (resolved != null) {
-                o = resolved;
-              }
-            }
-            branches.add(o);
-          }
-        }
-      }
-    }
-    if (branches.isEmpty()) {
-      // No union to widen — fall back to a plain type check when one is declared.
-      if (schema.has("type")) {
-        checkType(schema.get("type"), value, path, errors);
-      }
-      return;
-    }
-    for (JsonObject b : branches) {
-      if (!b.has("type")) {
-        return; // an untyped branch accepts anything
-      }
-      List<String> local = new ArrayList<>();
-      checkType(b.get("type"), value, path, local);
-      if (local.isEmpty()) {
-        return; // some branch's type accepts this value
-      }
-    }
-    errors.add(path + " does not match the type of any allowed schema");
   }
 
   /** Resolve a local {@code #/$defs/Name} reference against the loaded schema. */

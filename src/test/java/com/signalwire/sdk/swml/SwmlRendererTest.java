@@ -222,9 +222,9 @@ class SwmlRendererTest {
    * document — so a caller-supplied action config the SWML schema rejects (here a misspelled key on
    * the closed {@code hangup} verb) raises instead of being appended silently.
    *
-   * <p>This originally used an out-of-enum {@code hangup.reason}, which is NOT a rejection case:
-   * {@code $defs/Hangup.reason} carries {@code x-sdk-widen: true}, so its {@code
-   * hangup|busy|decline} union is a hint and the platform accepts any string.
+   * <p>A misspelled key is used rather than an out-of-enum {@code hangup.reason} because it
+   * additionally pins the closed-schema check; the value-set case is covered by the engine-reason
+   * rows in {@code ValidatorRoutingTest}.
    */
   @Test
   void testFunctionResponseActionIsSchemaValidated() {
@@ -235,15 +235,18 @@ class SwmlRendererTest {
                 "bye", newService(), List.of(Map.of("hangup", Map.of("reasonn", "busy"))), "json"));
   }
 
-  /** A widened reason is accepted by that same path. */
+  /**
+   * An engine-valid reason is accepted by that same path. {@code noAnswer} is one of the six {@code
+   * relay_apis.c:1105} accepts and was absent from the schema's earlier three-const union.
+   */
   @Test
-  void testFunctionResponseActionAcceptsWidenedHangupReason() {
+  void testFunctionResponseActionAcceptsAnEngineHangupReason() {
     assertDoesNotThrow(
         () ->
             SwmlRenderer.renderFunctionResponseSwml(
                 "bye",
                 newService(),
-                List.of(Map.of("hangup", Map.of("reason", "not-a-listed-reason"))),
+                List.of(Map.of("hangup", Map.of("reason", "noAnswer"))),
                 "json"));
   }
 

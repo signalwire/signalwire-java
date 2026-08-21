@@ -407,8 +407,11 @@ class SwmlTest {
     assertDoesNotThrow(() -> service.ai(Map.of("prompt", Map.of("text", "hi"))));
     assertDoesNotThrow(() -> service.play(Map.of("url", "say:hi")));
     assertDoesNotThrow(() -> service.hangup(Map.of("reason", "busy")));
-    // reason is x-sdk-widen, so an unlisted value is legal.
-    assertDoesNotThrow(() -> service.hangup(Map.of("reason", "done")));
+    // Every value relay_apis.c:1105 accepts is legal, including the three the
+    // schema's earlier three-const union omitted.
+    assertDoesNotThrow(() -> service.hangup(Map.of("reason", "noAnswer")));
+    // ...and one it refuses is not.
+    assertThrows(SchemaValidationError.class, () -> service.hangup(Map.of("reason", "done")));
   }
 
   /**

@@ -162,9 +162,9 @@ class SWMLBuilderTest {
 
   @Test
   void testFluentChainingReturnsThis() {
-    // `$defs/Hangup.reason` carries `x-sdk-widen: true` — its hangup|busy|decline
-    // union is a HINT, not a closed set, so an arbitrary reason is a legal document.
-    SWMLBuilder result = builder.reset().answer().say("hi").hangup("done");
+    // `noAnswer` is one of the six values relay_apis.c:1105 accepts, and was
+    // absent from the schema's earlier hangup|busy|decline union.
+    SWMLBuilder result = builder.reset().answer().say("hi").hangup("noAnswer");
     assertSame(builder, result);
     assertEquals("answer", firstKey(main().get(0)));
     assertEquals("play", firstKey(main().get(1)));
