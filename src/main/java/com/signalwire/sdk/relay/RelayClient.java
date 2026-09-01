@@ -1268,7 +1268,22 @@ public class RelayClient implements AutoCloseable {
   }
 
   private void handleInboundCall(RelayEvent.CallReceiveEvent event) {
+    // RELAY delivers at least once, so calling.call.receive can arrive again for a call
+    // already in flight. Receive is idempotent per call_id: keep the live instance and do
+    // NOT re-enter the onCall handler. Replacing the map entry would orphan the Call the
+    // application is holding — routing only ever reads `calls` by call_id, so the original
+    // would silently stop receiving events and a blocking action on it would wait out its
+    // timeout instead of returning at hangup. The event is ACKed by the read loop before
+    // this runs, so returning early still stops the server's retries.
+    if (calls.containsKey(event.getCallId())) {
+      log.debug(
+          "Ignoring redelivered calling.call.receive for in-flight call %s", event.getCallId());
+      return;
+    }
+
     // Drop the inbound call once the active-call cap is reached (relay/client.py:914).
+    // Checked AFTER the dedup above: a redelivery for a call already in the map is not a
+    // new call, so it must never be counted against the cap or logged as a dropped call.
     if (calls.size() >= maxActiveCalls) {
       log.error("Max active calls (" + maxActiveCalls + ") reached, dropping inbound call");
       return;

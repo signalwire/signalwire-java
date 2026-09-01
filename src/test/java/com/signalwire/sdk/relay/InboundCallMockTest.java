@@ -453,6 +453,93 @@ class InboundCallMockTest {
     assertEquals("inbound", inner.get("direction"));
   }
 
+  // ── Redelivered calling.call.receive (porting-sdk#141) ───────
+  //
+  // RELAY delivers at least once: the same receive frame can arrive twice for one call.
+  // Receive must therefore be idempotent per call_id — see the "Event Redelivery" section
+  // of porting-sdk's RELAY_IMPLEMENTATION_GUIDE.md.
+
+  /**
+   * Without the idempotency guard the second receive builds a second Call and overwrites {@code
+   * calls.get(callId)}. Routing only ever reads that map, so the first Call — the one handed to the
+   * application — silently stops receiving events and never reaches a terminal state.
+   */
+  @Test
+  @DisplayName("Redelivered receive keeps the live Call")
+  void redeliveredReceiveKeepsTheLiveCall() throws Exception {
+    List<Call> handlerCalls = java.util.Collections.synchronizedList(new ArrayList<>());
+    CompletableFuture<Void> firstSeen = new CompletableFuture<>();
+    client.onCall(
+        call -> {
+          handlerCalls.add(call);
+          firstSeen.complete(null);
+        });
+
+    mock.inboundCall(
+        new RelayMockTest.InboundCallSpec()
+            .callId("c-redeliver")
+            .autoStates(List.of("ringing", "answered"))
+            .delayMs(20)
+            .redeliverReceive(1));
+    firstSeen.get(5, TimeUnit.SECONDS);
+    // Let the redelivery and the trailing state frame drain.
+    Thread.sleep(600);
+
+    // 1. One call means one handler invocation.
+    assertEquals(
+        1,
+        handlerCalls.size(),
+        "on_call handler re-entered for a redelivered receive ("
+            + handlerCalls.size()
+            + " invocations for one call)");
+
+    // 2. The live instance survives — the map still points at what the application was
+    //    handed, not at a replacement.
+    Call first = handlerCalls.get(0);
+    assertSame(first, client.getCalls().get("c-redeliver"));
+
+    // 3. And it is still the object events route to.
+    assertEquals(
+        "answered",
+        first.getState(),
+        "the Call handed to the application stopped receiving events");
+
+    // The duplicate really was on the wire — otherwise this proves nothing.
+    long redelivered =
+        mock.journalSend(Constants.EVENT_CALL_RECEIVE).stream()
+            .filter(e -> "c-redeliver".equals(e.innerParams().get("call_id")))
+            .count();
+    assertEquals(
+        2,
+        redelivered,
+        "mock did not redeliver the receive frame; the scenario under test never happened");
+  }
+
+  /** The dedup is per call_id and must not swallow a genuinely new concurrent inbound call. */
+  @Test
+  @DisplayName("Distinct call_ids still create separate Calls")
+  void distinctCallIdsStillCreateSeparateCalls() throws Exception {
+    List<Call> handlerCalls = java.util.Collections.synchronizedList(new ArrayList<>());
+    CompletableFuture<Void> bothSeen = new CompletableFuture<>();
+    client.onCall(
+        call -> {
+          handlerCalls.add(call);
+          if (handlerCalls.size() == 2) bothSeen.complete(null);
+        });
+
+    mock.inboundCall(
+        new RelayMockTest.InboundCallSpec().callId("c-first").autoStates(List.of("ringing")));
+    mock.inboundCall(
+        new RelayMockTest.InboundCallSpec().callId("c-second").autoStates(List.of("ringing")));
+    bothSeen.get(5, TimeUnit.SECONDS);
+
+    List<String> ids = new ArrayList<>();
+    for (Call c : handlerCalls) ids.add(c.getCallId());
+    java.util.Collections.sort(ids);
+    assertEquals(List.of("c-first", "c-second"), ids, "dedup swallowed a distinct call");
+    assertNotSame(client.getCalls().get("c-first"), client.getCalls().get("c-second"));
+  }
+
   // ── Inbound without a registered handler — does not crash ────
 
   @Test

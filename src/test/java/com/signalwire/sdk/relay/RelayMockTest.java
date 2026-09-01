@@ -293,6 +293,7 @@ public final class RelayMockTest {
       body.put("context", spec.context);
       body.put("auto_states", spec.autoStates);
       body.put("delay_ms", spec.delayMs);
+      body.put("redeliver_receive", spec.redeliverReceive);
       if (spec.callId != null) body.put("call_id", spec.callId);
       // Target this harness's scoped session by default so the inbound-call
       // sequence reaches only this test's client (an unscoped harness
@@ -426,6 +427,13 @@ public final class RelayMockTest {
     public int delayMs = 50;
     public String sessionId;
 
+    /**
+     * Replay the {@code calling.call.receive} frame this many EXTRA times (byte-identical, before
+     * the state frames) to drive RELAY's at-least-once delivery. See porting-sdk
+     * RELAY_IMPLEMENTATION_GUIDE.md.
+     */
+    public int redeliverReceive = 0;
+
     public InboundCallSpec callId(String id) {
       this.callId = id;
       return this;
@@ -458,6 +466,11 @@ public final class RelayMockTest {
 
     public InboundCallSpec sessionId(String s) {
       this.sessionId = s;
+      return this;
+    }
+
+    public InboundCallSpec redeliverReceive(int n) {
+      this.redeliverReceive = n;
       return this;
     }
   }
