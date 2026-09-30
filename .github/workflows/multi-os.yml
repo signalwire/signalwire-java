@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
           port_sha='${{ github.sha }}'
           # Keys the last-green cache marker on porting-sdk main's SHA (the steady-state
-          # checkout ref). A coordinated branch pins a wave branch via its .porting-sdk-ref
+          # checkout ref). A coordinated branch pins a wave branch via its .github/porting-sdk-ref
           # file; the marker still keys on main, so a pinned run simply won't hit the
           # cache and re-runs — which is the desired behavior during a coordinated pass.
           psdk_sha=$(GH_TOKEN="$PSDK_TOKEN" gh api repos/signalwire/porting-sdk/commits/main --jq .sha)
@@ -83,7 +83,7 @@ jobs:
         with:
           path: signalwire-java
 
-      - name: Resolve coordinated refs (branch-local .porting-sdk-ref pin; no pin = main)
+      - name: Resolve coordinated refs (branch-local .github/porting-sdk-ref pin; no pin = main)
         # See porting-sdk/COORDINATED_PASS.md. Every foreign coordinated-set
         # checkout below takes its ref from this step's outputs.
         id: coord
@@ -95,7 +95,7 @@ jobs:
         with:
           repository: signalwire/porting-sdk
           # Coordinated-pass pin: resolved by the `coord` step from the branch-local
-          # .porting-sdk-ref pin file; main when the file is absent, so only a branch
+          # .github/porting-sdk-ref pin file; main when the file is absent, so only a branch
           # that commits the pin is affected (see porting-sdk/COORDINATED_PASS.md).
           ref: ${{ steps.coord.outputs.ref }}
           path: porting-sdk

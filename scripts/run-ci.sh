@@ -271,7 +271,7 @@ sched_gate NO-CHEAT desc="audit_no_cheat_tests" \
 sched_gate COORDINATED-PASS desc="a non-main porting-sdk pin must be declared on the PR (Coordinated-With: line or coordinated-pass label)" \
     -- python3 "$PORTING_SDK_DIR/scripts/coordinated_pass.py" --porting-sdk "$PORTING_SDK_DIR"
 
-sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) takes its ref from the branch-local .porting-sdk-ref pin resolver, never a repo variable or literal ref" \
+sched_gate COORDINATED-REFS desc="every coordinated-set checkout (porting-sdk + python oracle + matrix ports) takes its ref from the branch-local .github/porting-sdk-ref pin resolver, never a repo variable or literal ref" \
     -- python3 "$PORTING_SDK_DIR/scripts/check_coordinated_refs.py" --repo "$PORT_ROOT"
 
 sched_gate ENV-VAR-CONSISTENCY desc="REST base-url override seam present + canonical CA env names (SIGNALWIRE_REST_CA_FILE / SIGNALWIRE_RELAY_CA_FILE)" \
@@ -333,7 +333,7 @@ sched_gate PUBLIC-JARGON res=dayone desc="no internal porting jargon in public d
 # regression with a pinned number to prove it — it must red the run, not print a note.
 # Was report-only at graduation, and previously wrapped in a skip-with-pass guard for
 # when doc_surface.py still lived only on the porting-sdk plan branch. Both are gone: the
-# script is on the pinned .porting-sdk-ref branch, and a MISSING gate script must fail, not pass.
+# script is on the pinned .github/porting-sdk-ref branch, and a MISSING gate script must fail, not pass.
 sched_gate DOC-SURFACE res=dayone desc="javadoc coverage floor on the public API surface (100% — blocking; ratchets via .doc_surface_floor)" \
     -- python3 "$PORTING_SDK_DIR/scripts/doc_surface.py" --port java --repo "$PORT_ROOT"
 
@@ -351,7 +351,7 @@ sched_gate WIRED-MODES res=dayone desc="run-ci exports every load-bearing strict
 # shared ai_chat_corpus against porting-sdk's in-process mock_ai_chat and asserts the client
 # speaks the AI Chat JSON-RPC protocol per the vendored spec (ai-chat-specs/ai-chat.yaml).
 # The gate script (diff_port_ai_chat.py) + mock live on the porting-sdk `ai-chat-client`
-# branch, so during the coordinated pass the .porting-sdk-ref pin selects that branch and the gate runs;
+# branch, so during the coordinated pass the .github/porting-sdk-ref pin selects that branch and the gate runs;
 # on plain main it skip-passes until the branch merges. res=gradle: the aiChatDump task
 # shells to ./gradlew (mutex with the other Gradle gates).
 sched_gate AI-CHAT res=gradle desc="AIChatClient speaks the AI Chat protocol per the vendored spec (mock_ai_chat wire-behavioral)" \
