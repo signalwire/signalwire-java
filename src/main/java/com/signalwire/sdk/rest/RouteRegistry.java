@@ -225,6 +225,7 @@ final class RouteRegistry {
       return Collections.emptyMap();
     }
 
+    /** Records the GET route; returns an empty body. */
     @Override
     public String getText(
         String path,
@@ -242,6 +243,7 @@ final class RouteRegistry {
       return Collections.emptyList();
     }
 
+    /** Records the GET route; returns an empty location. */
     @Override
     public String getRedirectLocation(
         String path, Map<String, String> queryParams, RequestOptions requestOptions) {
@@ -309,6 +311,23 @@ final class RouteRegistry {
    * typed DTO). All three shapes are the wire response — recognise them so a flipped route is not
    * silently dropped from Set B (which would masquerade as "the SDK is missing this route").
    */
+  /**
+   * A generated resource verb whose success is not a JSON object: a text body or a redirect's
+   * Location ({@code String}, e.g. {@code download(id, params)}) or a top-level JSON array ({@code
+   * List}). Only methods declared on a generated resource that take arguments qualify, so plain
+   * getters such as {@code getBasePath()} never do.
+   */
+  private static boolean isGeneratedNonJsonRoute(Method m) {
+    Class<?> rt = m.getReturnType();
+    if (rt != String.class && !List.class.isAssignableFrom(rt)) {
+      return false;
+    }
+    Package p = m.getDeclaringClass().getPackage();
+    return m.getParameterCount() > 0
+        && p != null
+        && p.getName().equals("com.signalwire.sdk.rest.namespaces.generated");
+  }
+
   private static boolean isWireResponseType(Class<?> rt) {
     if (Map.class.isAssignableFrom(rt)) {
       return true;
@@ -322,7 +341,7 @@ final class RouteRegistry {
 
   /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!isWireResponseType(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType()) && !isGeneratedNonJsonRoute(m)) {
       return false;
     }
     // Every generated verb ships a convenience overload + a RequestOptions-carrying full

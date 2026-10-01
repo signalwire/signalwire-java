@@ -990,6 +990,14 @@ def emit_request_builder(
         f"  /** Closed typed request for {{@link #{snake_to_lower_camel(method)}}} (builder + extras door). */"
     )
     lines.append(f"  public static final class {req_cls} {{")
+    req_headers = [i for _w, i, r in headers if r]
+    if req_headers:
+        # The builder setters of the REQUIRED header params (the server answers 400 without
+        # them). Read reflectively by the route test plan so a generated wire test sets them.
+        joined = ", ".join(java_str(i) for i in req_headers)
+        lines.append(
+            f"    static final java.util.List<String> REQUIRED_HEADER_SETTERS = java.util.List.of({joined});"
+        )
     for _wire, jtype, _required, ident in all_fields:
         lines.append(f"    private final {jtype} {ident};")
     lines.append("    private final java.util.Map<String, Object> extras;")
@@ -1033,10 +1041,10 @@ def emit_request_builder(
         lines.append(f"        body.put({java_str(root)}, nested);")
         lines.append("      }")
     lines.append("      if (this.extras != null) { body.putAll(this.extras); }")
-    for wire in autofill:
-        lines.append(
-            f"      body.putIfAbsent({java_str(wire)}, java.util.UUID.randomUUID().toString());"
-        )
+    lines.extend(
+        f"      body.putIfAbsent({java_str(wire)}, java.util.UUID.randomUUID().toString());"
+        for wire in autofill
+    )
     lines.append("      return body;")
     lines.append("    }")
     lines.append("")
@@ -2040,7 +2048,7 @@ CONTAINERS = {
 PAT_SECURITY_SCHEME = "SignalWirePersonalAccessToken"
 
 
-def is_pat_spec(spec: "Spec") -> bool:
+def is_pat_spec(spec: Spec) -> bool:
     """True when the spec's root ``security`` accepts ONLY the Personal Access Token:
     its resources are wired to the client's PAT credential, never the project token."""
     security = spec.doc.get("security") or []

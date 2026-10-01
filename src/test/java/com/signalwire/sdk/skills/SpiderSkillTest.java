@@ -170,6 +170,7 @@ class SpiderSkillTest {
   // ---- helpers ----
 
   private static String scrape(SpiderSkill skill, String url) {
+    allowLoopback(skill);
     for (ToolDefinition td : skill.registerTools()) {
       if ("scrape_url".equals(td.getName())) {
         FunctionResult r = td.getHandler().handle(Map.of("url", url), Map.of());
@@ -177,6 +178,38 @@ class SpiderSkillTest {
       }
     }
     throw new AssertionError("scrape_url tool not registered");
+  }
+
+  /**
+   * The skill fetches through a {@link com.signalwire.sdk.utils.PublicSession} that refuses
+   * loopback targets (the SSRF guard). These tests serve the page on loopback, so swap in a session
+   * that allows private addresses — the equivalent of {@code SWML_ALLOW_PRIVATE_URLS}.
+   */
+  private static void allowLoopback(SpiderSkill skill) {
+    try {
+      java.lang.reflect.Field f = SpiderSkill.class.getDeclaredField("session");
+      f.setAccessible(true);
+      f.set(skill, new com.signalwire.sdk.utils.PublicSession(true));
+    } catch (ReflectiveOperationException e) {
+      throw new LinkageError(e.getMessage(), e);
+    }
+  }
+
+  @Test
+  void testLoopbackPageIsRefusedByDefault() throws Exception {
+    // The SSRF guard: without SWML_ALLOW_PRIVATE_URLS a loopback target is refused, so a
+    // user-supplied URL cannot reach an internal address.
+    try (PageServer page = PageServer.serving("<html><body>SECRET</body></html>")) {
+      SpiderSkill skill = new SpiderSkill();
+      skill.setup(Map.of());
+      String out = null;
+      for (ToolDefinition td : skill.registerTools()) {
+        if ("scrape_url".equals(td.getName())) {
+          out = td.getHandler().handle(Map.of("url", page.url()), Map.of()).getResponse();
+        }
+      }
+      assertTrue(out != null && out.contains("URL rejected") && !out.contains("SECRET"), out);
+    }
   }
 
   /**

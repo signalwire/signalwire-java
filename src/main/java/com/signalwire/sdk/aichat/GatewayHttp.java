@@ -59,6 +59,7 @@ final class GatewayHttp {
 
   /** Writes a double with Python's {@code float.__repr__} spelling. */
   private static final class PyFloatAdapter extends TypeAdapter<Double> {
+    /** Writes {@code value} in Python's float spelling ({@code null} as JSON null). */
     @Override
     public void write(JsonWriter out, Double value) throws IOException {
       if (value == null) {
@@ -68,6 +69,7 @@ final class GatewayHttp {
       }
     }
 
+    /** Reads a JSON number as a double. */
     @Override
     public Double read(JsonReader in) throws IOException {
       return in.nextDouble();

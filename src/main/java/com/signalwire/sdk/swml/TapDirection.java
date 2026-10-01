@@ -18,15 +18,15 @@ package com.signalwire.sdk.swml;
  * <p><strong>This is a DIFFERENT set from {@link RecordDirection}.</strong> {@code tap} uses {@code
  * hear} where {@code record_call} uses {@code listen}: the server validates the two verbs against
  * two separate lists, so the two sets are modelled as two distinct enums and are never shared (see
- * the 3-vocabulary trap: SWML {@code record_call} {@code {speak,listen,both}} vs SWML {@code tap}
- * {@code {speak,hear,both}} vs RELAY {@code {listen,speak,both}}).
+ * the SWML {@code tap} verb's own enum, which is {@code {speak,listen,both}} — the same set as
+ * {@code record_call}; {@code "hear"} was never a tap direction and the platform rejects it).
  *
  * <p>Each constant's {@link #getValue() value} is the canonical wire string, so routing a tap
  * through the enum is byte-for-byte identical to passing that string.
  */
 public enum TapDirection implements WireEnum {
   SPEAK("speak"),
-  HEAR("hear"),
+  LISTEN("listen"),
   BOTH("both");
 
   private final String value;
@@ -36,7 +36,7 @@ public enum TapDirection implements WireEnum {
   }
 
   /**
-   * The canonical wire string for this direction ({@code "speak"} / {@code "hear"} / {@code
+   * The canonical wire string for this direction ({@code "speak"} / {@code "listen"} / {@code
    * "both"}).
    *
    * @return the lower-case direction name as it appears on the wire.
@@ -48,8 +48,7 @@ public enum TapDirection implements WireEnum {
 
   /**
    * Parse a wire string into a {@link TapDirection}, or return {@code null} if it is not a
-   * recognised direction — the same strings the server rejects. Note {@code "listen"} is valid for
-   * {@link RecordDirection} but NOT for {@code tap}, so it returns {@code null} here.
+   * recognised direction — the same strings the server rejects ({@code "hear"} among them).
    *
    * @param wire the candidate wire string (case-sensitive).
    * @return the matching constant, or {@code null} if none matches.

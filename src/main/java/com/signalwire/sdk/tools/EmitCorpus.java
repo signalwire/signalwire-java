@@ -329,7 +329,8 @@ final class EmitCorpus {
             () -> fr("").tap("ws://ex.com/tap", null, "speak", "PCMA", 20, null)));
     c.add(
         new Entry(
-            "tap.hear_pcmu", () -> fr("").tap("wss://ex.com/tap", null, "hear", "PCMU", 20, null)));
+            "tap.listen_pcmu",
+            () -> fr("").tap("wss://ex.com/tap", null, "listen", "PCMU", 20, null)));
     c.add(
         new Entry(
             "tap.both_full",
@@ -446,6 +447,40 @@ final class EmitCorpus {
     // ---- speech timeouts ----------------------------------------------------
     c.add(new Entry("end_of_speech_timeout", () -> fr("").setEndOfSpeechTimeout(800)));
     c.add(new Entry("speech_event_timeout", () -> fr("").setSpeechEventTimeout(1200)));
+    // ---- structured tool response -------------------------------------------
+    c.add(
+        new Entry(
+            "tool_response.ctor",
+            () ->
+                new FunctionResult(
+                    null, false, "Order 1042 placed.", "Tell the caller their order number.")));
+    c.add(
+        new Entry(
+            "tool_response.set",
+            () -> fr("").setToolResponse("Balance is $12.50.", "Read the balance to the caller.")));
+    c.add(new Entry("tool_response.result_only", () -> fr("").setToolResponse("Saved.")));
+    // ---- hold with a prompt and step routing --------------------------------
+    c.add(new Entry("hold.prompt", () -> fr("").hold("Please hold while I check.")));
+    c.add(new Entry("hold.routing", () -> fr("").hold("One moment.", 60, "resume", "timed_out")));
+    // ---- RPC global data ----------------------------------------------------
+    c.add(
+        new Entry(
+            "rpc_ai_message.global_data",
+            () ->
+                fr("")
+                    .rpcAiMessage(
+                        "call-abc",
+                        "The caller is back.",
+                        "system",
+                        Map.of("status", "returned"))));
+    c.add(
+        new Entry(
+            "rpc_ai_message.data_only",
+            () -> fr("").rpcAiMessage("call-abc", null, "system", Map.of("order_id", "1042"))));
+    c.add(
+        new Entry(
+            "rpc_ai_global_data",
+            () -> fr("").rpcAiGlobalData("call-abc", map("order_id", "1042", "paid", true))));
 
     // ---- execute_swml (dict + JSON-string + transfer) ----------------------
     c.add(

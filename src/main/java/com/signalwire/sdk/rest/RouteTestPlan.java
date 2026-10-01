@@ -192,6 +192,7 @@ final class RouteTestPlan {
       return Collections.emptyMap();
     }
 
+    /** Records the GET route; returns an empty body. */
     @Override
     public String getText(
         String path,
@@ -209,6 +210,7 @@ final class RouteTestPlan {
       return Collections.emptyList();
     }
 
+    /** Records the GET route; returns an empty location. */
     @Override
     public String getRedirectLocation(
         String path, Map<String, String> queryParams, RequestOptions requestOptions) {
@@ -253,6 +255,23 @@ final class RouteTestPlan {
    * listAddresses} base, covariantly overridden to a DTO). Recognising all three keeps a flipped
    * route in the test plan instead of silently dropping it.
    */
+  /**
+   * A generated resource verb whose success is not a JSON object: a text body or a redirect's
+   * Location ({@code String}, e.g. {@code download(id, params)}) or a top-level JSON array ({@code
+   * List}). Only methods declared on a generated resource that take arguments qualify, so plain
+   * getters such as {@code getBasePath()} never do.
+   */
+  private static boolean isGeneratedNonJsonRoute(Method m) {
+    Class<?> rt = m.getReturnType();
+    if (rt != String.class && !List.class.isAssignableFrom(rt)) {
+      return false;
+    }
+    Package p = m.getDeclaringClass().getPackage();
+    return m.getParameterCount() > 0
+        && p != null
+        && p.getName().equals("com.signalwire.sdk.rest.namespaces.generated");
+  }
+
   private static boolean isWireResponseType(Class<?> rt) {
     if (Map.class.isAssignableFrom(rt) || rt == Object.class) {
       return true;
@@ -263,7 +282,7 @@ final class RouteTestPlan {
 
   /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!isWireResponseType(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType()) && !isGeneratedNonJsonRoute(m)) {
       return false;
     }
     // Skip the RequestOptions-carrying full overload (plan 4.2 / PY-9); its no-RO
@@ -360,10 +379,30 @@ final class RouteTestPlan {
       // class is not needed since we fully-qualify it).
       String fqn = t.getCanonicalName();
       if (fqn != null) {
-        return fqn + ".builder().build()";
+        StringBuilder expr = new StringBuilder(fqn).append(".builder()");
+        for (String setter : requiredHeaderSetters(t)) {
+          expr.append('.').append(setter).append("(\"x\")");
+        }
+        return expr.append(".build()").toString();
       }
     }
     return null;
+  }
+
+  /**
+   * The builder setters of a generated request's REQUIRED header params (e.g. the space top-up
+   * {@code Idempotency-Key}), which the server answers 400 without — read from the request's
+   * generated {@code REQUIRED_HEADER_SETTERS}; empty when it has none.
+   */
+  @SuppressWarnings("unchecked")
+  private static List<String> requiredHeaderSetters(Class<?> t) {
+    try {
+      java.lang.reflect.Field f = t.getDeclaredField("REQUIRED_HEADER_SETTERS");
+      f.setAccessible(true);
+      return (List<String>) f.get(null);
+    } catch (ReflectiveOperationException e) {
+      return List.of();
+    }
   }
 
   private static boolean isBuilderBackedRequest(Class<?> t) {

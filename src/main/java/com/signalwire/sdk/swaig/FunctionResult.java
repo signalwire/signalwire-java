@@ -790,10 +790,16 @@ public class FunctionResult {
     } else {
       throw new IllegalArgumentException("swmlContent must be a String or Map");
     }
+    // transfer rides BESIDE the SWML document, not inside it — the same shape connect() and
+    // swmlTransfer() emit. Inside the document it is not a SWML key and the call never exits
+    // the agent.
+    Map<String, Object> action = new LinkedHashMap<>();
+    action.put("SWML", swmlData);
     if (transfer) {
-      swmlData.put("transfer", "true");
+      action.put("transfer", "true");
     }
-    return addAction("SWML", swmlData);
+    actions.add(action);
+    return this;
   }
 
   /**
@@ -824,7 +830,8 @@ public class FunctionResult {
    * @param startOnEnter conference starts when this participant enters (default {@code true})
    * @param endOnExit conference ends when this participant exits (default {@code false})
    * @param waitUrl SWML URL for hold music ({@code null} for default)
-   * @param maxParticipants maximum participants, 1..250 (default 250)
+   * @param maxParticipants maximum participants, 2 or more; {@code null} (the default) leaves it
+   *     out so the platform's default applies
    * @param record "do-not-record" or "record-from-start" (default "do-not-record")
    * @param region conference region ({@code null} for default)
    * @param trim "trim-silence" or "do-not-trim" (default "trim-silence")
@@ -846,7 +853,7 @@ public class FunctionResult {
       boolean startOnEnter,
       boolean endOnExit,
       String waitUrl,
-      int maxParticipants,
+      Integer maxParticipants,
       String record,
       String region,
       String trim,
@@ -867,9 +874,11 @@ public class FunctionResult {
           "beep must be one of ['true', 'false', 'onEnter', 'onExit']");
     }
 
-    // Validate max_participants.
-    if (maxParticipants <= 0 || maxParticipants > 250) {
-      throw new IllegalArgumentException("max_participants must be a positive integer <= 250");
+    // The platform requires a positive number, and its conference refuses fewer than 2; it sets
+    // no upper limit.
+    if (maxParticipants != null && maxParticipants < 2) {
+      throw new IllegalArgumentException(
+          "max_participants must be an integer of at least 2, got " + maxParticipants);
     }
 
     // Validate record.
@@ -909,7 +918,7 @@ public class FunctionResult {
             && startOnEnter
             && !endOnExit
             && waitUrl == null
-            && maxParticipants == 250
+            && maxParticipants == null
             && "do-not-record".equals(record)
             && region == null
             && "trim-silence".equals(trim)
@@ -933,7 +942,7 @@ public class FunctionResult {
       if (!startOnEnter) params.put("start_on_enter", false);
       if (endOnExit) params.put("end_on_exit", true);
       if (waitUrl != null) params.put("wait_url", waitUrl);
-      if (maxParticipants != 250) params.put("max_participants", maxParticipants);
+      if (maxParticipants != null) params.put("max_participants", maxParticipants);
       if (!"do-not-record".equals(record)) params.put("record", record);
       if (region != null) params.put("region", region);
       if (!"trim-silence".equals(trim)) params.put("trim", trim);
@@ -974,7 +983,7 @@ public class FunctionResult {
         true,
         false,
         null,
-        250,
+        null,
         "do-not-record",
         null,
         "trim-silence",
@@ -1013,16 +1022,17 @@ public class FunctionResult {
   /**
    * Start a background call tap via SWML.
    *
-   * <p>Validates {@code direction} ∈ {speak, hear, both}, {@code codec} ∈ {PCMU, PCMA}, and {@code
-   * rtp_ptime > 0} with byte-exact Python {@code ValueError} messages (rendered through {@link
-   * IllegalArgumentException}). Only {@code uri} is always emitted; each other key is emitted only
-   * when it differs from its reference default ({@code direction != "both"}, {@code codec !=
-   * "PCMU"}, {@code rtp_ptime != 20}), plus {@code control_id} and {@code status_url} when
+   * <p>Validates {@code direction} ∈ {speak, listen, both}, {@code codec} ∈ {PCMU, PCMA}, and
+   * {@code rtp_ptime > 0} with byte-exact Python {@code ValueError} messages (rendered through
+   * {@link IllegalArgumentException}). Only {@code uri} is always emitted; each other key is
+   * emitted only when it differs from its reference default ({@code direction != "both"}, {@code
+   * codec != "PCMU"}, {@code rtp_ptime != 20}), plus {@code control_id} and {@code status_url} when
    * supplied.
    *
    * @param uri tap media-stream destination (required; rtp://, ws://, wss://)
    * @param controlId tap identifier ({@code null} for an auto-generated one)
-   * @param direction "speak", "hear" or "both" (default "both")
+   * @param direction "speak", "listen" or "both" (default "both"); always emitted, because the
+   *     verb's own default is "speak"
    * @param codec "PCMU" or "PCMA" (default "PCMU")
    * @param rtpPtime RTP packetization time in ms, &gt; 0 (default 20)
    * @param statusUrl URL for status-change requests ({@code null} to omit)
@@ -1038,9 +1048,9 @@ public class FunctionResult {
       String statusUrl) {
     // Validate direction. Error strings mirror Python's f-string list
     // rendering (single-quoted members) so a ported substring match passes.
-    List<String> validDirections = List.of("speak", "hear", "both");
+    List<String> validDirections = List.of("speak", "listen", "both");
     if (!validDirections.contains(direction)) {
-      throw new IllegalArgumentException("direction must be one of ['speak', 'hear', 'both']");
+      throw new IllegalArgumentException("direction must be one of ['speak', 'listen', 'both']");
     }
     // Validate codec.
     List<String> validCodecs = List.of("PCMU", "PCMA");
@@ -1055,7 +1065,8 @@ public class FunctionResult {
     Map<String, Object> tapParams = new LinkedHashMap<>();
     tapParams.put("uri", uri);
     if (controlId != null && !controlId.isEmpty()) tapParams.put("control_id", controlId);
-    if (!"both".equals(direction)) tapParams.put("direction", direction);
+    // Always emitted: the tap verb defaults to "speak", not the helper's "both".
+    tapParams.put("direction", direction);
     if (!"PCMU".equals(codec)) tapParams.put("codec", codec);
     if (rtpPtime != 20) tapParams.put("rtp_ptime", rtpPtime);
     if (statusUrl != null && !statusUrl.isEmpty()) tapParams.put("status_url", statusUrl);

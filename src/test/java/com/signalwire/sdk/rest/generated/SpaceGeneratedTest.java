@@ -225,6 +225,64 @@ class SpaceGeneratedTest {
   }
 
   @Test
+  void spaceBillingStatementsGetCsvSuccess() {
+    dispatch(() -> client.space().billingStatements().getCsv(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for space.get_billing_statement_csv");
+    assertEquals(
+        "space.get_billing_statement_csv",
+        j.getMatchedRoute(),
+        "matched_route for space.get_billing_statement_csv");
+  }
+
+  @Test
+  void spaceBillingStatementsGetCsvError() {
+    mock.scenarioSet("space.get_billing_statement_csv", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.space().billingStatements().getCsv(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for space.get_billing_statement_csv");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for space.get_billing_statement_csv");
+    assertEquals(
+        "space.get_billing_statement_csv",
+        j.getMatchedRoute(),
+        "matched_route for space.get_billing_statement_csv");
+  }
+
+  @Test
+  void spaceBillingStatementsGetPdfSuccess() {
+    dispatch(() -> client.space().billingStatements().getPdf(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for space.get_billing_statement_pdf");
+    assertEquals(
+        "space.get_billing_statement_pdf",
+        j.getMatchedRoute(),
+        "matched_route for space.get_billing_statement_pdf");
+  }
+
+  @Test
+  void spaceBillingStatementsGetPdfError() {
+    mock.scenarioSet("space.get_billing_statement_pdf", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.space().billingStatements().getPdf(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for space.get_billing_statement_pdf");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for space.get_billing_statement_pdf");
+    assertEquals(
+        "space.get_billing_statement_pdf",
+        j.getMatchedRoute(),
+        "matched_route for space.get_billing_statement_pdf");
+  }
+
+  @Test
   void spaceBillingStatementsListSuccess() {
     dispatch(() -> client.space().billingStatements().list(java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();

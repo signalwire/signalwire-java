@@ -1258,6 +1258,34 @@ class RelayRestGeneratedTest {
   }
 
   @Test
+  void recordingsDownloadSuccess() {
+    dispatch(() -> client.recordings().download("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for relay-rest.download_recording");
+    assertEquals(
+        "relay-rest.download_recording",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.download_recording");
+  }
+
+  @Test
+  void recordingsDownloadError() {
+    mock.scenarioSet("relay-rest.download_recording", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.recordings().download("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.download_recording");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.download_recording");
+    assertEquals(
+        "relay-rest.download_recording",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.download_recording");
+  }
+
+  @Test
   void recordingsGetSuccess() {
     dispatch(() -> client.recordings().get("x", java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();

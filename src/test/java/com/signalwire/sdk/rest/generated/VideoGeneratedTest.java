@@ -394,6 +394,36 @@ class VideoGeneratedTest {
   }
 
   @Test
+  void videoRoomRecordingsDownloadSuccess() {
+    dispatch(() -> client.video().roomRecordings().download("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for video.download_room_recording");
+    assertEquals(
+        "video.download_room_recording",
+        j.getMatchedRoute(),
+        "matched_route for video.download_room_recording");
+  }
+
+  @Test
+  void videoRoomRecordingsDownloadError() {
+    mock.scenarioSet("video.download_room_recording", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () -> client.video().roomRecordings().download("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for video.download_room_recording");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for video.download_room_recording");
+    assertEquals(
+        "video.download_room_recording",
+        j.getMatchedRoute(),
+        "matched_route for video.download_room_recording");
+  }
+
+  @Test
   void videoRoomRecordingsGetSuccess() {
     dispatch(() -> client.video().roomRecordings().get("x", java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();

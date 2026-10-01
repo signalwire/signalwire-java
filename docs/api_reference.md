@@ -1432,7 +1432,7 @@ Start call tapping/monitoring. Additional overloads accept `TapDirection`/`Codec
 **Parameters:**
 - `uri`: URI to send tapped audio to
 - `controlId`: Unique identifier for this tap (nullable)
-- `direction`: Tap direction: `"speak"`, `"hear"`, `"both"`
+- `direction`: Tap direction: `"speak"`, `"listen"`, `"both"` (always sent; the verb itself defaults to `"speak"`)
 - `codec`: Audio codec: `"PCMU"`, `"PCMA"`, `"G722"`
 
 **Usage:**
