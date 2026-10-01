@@ -1445,6 +1445,13 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     "CreateConversationOptionsBuilder",
     "SummarizeOptions",
     "SummarizeOptionsBuilder",
+    # Same idiom for the keyword-only ChatGateway / HandoffRouter constructors, and
+    # PreparedCall, the typed stand-in for ChatGateway.prepare's 3-tuple return.
+    "ChatGatewayOptions",
+    "ChatGatewayOptionsBuilder",
+    "HandoffRouterOptions",
+    "HandoffRouterOptionsBuilder",
+    "PreparedCall",
 }
 
 
@@ -1574,6 +1581,7 @@ _AI_CHAT_MEMBER_OVERRIDES: dict[str, list[str]] = {
         "delete",
         "end",
         "log",
+        "raw_post",
         "summarize",
         "url",
     ],

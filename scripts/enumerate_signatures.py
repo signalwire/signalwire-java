@@ -1610,6 +1610,208 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         ],
         "returns": "void",
     },
+    # AI Chat browser gateway + voice/text handoff (signalwire.ai_chat.gateway /
+    # .handoff). Same Options-vs-kwargs idiom as AIChatClient: the reference's
+    # keyword-only constructors take a typed ChatGatewayOptions / HandoffRouterOptions
+    # value in Java (built by a fluent builder); expand back to the reference's flat
+    # keyword list so the idiom compares EQUAL.
+    ("ChatGateway", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {
+                "name": "config_url",
+                "kind": "keyword",
+                "type": "string",
+                "required": True,
+            },
+            {
+                "name": "key",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "allowed_origins",
+                "kind": "keyword",
+                "type": "union<list<string>,tuple<string,any>>",
+                "required": False,
+                "default": "()",
+            },
+            {
+                "name": "client",
+                "kind": "keyword",
+                "type": "optional<class:signalwire.ai_chat.client.AIChatClient>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "secret",
+                "kind": "keyword",
+                "type": "optional<union<bytes,string>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "handle_ttl",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_HANDLE_TTL",
+            },
+            {
+                "name": "conversation_timeout",
+                "kind": "keyword",
+                "type": "optional<int>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "max_new_conversations",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_MAX_NEW_CONVERSATIONS",
+            },
+            {
+                "name": "max_turns",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_MAX_TURNS",
+            },
+            {
+                "name": "window_seconds",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_WINDOW_SECONDS",
+            },
+        ],
+        "returns": "void",
+    },
+    # prepare(body, *, origin, key): Java spells the two required keyword-only params
+    # positionally (as WebhookValidator.validate's signing_key) and returns the typed
+    # PreparedCall stand-in for the reference's (method, params, minted_handle) tuple.
+    ("ChatGateway", "prepare"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "body", "type": "dict<string,any>", "required": True},
+            {
+                "name": "origin",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": True,
+            },
+            {
+                "name": "key",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": True,
+            },
+        ],
+        "returns": "tuple<string,dict<string,any>,optional<string>>",
+    },
+    # router(): the reference returns a FastAPI APIRouter; Java returns the JDK
+    # HttpHandler (the same mountable-routes unit Service.asRouter returns).
+    ("ChatGateway", "router"): {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "class:APIRouter",
+    },
+    ("HandoffRouter", "router"): {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "class:APIRouter",
+    },
+    # register(nonce, *, conversation_id, call_id=None): the 2-/3-arg overloads are
+    # Java's spelling of the optional keyword call_id.
+    ("HandoffRouter", "register"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "nonce", "type": "string", "required": True},
+            {
+                "name": "conversation_id",
+                "kind": "keyword",
+                "type": "string",
+                "required": True,
+            },
+            {
+                "name": "call_id",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "void",
+    },
+    ("HandoffRouter", "__init__"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {
+                "name": "gateway",
+                "kind": "keyword",
+                "type": "class:signalwire.ai_chat.gateway.ChatGateway",
+                "required": True,
+            },
+            {
+                "name": "capture_leg",
+                "kind": "keyword",
+                "type": "optional<callable<list<string,string>,union<bool,bool>>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "end_call",
+                "kind": "keyword",
+                "type": "optional<callable<list<string>,void>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "send_message",
+                "kind": "keyword",
+                "type": "optional<callable<list<string,string>,union<bool,bool>>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "next_conversation_id",
+                "kind": "keyword",
+                "type": "optional<callable<list<string>,string>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "nonce_ttl",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_NONCE_TTL",
+            },
+            {
+                "name": "max_messages_per_call",
+                "kind": "keyword",
+                "type": "int",
+                "required": False,
+                "default": "DEFAULT_MAX_MESSAGES_PER_CALL",
+            },
+            {
+                "name": "capture_timeout",
+                "kind": "keyword",
+                "type": "float",
+                "required": False,
+                "default": "DEFAULT_CAPTURE_TIMEOUT",
+            },
+            {
+                "name": "registry",
+                "kind": "keyword",
+                "type": "optional<dict<string,class:signalwire.ai_chat.handoff.NonceEntry>>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "void",
+    },
 }
 
 # Methods dropped from a canonical class: the Java builder-idiom factory has no
@@ -2084,6 +2286,12 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     "ChatOptions",
     "CreateConversationOptions",
     "SummarizeOptions",
+    # ChatGateway / HandoffRouter keyword-only constructors (same idiom), and
+    # PreparedCall, the typed stand-in for ChatGateway.prepare's 3-tuple return
+    # (like InferredSchema above).
+    "ChatGatewayOptions",
+    "HandoffRouterOptions",
+    "PreparedCall",
 }
 
 
