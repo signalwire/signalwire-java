@@ -184,7 +184,7 @@ final class GatewayHttp {
         && !declared.isEmpty()
         && declared.chars().allMatch(c -> c >= '0' && c <= '9')) {
       if (new BigInteger(declared).compareTo(BigInteger.valueOf(limit)) > 0) {
-        throw new GatewayRejection(413, "request too large");
+        throw tooLarge(exchange);
       }
     }
     ByteArrayOutputStream received = new ByteArrayOutputStream();
@@ -194,10 +194,21 @@ final class GatewayHttp {
     while ((n = in.read(buf)) != -1) {
       received.write(buf, 0, n);
       if (received.size() > limit) {
-        throw new GatewayRejection(413, "request too large");
+        throw tooLarge(exchange);
       }
     }
     return received.toByteArray();
+  }
+
+  /**
+   * The 413 for an oversized body. The rest of that body is left UNREAD on the connection, so the
+   * response says {@code Connection: close}: the server closes the socket after answering and the
+   * client opens a fresh one for its next request, instead of reusing a keep-alive connection the
+   * server is about to drop (which surfaced as a reset on the client's following request).
+   */
+  private static GatewayRejection tooLarge(HttpExchange exchange) {
+    exchange.getResponseHeaders().set("Connection", "close");
+    return new GatewayRejection(413, "request too large");
   }
 
   /**
