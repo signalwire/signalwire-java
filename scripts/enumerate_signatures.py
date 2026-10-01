@@ -1212,6 +1212,13 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
 # both SWMLService (the base core) and AgentBase (the render-override), matching the
 # reference which declares it on both.
 METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    # SpiderSkill.session: Java's PublicSession is the port's stand-in for the reference's
+    # PRIVATE ``url_validator._PublicSession`` (an underscore class the oracle records only
+    # as this type-ref); the class itself is dropped on both sides like EffectiveOptions.
+    ("SpiderSkill", "get_session"): {
+        "params": [{"name": "self", "kind": "self"}],
+        "returns": "class:signalwire.utils.url_validator._PublicSession",
+    },
     # AgentBase.addPerCallConfig takes the AgentBase.DynamicConfigCallback functional
     # interface -- Java's typed spelling of the reference's 4-arg callable
     # (query_params, body_params, headers, agent); reflection can only name the interface.
@@ -2062,6 +2069,10 @@ _SIG_EXCLUDED_SIMPLE_NAMES: set[str] = {
     # BOTH sides rather than launder them as PORT_ADDITIONS.
     "EffectiveOptions",
     "AbortSignal",
+    # PublicSession (+ its BlockedUrlException): the port's stand-in for the reference's
+    # PRIVATE url_validator._PublicSession / _BlockedURLError (not enumerated by the oracle).
+    "PublicSession",
+    "BlockedUrlException",
     # AI Chat options value types — the Java NAMED-param idiom for the reference's
     # many-optional-kwargs methods (AIChatClient __init__/chat/create_conversation/
     # summarize). Each is an immutable Options value + a fluent nested Builder with no
@@ -2163,6 +2174,12 @@ def collect(
         # types above. Drop them (no reference counterpart), mirroring the surface
         # enumerator's _SURFACE_EXCLUDED_CLASSES <Options>Builder drops.
         if pkg == "com.signalwire.sdk.aichat" and java_name == "Builder":
+            continue
+        # RestClient.Builder / RequestOptions.Builder (both bare ``Builder`` in the rest
+        # package): the NAMED-param builders for the reference's RestClient.__init__ and
+        # RequestOptions dataclass kwargs — construction idiom, folded onto __init__ (the
+        # surface enumerator drops RestClientBuilder / RequestOptionsBuilder the same way).
+        if pkg == "com.signalwire.sdk.rest" and java_name == "Builder":
             continue
 
         # Generated wire-type / read-side-payload classes (item A/H + D). Route BY

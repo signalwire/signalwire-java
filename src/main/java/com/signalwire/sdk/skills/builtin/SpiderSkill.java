@@ -4,9 +4,9 @@ import com.signalwire.sdk.logging.Logger;
 import com.signalwire.sdk.skills.SkillBase;
 import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
+import com.signalwire.sdk.utils.PublicSession;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.*;
@@ -26,6 +26,22 @@ public class SpiderSkill implements SkillBase {
   private String userAgent = "SignalWire-Spider/1.0";
   // Python parity: get_instance_key defaults tool_name to SKILL_NAME (spider/skill.py).
   private String toolName = "spider";
+
+  /**
+   * The session every fetch goes through: it refuses private or internal targets, redirects
+   * included, which a check before the fetch can't catch.
+   */
+  private final PublicSession session = new PublicSession();
+
+  /**
+   * The session the skill fetches through — it checks every request's URL (redirect hops included)
+   * and refuses private, internal or invalid targets.
+   *
+   * @return the skill's fetch session.
+   */
+  public PublicSession getSession() {
+    return session;
+  }
 
   /**
    * XPath expressions for elements dropped before text extraction, PREFILLED with the default set
@@ -120,6 +136,9 @@ public class SpiderSkill implements SkillBase {
     if (params.containsKey("max_text_length"))
       this.maxTextLength = ((Number) params.get("max_text_length")).intValue();
     if (params.containsKey("user_agent")) this.userAgent = (String) params.get("user_agent");
+    if (params.get("headers") instanceof Map<?, ?> extra) {
+      extra.forEach((k, v) -> session.getHeaders().put(String.valueOf(k), String.valueOf(v)));
+    }
     if (params.containsKey("tool_name")) this.toolName = (String) params.get("tool_name");
     if (params.get("remove_xpaths") instanceof List<?> xpaths) {
       List<String> parsed = new ArrayList<>();
@@ -176,19 +195,13 @@ public class SpiderSkill implements SkillBase {
                 }
               }
               try {
-                HttpClient client =
-                    HttpClient.newBuilder()
-                        .followRedirects(HttpClient.Redirect.NORMAL)
-                        .connectTimeout(Duration.ofSeconds(timeout))
-                        .build();
-                HttpRequest request =
-                    HttpRequest.newBuilder()
-                        .uri(URI.create(url))
-                        .header("User-Agent", userAgent)
-                        .GET()
-                        .build();
+                session.getHeaders().put("User-Agent", userAgent);
+                // The user-supplied URL is checked by the session; an operator-configured
+                // SPIDER_BASE_URL upstream is trusted (it is configuration, not caller input).
                 HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
+                    spiderBase != null && !spiderBase.isEmpty()
+                        ? trustedUpstream().get(url, Duration.ofSeconds(timeout), true)
+                        : session.get(url, Duration.ofSeconds(timeout), true);
                 String body = response.body();
                 // Drop the removeXpaths elements (content included), then strip the
                 // remaining tags — the reference drops the same elements via lxml
@@ -256,6 +269,13 @@ public class SpiderSkill implements SkillBase {
   @Override
   public String getInstanceKey() {
     return getName() + "_" + toolName;
+  }
+
+  /** A session for the operator-configured {@code SPIDER_BASE_URL} upstream (no address check). */
+  private PublicSession trustedUpstream() {
+    PublicSession upstream = new PublicSession(true);
+    upstream.getHeaders().putAll(session.getHeaders());
+    return upstream;
   }
 
   /**

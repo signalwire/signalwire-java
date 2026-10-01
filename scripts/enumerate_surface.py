@@ -1418,6 +1418,10 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     #  - RequestOptionsSupportEffectiveOptions: the nested value record standing in for
     #    the reference's PRIVATE _EffectiveOptions (like SWMLServiceHttpResult).
     "RequestOptionsBuilder",
+    # PublicSession: the port's stand-in for the reference's PRIVATE
+    # url_validator._PublicSession (underscore classes are not reference surface).
+    "PublicSession",
+    "PublicSessionBlockedUrlException",
     # RestClient.Builder: the NAMED-param builder for the reference's RestClient.__init__
     # kwargs (emitted as RestClient.__init__ via _PRIVATE_CTOR_PUBLIC_FACTORY), exactly
     # like RequestOptionsBuilder.
