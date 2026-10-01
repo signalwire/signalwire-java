@@ -719,6 +719,18 @@ public class Service implements AutoCloseable {
     if (!schemaValidation) {
       return;
     }
+    // A verb with a specialized handler (the ai verb) is checked by the handler's own
+    // verb-specific contract first (e.g. ai requires `prompt` with a text or pom base), then
+    // by the schema's shallow top-level-key check below — the reference's add_verb order.
+    if (verbData instanceof Map<?, ?> m && verbRegistry().hasHandler(verbName)) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> config = (Map<String, Object>) m;
+      SWMLVerbHandler.ValidationResult hv =
+          verbRegistry().getHandler(verbName).validateConfig(config);
+      if (!hv.isValid()) {
+        throw new SchemaValidationError(verbName, hv.getErrors());
+      }
+    }
     Map.Entry<Boolean, List<String>> res = getSchemaUtils().validateVerbValue(verbName, verbData);
     if (!res.getKey()) {
       throw new SchemaValidationError(verbName, res.getValue());

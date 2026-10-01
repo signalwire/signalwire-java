@@ -97,9 +97,11 @@ class ValidatorRoutingTest {
   }
 
   @Test
-  void builderPlayRejectsConfigWithNoUrl() {
+  void builderPlayAcceptsConfigWithNoUrl() {
+    // The server-derived schema (porting-sdk schema.json) requires no key on the play config
+    // object; the reference's add_verb("play", {}) accepts it too.
     SWMLBuilder b = new SWMLBuilder(svc());
-    assertThrows(SchemaValidationError.class, () -> b.play(new LinkedHashMap<>()));
+    assertDoesNotThrow(() -> b.play(new LinkedHashMap<>()));
   }
 
   @Test

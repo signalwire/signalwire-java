@@ -328,7 +328,7 @@ class SwmlTest {
     service.denoise(Map.of());
     service.detectMachine(Map.of());
     service.enterQueue(
-        Map.of("queue_name", "sales", "transfer_after_bridge", "https://ex.com/after"));
+        Map.of("queue_name", "sales", "execute_after_queue", "https://ex.com/after"));
     service.execute(Map.of("dest", "my_section"));
     service.gotoLabel(Map.of("label", "start"));
     service.hangup(Map.of());
@@ -398,7 +398,8 @@ class SwmlTest {
     var service = new Service("test-service");
     assertThrows(SchemaValidationError.class, () -> service.ai(null));
     assertThrows(SchemaValidationError.class, () -> service.ai(Map.of()));
-    assertThrows(SchemaValidationError.class, () -> service.play(Map.of()));
+    // play's config object requires no key in the server-derived schema (reference accepts it).
+    assertDoesNotThrow(() -> service.play(Map.of()));
     assertThrows(SchemaValidationError.class, () -> service.hangup(Map.of("reasonn", "busy")));
     assertThrows(SchemaValidationError.class, () -> service.answer(Map.of("maxduration", 5)));
     // Valid shapes still pass.

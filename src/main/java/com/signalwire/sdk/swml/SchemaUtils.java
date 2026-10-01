@@ -183,9 +183,42 @@ public class SchemaUtils {
     return this.fullValidator != null;
   }
 
-  /** Sorted list of all known verb names. */
+  /** Sorted list of the verb names the SDK exposes (deprecated verbs left out). */
   public List<String> getAllVerbNames() {
-    return new ArrayList<>(new TreeSet<>(verbs.keySet()));
+    TreeSet<String> names = new TreeSet<>();
+    for (VerbInfo v : verbs.values()) {
+      if (!isDeprecated(v)) {
+        names.add(v.name);
+      }
+    }
+    return new ArrayList<>(names);
+  }
+
+  /**
+   * Whether a verb wrapper is marked {@code "deprecated": true} in the schema — on the wrapper or
+   * on its verb property. A deprecated verb (dial / eval / if) is not SDK surface, so it is left
+   * out of {@link #getAllVerbNames()}; it stays known to validation, so a document that already
+   * carries it still validates.
+   */
+  private static boolean isDeprecated(VerbInfo v) {
+    JsonObject def = v.definition;
+    if (def.has("deprecated")
+        && def.get("deprecated").isJsonPrimitive()
+        && def.get("deprecated").getAsJsonPrimitive().isBoolean()
+        && def.get("deprecated").getAsBoolean()) {
+      return true;
+    }
+    if (def.has("properties") && def.get("properties").isJsonObject()) {
+      JsonElement prop = def.getAsJsonObject("properties").get(v.name);
+      if (prop != null && prop.isJsonObject()) {
+        JsonElement d = prop.getAsJsonObject().get("deprecated");
+        return d != null
+            && d.isJsonPrimitive()
+            && d.getAsJsonPrimitive().isBoolean()
+            && d.getAsBoolean();
+      }
+    }
+    return false;
   }
 
   /**
@@ -360,18 +393,59 @@ public class SchemaUtils {
   }
 
   /**
-   * If {@code verbName} is the {@code ai} verb and its inner schema is a {@code $ref} to a closed
-   * object (AIObject), return that resolved object so the ai verb can be validated top-level-only.
-   * Returns {@code null} for every other verb (which gets full validation).
+   * If {@code verbName} is the {@code ai} verb, return the single object schema its body resolves
+   * to (see {@link #singleObjectArm}) so the ai verb can be validated top-level-only — or an empty
+   * schema (no checks) when there is no single object arm. Returns {@code null} for every other
+   * verb (which gets full validation).
    */
   private JsonObject aiTopLevelSchema(String verbName, JsonObject innerSchema) {
     if (!"ai".equals(verbName)) {
       return null;
     }
-    if (innerSchema.has("$ref") && innerSchema.get("$ref").isJsonPrimitive()) {
-      return resolveRef(innerSchema.get("$ref").getAsString());
+    JsonObject arm = singleObjectArm(innerSchema, 0);
+    // No single object arm: disengage (an empty schema checks nothing) rather than guess.
+    return arm != null ? arm : new JsonObject();
+  }
+
+  /** Bound on {@code $ref} hops while resolving a verb body, so a self-reference cannot spin. */
+  private static final int MAX_SCHEMA_RESOLVE_DEPTH = 8;
+
+  /**
+   * The ONE object schema a verb body resolves to, per the #223 contract: follow {@code $ref}; for
+   * an {@code anyOf}/{@code oneOf} union, return its object arm only when there is EXACTLY one (the
+   * ai body is {@code anyOf: [<config object>, <positional array>, number, <bare string>]}); with
+   * zero or several object arms there is no single key set to check, so return {@code null}
+   * (disengage) — never the union of the arms' keys, which would admit a document mixing two arms
+   * that no single arm accepts.
+   */
+  private JsonObject singleObjectArm(JsonObject node, int depth) {
+    if (node == null || depth > MAX_SCHEMA_RESOLVE_DEPTH) {
+      return null;
     }
-    return innerSchema;
+    if (node.has("$ref") && node.get("$ref").isJsonPrimitive()) {
+      return singleObjectArm(resolveRef(node.get("$ref").getAsString()), depth + 1);
+    }
+    for (String comb : new String[] {"anyOf", "oneOf"}) {
+      if (node.has(comb) && node.get(comb).isJsonArray()) {
+        JsonObject only = null;
+        int objectArms = 0;
+        for (JsonElement el : node.getAsJsonArray(comb)) {
+          if (!el.isJsonObject()) {
+            continue;
+          }
+          JsonObject arm = singleObjectArm(el.getAsJsonObject(), depth + 1);
+          if (arm != null) {
+            objectArms++;
+            only = arm;
+          }
+        }
+        return objectArms == 1 ? only : null;
+      }
+    }
+    if (node.has("properties") && node.get("properties").isJsonObject()) {
+      return node;
+    }
+    return null;
   }
 
   /**

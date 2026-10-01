@@ -62,7 +62,9 @@ class SchemaUtilsParityTest {
     SchemaUtils su = new SchemaUtils(null, true);
     Map<String, Object> props = su.getVerbProperties("answer");
     assertFalse(props.isEmpty(), "expected non-empty properties for 'answer'");
-    assertEquals("object", props.get("type"));
+    // The verb body is the schema's union of its accepted forms: the config object, the
+    // positional array and the bare max_duration shorthand.
+    assertTrue(props.get("anyOf") instanceof List<?>, "expected the anyOf union for 'answer'");
   }
 
   @Test
