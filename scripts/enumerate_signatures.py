@@ -1092,7 +1092,7 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             {
                 "name": "roles",
                 "kind": "keyword",
-                "type": "tuple<string,any>",
+                "type": "list<string>",
                 "required": False,
                 "default": "DIALOGUE_ROLES",
             },
@@ -1211,6 +1211,19 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
 # (``body=None``); mark it non-required so the drift compare is exact. It lives on
 # both SWMLService (the base core) and AgentBase (the render-override), matching the
 # reference which declares it on both.
+# TYPE-FOLDS of a return type the Java idiom spells differently: keyed by
+# (canonical_class, method) -> (the native canonical return, the reference's). The fold
+# fires only while the port still returns exactly ``native_from`` (fails loud otherwise),
+# so a changed Java return re-enters the comparison instead of hiding behind the fold.
+RETURN_TYPE_FOLDS: dict[tuple[str, str], tuple[str, str]] = {
+    # FunctionResult.response: the reference attribute is ``str | dict[str, Any]`` (the
+    # plain string or the structured {tool_result, tool_prompt} object). Java keeps the
+    # published ``String getResponse()`` and returns the structured form as its JSON text
+    # (the wire still carries the object, via toMap()). Owner approval 2026-10-01, option A:
+    # a type-fold, not an omission.
+    ("FunctionResult", "get_response"): ("string", "union<dict<string,any>,string>"),
+}
+
 METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
     # SpiderSkill.session: Java's PublicSession is the port's stand-in for the reference's
     # PRIVATE ``url_validator._PublicSession`` (an underscore class the oracle records only
@@ -1712,15 +1725,15 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
         ],
         "returns": "tuple<string,dict<string,any>,optional<string>>",
     },
-    # router(): the reference returns a FastAPI APIRouter; Java returns the JDK
+    # router(): the reference returns its host-app router (core.web.HostAppRouter); Java returns the JDK
     # HttpHandler (the same mountable-routes unit Service.asRouter returns).
     ("ChatGateway", "router"): {
         "params": [{"name": "self", "kind": "self"}],
-        "returns": "class:APIRouter",
+        "returns": "class:signalwire.core.web.HostAppRouter",
     },
     ("HandoffRouter", "router"): {
         "params": [{"name": "self", "kind": "self"}],
-        "returns": "class:APIRouter",
+        "returns": "class:signalwire.core.web.HostAppRouter",
     },
     # register(nonce, *, conversation_id, call_id=None): the 2-/3-arg overloads are
     # Java's spelling of the optional keyword call_id.
@@ -2577,6 +2590,15 @@ def collect(
             # shape — e.g. a value-tuple stand-in record return — doesn't
             # translate via reflection alone). Replace the reflected signature
             # with the canonical one keyed by (canonical_class, method).
+            fold = RETURN_TYPE_FOLDS.get((canonical_name, method_canonical))
+            if fold is not None:
+                native_from, ref_to = fold
+                if sig.get("returns") != native_from:
+                    raise RuntimeError(
+                        f"RETURN_TYPE_FOLDS: {canonical_name}.{method_canonical} returns "
+                        f"{sig.get('returns')!r}, not the folded {native_from!r} — re-check the fold"
+                    )
+                sig = {**sig, "returns": ref_to}
             mo = METHOD_SIGNATURE_OVERRIDES.get((canonical_name, method_canonical))
             if mo is not None:
                 sig = {

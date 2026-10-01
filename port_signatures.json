@@ -1586,7 +1586,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:APIRouter"
+              "returns": "class:signalwire.core.web.HostAppRouter"
             },
             "visible_messages": {
               "params": [
@@ -1852,7 +1852,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "class:APIRouter"
+              "returns": "class:signalwire.core.web.HostAppRouter"
             },
             "say": {
               "params": [
@@ -6007,7 +6007,7 @@
                   "kind": "self"
                 }
               ],
-              "returns": "string"
+              "returns": "union<dict<string,any>,string>"
             },
             "post_process": {
               "params": [
@@ -7457,7 +7457,7 @@
             {
               "name": "roles",
               "kind": "keyword",
-              "type": "tuple<string,any>",
+              "type": "list<string>",
               "required": false,
               "default": "DIALOGUE_ROLES"
             },

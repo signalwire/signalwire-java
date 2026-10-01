@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ a889daa75b5ff0c6ba8b2f0566dfc1cd56f34a17",
+  "generated_from": "signalwire-java @ 6e943e853f909b565c494c40b3788129854c4b78",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
