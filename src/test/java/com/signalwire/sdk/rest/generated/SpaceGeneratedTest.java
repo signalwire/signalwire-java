@@ -72,6 +72,7 @@ class SpaceGeneratedTest {
                 .createTopUp(
                     com.signalwire.sdk.rest.namespaces.generated.SpaceBalance.CreateTopUpRequest
                         .builder()
+                        .idempotencyKey("x")
                         .build()));
     MockTest.JournalEntry j = mock.last();
     assertEquals("POST", j.method, "method for space.create_top_up");
@@ -92,6 +93,7 @@ class SpaceGeneratedTest {
                     .createTopUp(
                         com.signalwire.sdk.rest.namespaces.generated.SpaceBalance.CreateTopUpRequest
                             .builder()
+                            .idempotencyKey("x")
                             .build()));
     assertEquals(500, ex.getStatusCode(), "status for space.create_top_up");
     MockTest.JournalEntry j = mock.last();

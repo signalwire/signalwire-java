@@ -48,6 +48,8 @@ public class SpaceBalance extends BaseResource {
 
   /** Closed typed request for {@link #createTopUp} (builder + extras door). */
   public static final class CreateTopUpRequest {
+    static final java.util.List<String> REQUIRED_HEADER_SETTERS =
+        java.util.List.of("idempotencyKey");
     private final String idempotencyKey;
     private final Long amountInMicrodollars;
     private final String paymentMethodId;
