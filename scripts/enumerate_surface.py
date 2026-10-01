@@ -1352,6 +1352,12 @@ def strip_base_only_skill_hooks(
 # excluded here rather than laundered as PORT_ADDITIONS. Keyed by the
 # fully-qualified SURFACE class name (outer-qualified for nested types, exactly
 # as parse_type_body emits them).
+# Excluded from the reference-comparison surface but KEPT in the native (doc-audit)
+# surface, because the docs name their methods: RestClient.Builder's setters
+# (``.project(...)``, ``.requestOptions(...)``) fold onto RestClient.__init__ for parity,
+# yet the README shows them as the way to build a client.
+_NATIVE_KEEP_CLASSES: set[str] = {"RestClientBuilder"}
+
 _SURFACE_EXCLUDED_CLASSES: set[str] = {
     # Options-builder for SwmlRenderer's many-optional-param static methods.
     "SwmlRendererRenderOptions",
@@ -2314,7 +2320,9 @@ def enumerate_file(
     # Assign each class to its Python-reference module.
     out: dict[str, dict] = {}
     for cls_name, methods in classes.items():
-        if cls_name in _SURFACE_EXCLUDED_CLASSES:
+        if cls_name in _SURFACE_EXCLUDED_CLASSES and not (
+            native and cls_name in _NATIVE_KEEP_CLASSES
+        ):
             continue  # idiom-scaffolding (options-builder / result record / nested value type)
         mod = java_to_python_module(java_package, cls_name, class_to_module)
         # Per-(module, class) method-NAME aliases: a Java-idiom method whose

@@ -1,5 +1,5 @@
 {
-  "generated_from": "signalwire-java @ 02d6210100f17a5813f1e7dd210a687e814d5b1b",
+  "generated_from": "signalwire-java @ a889daa75b5ff0c6ba8b2f0566dfc1cd56f34a17",
   "language": "java",
   "modules": {
     "signalwire.agent.agent_base_builder": {
@@ -4635,6 +4635,21 @@
         "Types_StatusCodes_StatusCode500": [],
         "VideoRoomVoiceLog": [],
         "VoiceLogsListStatusCode422": []
+      },
+      "functions": []
+    },
+    "signalwire.rest.rest_client_builder": {
+      "classes": {
+        "RestClientBuilder": [
+          "build",
+          "personalAccessToken",
+          "personal_access_token",
+          "project",
+          "requestOptions",
+          "request_options",
+          "space",
+          "token"
+        ]
       },
       "functions": []
     },
