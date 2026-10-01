@@ -19,7 +19,7 @@ public final class ConferenceRoom {
   public String display_name;
   public Long max_members;
   public String quality;
-  public Double fps;
+  public Long fps;
   public String join_from;
   public String join_until;
   public String remove_at;

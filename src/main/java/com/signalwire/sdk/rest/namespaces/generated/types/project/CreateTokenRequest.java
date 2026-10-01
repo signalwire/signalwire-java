@@ -17,4 +17,5 @@ public final class CreateTokenRequest {
   public String name;
   public java.util.List<Object> permissions;
   public String subproject_id;
+  public String project_id;
 }

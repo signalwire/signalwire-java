@@ -23,4 +23,5 @@ public final class CarrierLookupInfo {
   public String jurisdiction;
   public String lec;
   public String linetype;
+  public String dnc;
 }

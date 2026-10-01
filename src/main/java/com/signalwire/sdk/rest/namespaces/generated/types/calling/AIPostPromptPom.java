@@ -13,11 +13,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class AIPostPromptPom {
-  public Long max_tokens;
-  public java.util.Map<String, Object> temperature;
-  public java.util.Map<String, Object> top_p;
-  public java.util.Map<String, Object> confidence;
-  public java.util.Map<String, Object> presence_penalty;
   public java.util.Map<String, Object> frequency_penalty;
+  public Double max_completion_tokens;
+  public Double max_tokens;
+  public String model;
   public java.util.List<Object> pom;
+  public java.util.Map<String, Object> presence_penalty;
+  public String reasoning_effort;
+  public Double temperature;
+  public String text;
+  public Double top_p;
+  public String verbosity;
 }

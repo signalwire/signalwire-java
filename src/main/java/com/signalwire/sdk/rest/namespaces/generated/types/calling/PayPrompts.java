@@ -13,13 +13,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class PayPrompts {
-  public java.util.List<Object> actions;
+  public java.util.Map<String, Object> actions;
+  public String attempt;
+  public String card_type;
+  public String error_type;
 
   /** wire key: for */
   @com.google.gson.annotations.SerializedName("for")
   public String for_;
 
-  public String attempts;
-  public String card_type;
-  public String error_type;
+  public java.util.Map<String, Object> play;
+  public String require_matching_inputs;
 }

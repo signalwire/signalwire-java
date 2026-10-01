@@ -12,6 +12,9 @@ import com.signalwire.sdk.rest.HttpClient;
 /** FabricNamespace — generated container grouping the fabric namespace resources (§8). */
 public final class FabricNamespace {
   private final HttpClient httpClient;
+  private AliasAddresses aliasAddresses;
+  private SipAddresses sipAddresses;
+  private PhoneNumberAddresses phoneNumberAddresses;
   private FabricAddresses addresses;
   private GenericResources resources;
   private AiAgents aiAgents;
@@ -31,6 +34,27 @@ public final class FabricNamespace {
 
   public FabricNamespace(HttpClient httpClient) {
     this.httpClient = httpClient;
+  }
+
+  public AliasAddresses aliasAddresses() {
+    if (aliasAddresses == null) {
+      aliasAddresses = new AliasAddresses(httpClient);
+    }
+    return aliasAddresses;
+  }
+
+  public SipAddresses sipAddresses() {
+    if (sipAddresses == null) {
+      sipAddresses = new SipAddresses(httpClient);
+    }
+    return sipAddresses;
+  }
+
+  public PhoneNumberAddresses phoneNumberAddresses() {
+    if (phoneNumberAddresses == null) {
+      phoneNumberAddresses = new PhoneNumberAddresses(httpClient);
+    }
+    return phoneNumberAddresses;
   }
 
   public FabricAddresses addresses() {

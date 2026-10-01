@@ -608,6 +608,11 @@ def snake_to_pascal(snake: str) -> str:
     return "".join(w[:1].upper() + w[1:] for w in parts)
 
 
+def snake_name(wire: str) -> str:
+    """The reference's snake_case kwarg for a wire name (``Idempotency-Key`` -> ``idempotency_key``)."""
+    return re.sub(r"[^0-9A-Za-z]+", "_", wire).strip("_").lower()
+
+
 def escape_ident(field: str) -> str:
     ident = snake_to_lower_camel(field)
     return ident + "_" if ident in JAVA_KEYWORDS else ident
@@ -834,6 +839,52 @@ def command_param_fields(
     return [(name, psc, name in req_all) for name, psc in all_props.items()], has_id
 
 
+def command_markup(spec: Spec, cmd: str, command_schema: dict, fields):
+    """Apply the command ``params`` markup the reference generator honours:
+
+    * ``x-sdk-autofill: uuid4`` on a param — a server-required id the SDK generates when
+      the caller omits it, so the param is OPTIONAL (returned in ``autofill``);
+    * ``x-sdk-compat-kwargs`` on the params schema — ``{arg: {into: "<root>.<leaf>"}}``, an
+      SDK setter kept for compatibility whose value is sent INTO ``params.<root>.<leaf>``;
+      the nested root it fills becomes OPTIONAL.
+
+    Returns ``(fields, autofill_wire_keys, [(arg, root, leaf, leafSchema)])``. Fails loud on
+    an unknown autofill generator or a compat target that does not exist.
+    """
+    cs = resolve_schema(spec, command_schema)
+    pnode = resolve_schema(spec, (cs.get("properties") or {}).get("params") or {})
+    props = {name: sc for name, sc, _req in fields}
+    autofill: list[str] = []
+    out = []
+    for name, sc, req in fields:
+        gen = sc.get("x-sdk-autofill") if isinstance(sc, dict) else None
+        if gen is not None and gen != "uuid4":
+            raise SystemExit(f"command {cmd!r}: {name}: unknown x-sdk-autofill {gen!r}")
+        if gen == "uuid4":
+            autofill.append(name)
+            req = False
+        out.append([name, sc, req])
+    compat = []
+    for carg, cspec in (pnode.get("x-sdk-compat-kwargs") or {}).items():
+        into = (cspec or {}).get("into", "") if isinstance(cspec, dict) else ""
+        parts = into.split(".")
+        if len(parts) != 2 or carg in props or parts[0] not in props:
+            raise SystemExit(
+                f"command {cmd!r}: x-sdk-compat-kwargs.{carg} into {into!r} must name "
+                "<existing param>.<key> and must not shadow a param"
+            )
+        root_props = resolve_schema(spec, props[parts[0]]).get("properties") or {}
+        if parts[1] not in root_props:
+            raise SystemExit(
+                f"command {cmd!r}: x-sdk-compat-kwargs.{carg}: {into!r} not found"
+            )
+        compat.append((carg, parts[0], parts[1], root_props[parts[1]]))
+        for f in out:
+            if f[0] == parts[0]:
+                f[2] = False
+    return [tuple(f) for f in out], autofill, compat
+
+
 def is_object_body(spec: Spec, body_schema: dict) -> bool:
     if not body_schema:
         return False
@@ -902,7 +953,12 @@ def _register_sidecar(cls: str, java_method: str, records: list[dict]) -> None:
 
 
 def emit_request_builder(
-    cls: str, method: str, fields: list[tuple[str, str, bool, str]]
+    cls: str,
+    method: str,
+    fields: list[tuple[str, str, bool, str]],
+    autofill: list[str] | None = None,
+    compat: list[tuple[str, str, str, str]] | None = None,
+    headers: list[tuple[str, str, bool]] | None = None,
 ) -> str:
     """Emit a nested static <Method>Request builder class.
 
@@ -911,24 +967,42 @@ def emit_request_builder(
       - a fluent builder setter per param + extras(Map),
       - build() → the immutable request,
       - toBody() → the Map<String,Object> wire body (non-null fields + extras).
+
+    autofill: wire keys marked ``x-sdk-autofill: uuid4`` — a server-required id the SDK
+    generates when the caller omits it (set AFTER extras, like the reference's setdefault).
+    compat: ``x-sdk-compat-kwargs`` as (ident, javaType, rootWire, leafWire) — an SDK
+    setter kept for compatibility whose value is sent INTO ``params.<root>.<leaf>``.
     """
+    autofill = autofill or []
+    compat = compat or []
+    headers = headers or []
+    hdr_fields = [(w, "String", r, i) for w, i, r in headers]
+    all_fields = (
+        [f for f in hdr_fields if f[2]]
+        + list(fields)
+        + [(leaf, jtype, False, ident) for ident, jtype, _root, leaf in compat]
+        + [f for f in hdr_fields if not f[2]]
+    )
+    header_idents = {i for _w, i, _r in headers}
     req_cls = snake_to_pascal(method) + "Request"
     lines = []
     lines.append(
         f"  /** Closed typed request for {{@link #{snake_to_lower_camel(method)}}} (builder + extras door). */"
     )
     lines.append(f"  public static final class {req_cls} {{")
-    for _wire, jtype, _required, ident in fields:
+    for _wire, jtype, _required, ident in all_fields:
         lines.append(f"    private final {jtype} {ident};")
     lines.append("    private final java.util.Map<String, Object> extras;")
     lines.append("")
     # private ctor from builder
-    ctor_args = ", ".join(f"{jtype} {ident}" for wire, jtype, required, ident in fields)
-    sep = ", " if fields else ""
+    ctor_args = ", ".join(
+        f"{jtype} {ident}" for wire, jtype, required, ident in all_fields
+    )
+    sep = ", " if all_fields else ""
     lines.append(
         f"    private {req_cls}({ctor_args}{sep}java.util.Map<String, Object> extras) {{"
     )
-    for _wire, _jtype, _required, ident in fields:
+    for _wire, _jtype, _required, ident in all_fields:
         lines.append(f"      this.{ident} = {ident};")
     lines.append("      this.extras = extras;")
     lines.append("    }")
@@ -941,20 +1015,50 @@ def emit_request_builder(
         "      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();"
     )
     for wire, _jtype, _required, ident in fields:
+        if ident in header_idents:
+            continue
         lines.append(
             f"      if (this.{ident} != null) {{ body.put({java_str(wire)}, this.{ident}); }}"
         )
+    for ident, _jtype, root, leaf in compat:
+        lines.append(f"      if (this.{ident} != null) {{")
+        lines.append(
+            "        java.util.Map<String, Object> nested = new java.util.LinkedHashMap<>();"
+        )
+        lines.append(f"        Object existing = body.get({java_str(root)});")
+        lines.append("        if (existing instanceof java.util.Map<?, ?> m) {")
+        lines.append("          m.forEach((k, v) -> nested.put(String.valueOf(k), v));")
+        lines.append("        }")
+        lines.append(f"        nested.put({java_str(leaf)}, this.{ident});")
+        lines.append(f"        body.put({java_str(root)}, nested);")
+        lines.append("      }")
     lines.append("      if (this.extras != null) { body.putAll(this.extras); }")
+    for wire in autofill:
+        lines.append(
+            f"      body.putIfAbsent({java_str(wire)}, java.util.UUID.randomUUID().toString());"
+        )
     lines.append("      return body;")
     lines.append("    }")
     lines.append("")
+    if headers:
+        lines.append("    java.util.Map<String, String> toHeaders() {")
+        lines.append(
+            "      java.util.Map<String, String> headers = new java.util.LinkedHashMap<>();"
+        )
+        for wire, ident, _r in headers:
+            lines.append(
+                f"      if (this.{ident} != null) {{ headers.put({java_str(wire)}, this.{ident}); }}"
+            )
+        lines.append("      return headers;")
+        lines.append("    }")
+        lines.append("")
     # Builder
     lines.append("    public static final class Builder {")
-    for _wire, jtype, _required, ident in fields:
+    for _wire, jtype, _required, ident in all_fields:
         lines.append(f"      private {jtype} {ident};")
     lines.append("      private java.util.Map<String, Object> extras;")
     lines.append("")
-    for _wire, jtype, _required, ident in fields:
+    for _wire, jtype, _required, ident in all_fields:
         lines.append(f"      public Builder {ident}({jtype} {ident}) {{")
         lines.append(f"        this.{ident} = {ident};")
         lines.append("        return this;")
@@ -964,8 +1068,8 @@ def emit_request_builder(
     lines.append("        return this;")
     lines.append("      }")
     lines.append("")
-    call = ", ".join(ident for wire, jtype, required, ident in fields)
-    csep = ", " if fields else ""
+    call = ", ".join(ident for wire, jtype, required, ident in all_fields)
+    csep = ", " if all_fields else ""
     lines.append(
         f"      public {req_cls} build() {{ return new {req_cls}({call}{csep}extras); }}"
     )
@@ -982,7 +1086,7 @@ def build_field_tuples(spec, fields):
     return out
 
 
-def sidecar_records_for_fields(spec, fields, leading, door_name="extras"):
+def sidecar_records_for_fields(spec, fields, leading, door_name="extras", compat=None):
     records: list[dict] = list(leading)
     for wire, schema, required in ordered_fields(fields):
         records.append(
@@ -992,6 +1096,16 @@ def sidecar_records_for_fields(spec, fields, leading, door_name="extras"):
                 "type": canonical_type(spec, schema, required),
                 "required": required,
                 **({"default": None} if not required else {}),
+            }
+        )
+    for carg, _cschema in compat or []:
+        records.append(
+            {
+                "name": carg,
+                "kind": "keyword",
+                "type": "optional<any>",
+                "required": False,
+                "default": None,
             }
         )
     records.append(
@@ -1017,12 +1131,20 @@ def method_call_path(spec: Spec, anchor: str, markup: dict, op_path: str):
     id_args: list[str] = []
     pieces: list[str] = []
     for s in segs:
-        if s.startswith("{") and s.endswith("}"):
-            arg = arg_for(s[1:-1])
+        m = re.fullmatch(r"([^{}]*)\{([^{}]+)\}([^{}]*)", s)
+        if m:
+            # A whole-segment ``{id}`` or one embedded in a segment (``{id}.mp3``).
+            arg = arg_for(m.group(2))
             while arg in id_args:
                 arg += "2"
             id_args.append(arg)
-            pieces.append(arg)
+            pre, post = m.group(1), m.group(3)
+            piece = arg
+            if pre:
+                piece = f"{java_str(pre)} + {piece}"
+            if post:
+                piece = f"{piece} + {java_str(post)}"
+            pieces.append(piece)
         else:
             pieces.append(java_str(s))
     if sibling:
@@ -1226,6 +1348,52 @@ def _wrap_return(java_type: str, map_expr: str) -> str:
     return f"asType({map_expr}, {java_type}.class)"
 
 
+def op_node(spec: Spec, op_id: str) -> tuple[dict, dict]:
+    """(path item, operation) for an operationId."""
+    verb, op_path, _hb = spec.ops[op_id]
+    item = (spec.doc.get("paths") or {}).get(op_path) or {}
+    return item, item.get(verb) or {}
+
+
+def op_response_kind(spec: Spec, op_id: str) -> tuple[str, str | None]:
+    """How the success is read: ``json`` (default); ``text`` when the success body is
+    another media type (returned as a String, that type sent as ``Accept``); ``redirect``
+    when the only success IS a 3xx carrying ``Location`` (the method returns that URL and
+    never follows it). Mirrors the reference generator's response_kind."""
+    _item, op = op_node(spec, op_id)
+    responses = op.get("responses") or {}
+    ok = responses.get("200") or responses.get("201") or responses.get("2XX") or {}
+    ok_content = ok.get("content") or {}
+    text_media = next((m for m in ok_content if m != "application/json"), None)
+    if ok and "application/json" not in ok_content and text_media is not None:
+        return "text", text_media
+    if not ok:
+        for code, r in sorted(responses.items()):
+            if str(code).startswith("3") and "Location" in (
+                (r or {}).get("headers") or {}
+            ):
+                return "redirect", None
+    return "json", None
+
+
+def op_header_params(spec: Spec, op_id: str) -> list[tuple[str, str, bool]]:
+    """Declared ``in: header`` params as (wireName, javaIdent, required)."""
+    item, op = op_node(spec, op_id)
+    out = []
+    for raw in [*(item.get("parameters") or []), *(op.get("parameters") or [])]:
+        prm = raw
+        if isinstance(raw, dict) and "$ref" in raw:
+            leaf = raw["$ref"].rsplit("/", 1)[-1]
+            prm = ((spec.doc.get("components") or {}).get("parameters") or {}).get(
+                leaf
+            ) or {}
+        if not isinstance(prm, dict) or prm.get("in") != "header":
+            continue
+        snake = re.sub(r"[^0-9A-Za-z]+", "_", prm["name"]).strip("_").lower()
+        out.append((prm["name"], escape_ident(snake), bool(prm.get("required"))))
+    return out
+
+
 def emit_method(
     spec: Spec,
     anchor: str,
@@ -1268,19 +1436,59 @@ def emit_method(
     ro_param = _REQUEST_OPTIONS_JAVA_PARAM
     # Typed return DTO (JAVA-1): the op's 200/201 response type, or Map when none.
     ret_type = response_java_type(spec, op_id)
+    response_kind, text_media = op_response_kind(spec, op_id)
+    if response_kind != "json":
+        if verb != "get":
+            raise SystemExit(
+                f"{cls}.{method_snake} ({op_id}): {response_kind} success on "
+                f"{verb.upper()}; only GET is supported"
+            )
+        ret_type = "String"
+    header_params = op_header_params(spec, op_id)
+    if header_params and not (write_verb and has_body and verb == "post"):
+        raise SystemExit(
+            f"{cls}.{method_snake} ({op_id}): header parameters are supported only on a "
+            "POST with an object body"
+        )
     if write_verb and has_body:
         body_schema = spec.op_body.get(op_id) or {}
         if is_object_body(spec, body_schema):
             fields = object_body_fields(spec, body_schema)
             ftuples = build_field_tuples(spec, fields)
             req_cls = snake_to_pascal(method_snake) + "Request"
-            builder_src = emit_request_builder(cls, method_snake, ftuples)
-            _register_sidecar(
-                cls, name, sidecar_records_for_fields(spec, fields, id_records)
+            builder_src = emit_request_builder(
+                cls, method_snake, ftuples, headers=header_params
             )
+            hdr_lead = [
+                {
+                    "name": snake_name(w),
+                    "kind": "keyword",
+                    "type": "string",
+                    "required": True,
+                }
+                for w, _i, r in header_params
+                if r
+            ]
+            hdr_tail = [
+                {
+                    "name": snake_name(w),
+                    "kind": "keyword",
+                    "type": "optional<any>",
+                    "required": False,
+                    "default": None,
+                }
+                for w, _i, r in header_params
+                if not r
+            ]
+            recs = sidecar_records_for_fields(spec, fields, [*id_records, *hdr_lead])
+            recs[-1:-1] = hdr_tail  # optional headers sit before the extras door
+            _register_sidecar(cls, name, recs)
             base_params = [*id_params, f"{req_cls} request"]
             call_args = [*id_args, "request"]
-            map_expr = f"{verb_fn}({path_expr}, request.toBody(), requestOptions)"
+            if header_params:
+                map_expr = f"{verb_fn}({path_expr}, request.toBody(), requestOptions, request.toHeaders())"
+            else:
+                map_expr = f"{verb_fn}({path_expr}, request.toBody(), requestOptions)"
         else:
             # §5.2 union body → a single Map body param.
             base_params = [*id_params, "java.util.Map<String, Object> body"]
@@ -1324,14 +1532,25 @@ def emit_method(
                 },
             ],
         )
-        map_expr = f"restGet({path_expr}, params, requestOptions)"
+        if response_kind == "text":
+            map_expr = (
+                f"restGetText({path_expr}, params, requestOptions, "
+                f'java.util.Map.of("Accept", {java_str(text_media)}))'
+            )
+        elif response_kind == "redirect":
+            map_expr = f"restGetRedirectLocation({path_expr}, params, requestOptions)"
+        else:
+            map_expr = f"restGet({path_expr}, params, requestOptions)"
     else:  # delete
         base_params = list(id_params)
         call_args = list(id_args)
         _register_sidecar(cls, name, list(id_records))
         map_expr = f"restDelete({path_expr}, requestOptions)"
 
-    call = f"    return {_wrap_return(ret_type, map_expr)};"
+    if ret_type == "String":
+        call = f"    return {map_expr};"
+    else:
+        call = f"    return {_wrap_return(ret_type, map_expr)};"
     override = "  @Override\n" if is_override else ""
     full_sig = ", ".join([*base_params, ro_param])
     conv_sig = ", ".join(base_params)
@@ -1590,9 +1809,21 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
         cmd_leaf = (mapping.get(cmd) or "").rsplit("/", 1)[-1]
         cmd_schema = spec.schemas.get(cmd_leaf, {})
         fields, with_id = command_param_fields(spec, cmd_schema)
+        fields, autofill, compat = command_markup(spec, cmd, cmd_schema, fields)
         ftuples = build_field_tuples(spec, fields)
         req_cls = snake_to_pascal(command_py_name(cmd)) + "Request"
-        builders.append(emit_request_builder(name, command_py_name(cmd), ftuples))
+        builders.append(
+            emit_request_builder(
+                name,
+                command_py_name(cmd),
+                ftuples,
+                autofill,
+                [
+                    (escape_ident(a), java_field_type(spec, sc), r, lf)
+                    for a, r, lf, sc in compat
+                ],
+            )
+        )
 
         records: list[dict] = []
         if with_id:
@@ -1604,7 +1835,9 @@ def emit_command_dispatch(spec: Spec, anchor: str, markup: dict) -> str:
                     "required": True,
                 }
             )
-        records = sidecar_records_for_fields(spec, fields, records)
+        records = sidecar_records_for_fields(
+            spec, fields, records, compat=[(a, sc) for a, _r, _lf, sc in compat]
+        )
         _register_sidecar(name, mname, records)
 
         id_param = ["String callId"] if with_id else []
@@ -1786,7 +2019,40 @@ CONTAINERS = {
     "registry": ("RegistryNamespace", "registry"),
     "project": ("ProjectNamespace", "project"),
     "datasphere": ("DatasphereNamespace", "datasphere"),
+    "space": ("SpaceNamespace", "space"),
+    "whatsapp": ("WhatsappNamespace", "whatsapp"),
 }
+
+#: The security scheme a Personal-Access-Token spec declares (rest-apis/space) — the
+#: same name porting-sdk's python generator and mock_signalwire route by.
+PAT_SECURITY_SCHEME = "SignalWirePersonalAccessToken"
+
+
+def is_pat_spec(spec: "Spec") -> bool:
+    """True when the spec's root ``security`` accepts ONLY the Personal Access Token:
+    its resources are wired to the client's PAT credential, never the project token."""
+    security = spec.doc.get("security") or []
+    names = [n for req in security if isinstance(req, dict) for n in req]
+    return bool(names) and all(n == PAT_SECURITY_SCHEME for n in names)
+
+
+def pat_containers(placed) -> set[str]:
+    """The containers whose resources ALL come from a PAT spec. Fails loud on a container
+    mixing PAT and project-token resources (one container gets one HttpClient), and on a
+    flat (uncontainered) PAT resource."""
+    kinds: dict[str, set[bool]] = {}
+    for spec, _anchor, _markup, container in placed:
+        kinds.setdefault(container, set()).add(is_pat_spec(spec))
+    mixed = sorted(c for c, k in kinds.items() if len(k) > 1)
+    if mixed:
+        raise SystemExit(
+            f"container(s) {mixed} mix Personal-Access-Token and project-token resources"
+        )
+    pat = {c for c, k in kinds.items() if k == {True}}
+    if "" in pat:
+        raise SystemExit("a Personal-Access-Token spec must declare x-sdk-namespace")
+    return pat
+
 
 ATTR_OVERRIDE = {
     "GenericResources": "resources",
@@ -1857,7 +2123,7 @@ def emit_container(container: str, members: list[tuple[str, str]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def emit_resource_tree(placed) -> str:
+def emit_resource_tree(placed, pat: set[str]) -> str:
     """A generated abstract class the hand RestClient extends: lazy accessor per
     FLAT resource + per container. (§8)."""
     flats = []
@@ -1888,6 +2154,12 @@ def emit_resource_tree(placed) -> str:
         lines.append(f"  private {clsname} {acc};")
     lines.append("")
     lines.append("  protected abstract HttpClient generatedHttpClient();")
+    if pat:
+        lines.append("")
+        lines.append(
+            "  /** The Personal Access Token HttpClient for the PAT-authenticated namespaces. */"
+        )
+        lines.append("  protected abstract HttpClient generatedPatHttpClient();")
     for accessor, cls in flats:
         lines.append("")
         lines.append(f"  public {cls} {accessor}() {{")
@@ -1898,11 +2170,10 @@ def emit_resource_tree(placed) -> str:
         lines.append("  }")
     for c in containers_seen:
         clsname, acc = CONTAINERS[c]
+        cred = "generatedPatHttpClient" if c in pat else "generatedHttpClient"
         lines.append("")
         lines.append(f"  public {clsname} {acc}() {{")
-        lines.append(
-            f"    if ({acc} == null) {{ {acc} = new {clsname}(generatedHttpClient()); }}"
-        )
+        lines.append(f"    if ({acc} == null) {{ {acc} = new {clsname}({cred}()); }}")
         lines.append(f"    return {acc};")
         lines.append("  }")
     lines.append("}")
@@ -2096,6 +2367,17 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
             ]
             if len(non_null) == 1:
                 return type_field_type(non_null[0], schemas)
+            # ``X | SWMLVar``: a SWML variable reference (``${var}``) is itself a string,
+            # so a string field that also accepts one is still exactly a String.
+            plain = [
+                v
+                for v in non_null
+                if str(v.get("$ref") or "").rsplit("/", 1)[-1] != "SWMLVar"
+            ]
+            if len(plain) == 1 and len(non_null) == 2:
+                inner = type_field_type(plain[0], schemas)
+                if inner == "String":
+                    return inner
     if (
         schema.get("allOf")
         or schema.get("oneOf")
@@ -2369,7 +2651,7 @@ def build_outputs(psdk: Path) -> dict[str, str]:
             )
         cls, _ = CONTAINERS[container]
         outs[cls + ".java"] = emit_container(container, by_container[container])
-    outs["ResourceTree.java"] = emit_resource_tree(placed)
+    outs["ResourceTree.java"] = emit_resource_tree(placed, pat_containers(placed))
 
     # Wire-type surface (item A/H): one method-less data class / enum per
     # components/schemas OBJECT across the discovered REST namespaces, under

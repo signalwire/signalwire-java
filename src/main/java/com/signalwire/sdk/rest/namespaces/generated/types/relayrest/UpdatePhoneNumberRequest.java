@@ -28,6 +28,7 @@ public final class UpdatePhoneNumberRequest {
   public String call_relay_topic;
   public String call_relay_topic_status_callback_url;
   public String call_relay_script_url;
+  public String call_relay_script_url_method;
   public String call_relay_context;
   public String call_relay_context_status_callback_url;
   public String call_relay_application;

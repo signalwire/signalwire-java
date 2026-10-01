@@ -14,10 +14,12 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class PlayWithURLS {
   public java.util.Map<String, Object> auto_answer;
-  public java.util.Map<String, Object> volume;
-  public String say_voice;
-  public String say_language;
+  public java.util.Map<String, Object> loop;
   public String say_gender;
+  public String say_language;
+  public String say_voice;
   public String status_url;
-  public java.util.Map<String, Object> urls;
+  public String url;
+  public java.util.List<Object> urls;
+  public java.util.Map<String, Object> volume;
 }

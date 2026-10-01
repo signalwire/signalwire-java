@@ -15,7 +15,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  */
 public final class CreatePartnerCampaignRequest {
   public String name;
-  public String brand_id;
   public String csp_campaign_reference;
   public String status_callback_url;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

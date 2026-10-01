@@ -14,13 +14,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class SWAIGInternalFiller {
-  public java.util.Map<String, Object> hangup;
+  public java.util.Map<String, Object> adjust_response_latency;
+  public java.util.Map<String, Object> change_context;
   public java.util.Map<String, Object> check_time;
+  public java.util.Map<String, Object> get_ideal_strategy;
+  public java.util.Map<String, Object> get_visual_input;
+  public java.util.Map<String, Object> next_step;
+  public java.util.Map<String, Object> pause_conversation;
   public java.util.Map<String, Object> wait_for_user;
   public java.util.Map<String, Object> wait_seconds;
-  public java.util.Map<String, Object> adjust_response_latency;
-  public java.util.Map<String, Object> next_step;
-  public java.util.Map<String, Object> change_context;
-  public java.util.Map<String, Object> get_visual_input;
-  public java.util.Map<String, Object> get_ideal_strategy;
 }

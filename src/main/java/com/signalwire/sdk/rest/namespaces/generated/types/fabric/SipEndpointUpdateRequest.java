@@ -22,4 +22,5 @@ public final class SipEndpointUpdateRequest {
   public String encryption;
   public String call_handler;
   public String calling_handler_resource_id;
+  public String password;
 }

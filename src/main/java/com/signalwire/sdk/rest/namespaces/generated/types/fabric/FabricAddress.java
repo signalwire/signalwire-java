@@ -20,6 +20,6 @@ public final class FabricAddress {
   public String preview_url;
   public Boolean locked;
   public java.util.Map<String, Object> channels;
-  public String created_at;
   public String type;
+  public String resource_id;
 }

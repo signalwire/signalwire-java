@@ -15,4 +15,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  */
 public final class UpdateCampaignRequest {
   public String name;
+  public String status_callback_url;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

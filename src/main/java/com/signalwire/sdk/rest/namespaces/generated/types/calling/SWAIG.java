@@ -14,8 +14,10 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class SWAIG {
   public java.util.Map<String, Object> defaults;
-  public java.util.List<Object> native_functions;
-  public java.util.List<Object> includes;
   public java.util.List<Object> functions;
+  public java.util.List<Object> hooks;
+  public java.util.List<Object> includes;
   public java.util.Map<String, Object> internal_fillers;
+  public java.util.List<Object> mcp_servers;
+  public java.util.List<Object> native_functions;
 }

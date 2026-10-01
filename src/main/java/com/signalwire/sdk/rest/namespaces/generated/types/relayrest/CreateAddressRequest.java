@@ -25,4 +25,6 @@ public final class CreateAddressRequest {
   public String city;
   public String state;
   public String postal_code;
+  public Boolean emergency_enabled;
+  public Boolean auto_correct_address;
 }

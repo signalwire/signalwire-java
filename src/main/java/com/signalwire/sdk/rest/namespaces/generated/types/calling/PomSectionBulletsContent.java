@@ -15,9 +15,9 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class PomSectionBulletsContent {
   public String title;
-  public java.util.List<Object> subsections;
-  public java.util.Map<String, Object> numbered;
-  public java.util.Map<String, Object> numberedBullets;
   public String body;
   public java.util.List<Object> bullets;
+  public Boolean numbered;
+  public Boolean numberedBullets;
+  public java.util.List<Object> subsections;
 }

@@ -185,9 +185,72 @@ public class HttpClient {
   /** POST request with JSON body and a per-request {@link RequestOptions} override. */
   public Map<String, Object> post(
       String path, Map<String, Object> body, RequestOptions requestOptions) {
+    return post(path, body, requestOptions, null);
+  }
+
+  /**
+   * POST request with JSON body, a per-request {@link RequestOptions} override, and extra request
+   * headers (e.g. a declared {@code Idempotency-Key} header parameter).
+   *
+   * @param path absolute API path
+   * @param body JSON body (may be {@code null}, sent as an empty object)
+   * @param requestOptions per-request transport options (may be {@code null})
+   * @param headers extra request headers (may be {@code null})
+   * @return the decoded JSON response
+   */
+  public Map<String, Object> post(
+      String path,
+      Map<String, Object> body,
+      RequestOptions requestOptions,
+      Map<String, String> headers) {
     String url = buildUrl(path, null);
     String json = body != null ? gson.toJson(body) : "{}";
-    return execute("POST", path, url, json, requestOptions);
+    return parseJson(
+        "POST", path, url, send("POST", path, url, json, requestOptions, headers, false).body());
+  }
+
+  /**
+   * GET request whose success body is NOT JSON (e.g. {@code text/csv}); returns it as text. Pass
+   * the success media type as the {@code Accept} header. Errors are raised exactly as {@link #get}.
+   *
+   * @param path absolute API path
+   * @param queryParams query parameters (may be {@code null})
+   * @param requestOptions per-request transport options (may be {@code null})
+   * @param headers extra request headers, e.g. {@code Accept} (may be {@code null})
+   * @return the response body text
+   */
+  public String getText(
+      String path,
+      Map<String, String> queryParams,
+      RequestOptions requestOptions,
+      Map<String, String> headers) {
+    String url = buildUrl(path, queryParams);
+    String body = send("GET", path, url, null, requestOptions, headers, false).body();
+    return body != null ? body : "";
+  }
+
+  /**
+   * GET request whose success IS a redirect: returns its {@code Location} without following it (the
+   * endpoint's answer is the URL of the resource, e.g. a signed download URL, which the caller
+   * fetches with any HTTP client).
+   *
+   * @param path absolute API path
+   * @param queryParams query parameters (may be {@code null})
+   * @param requestOptions per-request transport options (may be {@code null})
+   * @return the redirect target URL
+   * @throws RestError for an error status, or a success that is not a redirect
+   */
+  public String getRedirectLocation(
+      String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+    String url = buildUrl(path, queryParams);
+    HttpResponse<String> response = send("GET", path, url, null, requestOptions, null, true);
+    Optional<String> location = response.headers().firstValue("Location");
+    int status = response.statusCode();
+    if (status >= 300 && status < 400 && location.isPresent() && !location.get().isEmpty()) {
+      return location.get();
+    }
+    // A success that is not the redirect the endpoint answers with.
+    throw new RestError(status, "GET", path, url, response.body(), firstValueHeaders(response));
   }
 
   /**
@@ -252,13 +315,26 @@ public class HttpClient {
 
   // ── Internal ─────────────────────────────────────────────────────
 
-  private HttpRequest buildRequest(String method, String url, String jsonBody, Duration timeout) {
+  private HttpRequest buildRequest(
+      String method, String url, String jsonBody, Duration timeout, Map<String, String> headers) {
+    String accept = "application/json";
+    if (headers != null && headers.containsKey("Accept")) {
+      accept = headers.get("Accept");
+    }
     HttpRequest.Builder b =
         HttpRequest.newBuilder()
             .uri(URI.create(url))
             .header("Authorization", authHeader)
-            .header("Accept", "application/json")
+            .header("Accept", accept)
             .timeout(timeout);
+    if (headers != null) {
+      headers.forEach(
+          (k, v) -> {
+            if (v != null && !"Accept".equals(k)) {
+              b.header(k, v);
+            }
+          });
+    }
     switch (method) {
       case "GET":
         b.GET();
@@ -288,6 +364,40 @@ public class HttpClient {
    */
   private Map<String, Object> execute(
       String method, String path, String url, String jsonBody, RequestOptions perRequest) {
+    return parseJson(
+        method, path, url, send(method, path, url, jsonBody, perRequest, null, false).body());
+  }
+
+  /**
+   * Decode a success body as a JSON object. A body that is not a JSON object (e.g. a top-level
+   * array) surfaces as the transport-error family ({@link SignalWireRestTransportError}, no status)
+   * rather than a bare parse exception.
+   */
+  private static Map<String, Object> parseJson(
+      String method, String path, String url, String body) {
+    if (body == null || body.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    try {
+      return gson.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
+    } catch (RuntimeException e) {
+      throw new SignalWireRestTransportError(method, path, url, e);
+    }
+  }
+
+  /**
+   * The transport core: send with retries and return the successful response. A 2xx is success;
+   * when {@code redirectIsSuccess} a 3xx is also returned as-is (redirects are never followed —
+   * this client is built with the JDK default {@code Redirect.NEVER}).
+   */
+  private HttpResponse<String> send(
+      String method,
+      String path,
+      String url,
+      String jsonBody,
+      RequestOptions perRequest,
+      Map<String, String> headers,
+      boolean redirectIsSuccess) {
     EffectiveOptions opts = RequestOptionsSupport.resolve(this.requestOptions, perRequest);
     Duration timeout = Duration.ofMillis(Math.max(1L, Math.round(opts.timeout() * 1000.0)));
 
@@ -305,19 +415,16 @@ public class HttpClient {
             new java.util.concurrent.CancellationException("request cancelled by abortSignal"));
       }
 
-      HttpRequest request = buildRequest(method, url, jsonBody, timeout);
+      HttpRequest request = buildRequest(method, url, jsonBody, timeout, headers);
       try {
         log.debug("%s %s", method, url);
         HttpResponse<String> response =
             httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         int statusCode = response.statusCode();
 
-        if (statusCode >= 200 && statusCode < 300) {
-          String body = response.body();
-          if (body == null || body.isEmpty()) {
-            return Collections.emptyMap();
-          }
-          return gson.fromJson(body, new TypeToken<Map<String, Object>>() {}.getType());
+        if ((statusCode >= 200 && statusCode < 300)
+            || (redirectIsSuccess && statusCode >= 300 && statusCode < 400)) {
+          return response;
         }
 
         // A non-2xx response. Retry if attempts remain AND the status is retryable

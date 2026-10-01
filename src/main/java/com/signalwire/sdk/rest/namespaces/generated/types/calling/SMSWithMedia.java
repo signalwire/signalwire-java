@@ -13,10 +13,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class SMSWithMedia {
-  public String to_number;
-  public String from_number;
-  public String region;
-  public java.util.List<Object> tags;
-  public java.util.List<Object> media;
   public String body;
+  public String from_number;
+  public java.util.List<Object> media;
+  public String region;
+  public String status_callback;
+  public java.util.List<Object> tags;
+  public String to_number;
 }

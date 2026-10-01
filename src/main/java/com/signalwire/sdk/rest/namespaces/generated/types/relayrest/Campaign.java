@@ -25,7 +25,6 @@ public final class Campaign {
   public String sample3;
   public String sample4;
   public String sample5;
-  public String dynamic_templates;
   public String message_flow;
   public String opt_in_message;
   public String opt_out_message;
@@ -33,7 +32,6 @@ public final class Campaign {
   public String opt_in_keywords;
   public String opt_out_keywords;
   public String help_keywords;
-  public Boolean number_pooling_required;
   public String number_pooling_per_campaign;
   public Boolean direct_lending;
   public Boolean embedded_link;
@@ -44,4 +42,10 @@ public final class Campaign {
   public String status_callback_url;
   public String created_at;
   public String updated_at;
+  public String dynamic_messages;
+  public String requested_throughput;
+  public String daily_messages_per_number;
+  public String privacy_policy_link;
+  public String purchase_or_port_numbers;
+  public java.util.List<Object> signalwire_contact_emails;
 }

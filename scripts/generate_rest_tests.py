@@ -405,7 +405,7 @@ class {cls} {{
 
   @BeforeEach
   void setUp() {{
-    MockTest.Bound bound = MockTest.newClient();
+    MockTest.Bound bound = MockTest.{new_client}();
     this.client = bound.client;
     this.mock = bound.harness;
   }}
@@ -431,9 +431,40 @@ class {cls} {{
 """
 
 
+#: Spec dirs whose root ``security`` is ONLY the Personal Access Token (filled by
+#: build_outputs from the specs; the same test generate_rest.py wires space() by).
+PAT_SPECS: set[str] = set()
+
+
+def _pat_spec_dirs(psdk: Path, spec_dirs) -> set[str]:
+    import yaml
+
+    out = set()
+    for d in spec_dirs:
+        name = d if isinstance(d, str) else getattr(d, "name", str(d))
+        f = psdk / "rest-apis" / name / "openapi.enriched.yaml"
+        if not f.is_file():
+            f = psdk / "rest-apis" / name / "openapi.yaml"
+        if not f.is_file():
+            continue
+        doc = yaml.safe_load(f.read_text()) or {}
+        names = [
+            n
+            for req in (doc.get("security") or [])
+            if isinstance(req, dict)
+            for n in req
+        ]
+        if names and all(n == "SignalWirePersonalAccessToken" for n in names):
+            out.add(name)
+    return out
+
+
 def emit_spec_file(spec: str, rows: list[dict]) -> str:
     cls = pascal_spec(spec) + "GeneratedTest"
-    body = HEADER_TMPL.format(spec=spec, cls=cls)
+    # A Personal-Access-Token-secured namespace (rest-apis/space) is served by the mock only
+    # to the PAT credential, so its tests run on a PAT-only client.
+    new_client = "newPatClient" if spec in PAT_SPECS else "newClient"
+    body = HEADER_TMPL.format(spec=spec, cls=cls, new_client=new_client)
     for r in rows:
         ident = r["_ident"]
         call = r["_call"]
@@ -473,6 +504,8 @@ def build_outputs(psdk: Path) -> tuple[dict[str, str], list[str], int]:
     plan = load_plan()
     spec_dirs = spec_dirs_with_openapi(psdk)
     rows = build_join(routes, psdk, spec_dirs)
+    PAT_SPECS.clear()
+    PAT_SPECS.update(_pat_spec_dirs(psdk, spec_dirs))
 
     by_spec: dict[str, list[dict]] = {}
     uncovered: list[str] = []

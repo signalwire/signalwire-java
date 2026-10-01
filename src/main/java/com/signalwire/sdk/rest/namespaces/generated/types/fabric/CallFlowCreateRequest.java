@@ -15,4 +15,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  */
 public final class CallFlowCreateRequest {
   public String title;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
 }

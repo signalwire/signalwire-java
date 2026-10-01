@@ -19,4 +19,7 @@ public final class Order {
   public String created_at;
   public String updated_at;
   public String status_callback_url;
+  public String campaign_id;
+  public String brand_id;
+  public java.util.List<Object> phone_numbers;
 }

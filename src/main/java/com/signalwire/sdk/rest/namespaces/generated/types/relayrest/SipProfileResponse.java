@@ -20,4 +20,5 @@ public final class SipProfileResponse {
   public java.util.List<Object> default_ciphers;
   public String default_encryption;
   public String default_send_as;
+  public String default_outbound_policy;
 }

@@ -13,5 +13,7 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class HoldAction {
+  public String step;
   public Double timeout;
+  public String timeout_step;
 }

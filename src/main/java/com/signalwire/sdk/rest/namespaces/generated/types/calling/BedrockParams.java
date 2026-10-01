@@ -14,10 +14,12 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  */
 public final class BedrockParams {
   public java.util.Map<String, Object> attention_timeout;
-  public java.util.Map<String, Object> hard_stop_time;
-  public java.util.Map<String, Object> inactivity_timeout;
-  public String video_listening_file;
-  public String video_idle_file;
-  public String video_talking_file;
+  public String compact_conversation_time;
+  public String compact_strategy;
   public String hard_stop_prompt;
+  public String hard_stop_time;
+  public java.util.Map<String, Object> inactivity_timeout;
+  public String video_idle_file;
+  public String video_listening_file;
+  public String video_talking_file;
 }

@@ -25,4 +25,6 @@ public final class CreateManagedBrandRequest {
   public String company_vertical;
   public String company_website;
   public String status_callback_url;
+  public String csp_brand_reference;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

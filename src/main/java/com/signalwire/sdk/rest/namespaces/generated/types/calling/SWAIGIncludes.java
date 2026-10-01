@@ -13,7 +13,9 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class SWAIGIncludes {
+  public String auth_password;
+  public String auth_user;
   public java.util.List<Object> functions;
-  public String url;
   public java.util.Map<String, Object> meta_data;
+  public String url;
 }

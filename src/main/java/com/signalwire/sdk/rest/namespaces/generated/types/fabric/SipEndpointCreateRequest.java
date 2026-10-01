@@ -14,7 +14,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class SipEndpointCreateRequest {
-  public String id;
   public String username;
   public String caller_id;
   public String send_as;
@@ -23,4 +22,5 @@ public final class SipEndpointCreateRequest {
   public String encryption;
   public String call_handler;
   public String calling_handler_resource_id;
+  public String password;
 }

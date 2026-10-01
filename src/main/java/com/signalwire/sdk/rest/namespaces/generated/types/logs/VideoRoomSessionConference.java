@@ -24,6 +24,6 @@ public final class VideoRoomSessionConference {
   public Boolean locked;
   public String started_at;
   public String ended_at;
-  public String charge;
+  public Double charge;
   public java.util.List<Object> charge_details;
 }

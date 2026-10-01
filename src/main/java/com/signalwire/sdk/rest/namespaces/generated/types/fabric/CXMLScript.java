@@ -19,7 +19,7 @@ public final class CXMLScript {
   public String last_accessed_at;
   public String request_url;
   public String script_type;
-  public String display_name;
+  public String name;
   public String status_callback_url;
   public java.util.Map<String, Object> status_callback_method;
 }

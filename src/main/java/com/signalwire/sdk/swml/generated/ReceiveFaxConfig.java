@@ -2,12 +2,12 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'receive_fax' config
+// schema.json $defs schema 'ReceiveFaxConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * ReceiveFaxConfig — generated wire type (flattened SWMLMethod verb 'receive_fax' config).
+ * ReceiveFaxConfig — generated wire type (schema.json $defs schema 'ReceiveFaxConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.

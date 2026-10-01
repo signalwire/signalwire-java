@@ -13,6 +13,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class Output {
-  public String response;
-  public java.util.List<Object> action;
+  public java.util.Map<String, Object> action;
+  public Boolean post_process;
+  public java.util.Map<String, Object> response;
 }

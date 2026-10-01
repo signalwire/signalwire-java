@@ -23,6 +23,8 @@ public final class AIAgentCreateRequest {
   public java.util.List<Object> pronounce;
   public java.util.Map<String, Object> prompt;
   public java.util.Map<String, Object> SWAIG;
-  public String agent_id;
   public String name;
+  public String post_prompt_auth_user;
+  public String post_prompt_auth_password;
+  public java.util.Map<String, Object> multilingual;
 }

@@ -2,21 +2,21 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'tap' config
+// schema.json $defs schema 'TapConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * TapConfig — generated wire type (flattened SWMLMethod verb 'tap' config).
+ * TapConfig — generated wire type (schema.json $defs schema 'TapConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class TapConfig {
-  public String uri;
-  public String control_id;
-  public java.util.Map<String, Object> direction;
-  public java.util.Map<String, Object> codec;
+  public String codec;
+  public java.util.Map<String, Object> control_id;
+  public String direction;
   public java.util.Map<String, Object> rtp_ptime;
   public String status_url;
+  public String uri;
 }

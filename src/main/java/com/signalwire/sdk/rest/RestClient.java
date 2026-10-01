@@ -27,26 +27,76 @@ import java.util.Objects;
  * var numbers = client.phoneNumbers().list();
  * var docs = client.datasphere().documents().list();
  * }</pre>
+ *
+ * <p>The Space Administration API ({@link #space()}) authenticates with a user's Personal Access
+ * Token instead of the project token:
+ *
+ * <pre>{@code
+ * var admin = RestClient.builder()
+ *     .personalAccessToken("pat_...")
+ *     .space("example.signalwire.com")
+ *     .build();
+ * admin.space().members().list();
+ * }</pre>
  */
 public class RestClient extends ResourceTree {
 
   private final String project;
   private final String space;
   private final HttpClient httpClient;
+  private final HttpClient patHttpClient;
 
   private RestClient(Builder builder) {
     this.project = builder.project;
     this.space = builder.space;
+    boolean hasProject = builder.project != null && builder.token != null;
     this.httpClient =
         builder.httpClient != null
             ? builder.httpClient
-            : new HttpClient(builder.space, builder.project, builder.token, builder.requestOptions);
+            : hasProject
+                ? new HttpClient(
+                    builder.space, builder.project, builder.token, builder.requestOptions)
+                : null;
+    // A Personal Access Token is HTTP Basic with an EMPTY username (prime-rails
+    // API::Space::BaseController -> Authenticators::PersonalAccessToken).
+    this.patHttpClient =
+        builder.patHttpClient != null
+            ? builder.patHttpClient
+            : builder.personalAccessToken != null
+                ? new HttpClient(
+                    builder.space, "", builder.personalAccessToken, builder.requestOptions)
+                : null;
   }
 
-  /** Supplies the HttpClient to the generated {@link ResourceTree} accessors. */
+  /**
+   * Supplies the project-token HttpClient to the generated {@link ResourceTree} accessors.
+   *
+   * @throws IllegalStateException when this client was built with only a personal access token
+   */
   @Override
   protected HttpClient generatedHttpClient() {
+    if (httpClient == null) {
+      throw new IllegalStateException(
+          "project and token are required for this resource (SIGNALWIRE_PROJECT_ID / "
+              + "SIGNALWIRE_API_TOKEN); this client has only a personal access token, which "
+              + "authenticates space()");
+    }
     return httpClient;
+  }
+
+  /**
+   * Supplies the Personal Access Token HttpClient to the generated {@link ResourceTree} accessors
+   * whose spec security requires it ({@link #space()}).
+   *
+   * @throws IllegalStateException when this client was built without a personal access token
+   */
+  @Override
+  protected HttpClient generatedPatHttpClient() {
+    if (patHttpClient == null) {
+      throw new IllegalStateException(
+          "personalAccessToken is required for space() (SIGNALWIRE_PERSONAL_ACCESS_TOKEN)");
+    }
+    return patHttpClient;
   }
 
   /**
@@ -95,7 +145,9 @@ public class RestClient extends ResourceTree {
     private String project;
     private String token;
     private String space;
+    private String personalAccessToken;
     private HttpClient httpClient;
+    private HttpClient patHttpClient;
     private RequestOptions requestOptions;
 
     /**
@@ -143,6 +195,19 @@ public class RestClient extends ResourceTree {
     }
 
     /**
+     * A user's Personal Access Token ({@code pat_...}), which authenticates {@link
+     * RestClient#space()}. Falls back to {@code SIGNALWIRE_PERSONAL_ACCESS_TOKEN}. Either this or a
+     * project + token pair (or both) must be supplied.
+     *
+     * @param personalAccessToken the personal access token.
+     * @return this builder.
+     */
+    public Builder personalAccessToken(String personalAccessToken) {
+      this.personalAccessToken = personalAccessToken;
+      return this;
+    }
+
+    /**
      * Use a pre-built {@link HttpClient}. Useful when pointing the client at an explicit base URL
      * (e.g. via {@link HttpClient#withBaseUrl}).
      */
@@ -151,12 +216,18 @@ public class RestClient extends ResourceTree {
       return this;
     }
 
+    /** Use a pre-built Personal Access Token {@link HttpClient} (e.g. a loopback fixture). */
+    Builder patHttpClient(HttpClient patHttpClient) {
+      this.patHttpClient = patHttpClient;
+      return this;
+    }
+
     /**
      * Resolve credentials from the builder then the environment, and construct the client.
      *
      * @return the constructed client.
-     * @throws IllegalArgumentException when any of project, token, or space is still unset after
-     *     the environment fallback, naming all three and their variables.
+     * @throws IllegalArgumentException when space is unset, or when neither a complete project +
+     *     token pair nor a personal access token is available, after the environment fallback.
      */
     public RestClient build() {
       // Env-var fallback for any credential not set explicitly — parity with
@@ -173,11 +244,17 @@ public class RestClient extends ResourceTree {
       if (space == null) {
         space = envOrNull("SIGNALWIRE_SPACE");
       }
-      if (project == null || token == null || space == null) {
+      if (personalAccessToken == null) {
+        personalAccessToken = envOrNull("SIGNALWIRE_PERSONAL_ACCESS_TOKEN");
+      }
+      boolean hasProject = project != null && token != null;
+      boolean hasPat = personalAccessToken != null || patHttpClient != null;
+      if (space == null || !(hasProject || hasPat)) {
         throw new IllegalArgumentException(
             "project, token, and space are required. Provide them via the builder or set "
                 + "SIGNALWIRE_PROJECT_ID, SIGNALWIRE_API_TOKEN, and SIGNALWIRE_SPACE "
-                + "environment variables.");
+                + "environment variables (or, for space() only, space and personalAccessToken "
+                + "/ SIGNALWIRE_PERSONAL_ACCESS_TOKEN).");
       }
       return new RestClient(this);
     }
@@ -209,9 +286,10 @@ public class RestClient extends ResourceTree {
   }
 
   /**
-   * The HTTP client carrying this client's base URL and credentials.
+   * The HTTP client carrying this client's base URL and project credentials.
    *
-   * @return the underlying HTTP client.
+   * @return the underlying HTTP client, or {@code null} when this client was built with only a
+   *     personal access token.
    */
   public HttpClient getHttpClient() {
     return httpClient;

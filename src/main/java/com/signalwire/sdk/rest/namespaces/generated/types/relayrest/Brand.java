@@ -24,10 +24,12 @@ public final class Brand {
   public String ein;
   public String company_address;
   public String company_vertical;
-  public String company_website;
   public String csp_brand_reference;
   public Boolean csp_self_registered;
   public String status_callback_url;
   public String created_at;
   public String updated_at;
+  public java.util.List<Object> signalwire_contact_emails;
+  public String large_message_limit;
+  public String number_pooling_for_company;
 }

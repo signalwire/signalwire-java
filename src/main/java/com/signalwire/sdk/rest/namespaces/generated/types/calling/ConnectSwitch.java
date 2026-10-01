@@ -13,13 +13,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class ConnectSwitch {
-  public String variable;
+  /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
+  public java.util.Map<String, Object> default_;
 
   /** wire key: case */
   @com.google.gson.annotations.SerializedName("case")
   public java.util.Map<String, Object> case_;
 
-  /** wire key: default */
-  @com.google.gson.annotations.SerializedName("default")
-  public java.util.List<Object> default_;
+  public String variable;
 }

@@ -18,6 +18,6 @@ public final class CallFlowVersionDeployResponse {
   public String created_at;
   public String updated_at;
   public Long document_version;
-  public String flow_data;
-  public String relayml;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
 }

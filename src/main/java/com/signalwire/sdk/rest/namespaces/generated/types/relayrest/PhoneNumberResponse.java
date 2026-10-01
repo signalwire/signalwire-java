@@ -20,6 +20,8 @@ public final class PhoneNumberResponse {
   public java.util.List<Object> capabilities;
   public String number_type;
   public String e911_address_id;
+  public String e911_status;
+  public String cnam;
   public String created_at;
   public String updated_at;
   public String next_billed_at;

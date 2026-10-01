@@ -13,10 +13,10 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class CondReg {
-  public String when;
-  public java.util.List<Object> then;
-
   /** wire key: else */
   @com.google.gson.annotations.SerializedName("else")
   public java.util.List<Object> else_;
+
+  public java.util.List<Object> then;
+  public String when;
 }

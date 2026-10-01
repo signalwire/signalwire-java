@@ -40,4 +40,5 @@ public final class CreateSipEndpointRequest {
   public String call_flow_version;
   public String call_ai_agent_id;
   public String call_relay_script_url;
+  public String call_relay_script_url_method;
 }

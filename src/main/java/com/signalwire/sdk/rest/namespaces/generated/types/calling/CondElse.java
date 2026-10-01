@@ -16,4 +16,7 @@ public final class CondElse {
   /** wire key: else */
   @com.google.gson.annotations.SerializedName("else")
   public java.util.List<Object> else_;
+
+  public java.util.List<Object> then;
+  public String when;
 }

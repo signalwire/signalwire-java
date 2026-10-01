@@ -35,6 +35,7 @@ public final class CreateDomainApplicationRequest {
   public String call_laml_application_id;
   public String call_video_room_id;
   public String call_relay_script_url;
+  public String call_relay_script_url_method;
   public String call_dialogflow_agent_id;
   public String call_ai_agent_id;
   public String call_flow_id;

@@ -13,8 +13,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class BedrockSWAIG {
-  public java.util.List<Object> functions;
   public java.util.Map<String, Object> defaults;
-  public java.util.List<Object> native_functions;
-  public java.util.List<Object> includes;
+  public java.util.List<Object> functions;
 }

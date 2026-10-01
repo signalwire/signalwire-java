@@ -15,11 +15,5 @@ package com.signalwire.sdk.swml.generated;
 public final class RingbackConfig {
   public String url;
   public java.util.List<Object> urls;
-  public Double volume;
-  public Boolean auto_answer;
-  public String say_voice;
-  public String say_language;
-  public String say_gender;
-  public String status_url;
-  public Long loop;
+  public java.util.Map<String, Object> volume;
 }

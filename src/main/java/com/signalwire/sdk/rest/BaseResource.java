@@ -86,6 +86,33 @@ public class BaseResource {
     return httpClient.post(path, body, requestOptions);
   }
 
+  /**
+   * POST {@code path} with a JSON body, a per-request {@link RequestOptions} override and extra
+   * request headers (a declared header parameter such as {@code Idempotency-Key}).
+   */
+  protected Map<String, Object> restPost(
+      String path,
+      Map<String, Object> body,
+      RequestOptions requestOptions,
+      Map<String, String> headers) {
+    return httpClient.post(path, body, requestOptions, headers);
+  }
+
+  /** GET {@code path} whose success body is not JSON; returns it as text. */
+  protected String restGetText(
+      String path,
+      Map<String, String> params,
+      RequestOptions requestOptions,
+      Map<String, String> headers) {
+    return httpClient.getText(path, params, requestOptions, headers);
+  }
+
+  /** GET {@code path} whose success is a redirect; returns its {@code Location} unfollowed. */
+  protected String restGetRedirectLocation(
+      String path, Map<String, String> params, RequestOptions requestOptions) {
+    return httpClient.getRedirectLocation(path, params, requestOptions);
+  }
+
   /** PUT {@code path} with a JSON body. */
   protected Map<String, Object> restPut(String path, Map<String, Object> body) {
     return httpClient.put(path, body);

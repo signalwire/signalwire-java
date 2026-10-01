@@ -59,6 +59,20 @@ public class RegistryBrands extends BaseResource {
         com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse.class);
   }
 
+  /** update (generated from operation 'update_brand'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse update(
+      String id, UpdateRequest request) {
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPut(getBasePath() + "/" + id, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.BrandResponse.class);
+  }
+
   /** listCampaigns (generated from operation 'list_campaigns'). */
   public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignListResponse
       listCampaigns(String id, java.util.Map<String, String> params) {
@@ -86,5 +100,211 @@ public class RegistryBrands extends BaseResource {
     return asType(
         restPost(getBasePath() + "/" + id + "/" + "campaigns", body, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.relayrest.CampaignResponse.class);
+  }
+
+  /** Closed typed request for {@link #update} (builder + extras door). */
+  public static final class UpdateRequest {
+    private final String name;
+    private final String companyName;
+    private final String contactEmail;
+    private final String contactPhone;
+    private final String einIssuingCountry;
+    private final String legalEntityType;
+    private final String ein;
+    private final String companyVertical;
+    private final String companyWebsite;
+    private final String companyAddress;
+    private final String cspBrandReference;
+    private final String statusCallbackUrl;
+    private final java.util.Map<String, Object> signalwireContactEmails;
+    private final java.util.Map<String, Object> extras;
+
+    private UpdateRequest(
+        String name,
+        String companyName,
+        String contactEmail,
+        String contactPhone,
+        String einIssuingCountry,
+        String legalEntityType,
+        String ein,
+        String companyVertical,
+        String companyWebsite,
+        String companyAddress,
+        String cspBrandReference,
+        String statusCallbackUrl,
+        java.util.Map<String, Object> signalwireContactEmails,
+        java.util.Map<String, Object> extras) {
+      this.name = name;
+      this.companyName = companyName;
+      this.contactEmail = contactEmail;
+      this.contactPhone = contactPhone;
+      this.einIssuingCountry = einIssuingCountry;
+      this.legalEntityType = legalEntityType;
+      this.ein = ein;
+      this.companyVertical = companyVertical;
+      this.companyWebsite = companyWebsite;
+      this.companyAddress = companyAddress;
+      this.cspBrandReference = cspBrandReference;
+      this.statusCallbackUrl = statusCallbackUrl;
+      this.signalwireContactEmails = signalwireContactEmails;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.name != null) {
+        body.put("name", this.name);
+      }
+      if (this.companyName != null) {
+        body.put("company_name", this.companyName);
+      }
+      if (this.contactEmail != null) {
+        body.put("contact_email", this.contactEmail);
+      }
+      if (this.contactPhone != null) {
+        body.put("contact_phone", this.contactPhone);
+      }
+      if (this.einIssuingCountry != null) {
+        body.put("ein_issuing_country", this.einIssuingCountry);
+      }
+      if (this.legalEntityType != null) {
+        body.put("legal_entity_type", this.legalEntityType);
+      }
+      if (this.ein != null) {
+        body.put("ein", this.ein);
+      }
+      if (this.companyVertical != null) {
+        body.put("company_vertical", this.companyVertical);
+      }
+      if (this.companyWebsite != null) {
+        body.put("company_website", this.companyWebsite);
+      }
+      if (this.companyAddress != null) {
+        body.put("company_address", this.companyAddress);
+      }
+      if (this.cspBrandReference != null) {
+        body.put("csp_brand_reference", this.cspBrandReference);
+      }
+      if (this.statusCallbackUrl != null) {
+        body.put("status_callback_url", this.statusCallbackUrl);
+      }
+      if (this.signalwireContactEmails != null) {
+        body.put("signalwire_contact_emails", this.signalwireContactEmails);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String name;
+      private String companyName;
+      private String contactEmail;
+      private String contactPhone;
+      private String einIssuingCountry;
+      private String legalEntityType;
+      private String ein;
+      private String companyVertical;
+      private String companyWebsite;
+      private String companyAddress;
+      private String cspBrandReference;
+      private String statusCallbackUrl;
+      private java.util.Map<String, Object> signalwireContactEmails;
+      private java.util.Map<String, Object> extras;
+
+      public Builder name(String name) {
+        this.name = name;
+        return this;
+      }
+
+      public Builder companyName(String companyName) {
+        this.companyName = companyName;
+        return this;
+      }
+
+      public Builder contactEmail(String contactEmail) {
+        this.contactEmail = contactEmail;
+        return this;
+      }
+
+      public Builder contactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
+        return this;
+      }
+
+      public Builder einIssuingCountry(String einIssuingCountry) {
+        this.einIssuingCountry = einIssuingCountry;
+        return this;
+      }
+
+      public Builder legalEntityType(String legalEntityType) {
+        this.legalEntityType = legalEntityType;
+        return this;
+      }
+
+      public Builder ein(String ein) {
+        this.ein = ein;
+        return this;
+      }
+
+      public Builder companyVertical(String companyVertical) {
+        this.companyVertical = companyVertical;
+        return this;
+      }
+
+      public Builder companyWebsite(String companyWebsite) {
+        this.companyWebsite = companyWebsite;
+        return this;
+      }
+
+      public Builder companyAddress(String companyAddress) {
+        this.companyAddress = companyAddress;
+        return this;
+      }
+
+      public Builder cspBrandReference(String cspBrandReference) {
+        this.cspBrandReference = cspBrandReference;
+        return this;
+      }
+
+      public Builder statusCallbackUrl(String statusCallbackUrl) {
+        this.statusCallbackUrl = statusCallbackUrl;
+        return this;
+      }
+
+      public Builder signalwireContactEmails(
+          java.util.Map<String, Object> signalwireContactEmails) {
+        this.signalwireContactEmails = signalwireContactEmails;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public UpdateRequest build() {
+        return new UpdateRequest(
+            name,
+            companyName,
+            contactEmail,
+            contactPhone,
+            einIssuingCountry,
+            legalEntityType,
+            ein,
+            companyVertical,
+            companyWebsite,
+            companyAddress,
+            cspBrandReference,
+            statusCallbackUrl,
+            signalwireContactEmails,
+            extras);
+      }
+    }
   }
 }

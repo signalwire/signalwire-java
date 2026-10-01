@@ -14,10 +14,16 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class AmazonBedrockObject {
+  public java.util.Map<String, Object> SWAIG;
+  public String app_name;
+  public String assistant_name;
+  public String assistant_prompt;
+  public String conversation_id;
   public java.util.Map<String, Object> global_data;
+  public java.util.Map<String, Object> greeting_prompt;
   public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> post_prompt;
   public String post_prompt_url;
   public java.util.Map<String, Object> prompt;
-  public java.util.Map<String, Object> SWAIG;
+  public String transcript_webhook_url;
 }

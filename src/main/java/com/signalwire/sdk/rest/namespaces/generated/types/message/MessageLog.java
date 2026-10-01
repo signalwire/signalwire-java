@@ -26,4 +26,6 @@ public final class MessageLog {
   public Double charge;
   public java.util.List<Object> charge_details;
   public String created_at;
+  public String error_code;
+  public String error_message;
 }

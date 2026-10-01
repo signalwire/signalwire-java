@@ -17,7 +17,6 @@ public final class Project {
   public String name;
   public String parent_project_id;
   public Boolean subproject;
-  public String region_preference;
   public Boolean protect_recordings;
   public Boolean protect_message_media;
   public Boolean protect_fax_media;

@@ -181,6 +181,33 @@ final class RouteTestPlan {
       CALLS.add(new Call("DELETE", wire(path)));
       return Collections.emptyMap();
     }
+
+    @Override
+    public Map<String, Object> post(
+        String path,
+        Map<String, Object> body,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("POST", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    @Override
+    public String getText(
+        String path,
+        Map<String, String> queryParams,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
+
+    @Override
+    public String getRedirectLocation(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
   }
 
   private record PlanRec(
@@ -453,6 +480,7 @@ final class RouteTestPlan {
             .token("t")
             .space("recording.invalid")
             .httpClient(new RecordingHttpClient())
+            .patHttpClient(new RecordingHttpClient())
             .build();
 
     for (Method m : publicMethods(client)) {

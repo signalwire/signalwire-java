@@ -21,4 +21,9 @@ public final class CreateMessageRequest {
   public Boolean send_as_mms;
   public String status_callback;
   public java.util.Map<String, Object> custom_variables;
+  public String message_type;
+  public String template_id;
+  public java.util.Map<String, Object> header_template_parameters;
+  public java.util.Map<String, Object> body_template_parameters;
+  public java.util.List<Object> button_template_parameters;
 }

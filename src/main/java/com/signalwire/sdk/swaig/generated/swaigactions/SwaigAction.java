@@ -13,10 +13,12 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class SwaigAction {
+  public java.util.Map<String, Object> SWML;
   public java.util.List<Object> add_dynamic_hints;
   public java.util.Map<String, Object> back_to_back_functions;
   public String change_context;
   public String change_step;
+  public java.util.Map<String, Object> change_voice;
   public Boolean clear_dynamic_hints;
   public java.util.Map<String, Object> context_switch;
   public Long end_of_speech_timeout;

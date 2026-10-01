@@ -14,8 +14,9 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class CXMLScriptCreateRequest {
-  public String display_name;
   public String contents;
   public String status_callback_url;
   public java.util.Map<String, Object> status_callback_method;
+  public String name;
+  public String script_type;
 }

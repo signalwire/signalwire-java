@@ -17,4 +17,5 @@ public final class SwmlScriptCreateRequest {
   public String name;
   public String contents;
   public String status_callback_url;
+  public String script_type;
 }

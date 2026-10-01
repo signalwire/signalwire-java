@@ -59,6 +59,20 @@ public class Addresses extends BaseResource {
         com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AddressResponse.class);
   }
 
+  /** update (generated from operation 'update_address'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AddressResponse update(
+      String id, UpdateRequest request) {
+    return update(id, request, (RequestOptions) null);
+  }
+
+  /** update with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AddressResponse update(
+      String id, UpdateRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPut(getBasePath() + "/" + id, request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.AddressResponse.class);
+  }
+
   /** delete (generated from operation 'delete_address'). */
   public java.util.Map<String, Object> delete(String id) {
     return delete(id, (RequestOptions) null);
@@ -82,6 +96,8 @@ public class Addresses extends BaseResource {
     private final String postalCode;
     private final String addressType;
     private final String addressNumber;
+    private final Boolean emergencyEnabled;
+    private final Boolean autoCorrectAddress;
     private final java.util.Map<String, Object> extras;
 
     private CreateRequest(
@@ -96,6 +112,8 @@ public class Addresses extends BaseResource {
         String postalCode,
         String addressType,
         String addressNumber,
+        Boolean emergencyEnabled,
+        Boolean autoCorrectAddress,
         java.util.Map<String, Object> extras) {
       this.label = label;
       this.country = country;
@@ -108,6 +126,8 @@ public class Addresses extends BaseResource {
       this.postalCode = postalCode;
       this.addressType = addressType;
       this.addressNumber = addressNumber;
+      this.emergencyEnabled = emergencyEnabled;
+      this.autoCorrectAddress = autoCorrectAddress;
       this.extras = extras;
     }
 
@@ -150,6 +170,12 @@ public class Addresses extends BaseResource {
       if (this.addressNumber != null) {
         body.put("address_number", this.addressNumber);
       }
+      if (this.emergencyEnabled != null) {
+        body.put("emergency_enabled", this.emergencyEnabled);
+      }
+      if (this.autoCorrectAddress != null) {
+        body.put("auto_correct_address", this.autoCorrectAddress);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -168,6 +194,8 @@ public class Addresses extends BaseResource {
       private String postalCode;
       private String addressType;
       private String addressNumber;
+      private Boolean emergencyEnabled;
+      private Boolean autoCorrectAddress;
       private java.util.Map<String, Object> extras;
 
       public Builder label(String label) {
@@ -225,6 +253,16 @@ public class Addresses extends BaseResource {
         return this;
       }
 
+      public Builder emergencyEnabled(Boolean emergencyEnabled) {
+        this.emergencyEnabled = emergencyEnabled;
+        return this;
+      }
+
+      public Builder autoCorrectAddress(Boolean autoCorrectAddress) {
+        this.autoCorrectAddress = autoCorrectAddress;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
@@ -243,6 +281,213 @@ public class Addresses extends BaseResource {
             postalCode,
             addressType,
             addressNumber,
+            emergencyEnabled,
+            autoCorrectAddress,
+            extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #update} (builder + extras door). */
+  public static final class UpdateRequest {
+    private final String label;
+    private final String country;
+    private final String firstName;
+    private final String lastName;
+    private final String streetNumber;
+    private final String streetName;
+    private final String addressType;
+    private final String addressNumber;
+    private final String city;
+    private final String state;
+    private final String postalCode;
+    private final Boolean emergencyEnabled;
+    private final Boolean autoCorrectAddress;
+    private final java.util.Map<String, Object> extras;
+
+    private UpdateRequest(
+        String label,
+        String country,
+        String firstName,
+        String lastName,
+        String streetNumber,
+        String streetName,
+        String addressType,
+        String addressNumber,
+        String city,
+        String state,
+        String postalCode,
+        Boolean emergencyEnabled,
+        Boolean autoCorrectAddress,
+        java.util.Map<String, Object> extras) {
+      this.label = label;
+      this.country = country;
+      this.firstName = firstName;
+      this.lastName = lastName;
+      this.streetNumber = streetNumber;
+      this.streetName = streetName;
+      this.addressType = addressType;
+      this.addressNumber = addressNumber;
+      this.city = city;
+      this.state = state;
+      this.postalCode = postalCode;
+      this.emergencyEnabled = emergencyEnabled;
+      this.autoCorrectAddress = autoCorrectAddress;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.label != null) {
+        body.put("label", this.label);
+      }
+      if (this.country != null) {
+        body.put("country", this.country);
+      }
+      if (this.firstName != null) {
+        body.put("first_name", this.firstName);
+      }
+      if (this.lastName != null) {
+        body.put("last_name", this.lastName);
+      }
+      if (this.streetNumber != null) {
+        body.put("street_number", this.streetNumber);
+      }
+      if (this.streetName != null) {
+        body.put("street_name", this.streetName);
+      }
+      if (this.addressType != null) {
+        body.put("address_type", this.addressType);
+      }
+      if (this.addressNumber != null) {
+        body.put("address_number", this.addressNumber);
+      }
+      if (this.city != null) {
+        body.put("city", this.city);
+      }
+      if (this.state != null) {
+        body.put("state", this.state);
+      }
+      if (this.postalCode != null) {
+        body.put("postal_code", this.postalCode);
+      }
+      if (this.emergencyEnabled != null) {
+        body.put("emergency_enabled", this.emergencyEnabled);
+      }
+      if (this.autoCorrectAddress != null) {
+        body.put("auto_correct_address", this.autoCorrectAddress);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String label;
+      private String country;
+      private String firstName;
+      private String lastName;
+      private String streetNumber;
+      private String streetName;
+      private String addressType;
+      private String addressNumber;
+      private String city;
+      private String state;
+      private String postalCode;
+      private Boolean emergencyEnabled;
+      private Boolean autoCorrectAddress;
+      private java.util.Map<String, Object> extras;
+
+      public Builder label(String label) {
+        this.label = label;
+        return this;
+      }
+
+      public Builder country(String country) {
+        this.country = country;
+        return this;
+      }
+
+      public Builder firstName(String firstName) {
+        this.firstName = firstName;
+        return this;
+      }
+
+      public Builder lastName(String lastName) {
+        this.lastName = lastName;
+        return this;
+      }
+
+      public Builder streetNumber(String streetNumber) {
+        this.streetNumber = streetNumber;
+        return this;
+      }
+
+      public Builder streetName(String streetName) {
+        this.streetName = streetName;
+        return this;
+      }
+
+      public Builder addressType(String addressType) {
+        this.addressType = addressType;
+        return this;
+      }
+
+      public Builder addressNumber(String addressNumber) {
+        this.addressNumber = addressNumber;
+        return this;
+      }
+
+      public Builder city(String city) {
+        this.city = city;
+        return this;
+      }
+
+      public Builder state(String state) {
+        this.state = state;
+        return this;
+      }
+
+      public Builder postalCode(String postalCode) {
+        this.postalCode = postalCode;
+        return this;
+      }
+
+      public Builder emergencyEnabled(Boolean emergencyEnabled) {
+        this.emergencyEnabled = emergencyEnabled;
+        return this;
+      }
+
+      public Builder autoCorrectAddress(Boolean autoCorrectAddress) {
+        this.autoCorrectAddress = autoCorrectAddress;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public UpdateRequest build() {
+        return new UpdateRequest(
+            label,
+            country,
+            firstName,
+            lastName,
+            streetNumber,
+            streetName,
+            addressType,
+            addressNumber,
+            city,
+            state,
+            postalCode,
+            emergencyEnabled,
+            autoCorrectAddress,
             extras);
       }
     }

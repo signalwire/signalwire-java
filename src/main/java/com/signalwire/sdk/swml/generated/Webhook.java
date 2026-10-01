@@ -13,14 +13,15 @@ package com.signalwire.sdk.swml.generated;
  * fields directly.
  */
 public final class Webhook {
-  public java.util.List<Object> expressions;
   public java.util.Map<String, Object> error_keys;
-  public String url;
+  public java.util.Map<String, Object> expressions;
   public java.util.Map<String, Object> foreach;
+  public String form_param;
   public java.util.Map<String, Object> headers;
-  public java.util.Map<String, Object> method;
-  public java.util.Map<String, Object> input_args_as_params;
+  public Boolean input_args_as_params;
+  public String method;
+  public java.util.Map<String, Object> output;
   public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> require_args;
-  public java.util.Map<String, Object> output;
+  public String url;
 }

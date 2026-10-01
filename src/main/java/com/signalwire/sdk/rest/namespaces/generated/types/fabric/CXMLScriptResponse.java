@@ -16,7 +16,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 public final class CXMLScriptResponse {
   public String id;
   public String project_id;
-  public String name;
+  public String display_name;
   public String type;
   public String created_at;
   public String updated_at;

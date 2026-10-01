@@ -13,6 +13,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class LanguageParams {
-  public java.util.Map<String, Object> stability;
+  public String emotion;
+  public java.util.Map<String, Object> pitch;
   public java.util.Map<String, Object> similarity;
+  public java.util.Map<String, Object> speakingRate;
+  public java.util.Map<String, Object> speed;
+  public java.util.Map<String, Object> stability;
+  public java.util.Map<String, Object> streaming;
+  public java.util.Map<String, Object> temperature;
+  public java.util.Map<String, Object> vol;
 }

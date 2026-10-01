@@ -17,24 +17,6 @@ public class CallFlows extends FabricResourcePUT {
     super(httpClient, "/fabric/resources/call_flows");
   }
 
-  /** listAddresses (generated from operation 'list_call_flow_addresses'). */
-  @Override
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
-      listAddresses(String id, java.util.Map<String, String> params) {
-    return listAddresses(id, params, (RequestOptions) null);
-  }
-
-  /** listAddresses with a per-request {@link RequestOptions} override. */
-  @Override
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
-      listAddresses(
-          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return asType(
-        restGet("/fabric/resources/call_flow/" + id + "/addresses", params, requestOptions),
-        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
-            .class);
-  }
-
   /** listVersions (generated from operation 'list_call_flow_versions'). */
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
       listVersions(String id, java.util.Map<String, String> params) {
@@ -45,7 +27,7 @@ public class CallFlows extends FabricResourcePUT {
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
       listVersions(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
     return asType(
-        restGet("/fabric/resources/call_flow/" + id + "/versions", params, requestOptions),
+        restGet(getBasePath() + "/" + id + "/" + "versions", params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
             .class);
   }
@@ -60,7 +42,7 @@ public class CallFlows extends FabricResourcePUT {
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
       deployVersion(String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
     return asType(
-        restPost("/fabric/resources/call_flow/" + id + "/versions", body, requestOptions),
+        restPost(getBasePath() + "/" + id + "/" + "versions", body, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
             .class);
   }

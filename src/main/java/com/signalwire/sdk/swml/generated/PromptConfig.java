@@ -2,30 +2,31 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'prompt' config
+// schema.json $defs schema 'PromptConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * PromptConfig — generated wire type (flattened SWMLMethod verb 'prompt' config).
+ * PromptConfig — generated wire type (schema.json $defs schema 'PromptConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class PromptConfig {
-  public java.util.Map<String, Object> play;
-  public Double volume;
-  public String say_voice;
-  public String say_language;
-  public String say_gender;
-  public java.util.Map<String, Object> max_digits;
-  public String terminators;
   public java.util.Map<String, Object> digit_timeout;
   public java.util.Map<String, Object> initial_timeout;
-  public java.util.Map<String, Object> speech_timeout;
+  public java.util.Map<String, Object> max_digits;
+  public java.util.Map<String, Object> play;
+  public String say_gender;
+  public String say_language;
+  public String say_voice;
   public java.util.Map<String, Object> speech_end_timeout;
-  public String speech_language;
-  public java.util.Map<String, Object> speech_hints;
   public String speech_engine;
+  public java.util.List<Object> speech_hints;
+  public String speech_language;
+  public java.util.Map<String, Object> speech_timeout;
   public String status_url;
+  public String terminators;
+  public String url;
+  public java.util.Map<String, Object> volume;
 }

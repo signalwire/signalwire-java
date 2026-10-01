@@ -14,6 +14,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class SubscriberTokenRequest {
+  public String ch;
   public String reference;
   public Long expire_at;
   public String application_id;
@@ -26,4 +27,6 @@ public final class SubscriberTokenRequest {
   public String country;
   public String region;
   public String company_name;
+  public String scope;
+  public String fingerprint;
 }

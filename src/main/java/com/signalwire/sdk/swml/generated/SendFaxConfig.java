@@ -2,12 +2,12 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'send_fax' config
+// schema.json $defs schema 'SendFaxConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * SendFaxConfig — generated wire type (flattened SWMLMethod verb 'send_fax' config).
+ * SendFaxConfig — generated wire type (schema.json $defs schema 'SendFaxConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.

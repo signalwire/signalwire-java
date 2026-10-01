@@ -2,12 +2,12 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'detect_machine' config
+// schema.json $defs schema 'DetectMachineConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * DetectMachineConfig — generated wire type (flattened SWMLMethod verb 'detect_machine' config).
+ * DetectMachineConfig — generated wire type (schema.json $defs schema 'DetectMachineConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
@@ -22,6 +22,6 @@ public final class DetectMachineConfig {
   public java.util.Map<String, Object> machine_words_threshold;
   public String status_url;
   public java.util.Map<String, Object> timeout;
-  public java.util.Map<String, Object> tone;
+  public String tone;
   public java.util.Map<String, Object> wait;
 }

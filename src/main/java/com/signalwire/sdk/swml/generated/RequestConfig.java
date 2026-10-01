@@ -2,22 +2,22 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'request' config
+// schema.json $defs schema 'RequestConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * RequestConfig — generated wire type (flattened SWMLMethod verb 'request' config).
+ * RequestConfig — generated wire type (schema.json $defs schema 'RequestConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class RequestConfig {
-  public String url;
-  public java.util.Map<String, Object> method;
-  public java.util.Map<String, Object> headers;
   public java.util.Map<String, Object> body;
-  public java.util.Map<String, Object> timeout;
   public java.util.Map<String, Object> connect_timeout;
+  public java.util.Map<String, Object> headers;
+  public String method;
   public java.util.Map<String, Object> save_variables;
+  public java.util.Map<String, Object> timeout;
+  public String url;
 }

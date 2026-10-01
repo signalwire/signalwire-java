@@ -14,26 +14,35 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class JoinConferenceObject {
-  public String name;
-  public java.util.Map<String, Object> muted;
   public String beep;
-  public java.util.Map<String, Object> start_on_enter;
+  public String coach;
+  public java.util.Map<String, Object> emit_call_quality;
   public java.util.Map<String, Object> end_on_exit;
-  public java.util.Map<String, Object> wait_url;
   public java.util.Map<String, Object> max_participants;
+  public java.util.Map<String, Object> meta;
+  public java.util.Map<String, Object> min_participants;
+  public java.util.Map<String, Object> muted;
+  public String name;
 
   /** wire key: record */
   @com.google.gson.annotations.SerializedName("record")
   public String record_;
 
-  public String region;
-  public String trim;
-  public String coach;
-  public String status_callback_event;
-  public String status_callback;
-  public String status_callback_method;
   public String recording_status_callback;
-  public String recording_status_callback_method;
   public String recording_status_callback_event;
-  public java.util.Map<String, Object> result;
+  public String recording_status_callback_event_type;
+  public String recording_status_callback_method;
+  public String region;
+  public java.util.Map<String, Object> start_on_enter;
+  public String status_callback;
+  public String status_callback_event;
+  public String status_callback_event_type;
+  public String status_callback_method;
+  public java.util.Map<String, Object> stream;
+  public String trim;
+  public java.util.Map<String, Object> video;
+  public String video_layout;
+  public java.util.Map<String, Object> video_preview;
+  public String video_quality;
+  public String wait_url;
 }

@@ -412,6 +412,31 @@ public final class MockTest {
     return new Bound(client, mock, project);
   }
 
+  /**
+   * A client authenticated ONLY with a per-test Personal Access Token — the credential the
+   * PAT-secured namespaces ({@code client.space()}) require. The mock serves a PAT-secured route
+   * only to HTTP Basic with an EMPTY username and a {@code pat_}-prefixed password, so the harness
+   * view filters the journal on exactly that header.
+   */
+  public static Bound newPatClient() {
+    Harness shared = ensureServer();
+    String pat = "pat_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    String authHeader =
+        "Basic "
+            + java.util.Base64.getEncoder()
+                .encodeToString((":" + pat).getBytes(StandardCharsets.UTF_8));
+    RestClient client =
+        RestClient.builder()
+            .personalAccessToken(pat)
+            .space(shared.url())
+            .patHttpClient(HttpClient.withBaseUrl(normalizeApi(shared.url()), "", pat))
+            .build();
+    Harness mock = new Harness(shared.url(), shared.port());
+    mock.authHeader = authHeader;
+    mock.project = "";
+    return new Bound(client, mock, "");
+  }
+
   private static String normalizeApi(String baseUrl) {
     return (baseUrl.endsWith("/api") || baseUrl.endsWith("/api/"))
         ? baseUrl.replaceAll("/$", "")

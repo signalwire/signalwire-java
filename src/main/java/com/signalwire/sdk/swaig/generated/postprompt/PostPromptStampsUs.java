@@ -15,7 +15,6 @@ package com.signalwire.sdk.swaig.generated.postprompt;
 public final class PostPromptStampsUs {
   public Long speech_start;
   public Long last_word_end;
-  public Long suspected_end;
   public Long turn_decided;
   public Long status_pushed;
   public Long request_detect;

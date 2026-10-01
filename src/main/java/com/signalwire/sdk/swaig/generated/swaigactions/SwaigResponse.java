@@ -13,7 +13,7 @@ package com.signalwire.sdk.swaig.generated.swaigactions;
  * fields directly.
  */
 public final class SwaigResponse {
-  public String response;
+  public java.util.Map<String, Object> response;
   public java.util.Map<String, Object> action;
   public Boolean post_process;
 }

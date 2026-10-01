@@ -2,19 +2,20 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'sip_refer' config
+// schema.json $defs schema 'SipReferConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * SipReferConfig — generated wire type (flattened SWMLMethod verb 'sip_refer' config).
+ * SipReferConfig — generated wire type (schema.json $defs schema 'SipReferConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class SipReferConfig {
-  public String to_uri;
-  public String status_url;
-  public String username;
   public String password;
+  public String status_url;
+  public String to;
+  public String to_uri;
+  public String username;
 }

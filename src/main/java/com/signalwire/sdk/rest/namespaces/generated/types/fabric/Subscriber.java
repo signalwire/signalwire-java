@@ -19,8 +19,7 @@ public final class Subscriber {
   public String last_name;
   public String display_name;
   public String job_title;
-  public String timezone;
   public String country;
-  public String region;
   public String company_name;
+  public String time_zone;
 }

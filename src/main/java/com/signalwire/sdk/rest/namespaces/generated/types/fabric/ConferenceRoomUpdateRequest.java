@@ -14,9 +14,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class ConferenceRoomUpdateRequest {
-  public String name;
   public String display_name;
-  public String description;
   public String join_from;
   public String join_until;
   public Long max_members;
@@ -28,7 +26,4 @@ public final class ConferenceRoomUpdateRequest {
   public Boolean enable_room_previews;
   public java.util.Map<String, Object> meta;
   public Boolean sync_audio_video;
-  public Boolean tone_on_entry_and_exit;
-  public Boolean room_join_video_off;
-  public Boolean user_join_video_off;
 }

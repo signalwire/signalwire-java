@@ -14,9 +14,10 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  */
 public final class SwmlScript {
   public String id;
-  public String contents;
+  public java.util.Map<String, Object> contents;
   public String request_url;
   public String display_name;
   public String status_callback_url;
   public String status_callback_method;
+  public String script_type;
 }

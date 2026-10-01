@@ -16,4 +16,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 public final class SubscriberGuestTokenCreateResponse {
   public String token;
   public String refresh_token;
+  public String address_uri;
+  public String expires_at;
+  public Long expires_in;
+  public String issued_at;
 }

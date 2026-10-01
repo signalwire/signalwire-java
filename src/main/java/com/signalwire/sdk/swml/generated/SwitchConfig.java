@@ -2,24 +2,24 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'switch' config
+// schema.json $defs schema 'SwitchConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * SwitchConfig — generated wire type (flattened SWMLMethod verb 'switch' config).
+ * SwitchConfig — generated wire type (schema.json $defs schema 'SwitchConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class SwitchConfig {
-  public String variable;
+  /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
+  public java.util.Map<String, Object> default_;
 
   /** wire key: case */
   @com.google.gson.annotations.SerializedName("case")
   public java.util.Map<String, Object> case_;
 
-  /** wire key: default */
-  @com.google.gson.annotations.SerializedName("default")
-  public java.util.List<Object> default_;
+  public String variable;
 }

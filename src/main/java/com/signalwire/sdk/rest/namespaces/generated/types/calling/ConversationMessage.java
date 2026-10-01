@@ -14,7 +14,9 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class ConversationMessage {
-  public String role;
   public String content;
   public String lang;
+  public String role;
+  public String tool_call_id;
+  public java.util.List<Object> tool_calls;
 }

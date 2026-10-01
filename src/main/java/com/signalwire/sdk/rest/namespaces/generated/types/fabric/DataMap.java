@@ -13,7 +13,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class DataMap {
+  public java.util.Map<String, Object> contexts;
+  public java.util.Map<String, Object> expressions;
   public java.util.Map<String, Object> output;
-  public java.util.List<Object> expressions;
-  public java.util.List<Object> webhooks;
+  public java.util.Map<String, Object> webhooks;
 }

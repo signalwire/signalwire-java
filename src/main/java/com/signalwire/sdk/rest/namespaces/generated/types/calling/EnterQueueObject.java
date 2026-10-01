@@ -13,9 +13,10 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class EnterQueueObject {
+  public String execute_after_queue;
   public String queue_name;
-  public java.util.Map<String, Object> transfer_after_bridge;
   public String status_url;
-  public java.util.Map<String, Object> wait_url;
   public java.util.Map<String, Object> wait_time;
+  public String wait_url;
+  public String whisper_url;
 }

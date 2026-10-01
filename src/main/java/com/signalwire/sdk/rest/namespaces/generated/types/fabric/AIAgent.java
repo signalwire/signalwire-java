@@ -24,4 +24,5 @@ public final class AIAgent {
   public java.util.Map<String, Object> SWAIG;
   public String agent_id;
   public String name;
+  public java.util.Map<String, Object> multilingual;
 }

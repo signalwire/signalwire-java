@@ -26,4 +26,7 @@ public final class AddressResponse {
   public String state;
   public String postal_code;
   public String zip_code;
+  public Boolean emergency_enabled;
+  public Boolean validated;
+  public String validated_at;
 }

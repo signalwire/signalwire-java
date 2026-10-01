@@ -27,5 +27,6 @@ public final class CallLeg {
   public Long duration_ms;
   public Long billing_ms;
   public java.util.Map<String, Object> type;
+  public java.util.Map<String, Object> qos_metrics;
   public String parent_id;
 }

@@ -14,14 +14,19 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class LanguagesWithFillers {
-  public String name;
-  public String code;
-  public String voice;
-  public String model;
-  public String emotion;
-  public String speed;
+  public java.util.Map<String, Object> auto_emotion;
+  public java.util.Map<String, Object> auto_speed;
+  public java.util.Map<String, Object> code;
+  public java.util.List<Object> double_turn_fillers;
   public String engine;
-  public java.util.Map<String, Object> params;
+  public java.util.List<Object> fillers;
   public java.util.List<Object> function_fillers;
+  public java.util.Map<String, Object> listen_language;
+  public String model;
+  public String name;
+  public java.util.Map<String, Object> params;
+  public java.util.List<Object> pronounce;
   public java.util.List<Object> speech_fillers;
+  public java.util.List<Object> turn_fillers;
+  public String voice;
 }

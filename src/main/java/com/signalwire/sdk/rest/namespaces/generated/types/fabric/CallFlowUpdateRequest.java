@@ -16,4 +16,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 public final class CallFlowUpdateRequest {
   public String title;
   public Long document_version;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
 }

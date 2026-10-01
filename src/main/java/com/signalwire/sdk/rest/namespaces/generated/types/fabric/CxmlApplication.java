@@ -28,4 +28,7 @@ public final class CxmlApplication {
   public java.util.Map<String, Object> sms_fallback_method;
   public String sms_status_callback;
   public java.util.Map<String, Object> sms_status_callback_method;
+  public String message_status_callback;
+  public String api_version;
+  public String uri;
 }

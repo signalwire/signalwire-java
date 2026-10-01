@@ -14,10 +14,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * fields directly.
  */
 public final class AvailablePhoneNumber {
-  public String number;
   public String region;
-  public String city;
   public String rate_center;
-  public String lata;
-  public java.util.Map<String, Object> capabilities;
+  public java.util.List<Object> capabilities;
+  public String e164;
+  public String national_number_formatted;
+  public String international_number_formatted;
+  public String country_code;
 }

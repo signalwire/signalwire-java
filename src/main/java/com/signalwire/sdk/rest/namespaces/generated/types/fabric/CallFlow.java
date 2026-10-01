@@ -15,7 +15,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 public final class CallFlow {
   public String id;
   public String title;
-  public String flow_data;
-  public String relayml;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
   public Long document_version;
 }

@@ -13,6 +13,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class SWMLObject {
-  public String version;
   public java.util.Map<String, Object> sections;
+  public String version;
 }

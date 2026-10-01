@@ -15,7 +15,6 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  */
 public final class CreateManagedCampaignRequest {
   public String name;
-  public String brand_id;
   public String sms_use_case;
   public java.util.List<Object> sub_use_cases;
   public String campaign_verify_token;
@@ -42,4 +41,6 @@ public final class CreateManagedCampaignRequest {
   public Boolean lead_generation;
   public Boolean terms_and_conditions;
   public String status_callback_url;
+  public String csp_campaign_reference;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

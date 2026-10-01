@@ -13,6 +13,8 @@ package com.signalwire.sdk.swaig.generated.swaigrequest;
  * fields directly.
  */
 public final class SwaigRequest {
+  public java.util.Map<String, Object> SWMLCall;
+  public java.util.Map<String, Object> SWMLVars;
   public String ai_session_id;
   public String app_name;
   public String args;

@@ -293,14 +293,12 @@ class SwmlTest {
     var cfg = new com.signalwire.sdk.swml.generated.ConnectConfig();
     cfg.from = "+15551112222";
     cfg.to = "+15553334444";
-    cfg.codecs = "PCMU,OPUS";
     typed.connect(cfg);
 
     var mapped = new Service("svc");
     var m = new java.util.LinkedHashMap<String, Object>();
     m.put("from", "+15551112222");
     m.put("to", "+15553334444");
-    m.put("codecs", "PCMU,OPUS");
     mapped.connect(m);
 
     // Parse both renders and compare as JSON trees — key order is not wire-significant.

@@ -13,5 +13,5 @@ package com.signalwire.sdk.swml.generated;
  * fields directly.
  */
 public final class Label {
-  public String label;
+  public java.util.Map<String, Object> label;
 }

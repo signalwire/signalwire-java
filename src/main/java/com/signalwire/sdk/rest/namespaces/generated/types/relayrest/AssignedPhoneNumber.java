@@ -17,5 +17,4 @@ public final class AssignedPhoneNumber {
   public String id;
   public String name;
   public String number;
-  public String status_callback_url;
 }

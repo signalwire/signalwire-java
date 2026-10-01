@@ -18,4 +18,5 @@ public final class ProjectCreate {
   public Boolean protect_message_media;
   public Boolean protect_fax_media;
   public Boolean force_https_requests;
+  public String parent_project_id;
 }

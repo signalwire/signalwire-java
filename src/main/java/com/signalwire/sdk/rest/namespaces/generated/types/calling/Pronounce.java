@@ -13,7 +13,7 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * fields directly.
  */
 public final class Pronounce {
+  public java.util.Map<String, Object> ignore_case;
   public String replace;
   public String with;
-  public java.util.Map<String, Object> ignore_case;
 }

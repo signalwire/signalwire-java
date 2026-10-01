@@ -14,7 +14,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class SwmlScriptUpdateRequest {
-  public String display_name;
   public String contents;
   public String status_callback_url;
+  public String name;
+  public String script_type;
 }

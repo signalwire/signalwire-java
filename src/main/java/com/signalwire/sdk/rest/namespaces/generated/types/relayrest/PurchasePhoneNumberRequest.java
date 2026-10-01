@@ -15,4 +15,5 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  */
 public final class PurchasePhoneNumberRequest {
   public String number;
+  public String number_type;
 }

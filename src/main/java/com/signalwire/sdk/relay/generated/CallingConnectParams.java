@@ -19,5 +19,6 @@ public final class CallingConnectParams {
   public Double max_price_per_minute;
   public String node_id;
   public java.util.List<Object> ringback;
+  public String send_digits;
   public String tag;
 }

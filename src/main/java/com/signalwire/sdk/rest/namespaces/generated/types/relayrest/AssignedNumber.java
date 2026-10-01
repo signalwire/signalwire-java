@@ -17,6 +17,7 @@ public final class AssignedNumber {
   public String state;
   public String campaign_id;
   public java.util.Map<String, Object> phone_number;
+  public String status_callback_url;
   public String created_at;
   public String updated_at;
 }

@@ -14,5 +14,5 @@ package com.signalwire.sdk.rest.namespaces.generated.types.logs;
  */
 public final class ChargeDetails {
   public String description;
-  public String charge;
+  public Double charge;
 }

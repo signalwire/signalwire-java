@@ -17,5 +17,6 @@ public final class CallingDialParams {
   public Double max_price_per_minute;
   public String node_id;
   public String region;
+  public String send_digits;
   public String tag;
 }

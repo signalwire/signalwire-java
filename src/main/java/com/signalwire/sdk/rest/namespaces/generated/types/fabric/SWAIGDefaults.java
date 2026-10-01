@@ -13,5 +13,10 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * fields directly.
  */
 public final class SWAIGDefaults {
+  public java.util.Map<String, Object> meta_data;
+  public String meta_data_token;
+  public String web_hook_auth_pass;
+  public String web_hook_auth_password;
+  public String web_hook_auth_user;
   public String web_hook_url;
 }

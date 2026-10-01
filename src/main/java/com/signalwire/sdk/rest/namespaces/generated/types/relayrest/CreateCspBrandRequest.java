@@ -18,4 +18,5 @@ public final class CreateCspBrandRequest {
   public String name;
   public String csp_brand_reference;
   public String status_callback_url;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

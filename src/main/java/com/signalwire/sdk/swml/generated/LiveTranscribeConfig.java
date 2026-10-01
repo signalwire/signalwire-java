@@ -2,16 +2,17 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'live_transcribe' config
+// schema.json $defs schema 'LiveTranscribeConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * LiveTranscribeConfig — generated wire type (flattened SWMLMethod verb 'live_transcribe' config).
+ * LiveTranscribeConfig — generated wire type (schema.json $defs schema 'LiveTranscribeConfig').
  *
  * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
  * fields directly.
  */
 public final class LiveTranscribeConfig {
   public java.util.Map<String, Object> action;
+  public java.util.Map<String, Object> hints;
 }

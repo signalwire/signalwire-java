@@ -22,5 +22,14 @@ public final class CallCreateParamsSWML {
   public java.util.List<Object> status_events;
   public String url_method;
   public java.util.Map<String, Object> codecs;
+  public java.util.Map<String, Object> to_script;
+  public Long timeout;
+  public Double max_price_per_minute;
+  public String send_digits;
+  public java.util.Map<String, Object> region;
+  public String username;
+  public String password;
+  public java.util.List<Object> headers;
+  public java.util.Map<String, Object> custom_variables;
   public java.util.Map<String, Object> swml;
 }

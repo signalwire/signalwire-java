@@ -32,17 +32,17 @@ public class ProjectTokens extends BaseResource {
   }
 
   /** update (generated from operation 'update_token'). */
-  public com.signalwire.sdk.rest.namespaces.generated.types.project.TokenResponse update(
+  public com.signalwire.sdk.rest.namespaces.generated.types.project.TokenUpdateResponse update(
       String tokenId, UpdateRequest request) {
     return update(tokenId, request, (RequestOptions) null);
   }
 
   /** update with a per-request {@link RequestOptions} override. */
-  public com.signalwire.sdk.rest.namespaces.generated.types.project.TokenResponse update(
+  public com.signalwire.sdk.rest.namespaces.generated.types.project.TokenUpdateResponse update(
       String tokenId, UpdateRequest request, RequestOptions requestOptions) {
     return asType(
         restPatch(getBasePath() + "/" + tokenId, request.toBody(), requestOptions),
-        com.signalwire.sdk.rest.namespaces.generated.types.project.TokenResponse.class);
+        com.signalwire.sdk.rest.namespaces.generated.types.project.TokenUpdateResponse.class);
   }
 
   /** delete (generated from operation 'delete_token'). */
@@ -60,16 +60,19 @@ public class ProjectTokens extends BaseResource {
     private final String name;
     private final java.util.List<Object> permissions;
     private final String subprojectId;
+    private final String projectId;
     private final java.util.Map<String, Object> extras;
 
     private CreateRequest(
         String name,
         java.util.List<Object> permissions,
         String subprojectId,
+        String projectId,
         java.util.Map<String, Object> extras) {
       this.name = name;
       this.permissions = permissions;
       this.subprojectId = subprojectId;
+      this.projectId = projectId;
       this.extras = extras;
     }
 
@@ -88,6 +91,9 @@ public class ProjectTokens extends BaseResource {
       if (this.subprojectId != null) {
         body.put("subproject_id", this.subprojectId);
       }
+      if (this.projectId != null) {
+        body.put("project_id", this.projectId);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -98,6 +104,7 @@ public class ProjectTokens extends BaseResource {
       private String name;
       private java.util.List<Object> permissions;
       private String subprojectId;
+      private String projectId;
       private java.util.Map<String, Object> extras;
 
       public Builder name(String name) {
@@ -115,13 +122,18 @@ public class ProjectTokens extends BaseResource {
         return this;
       }
 
+      public Builder projectId(String projectId) {
+        this.projectId = projectId;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
       }
 
       public CreateRequest build() {
-        return new CreateRequest(name, permissions, subprojectId, extras);
+        return new CreateRequest(name, permissions, subprojectId, projectId, extras);
       }
     }
   }

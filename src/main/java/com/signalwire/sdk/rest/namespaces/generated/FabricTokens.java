@@ -46,23 +46,6 @@ public class FabricTokens extends BaseResource {
             .class);
   }
 
-  /** createInviteToken (generated from operation 'create_subscriber_invite_token'). */
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
-          .SubscriberInviteTokenCreateResponse
-      createInviteToken(CreateInviteTokenRequest request) {
-    return createInviteToken(request, (RequestOptions) null);
-  }
-
-  /** createInviteToken with a per-request {@link RequestOptions} override. */
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
-          .SubscriberInviteTokenCreateResponse
-      createInviteToken(CreateInviteTokenRequest request, RequestOptions requestOptions) {
-    return asType(
-        restPost("/fabric/subscriber/invites", request.toBody(), requestOptions),
-        com.signalwire.sdk.rest.namespaces.generated.types.fabric
-            .SubscriberInviteTokenCreateResponse.class);
-  }
-
   /** createGuestToken (generated from operation 'create_subscriber_guest_token'). */
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric
           .SubscriberGuestTokenCreateResponse
@@ -97,6 +80,7 @@ public class FabricTokens extends BaseResource {
   /** Closed typed request for {@link #createSubscriberToken} (builder + extras door). */
   public static final class CreateSubscriberTokenRequest {
     private final String reference;
+    private final String ch;
     private final Long expireAt;
     private final String applicationId;
     private final String password;
@@ -108,10 +92,13 @@ public class FabricTokens extends BaseResource {
     private final String country;
     private final String region;
     private final String companyName;
+    private final String scope;
+    private final String fingerprint;
     private final java.util.Map<String, Object> extras;
 
     private CreateSubscriberTokenRequest(
         String reference,
+        String ch,
         Long expireAt,
         String applicationId,
         String password,
@@ -123,8 +110,11 @@ public class FabricTokens extends BaseResource {
         String country,
         String region,
         String companyName,
+        String scope,
+        String fingerprint,
         java.util.Map<String, Object> extras) {
       this.reference = reference;
+      this.ch = ch;
       this.expireAt = expireAt;
       this.applicationId = applicationId;
       this.password = password;
@@ -136,6 +126,8 @@ public class FabricTokens extends BaseResource {
       this.country = country;
       this.region = region;
       this.companyName = companyName;
+      this.scope = scope;
+      this.fingerprint = fingerprint;
       this.extras = extras;
     }
 
@@ -147,6 +139,9 @@ public class FabricTokens extends BaseResource {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
       if (this.reference != null) {
         body.put("reference", this.reference);
+      }
+      if (this.ch != null) {
+        body.put("ch", this.ch);
       }
       if (this.expireAt != null) {
         body.put("expire_at", this.expireAt);
@@ -181,6 +176,12 @@ public class FabricTokens extends BaseResource {
       if (this.companyName != null) {
         body.put("company_name", this.companyName);
       }
+      if (this.scope != null) {
+        body.put("scope", this.scope);
+      }
+      if (this.fingerprint != null) {
+        body.put("fingerprint", this.fingerprint);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -189,6 +190,7 @@ public class FabricTokens extends BaseResource {
 
     public static final class Builder {
       private String reference;
+      private String ch;
       private Long expireAt;
       private String applicationId;
       private String password;
@@ -200,10 +202,17 @@ public class FabricTokens extends BaseResource {
       private String country;
       private String region;
       private String companyName;
+      private String scope;
+      private String fingerprint;
       private java.util.Map<String, Object> extras;
 
       public Builder reference(String reference) {
         this.reference = reference;
+        return this;
+      }
+
+      public Builder ch(String ch) {
+        this.ch = ch;
         return this;
       }
 
@@ -262,6 +271,16 @@ public class FabricTokens extends BaseResource {
         return this;
       }
 
+      public Builder scope(String scope) {
+        this.scope = scope;
+        return this;
+      }
+
+      public Builder fingerprint(String fingerprint) {
+        this.fingerprint = fingerprint;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
@@ -270,6 +289,7 @@ public class FabricTokens extends BaseResource {
       public CreateSubscriberTokenRequest build() {
         return new CreateSubscriberTokenRequest(
             reference,
+            ch,
             expireAt,
             applicationId,
             password,
@@ -281,6 +301,8 @@ public class FabricTokens extends BaseResource {
             country,
             region,
             companyName,
+            scope,
+            fingerprint,
             extras);
       }
     }
@@ -332,75 +354,48 @@ public class FabricTokens extends BaseResource {
     }
   }
 
-  /** Closed typed request for {@link #createInviteToken} (builder + extras door). */
-  public static final class CreateInviteTokenRequest {
-    private final String addressId;
-    private final Long expiresAt;
-    private final java.util.Map<String, Object> extras;
-
-    private CreateInviteTokenRequest(
-        String addressId, Long expiresAt, java.util.Map<String, Object> extras) {
-      this.addressId = addressId;
-      this.expiresAt = expiresAt;
-      this.extras = extras;
-    }
-
-    public static Builder builder() {
-      return new Builder();
-    }
-
-    java.util.Map<String, Object> toBody() {
-      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.addressId != null) {
-        body.put("address_id", this.addressId);
-      }
-      if (this.expiresAt != null) {
-        body.put("expires_at", this.expiresAt);
-      }
-      if (this.extras != null) {
-        body.putAll(this.extras);
-      }
-      return body;
-    }
-
-    public static final class Builder {
-      private String addressId;
-      private Long expiresAt;
-      private java.util.Map<String, Object> extras;
-
-      public Builder addressId(String addressId) {
-        this.addressId = addressId;
-        return this;
-      }
-
-      public Builder expiresAt(Long expiresAt) {
-        this.expiresAt = expiresAt;
-        return this;
-      }
-
-      public Builder extras(java.util.Map<String, Object> extras) {
-        this.extras = extras;
-        return this;
-      }
-
-      public CreateInviteTokenRequest build() {
-        return new CreateInviteTokenRequest(addressId, expiresAt, extras);
-      }
-    }
-  }
-
   /** Closed typed request for {@link #createGuestToken} (builder + extras door). */
   public static final class CreateGuestTokenRequest {
     private final java.util.List<Object> allowedAddresses;
     private final Long expireAt;
+    private final String ch;
+    private final String region;
+    private final String email;
+    private final String firstName;
+    private final String lastName;
+    private final String displayName;
+    private final String jobTitle;
+    private final String timeZone;
+    private final String country;
+    private final String companyName;
     private final java.util.Map<String, Object> extras;
 
     private CreateGuestTokenRequest(
         java.util.List<Object> allowedAddresses,
         Long expireAt,
+        String ch,
+        String region,
+        String email,
+        String firstName,
+        String lastName,
+        String displayName,
+        String jobTitle,
+        String timeZone,
+        String country,
+        String companyName,
         java.util.Map<String, Object> extras) {
       this.allowedAddresses = allowedAddresses;
       this.expireAt = expireAt;
+      this.ch = ch;
+      this.region = region;
+      this.email = email;
+      this.firstName = firstName;
+      this.lastName = lastName;
+      this.displayName = displayName;
+      this.jobTitle = jobTitle;
+      this.timeZone = timeZone;
+      this.country = country;
+      this.companyName = companyName;
       this.extras = extras;
     }
 
@@ -416,6 +411,36 @@ public class FabricTokens extends BaseResource {
       if (this.expireAt != null) {
         body.put("expire_at", this.expireAt);
       }
+      if (this.ch != null) {
+        body.put("ch", this.ch);
+      }
+      if (this.region != null) {
+        body.put("region", this.region);
+      }
+      if (this.email != null) {
+        body.put("email", this.email);
+      }
+      if (this.firstName != null) {
+        body.put("first_name", this.firstName);
+      }
+      if (this.lastName != null) {
+        body.put("last_name", this.lastName);
+      }
+      if (this.displayName != null) {
+        body.put("display_name", this.displayName);
+      }
+      if (this.jobTitle != null) {
+        body.put("job_title", this.jobTitle);
+      }
+      if (this.timeZone != null) {
+        body.put("time_zone", this.timeZone);
+      }
+      if (this.country != null) {
+        body.put("country", this.country);
+      }
+      if (this.companyName != null) {
+        body.put("company_name", this.companyName);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -425,6 +450,16 @@ public class FabricTokens extends BaseResource {
     public static final class Builder {
       private java.util.List<Object> allowedAddresses;
       private Long expireAt;
+      private String ch;
+      private String region;
+      private String email;
+      private String firstName;
+      private String lastName;
+      private String displayName;
+      private String jobTitle;
+      private String timeZone;
+      private String country;
+      private String companyName;
       private java.util.Map<String, Object> extras;
 
       public Builder allowedAddresses(java.util.List<Object> allowedAddresses) {
@@ -437,13 +472,76 @@ public class FabricTokens extends BaseResource {
         return this;
       }
 
+      public Builder ch(String ch) {
+        this.ch = ch;
+        return this;
+      }
+
+      public Builder region(String region) {
+        this.region = region;
+        return this;
+      }
+
+      public Builder email(String email) {
+        this.email = email;
+        return this;
+      }
+
+      public Builder firstName(String firstName) {
+        this.firstName = firstName;
+        return this;
+      }
+
+      public Builder lastName(String lastName) {
+        this.lastName = lastName;
+        return this;
+      }
+
+      public Builder displayName(String displayName) {
+        this.displayName = displayName;
+        return this;
+      }
+
+      public Builder jobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+        return this;
+      }
+
+      public Builder timeZone(String timeZone) {
+        this.timeZone = timeZone;
+        return this;
+      }
+
+      public Builder country(String country) {
+        this.country = country;
+        return this;
+      }
+
+      public Builder companyName(String companyName) {
+        this.companyName = companyName;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
       }
 
       public CreateGuestTokenRequest build() {
-        return new CreateGuestTokenRequest(allowedAddresses, expireAt, extras);
+        return new CreateGuestTokenRequest(
+            allowedAddresses,
+            expireAt,
+            ch,
+            region,
+            email,
+            firstName,
+            lastName,
+            displayName,
+            jobTitle,
+            timeZone,
+            country,
+            companyName,
+            extras);
       }
     }
   }
