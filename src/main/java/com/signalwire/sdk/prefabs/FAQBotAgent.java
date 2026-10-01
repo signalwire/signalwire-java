@@ -8,7 +8,7 @@ import java.util.*;
 /** Pre-built agent for keyword-based FAQ matching with optional related suggestions. */
 public class FAQBotAgent {
 
-  /** Default personality when the caller supplies none — the reference's fallback text. */
+  /** Default personality applied when the caller supplies none. */
   private static final String DEFAULT_PERSONA =
       "You are a helpful FAQ bot that provides accurate answers to common questions.";
 
@@ -27,17 +27,16 @@ public class FAQBotAgent {
   }
 
   /**
-   * Full construction contract, mirroring the reference {@code FAQBotAgent(faqs, suggest_related,
-   * persona, name, route)}.
+   * Full construction contract — every option this prefab exposes.
    *
    * @param name agent name
-   * @param faqs the FAQ entries (the {@code faqs} param)
+   * @param faqs the FAQ entries
    * @param route HTTP route for this agent
    * @param port HTTP port for this agent
-   * @param suggestRelated whether to suggest related questions (the {@code suggest_related} param);
-   *     when true an extra instruction bullet is added, as the reference does
-   * @param persona custom personality description (the {@code persona} param); defaults to the
-   *     reference's stock text when {@code null}
+   * @param suggestRelated whether to suggest related questions; when true an extra instruction
+   *     bullet is added to the prompt
+   * @param persona custom personality description; defaults to the stock FAQ-bot text when {@code
+   *     null}
    */
   public FAQBotAgent(
       String name,
@@ -173,10 +172,10 @@ public class FAQBotAgent {
   }
 
   /**
-   * SWAIG tool handler: search FAQs matching a query and/or category. Ported from the Python
-   * FAQBotAgent.search_faqs -- scores each FAQ (substring match on the question, prefix boost, and
-   * category match), sorts by score descending, and returns the top 3 matching questions. Reads the
-   * optional {@code categories} list on each FAQ entry.
+   * SWAIG tool handler: search FAQs matching a query and/or category. Scores each FAQ (substring
+   * match on the question, prefix boost, and category match), sorts by score descending, and
+   * returns the top 3 matching questions. Reads the optional {@code categories} list on each FAQ
+   * entry.
    */
   public FunctionResult searchFaqs(Map<String, Object> args, Map<String, Object> rawData) {
     String query = ((String) args.getOrDefault("query", "")).toLowerCase(java.util.Locale.ROOT);
@@ -238,9 +237,9 @@ public class FAQBotAgent {
   }
 
   /**
-   * Register a post-prompt summary callback. Ported from the Python FAQBotAgent.on_summary hook:
-   * invoked with the parsed summary and the raw post-prompt payload once the conversation
-   * completes. Wires through to {@link AgentBase#onSummary}.
+   * Register a post-prompt summary callback: it is invoked with the parsed summary and the raw
+   * post-prompt payload once the conversation completes. Wires through to {@link
+   * AgentBase#onSummary}.
    *
    * @param handler callback receiving (summary, rawData); {@code null} clears any handler
    * @return this prefab for chaining
@@ -258,6 +257,12 @@ public class FAQBotAgent {
     return summaryHandler;
   }
 
+  /**
+   * The underlying agent this prefab configured. Use it to add tools, prompt sections, or skills
+   * beyond what the prefab sets up.
+   *
+   * @return the wrapped agent.
+   */
   public AgentBase getAgent() {
     return agent;
   }
@@ -280,10 +285,20 @@ public class FAQBotAgent {
     return persona;
   }
 
+  /**
+   * Start the agent's HTTP server and serve until stopped.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void serve() throws Exception {
     agent.serve();
   }
 
+  /**
+   * Start the agent's HTTP server. Equivalent to {@link #serve()}.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void run() throws Exception {
     agent.run();
   }

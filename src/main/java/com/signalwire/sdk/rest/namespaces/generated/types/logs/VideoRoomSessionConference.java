@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.logs;
  * VideoRoomSessionConference — generated wire type ('logs' spec, components/schemas
  * 'VideoRoomSessionConference').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class VideoRoomSessionConference {
   public String id;
@@ -24,6 +24,6 @@ public final class VideoRoomSessionConference {
   public Boolean locked;
   public String started_at;
   public String ended_at;
-  public String charge;
+  public Double charge;
   public java.util.List<Object> charge_details;
 }

@@ -5,6 +5,11 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Basic arithmetic the model can invoke rather than computing in its head.
+ *
+ * <p>Registered under the name {@code math}; load it with {@code agent.addSkill("math", params)}.
+ */
 public class MathSkill implements SkillBase {
 
   /** Returns an empty hint list — this skill ships no example hints. */
@@ -19,26 +24,53 @@ public class MathSkill implements SkillBase {
     return SkillParams.base(supportsMultipleInstances(), getName());
   }
 
+  /**
+   * The registry name this skill is loaded by: {@code math}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "math";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Perform basic mathematical calculations";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return false;
   }
 
+  /**
+   * Configure the skill from its parameters. This skill needs no configuration, so setup always
+   * succeeds.
+   *
+   * @param params the skill's configuration (unused).
+   * @return {@code true}.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     return true;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> params = new LinkedHashMap<>();

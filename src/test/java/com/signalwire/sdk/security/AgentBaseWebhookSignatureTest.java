@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.signalwire.sdk.agent.AgentBase;
 import com.signalwire.sdk.runtime.EnvProvider;
 import com.signalwire.sdk.swaig.FunctionResult;
+import com.signalwire.sdk.swaig.ToolDefinition;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -59,7 +60,12 @@ class AgentBaseWebhookSignatureTest {
             .authPassword("pass")
             .signingKey(SIGNING_KEY)
             .build();
-    agent.defineTool("ping", "Test tool", Map.of(), (args, raw) -> new FunctionResult("pong"));
+    // secure(false): these tests isolate the WEBHOOK-SIGNATURE layer. A secure tool would also
+    // demand a per-call __token, so an unsigned-vs-signed comparison would be decided by the
+    // token check instead of the signature check it is meant to exercise.
+    agent.defineTool(
+        new ToolDefinition("ping", "Test tool", Map.of(), (args, raw) -> new FunctionResult("pong"))
+            .setSecure(false));
     agent.serve();
     client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   }

@@ -293,7 +293,7 @@ class AgentBaseTest {
   @SuppressWarnings("unchecked")
   void testPreAnswerVerbs() {
     agent.setPromptText("Test");
-    agent.addPreAnswerVerb("play", Map.of("url", "ringback.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/ringback.wav"));
 
     Map<String, Object> swml = agent.renderSwml("http://localhost:4000");
     Map<String, Object> sections = (Map<String, Object>) swml.get("sections");
@@ -319,8 +319,8 @@ class AgentBaseTest {
 
   @Test
   void testClearVerbs() {
-    agent.addPreAnswerVerb("play", Map.of());
-    agent.addPostAnswerVerb("play", Map.of());
+    agent.addPreAnswerVerb("play", Map.of("url", "say:hi"));
+    agent.addPostAnswerVerb("play", Map.of("url", "say:hi"));
     agent.addPostAiVerb("hangup", Map.of());
 
     agent.clearPreAnswerVerbs();
@@ -392,7 +392,7 @@ class AgentBaseTest {
             .addLanguage("English", "en-US", "rachel")
             .addPronunciation("SW", "SignalWire", true)
             .setParam("temperature", 0.5)
-            .addPreAnswerVerb("play", Map.of())
+            .addPreAnswerVerb("play", Map.of("url", "say:hi"))
             .enableDebugEvents()
             .enableSipRouting();
 

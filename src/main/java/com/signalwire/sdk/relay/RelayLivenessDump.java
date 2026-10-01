@@ -11,6 +11,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.signalwire.sdk.logging.Logger;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.LinkedHashMap;
@@ -49,6 +50,11 @@ final class RelayLivenessDump {
   // BOUNDED_WINDOW_S = 5.0 in the differ. Keep drivers well inside it.
   private static final long WINDOW_MS = 5_000;
 
+  /**
+   * Entry point: emits the RELAY liveness dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     Logger.setGlobalLevel(Logger.Level.OFF);
     Map<String, Object> out = new LinkedHashMap<>();
@@ -109,7 +115,9 @@ final class RelayLivenessDump {
           new Thread(
               () -> {
                 try {
-                  client.connect((int) WINDOW_MS);
+                  // connect takes a long; the (int) cast only narrowed WINDOW_MS
+                  // on the way to re-widening it at the call.
+                  client.connect(WINDOW_MS);
                 } catch (RelayError e) {
                   m.put("raised_after_bounded_retry", true);
                   String text = e.getMessage() == null ? "" : e.getMessage();
@@ -332,24 +340,51 @@ final class RelayLivenessDump {
     volatile boolean silentVerb; // never answer a verb RPC
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {}
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {}
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {}
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     public void onMessage(WebSocket socket, String raw) {
       Map<String, Object> msg;

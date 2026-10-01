@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
 /**
  * OrderResponse — generated wire type ('relay_rest' spec, components/schemas 'OrderResponse').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class OrderResponse {
   public String id;
@@ -19,4 +19,7 @@ public final class OrderResponse {
   public String created_at;
   public String updated_at;
   public String status_callback_url;
+  public String campaign_id;
+  public String brand_id;
+  public java.util.List<Object> phone_numbers;
 }

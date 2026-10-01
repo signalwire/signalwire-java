@@ -10,10 +10,12 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * CallFlowUpdateRequest — generated wire type ('fabric' spec, components/schemas
  * 'CallFlowUpdateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallFlowUpdateRequest {
   public String title;
   public Long document_version;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
 }

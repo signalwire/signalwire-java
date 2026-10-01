@@ -9,10 +9,17 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * LanguageParams — generated wire type ('fabric' spec, components/schemas 'LanguageParams').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class LanguageParams {
-  public java.util.Map<String, Object> stability;
+  public String emotion;
+  public java.util.Map<String, Object> pitch;
   public java.util.Map<String, Object> similarity;
+  public java.util.Map<String, Object> speakingRate;
+  public java.util.Map<String, Object> speed;
+  public java.util.Map<String, Object> stability;
+  public java.util.Map<String, Object> streaming;
+  public java.util.Map<String, Object> temperature;
+  public java.util.Map<String, Object> vol;
 }

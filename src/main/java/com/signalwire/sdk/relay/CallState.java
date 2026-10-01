@@ -11,9 +11,9 @@ package com.signalwire.sdk.relay;
  *
  * <p>The RELAY server pushes the current call state as a bare string on every {@code
  * calling.call.state} event ({@code created} → {@code ringing} → {@code answered} → {@code ending}
- * → {@code ended}). This enum mirrors the five values the Python reference declares in {@code
- * signalwire/relay/constants.py} as {@code CALL_STATE_*} ({@link Constants#CALL_STATE_CREATED} …
- * {@link Constants#CALL_STATE_ENDED}).
+ * → {@code ended}). This enum names those five values; each constant carries the corresponding
+ * {@code CALL_STATE_*} wire string ({@link Constants#CALL_STATE_CREATED} … {@link
+ * Constants#CALL_STATE_ENDED}).
  *
  * <p>It is exposed <em>alongside</em> the existing string getter, never instead of it: {@link
  * Call#getState()} keeps returning the raw wire string (forward-compatible with any value the
@@ -31,15 +31,16 @@ package com.signalwire.sdk.relay;
  * <p><strong>Server-emitted, growable.</strong> These values mirror what the server sends and the
  * set can grow in a future protocol revision. So {@link #fromWire(String)} returns {@code null}
  * (and {@link Call#getCallState()} {@code Optional.empty()}) for an unrecognised value rather than
- * throwing — an unknown state must never crash event dispatch. This is the Java analog of Rust's
- * {@code #[non_exhaustive]} + a fallible {@code from_str}.
+ * throwing — an unknown state must never crash event dispatch. Treat the enum as open-ended: always
+ * handle the "not one of these five" case rather than assuming a {@code switch} is exhaustive over
+ * everything the server may send.
  *
  * <p><strong>This is a DISTINCT vocabulary from {@link DialState} and {@link
  * MessageState}.</strong> A {@code Call}'s lifecycle state ({@code
  * created/ringing/answered/ending/ended}) is not the dial <em>outcome</em> ({@code
  * dialing/answered/failed}) and not a message delivery state ({@code queued/…/delivered}). The
- * three are modelled as three separate enums and are never conflated — mirroring the three separate
- * {@code *_STATE_*} blocks in the Python reference's {@code constants.py}.
+ * three are modelled as three separate enums and are never conflated; the wire also keeps them
+ * separate, as three distinct {@code *_STATE_*} vocabularies.
  */
 public enum CallState {
 
@@ -63,7 +64,7 @@ public enum CallState {
   /**
    * The canonical wire string for this state ({@code "created"} / {@code "ringing"} / {@code
    * "answered"} / {@code "ending"} / {@code "ended"}) — exactly the value the server sends on
-   * {@code calling.call.state}. Equivalent to PHP's backed-enum {@code ->value}.
+   * {@code calling.call.state}.
    *
    * @return the lower-case state name as it appears on the wire.
    */
@@ -73,9 +74,9 @@ public enum CallState {
 
   /**
    * Whether this is a <em>terminal</em> state — i.e. the call has reached the end of its lifecycle
-   * and will not transition further. Only {@link #ENDED} is terminal (matching {@link
-   * Call#isEnded()} and the reference's {@code CALL_STATE_ENDED} terminal check); {@link #ENDING}
-   * is <em>not</em> terminal because an {@code ended} event still follows.
+   * and will not transition further. Only {@link #ENDED} is terminal — the same condition {@link
+   * Call#isEnded()} tests; {@link #ENDING} is <em>not</em> terminal because an {@code ended} event
+   * still follows.
    *
    * @return {@code true} iff this state is {@link #ENDED}.
    */
@@ -86,8 +87,8 @@ public enum CallState {
   /**
    * Parse a wire string into a {@link CallState}, or return {@code null} if it is not one of the
    * five recognised states. Because the set mirrors server-emitted values that may grow, an unknown
-   * string is tolerated (returns {@code null}) rather than rejected with an exception — the Java
-   * analog of a fallible {@code from_str} over a {@code #[non_exhaustive]} enum.
+   * string is tolerated (returns {@code null}) rather than rejected with an exception, so a
+   * protocol revision that adds a state cannot break event dispatch.
    *
    * @param wire the candidate wire string (case-sensitive), may be {@code null}.
    * @return the matching constant, or {@code null} if none matches.

@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
 /**
  * PstnRecording — generated wire type ('relay_rest' spec, components/schemas 'PstnRecording').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PstnRecording {
   public String id;

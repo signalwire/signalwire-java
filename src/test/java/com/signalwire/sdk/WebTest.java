@@ -33,7 +33,9 @@ class WebTest {
     Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
     List<Map<String, Object>> fns = (List<Map<String, Object>>) swaig.get("functions");
     String url = (String) fns.get(0).get("web_hook_url");
-    assertEquals("http://localhost:3000/swaig", url);
+    // A default tool is SECURE (A1), so its own webhook carries the ?__token= security param
+    // (reference agent_base.py:1096-1100). The path is what this test pins.
+    assertTrue(url.startsWith("http://localhost:3000/swaig?__token="), url);
   }
 
   @Test
@@ -76,7 +78,10 @@ class WebTest {
     Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
     List<Map<String, Object>> fns = (List<Map<String, Object>>) swaig.get("functions");
     String url = (String) fns.get(0).get("web_hook_url");
-    assertFalse(url.contains("?"));
+    // The cleared param is gone. The URL still has a query string because a default (secure) tool
+    // carries the ?__token= security param — that is the A1 contract, not a leftover query param.
+    assertFalse(url.contains("key=val"), url);
+    assertTrue(url.startsWith("http://localhost:3000/swaig?__token="), url);
   }
 
   // ======== Proxy URL ========
@@ -178,9 +183,11 @@ class WebTest {
     Map<String, Object> swaig = (Map<String, Object>) ai.get("SWAIG");
     List<Map<String, Object>> fns = (List<Map<String, Object>>) swaig.get("functions");
     String url = (String) fns.get(0).get("web_hook_url");
-    assertEquals("https://xyz.lambda-url.us-east-1.on.aws/my-agent/swaig", url);
+    // A default tool is SECURE (A1), so ?__token= follows the path; the ROUTE is what this pins.
+    assertTrue(
+        url.startsWith("https://xyz.lambda-url.us-east-1.on.aws/my-agent/swaig?__token="), url);
     assertFalse(
-        url.endsWith(".on.aws/swaig"),
+        url.startsWith("https://xyz.lambda-url.us-east-1.on.aws/swaig"),
         "BUG REGRESSION: webhook URL lost the agent's route: " + url);
   }
 

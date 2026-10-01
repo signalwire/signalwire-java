@@ -18,16 +18,15 @@ import java.util.function.Function;
 /**
  * Unified authentication handler supporting multiple auth methods.
  *
- * <p>Java port of the Python reference {@code signalwire.core.auth_handler.AuthHandler}. Provides a
- * clean pattern for Basic Auth, Bearer tokens, and API keys across all SignalWire services. All
- * credential comparisons are timing-safe ({@link MessageDigest#isEqual}).
+ * <p>Provides a clean pattern for Basic Auth, Bearer tokens, and API keys across all SignalWire
+ * services. All credential comparisons are timing-safe ({@link MessageDigest#isEqual}).
  *
- * <p>Idiom note: Python's {@code flask_decorator} / {@code get_fastapi_dependency} are
- * framework-bound (Flask / FastAPI). Java has neither; the native equivalents here are (a) {@link
- * #flaskDecorator(RequestHandler)} -- a middleware wrapping a handler so unauthenticated requests
- * get a 401 -- and (b) {@link #getFastapiDependency(boolean)} -- a {@link Function} taking a
- * request header map and returning an {@link AuthResult}. A "request" is modelled
- * framework-neutrally as a {@code Map<String,String>} of header name (case-insensitive) to value.
+ * <p>Two integration shapes are offered, and neither binds a web framework: (a) {@link
+ * #flaskDecorator(RequestHandler)} — a middleware wrapping a handler so unauthenticated requests
+ * get a 401 — and (b) {@link #getFastapiDependency(boolean)} — a {@link Function} taking a request
+ * header map and returning an {@link AuthResult}. A "request" is modelled framework-neutrally as a
+ * {@code Map<String,String>} of header name (case-insensitive) to value, so either shape can be
+ * adapted to whatever HTTP layer the application already uses.
  */
 public class AuthHandler {
 
@@ -40,8 +39,14 @@ public class AuthHandler {
   /** Basic-auth credential carrier: a decoded username/password pair. */
   public record BasicCredentials(String username, String password) {}
 
-  /** Bearer-token credential carrier: the raw token string. */
-  public record BearerCredentials(String credentials) {}
+  /**
+   * Bearer-token credential carrier: the authorization scheme as sent on the wire plus the raw
+   * credential following it.
+   *
+   * <p>Both fields are contract. Carrying only the token would drop half of it, leaving a caller
+   * unable to tell {@code Bearer} from any other scheme the client had sent.
+   */
+  public record BearerCredentials(String scheme, String credentials) {}
 
   /** Result of the {@link #getFastapiDependency(boolean)} callable. */
   public record AuthResult(boolean authenticated, String method) {}
@@ -59,6 +64,11 @@ public class AuthHandler {
       this.response = response;
     }
 
+    /**
+     * The response this handler produced — the status and any headers to send back.
+     *
+     * @return the response.
+     */
     public Response getResponse() {
       return response;
     }
@@ -74,6 +84,11 @@ public class AuthHandler {
     setupAuthMethods();
   }
 
+  /**
+   * The security configuration this handler authenticates against.
+   *
+   * @return the security config.
+   */
   public SecurityConfig getSecurityConfig() {
     return securityConfig;
   }
@@ -107,10 +122,9 @@ public class AuthHandler {
   }
 
   /**
-   * Native equivalent of Python's FastAPI dependency. Returns a callable taking a request header
-   * map and returning an {@link AuthResult}. When {@code optional} is false and authentication
-   * fails, the callable throws {@link AuthException}; when true it returns the (unauthenticated)
-   * result.
+   * Authentication as an injectable dependency. Returns a callable taking a request header map and
+   * returning an {@link AuthResult}. When {@code optional} is false and authentication fails, the
+   * callable throws {@link AuthException}; when true it returns the (unauthenticated) result.
    */
   public Function<Map<String, String>, AuthResult> getFastapiDependency(boolean optional) {
     return headers -> {
@@ -129,9 +143,9 @@ public class AuthHandler {
   }
 
   /**
-   * Native equivalent of Python's Flask decorator. Given a downstream {@link RequestHandler},
-   * returns a wrapping handler that enforces authentication: authenticated requests pass through,
-   * others get an HTTP 401 with a WWW-Authenticate challenge.
+   * Authentication as request middleware. Given a downstream {@link RequestHandler}, returns a
+   * wrapping handler that enforces authentication: authenticated requests pass through, others get
+   * an HTTP 401 with a WWW-Authenticate challenge.
    */
   public RequestHandler flaskDecorator(RequestHandler app) {
     return headers -> {
@@ -241,10 +255,18 @@ public class AuthHandler {
       return false;
     }
     String header = str(header(headers, "Authorization"));
-    if (!header.startsWith("Bearer ")) {
+    // RFC 7235: the scheme token is case-INSENSITIVE. FastAPI's HTTPBearer, which the
+    // reference delegates to, lowercases the scheme before comparing; a case-sensitive
+    // startsWith("Bearer ") rejected a conforming `bearer <tok>` / `BEARER <tok>`.
+    int sp = header.indexOf(' ');
+    if (sp < 0) {
       return false;
     }
-    return verifyBearerToken(new BearerCredentials(header.substring(7)));
+    String scheme = header.substring(0, sp);
+    if (!"Bearer".equalsIgnoreCase(scheme)) {
+      return false;
+    }
+    return verifyBearerToken(new BearerCredentials(scheme, header.substring(sp + 1)));
   }
 
   private boolean apiKeyOk(Map<String, String> headers) {

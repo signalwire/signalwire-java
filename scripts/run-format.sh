@@ -39,12 +39,17 @@ fi
 if [ "$MODE" = "check" ]; then
     echo "==> FMT check (spotlessCheck, read-only) — repo: $REPO_ROOT"
     sw_gradle -q spotlessCheck
+    echo "==> FMT check — Python (ruff format --check, read-only)"
+    sw_ruff format --check .
 else
     echo "==> FMT apply (spotlessApply) — repo: $REPO_ROOT"
     sw_gradle -q spotlessApply
+    echo "==> FMT apply — Python (ruff format)"
+    sw_ruff format .
     if ! (cd "$REPO_ROOT" && git diff --quiet 2>/dev/null); then
         echo "    (FMT applied formatting to your working tree — review & stage)"
     fi
-    # A residual issue spotlessApply can't fix must still fail the gate.
+    # A residual issue the apply step can't fix must still fail the gate.
     sw_gradle -q spotlessCheck
+    sw_ruff format --check .
 fi

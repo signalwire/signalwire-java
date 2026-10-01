@@ -460,6 +460,76 @@ public final class Calling {
     return execute("calling.ai.stop", callId, request.toBody(), requestOptions);
   }
 
+  /** aiSidecar — command 'calling.ai_sidecar'. */
+  public java.util.Map<String, Object> aiSidecar(String callId, AiSidecarRequest request) {
+    return aiSidecar(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiSidecar — command 'calling.ai_sidecar' with a per-request {@link RequestOptions} override.
+   */
+  public java.util.Map<String, Object> aiSidecar(
+      String callId, AiSidecarRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_sidecar", callId, request.toBody(), requestOptions);
+  }
+
+  /** aiSidecarAsk — command 'calling.ai_sidecar.ask'. */
+  public java.util.Map<String, Object> aiSidecarAsk(String callId, AiSidecarAskRequest request) {
+    return aiSidecarAsk(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiSidecarAsk — command 'calling.ai_sidecar.ask' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> aiSidecarAsk(
+      String callId, AiSidecarAskRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_sidecar.ask", callId, request.toBody(), requestOptions);
+  }
+
+  /** aiSidecarPoke — command 'calling.ai_sidecar.poke'. */
+  public java.util.Map<String, Object> aiSidecarPoke(String callId, AiSidecarPokeRequest request) {
+    return aiSidecarPoke(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiSidecarPoke — command 'calling.ai_sidecar.poke' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> aiSidecarPoke(
+      String callId, AiSidecarPokeRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_sidecar.poke", callId, request.toBody(), requestOptions);
+  }
+
+  /** aiSidecarStop — command 'calling.ai_sidecar.stop'. */
+  public java.util.Map<String, Object> aiSidecarStop(String callId, AiSidecarStopRequest request) {
+    return aiSidecarStop(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiSidecarStop — command 'calling.ai_sidecar.stop' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> aiSidecarStop(
+      String callId, AiSidecarStopRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_sidecar.stop", callId, request.toBody(), requestOptions);
+  }
+
+  /** aiSidecarStatus — command 'calling.ai_sidecar.status'. */
+  public java.util.Map<String, Object> aiSidecarStatus(
+      String callId, AiSidecarStatusRequest request) {
+    return aiSidecarStatus(callId, request, (RequestOptions) null);
+  }
+
+  /**
+   * aiSidecarStatus — command 'calling.ai_sidecar.status' with a per-request {@link RequestOptions}
+   * override.
+   */
+  public java.util.Map<String, Object> aiSidecarStatus(
+      String callId, AiSidecarStatusRequest request, RequestOptions requestOptions) {
+    return execute("calling.ai_sidecar.status", callId, request.toBody(), requestOptions);
+  }
+
   /** sendFaxStop — command 'calling.send_fax.stop'. */
   public java.util.Map<String, Object> sendFaxStop(String callId, SendFaxStopRequest request) {
     return sendFaxStop(callId, request, (RequestOptions) null);
@@ -509,8 +579,17 @@ public final class Calling {
     private final String statusUrl;
     private final java.util.List<Object> statusEvents;
     private final String urlMethod;
-    private final String url;
     private final java.util.Map<String, Object> codecs;
+    private final java.util.Map<String, Object> toScript;
+    private final Long timeout;
+    private final Double maxPricePerMinute;
+    private final String sendDigits;
+    private final java.util.Map<String, Object> region;
+    private final String username;
+    private final String password;
+    private final java.util.List<Object> headers;
+    private final java.util.Map<String, Object> customVariables;
+    private final String url;
     private final java.util.Map<String, Object> swml;
     private final java.util.Map<String, Object> extras;
 
@@ -522,8 +601,17 @@ public final class Calling {
         String statusUrl,
         java.util.List<Object> statusEvents,
         String urlMethod,
-        String url,
         java.util.Map<String, Object> codecs,
+        java.util.Map<String, Object> toScript,
+        Long timeout,
+        Double maxPricePerMinute,
+        String sendDigits,
+        java.util.Map<String, Object> region,
+        String username,
+        String password,
+        java.util.List<Object> headers,
+        java.util.Map<String, Object> customVariables,
+        String url,
         java.util.Map<String, Object> swml,
         java.util.Map<String, Object> extras) {
       this.from = from;
@@ -533,8 +621,17 @@ public final class Calling {
       this.statusUrl = statusUrl;
       this.statusEvents = statusEvents;
       this.urlMethod = urlMethod;
-      this.url = url;
       this.codecs = codecs;
+      this.toScript = toScript;
+      this.timeout = timeout;
+      this.maxPricePerMinute = maxPricePerMinute;
+      this.sendDigits = sendDigits;
+      this.region = region;
+      this.username = username;
+      this.password = password;
+      this.headers = headers;
+      this.customVariables = customVariables;
+      this.url = url;
       this.swml = swml;
       this.extras = extras;
     }
@@ -566,11 +663,38 @@ public final class Calling {
       if (this.urlMethod != null) {
         body.put("url_method", this.urlMethod);
       }
-      if (this.url != null) {
-        body.put("url", this.url);
-      }
       if (this.codecs != null) {
         body.put("codecs", this.codecs);
+      }
+      if (this.toScript != null) {
+        body.put("to_script", this.toScript);
+      }
+      if (this.timeout != null) {
+        body.put("timeout", this.timeout);
+      }
+      if (this.maxPricePerMinute != null) {
+        body.put("max_price_per_minute", this.maxPricePerMinute);
+      }
+      if (this.sendDigits != null) {
+        body.put("send_digits", this.sendDigits);
+      }
+      if (this.region != null) {
+        body.put("region", this.region);
+      }
+      if (this.username != null) {
+        body.put("username", this.username);
+      }
+      if (this.password != null) {
+        body.put("password", this.password);
+      }
+      if (this.headers != null) {
+        body.put("headers", this.headers);
+      }
+      if (this.customVariables != null) {
+        body.put("custom_variables", this.customVariables);
+      }
+      if (this.url != null) {
+        body.put("url", this.url);
       }
       if (this.swml != null) {
         body.put("swml", this.swml);
@@ -589,8 +713,17 @@ public final class Calling {
       private String statusUrl;
       private java.util.List<Object> statusEvents;
       private String urlMethod;
-      private String url;
       private java.util.Map<String, Object> codecs;
+      private java.util.Map<String, Object> toScript;
+      private Long timeout;
+      private Double maxPricePerMinute;
+      private String sendDigits;
+      private java.util.Map<String, Object> region;
+      private String username;
+      private String password;
+      private java.util.List<Object> headers;
+      private java.util.Map<String, Object> customVariables;
+      private String url;
       private java.util.Map<String, Object> swml;
       private java.util.Map<String, Object> extras;
 
@@ -629,13 +762,58 @@ public final class Calling {
         return this;
       }
 
-      public Builder url(String url) {
-        this.url = url;
+      public Builder codecs(java.util.Map<String, Object> codecs) {
+        this.codecs = codecs;
         return this;
       }
 
-      public Builder codecs(java.util.Map<String, Object> codecs) {
-        this.codecs = codecs;
+      public Builder toScript(java.util.Map<String, Object> toScript) {
+        this.toScript = toScript;
+        return this;
+      }
+
+      public Builder timeout(Long timeout) {
+        this.timeout = timeout;
+        return this;
+      }
+
+      public Builder maxPricePerMinute(Double maxPricePerMinute) {
+        this.maxPricePerMinute = maxPricePerMinute;
+        return this;
+      }
+
+      public Builder sendDigits(String sendDigits) {
+        this.sendDigits = sendDigits;
+        return this;
+      }
+
+      public Builder region(java.util.Map<String, Object> region) {
+        this.region = region;
+        return this;
+      }
+
+      public Builder username(String username) {
+        this.username = username;
+        return this;
+      }
+
+      public Builder password(String password) {
+        this.password = password;
+        return this;
+      }
+
+      public Builder headers(java.util.List<Object> headers) {
+        this.headers = headers;
+        return this;
+      }
+
+      public Builder customVariables(java.util.Map<String, Object> customVariables) {
+        this.customVariables = customVariables;
+        return this;
+      }
+
+      public Builder url(String url) {
+        this.url = url;
         return this;
       }
 
@@ -658,8 +836,17 @@ public final class Calling {
             statusUrl,
             statusEvents,
             urlMethod,
-            url,
             codecs,
+            toScript,
+            timeout,
+            maxPricePerMinute,
+            sendDigits,
+            region,
+            username,
+            password,
+            headers,
+            customVariables,
+            url,
             swml,
             extras);
       }
@@ -820,13 +1007,16 @@ public final class Calling {
 
   /** Closed typed request for {@link #aiHold} (builder + extras door). */
   public static final class AiHoldRequest {
-    private final Long timeout;
     private final String prompt;
+    private final java.util.Map<String, Object> timeout;
     private final java.util.Map<String, Object> extras;
 
-    private AiHoldRequest(Long timeout, String prompt, java.util.Map<String, Object> extras) {
-      this.timeout = timeout;
+    private AiHoldRequest(
+        String prompt,
+        java.util.Map<String, Object> timeout,
+        java.util.Map<String, Object> extras) {
       this.prompt = prompt;
+      this.timeout = timeout;
       this.extras = extras;
     }
 
@@ -836,11 +1026,11 @@ public final class Calling {
 
     java.util.Map<String, Object> toBody() {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.timeout != null) {
-        body.put("timeout", this.timeout);
-      }
       if (this.prompt != null) {
         body.put("prompt", this.prompt);
+      }
+      if (this.timeout != null) {
+        body.put("timeout", this.timeout);
       }
       if (this.extras != null) {
         body.putAll(this.extras);
@@ -849,17 +1039,17 @@ public final class Calling {
     }
 
     public static final class Builder {
-      private Long timeout;
       private String prompt;
+      private java.util.Map<String, Object> timeout;
       private java.util.Map<String, Object> extras;
-
-      public Builder timeout(Long timeout) {
-        this.timeout = timeout;
-        return this;
-      }
 
       public Builder prompt(String prompt) {
         this.prompt = prompt;
+        return this;
+      }
+
+      public Builder timeout(java.util.Map<String, Object> timeout) {
+        this.timeout = timeout;
         return this;
       }
 
@@ -869,7 +1059,7 @@ public final class Calling {
       }
 
       public AiHoldRequest build() {
-        return new AiHoldRequest(timeout, prompt, extras);
+        return new AiHoldRequest(prompt, timeout, extras);
       }
     }
   }
@@ -921,22 +1111,22 @@ public final class Calling {
 
   /** Closed typed request for {@link #aiMessage} (builder + extras door). */
   public static final class AiMessageRequest {
-    private final String role;
+    private final java.util.Map<String, Object> globalData;
     private final String messageText;
     private final java.util.Map<String, Object> reset;
-    private final java.util.Map<String, Object> globalData;
+    private final String role;
     private final java.util.Map<String, Object> extras;
 
     private AiMessageRequest(
-        String role,
+        java.util.Map<String, Object> globalData,
         String messageText,
         java.util.Map<String, Object> reset,
-        java.util.Map<String, Object> globalData,
+        String role,
         java.util.Map<String, Object> extras) {
-      this.role = role;
+      this.globalData = globalData;
       this.messageText = messageText;
       this.reset = reset;
-      this.globalData = globalData;
+      this.role = role;
       this.extras = extras;
     }
 
@@ -946,8 +1136,8 @@ public final class Calling {
 
     java.util.Map<String, Object> toBody() {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.role != null) {
-        body.put("role", this.role);
+      if (this.globalData != null) {
+        body.put("global_data", this.globalData);
       }
       if (this.messageText != null) {
         body.put("message_text", this.messageText);
@@ -955,8 +1145,8 @@ public final class Calling {
       if (this.reset != null) {
         body.put("reset", this.reset);
       }
-      if (this.globalData != null) {
-        body.put("global_data", this.globalData);
+      if (this.role != null) {
+        body.put("role", this.role);
       }
       if (this.extras != null) {
         body.putAll(this.extras);
@@ -965,14 +1155,14 @@ public final class Calling {
     }
 
     public static final class Builder {
-      private String role;
+      private java.util.Map<String, Object> globalData;
       private String messageText;
       private java.util.Map<String, Object> reset;
-      private java.util.Map<String, Object> globalData;
+      private String role;
       private java.util.Map<String, Object> extras;
 
-      public Builder role(String role) {
-        this.role = role;
+      public Builder globalData(java.util.Map<String, Object> globalData) {
+        this.globalData = globalData;
         return this;
       }
 
@@ -986,8 +1176,8 @@ public final class Calling {
         return this;
       }
 
-      public Builder globalData(java.util.Map<String, Object> globalData) {
-        this.globalData = globalData;
+      public Builder role(String role) {
+        this.role = role;
         return this;
       }
 
@@ -997,7 +1187,7 @@ public final class Calling {
       }
 
       public AiMessageRequest build() {
-        return new AiMessageRequest(role, messageText, reset, globalData, extras);
+        return new AiMessageRequest(globalData, messageText, reset, role, extras);
       }
     }
   }
@@ -1005,11 +1195,15 @@ public final class Calling {
   /** Closed typed request for {@link #liveTranscribe} (builder + extras door). */
   public static final class LiveTranscribeRequest {
     private final java.util.Map<String, Object> action;
+    private final java.util.List<Object> hints;
     private final java.util.Map<String, Object> extras;
 
     private LiveTranscribeRequest(
-        java.util.Map<String, Object> action, java.util.Map<String, Object> extras) {
+        java.util.Map<String, Object> action,
+        java.util.List<Object> hints,
+        java.util.Map<String, Object> extras) {
       this.action = action;
+      this.hints = hints;
       this.extras = extras;
     }
 
@@ -1022,6 +1216,9 @@ public final class Calling {
       if (this.action != null) {
         body.put("action", this.action);
       }
+      if (this.hints != null) {
+        body.put("hints", this.hints);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -1030,10 +1227,16 @@ public final class Calling {
 
     public static final class Builder {
       private java.util.Map<String, Object> action;
+      private java.util.List<Object> hints;
       private java.util.Map<String, Object> extras;
 
       public Builder action(java.util.Map<String, Object> action) {
         this.action = action;
+        return this;
+      }
+
+      public Builder hints(java.util.List<Object> hints) {
+        this.hints = hints;
         return this;
       }
 
@@ -1043,7 +1246,7 @@ public final class Calling {
       }
 
       public LiveTranscribeRequest build() {
-        return new LiveTranscribeRequest(action, extras);
+        return new LiveTranscribeRequest(action, hints, extras);
       }
     }
   }
@@ -1237,26 +1440,35 @@ public final class Calling {
   public static final class PlayRequest {
     private final java.util.List<Object> play;
     private final String controlId;
-    private final Double volume;
     private final String direction;
+    private final String gender;
+    private final String language;
     private final Long loop;
     private final String statusUrl;
+    private final String voice;
+    private final Double volume;
     private final java.util.Map<String, Object> extras;
 
     private PlayRequest(
         java.util.List<Object> play,
         String controlId,
-        Double volume,
         String direction,
+        String gender,
+        String language,
         Long loop,
         String statusUrl,
+        String voice,
+        Double volume,
         java.util.Map<String, Object> extras) {
       this.play = play;
       this.controlId = controlId;
-      this.volume = volume;
       this.direction = direction;
+      this.gender = gender;
+      this.language = language;
       this.loop = loop;
       this.statusUrl = statusUrl;
+      this.voice = voice;
+      this.volume = volume;
       this.extras = extras;
     }
 
@@ -1272,11 +1484,14 @@ public final class Calling {
       if (this.controlId != null) {
         body.put("control_id", this.controlId);
       }
-      if (this.volume != null) {
-        body.put("volume", this.volume);
-      }
       if (this.direction != null) {
         body.put("direction", this.direction);
+      }
+      if (this.gender != null) {
+        body.put("gender", this.gender);
+      }
+      if (this.language != null) {
+        body.put("language", this.language);
       }
       if (this.loop != null) {
         body.put("loop", this.loop);
@@ -1284,19 +1499,29 @@ public final class Calling {
       if (this.statusUrl != null) {
         body.put("status_url", this.statusUrl);
       }
+      if (this.voice != null) {
+        body.put("voice", this.voice);
+      }
+      if (this.volume != null) {
+        body.put("volume", this.volume);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
       private java.util.List<Object> play;
       private String controlId;
-      private Double volume;
       private String direction;
+      private String gender;
+      private String language;
       private Long loop;
       private String statusUrl;
+      private String voice;
+      private Double volume;
       private java.util.Map<String, Object> extras;
 
       public Builder play(java.util.List<Object> play) {
@@ -1309,13 +1534,18 @@ public final class Calling {
         return this;
       }
 
-      public Builder volume(Double volume) {
-        this.volume = volume;
+      public Builder direction(String direction) {
+        this.direction = direction;
         return this;
       }
 
-      public Builder direction(String direction) {
-        this.direction = direction;
+      public Builder gender(String gender) {
+        this.gender = gender;
+        return this;
+      }
+
+      public Builder language(String language) {
+        this.language = language;
         return this;
       }
 
@@ -1329,13 +1559,24 @@ public final class Calling {
         return this;
       }
 
+      public Builder voice(String voice) {
+        this.voice = voice;
+        return this;
+      }
+
+      public Builder volume(Double volume) {
+        this.volume = volume;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
       }
 
       public PlayRequest build() {
-        return new PlayRequest(play, controlId, volume, direction, loop, statusUrl, extras);
+        return new PlayRequest(
+            play, controlId, direction, gender, language, loop, statusUrl, voice, volume, extras);
       }
     }
   }
@@ -1535,18 +1776,21 @@ public final class Calling {
   /** Closed typed request for {@link #record} (builder + extras door). */
   public static final class RecordRequest {
     private final String controlId;
-    private final java.util.Map<String, Object> audio;
+    private final java.util.Map<String, Object> record_;
     private final String statusUrl;
+    private final java.util.Map<String, Object> audio;
     private final java.util.Map<String, Object> extras;
 
     private RecordRequest(
         String controlId,
-        java.util.Map<String, Object> audio,
+        java.util.Map<String, Object> record_,
         String statusUrl,
+        java.util.Map<String, Object> audio,
         java.util.Map<String, Object> extras) {
       this.controlId = controlId;
-      this.audio = audio;
+      this.record_ = record_;
       this.statusUrl = statusUrl;
+      this.audio = audio;
       this.extras = extras;
     }
 
@@ -1559,22 +1803,33 @@ public final class Calling {
       if (this.controlId != null) {
         body.put("control_id", this.controlId);
       }
-      if (this.audio != null) {
-        body.put("audio", this.audio);
+      if (this.record_ != null) {
+        body.put("record", this.record_);
       }
       if (this.statusUrl != null) {
         body.put("status_url", this.statusUrl);
       }
+      if (this.audio != null) {
+        java.util.Map<String, Object> nested = new java.util.LinkedHashMap<>();
+        Object existing = body.get("record");
+        if (existing instanceof java.util.Map<?, ?> m) {
+          m.forEach((k, v) -> nested.put(String.valueOf(k), v));
+        }
+        nested.put("audio", this.audio);
+        body.put("record", nested);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
       private String controlId;
-      private java.util.Map<String, Object> audio;
+      private java.util.Map<String, Object> record_;
       private String statusUrl;
+      private java.util.Map<String, Object> audio;
       private java.util.Map<String, Object> extras;
 
       public Builder controlId(String controlId) {
@@ -1582,13 +1837,18 @@ public final class Calling {
         return this;
       }
 
-      public Builder audio(java.util.Map<String, Object> audio) {
-        this.audio = audio;
+      public Builder record_(java.util.Map<String, Object> record_) {
+        this.record_ = record_;
         return this;
       }
 
       public Builder statusUrl(String statusUrl) {
         this.statusUrl = statusUrl;
+        return this;
+      }
+
+      public Builder audio(java.util.Map<String, Object> audio) {
+        this.audio = audio;
         return this;
       }
 
@@ -1598,7 +1858,7 @@ public final class Calling {
       }
 
       public RecordRequest build() {
-        return new RecordRequest(controlId, audio, statusUrl, extras);
+        return new RecordRequest(controlId, record_, statusUrl, audio, extras);
       }
     }
   }
@@ -1606,10 +1866,13 @@ public final class Calling {
   /** Closed typed request for {@link #recordPause} (builder + extras door). */
   public static final class RecordPauseRequest {
     private final String controlId;
+    private final String behavior;
     private final java.util.Map<String, Object> extras;
 
-    private RecordPauseRequest(String controlId, java.util.Map<String, Object> extras) {
+    private RecordPauseRequest(
+        String controlId, String behavior, java.util.Map<String, Object> extras) {
       this.controlId = controlId;
+      this.behavior = behavior;
       this.extras = extras;
     }
 
@@ -1622,6 +1885,9 @@ public final class Calling {
       if (this.controlId != null) {
         body.put("control_id", this.controlId);
       }
+      if (this.behavior != null) {
+        body.put("behavior", this.behavior);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -1630,10 +1896,16 @@ public final class Calling {
 
     public static final class Builder {
       private String controlId;
+      private String behavior;
       private java.util.Map<String, Object> extras;
 
       public Builder controlId(String controlId) {
         this.controlId = controlId;
+        return this;
+      }
+
+      public Builder behavior(String behavior) {
+        this.behavior = behavior;
         return this;
       }
 
@@ -1643,7 +1915,7 @@ public final class Calling {
       }
 
       public RecordPauseRequest build() {
-        return new RecordPauseRequest(controlId, extras);
+        return new RecordPauseRequest(controlId, behavior, extras);
       }
     }
   }
@@ -1740,28 +2012,40 @@ public final class Calling {
 
   /** Closed typed request for {@link #collect} (builder + extras door). */
   public static final class CollectRequest {
-    private final String controlId;
-    private final Double initialTimeout;
-    private final java.util.Map<String, Object> digits;
-    private final java.util.Map<String, Object> speech;
+    private final Boolean continue_;
     private final Boolean continuous;
+    private final String controlId;
+    private final java.util.Map<String, Object> digits;
+    private final Double initialTimeout;
     private final Boolean partialResults;
+    private final Boolean sendStartOfInput;
+    private final java.util.Map<String, Object> speech;
+    private final Boolean startInputTimers;
+    private final String statusUrl;
     private final java.util.Map<String, Object> extras;
 
     private CollectRequest(
-        String controlId,
-        Double initialTimeout,
-        java.util.Map<String, Object> digits,
-        java.util.Map<String, Object> speech,
+        Boolean continue_,
         Boolean continuous,
+        String controlId,
+        java.util.Map<String, Object> digits,
+        Double initialTimeout,
         Boolean partialResults,
+        Boolean sendStartOfInput,
+        java.util.Map<String, Object> speech,
+        Boolean startInputTimers,
+        String statusUrl,
         java.util.Map<String, Object> extras) {
-      this.controlId = controlId;
-      this.initialTimeout = initialTimeout;
-      this.digits = digits;
-      this.speech = speech;
+      this.continue_ = continue_;
       this.continuous = continuous;
+      this.controlId = controlId;
+      this.digits = digits;
+      this.initialTimeout = initialTimeout;
       this.partialResults = partialResults;
+      this.sendStartOfInput = sendStartOfInput;
+      this.speech = speech;
+      this.startInputTimers = startInputTimers;
+      this.statusUrl = statusUrl;
       this.extras = extras;
     }
 
@@ -1771,56 +2055,58 @@ public final class Calling {
 
     java.util.Map<String, Object> toBody() {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.controlId != null) {
-        body.put("control_id", this.controlId);
-      }
-      if (this.initialTimeout != null) {
-        body.put("initial_timeout", this.initialTimeout);
-      }
-      if (this.digits != null) {
-        body.put("digits", this.digits);
-      }
-      if (this.speech != null) {
-        body.put("speech", this.speech);
+      if (this.continue_ != null) {
+        body.put("continue", this.continue_);
       }
       if (this.continuous != null) {
         body.put("continuous", this.continuous);
       }
+      if (this.controlId != null) {
+        body.put("control_id", this.controlId);
+      }
+      if (this.digits != null) {
+        body.put("digits", this.digits);
+      }
+      if (this.initialTimeout != null) {
+        body.put("initial_timeout", this.initialTimeout);
+      }
       if (this.partialResults != null) {
         body.put("partial_results", this.partialResults);
+      }
+      if (this.sendStartOfInput != null) {
+        body.put("send_start_of_input", this.sendStartOfInput);
+      }
+      if (this.speech != null) {
+        body.put("speech", this.speech);
+      }
+      if (this.startInputTimers != null) {
+        body.put("start_input_timers", this.startInputTimers);
+      }
+      if (this.statusUrl != null) {
+        body.put("status_url", this.statusUrl);
       }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
-      private String controlId;
-      private Double initialTimeout;
-      private java.util.Map<String, Object> digits;
-      private java.util.Map<String, Object> speech;
+      private Boolean continue_;
       private Boolean continuous;
+      private String controlId;
+      private java.util.Map<String, Object> digits;
+      private Double initialTimeout;
       private Boolean partialResults;
+      private Boolean sendStartOfInput;
+      private java.util.Map<String, Object> speech;
+      private Boolean startInputTimers;
+      private String statusUrl;
       private java.util.Map<String, Object> extras;
 
-      public Builder controlId(String controlId) {
-        this.controlId = controlId;
-        return this;
-      }
-
-      public Builder initialTimeout(Double initialTimeout) {
-        this.initialTimeout = initialTimeout;
-        return this;
-      }
-
-      public Builder digits(java.util.Map<String, Object> digits) {
-        this.digits = digits;
-        return this;
-      }
-
-      public Builder speech(java.util.Map<String, Object> speech) {
-        this.speech = speech;
+      public Builder continue_(Boolean continue_) {
+        this.continue_ = continue_;
         return this;
       }
 
@@ -1829,8 +2115,43 @@ public final class Calling {
         return this;
       }
 
+      public Builder controlId(String controlId) {
+        this.controlId = controlId;
+        return this;
+      }
+
+      public Builder digits(java.util.Map<String, Object> digits) {
+        this.digits = digits;
+        return this;
+      }
+
+      public Builder initialTimeout(Double initialTimeout) {
+        this.initialTimeout = initialTimeout;
+        return this;
+      }
+
       public Builder partialResults(Boolean partialResults) {
         this.partialResults = partialResults;
+        return this;
+      }
+
+      public Builder sendStartOfInput(Boolean sendStartOfInput) {
+        this.sendStartOfInput = sendStartOfInput;
+        return this;
+      }
+
+      public Builder speech(java.util.Map<String, Object> speech) {
+        this.speech = speech;
+        return this;
+      }
+
+      public Builder startInputTimers(Boolean startInputTimers) {
+        this.startInputTimers = startInputTimers;
+        return this;
+      }
+
+      public Builder statusUrl(String statusUrl) {
+        this.statusUrl = statusUrl;
         return this;
       }
 
@@ -1841,7 +2162,17 @@ public final class Calling {
 
       public CollectRequest build() {
         return new CollectRequest(
-            controlId, initialTimeout, digits, speech, continuous, partialResults, extras);
+            continue_,
+            continuous,
+            controlId,
+            digits,
+            initialTimeout,
+            partialResults,
+            sendStartOfInput,
+            speech,
+            startInputTimers,
+            statusUrl,
+            extras);
       }
     }
   }
@@ -1940,16 +2271,19 @@ public final class Calling {
   public static final class DetectRequest {
     private final java.util.Map<String, Object> detect;
     private final String controlId;
+    private final String statusUrl;
     private final Double timeout;
     private final java.util.Map<String, Object> extras;
 
     private DetectRequest(
         java.util.Map<String, Object> detect,
         String controlId,
+        String statusUrl,
         Double timeout,
         java.util.Map<String, Object> extras) {
       this.detect = detect;
       this.controlId = controlId;
+      this.statusUrl = statusUrl;
       this.timeout = timeout;
       this.extras = extras;
     }
@@ -1966,18 +2300,23 @@ public final class Calling {
       if (this.controlId != null) {
         body.put("control_id", this.controlId);
       }
+      if (this.statusUrl != null) {
+        body.put("status_url", this.statusUrl);
+      }
       if (this.timeout != null) {
         body.put("timeout", this.timeout);
       }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
       private java.util.Map<String, Object> detect;
       private String controlId;
+      private String statusUrl;
       private Double timeout;
       private java.util.Map<String, Object> extras;
 
@@ -1988,6 +2327,11 @@ public final class Calling {
 
       public Builder controlId(String controlId) {
         this.controlId = controlId;
+        return this;
+      }
+
+      public Builder statusUrl(String statusUrl) {
+        this.statusUrl = statusUrl;
         return this;
       }
 
@@ -2002,7 +2346,7 @@ public final class Calling {
       }
 
       public DetectRequest build() {
-        return new DetectRequest(detect, controlId, timeout, extras);
+        return new DetectRequest(detect, controlId, statusUrl, timeout, extras);
       }
     }
   }
@@ -2054,19 +2398,22 @@ public final class Calling {
 
   /** Closed typed request for {@link #tap} (builder + extras door). */
   public static final class TapRequest {
-    private final java.util.Map<String, Object> tap;
     private final java.util.Map<String, Object> device;
+    private final java.util.Map<String, Object> tap;
     private final String controlId;
+    private final String statusUrl;
     private final java.util.Map<String, Object> extras;
 
     private TapRequest(
-        java.util.Map<String, Object> tap,
         java.util.Map<String, Object> device,
+        java.util.Map<String, Object> tap,
         String controlId,
+        String statusUrl,
         java.util.Map<String, Object> extras) {
-      this.tap = tap;
       this.device = device;
+      this.tap = tap;
       this.controlId = controlId;
+      this.statusUrl = statusUrl;
       this.extras = extras;
     }
 
@@ -2076,39 +2423,49 @@ public final class Calling {
 
     java.util.Map<String, Object> toBody() {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.tap != null) {
-        body.put("tap", this.tap);
-      }
       if (this.device != null) {
         body.put("device", this.device);
+      }
+      if (this.tap != null) {
+        body.put("tap", this.tap);
       }
       if (this.controlId != null) {
         body.put("control_id", this.controlId);
       }
+      if (this.statusUrl != null) {
+        body.put("status_url", this.statusUrl);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
-      private java.util.Map<String, Object> tap;
       private java.util.Map<String, Object> device;
+      private java.util.Map<String, Object> tap;
       private String controlId;
+      private String statusUrl;
       private java.util.Map<String, Object> extras;
-
-      public Builder tap(java.util.Map<String, Object> tap) {
-        this.tap = tap;
-        return this;
-      }
 
       public Builder device(java.util.Map<String, Object> device) {
         this.device = device;
         return this;
       }
 
+      public Builder tap(java.util.Map<String, Object> tap) {
+        this.tap = tap;
+        return this;
+      }
+
       public Builder controlId(String controlId) {
         this.controlId = controlId;
+        return this;
+      }
+
+      public Builder statusUrl(String statusUrl) {
+        this.statusUrl = statusUrl;
         return this;
       }
 
@@ -2118,7 +2475,7 @@ public final class Calling {
       }
 
       public TapRequest build() {
-        return new TapRequest(tap, device, controlId, extras);
+        return new TapRequest(device, tap, controlId, statusUrl, extras);
       }
     }
   }
@@ -2171,27 +2528,36 @@ public final class Calling {
   /** Closed typed request for {@link #stream} (builder + extras door). */
   public static final class StreamRequest {
     private final String url;
-    private final String controlId;
-    private final String codec;
-    private final String track;
     private final String authorizationBearerToken;
+    private final String codec;
+    private final String controlId;
     private final java.util.Map<String, Object> customParameters;
+    private final String name;
+    private final String statusUrl;
+    private final String statusUrlMethod;
+    private final String track;
     private final java.util.Map<String, Object> extras;
 
     private StreamRequest(
         String url,
-        String controlId,
-        String codec,
-        String track,
         String authorizationBearerToken,
+        String codec,
+        String controlId,
         java.util.Map<String, Object> customParameters,
+        String name,
+        String statusUrl,
+        String statusUrlMethod,
+        String track,
         java.util.Map<String, Object> extras) {
       this.url = url;
-      this.controlId = controlId;
-      this.codec = codec;
-      this.track = track;
       this.authorizationBearerToken = authorizationBearerToken;
+      this.codec = codec;
+      this.controlId = controlId;
       this.customParameters = customParameters;
+      this.name = name;
+      this.statusUrl = statusUrl;
+      this.statusUrlMethod = statusUrlMethod;
+      this.track = track;
       this.extras = extras;
     }
 
@@ -2204,53 +2570,51 @@ public final class Calling {
       if (this.url != null) {
         body.put("url", this.url);
       }
-      if (this.controlId != null) {
-        body.put("control_id", this.controlId);
+      if (this.authorizationBearerToken != null) {
+        body.put("authorization_bearer_token", this.authorizationBearerToken);
       }
       if (this.codec != null) {
         body.put("codec", this.codec);
       }
-      if (this.track != null) {
-        body.put("track", this.track);
-      }
-      if (this.authorizationBearerToken != null) {
-        body.put("authorization_bearer_token", this.authorizationBearerToken);
+      if (this.controlId != null) {
+        body.put("control_id", this.controlId);
       }
       if (this.customParameters != null) {
         body.put("custom_parameters", this.customParameters);
       }
+      if (this.name != null) {
+        body.put("name", this.name);
+      }
+      if (this.statusUrl != null) {
+        body.put("status_url", this.statusUrl);
+      }
+      if (this.statusUrlMethod != null) {
+        body.put("status_url_method", this.statusUrlMethod);
+      }
+      if (this.track != null) {
+        body.put("track", this.track);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
     public static final class Builder {
       private String url;
-      private String controlId;
-      private String codec;
-      private String track;
       private String authorizationBearerToken;
+      private String codec;
+      private String controlId;
       private java.util.Map<String, Object> customParameters;
+      private String name;
+      private String statusUrl;
+      private String statusUrlMethod;
+      private String track;
       private java.util.Map<String, Object> extras;
 
       public Builder url(String url) {
         this.url = url;
-        return this;
-      }
-
-      public Builder controlId(String controlId) {
-        this.controlId = controlId;
-        return this;
-      }
-
-      public Builder codec(String codec) {
-        this.codec = codec;
-        return this;
-      }
-
-      public Builder track(String track) {
-        this.track = track;
         return this;
       }
 
@@ -2259,8 +2623,38 @@ public final class Calling {
         return this;
       }
 
+      public Builder codec(String codec) {
+        this.codec = codec;
+        return this;
+      }
+
+      public Builder controlId(String controlId) {
+        this.controlId = controlId;
+        return this;
+      }
+
       public Builder customParameters(java.util.Map<String, Object> customParameters) {
         this.customParameters = customParameters;
+        return this;
+      }
+
+      public Builder name(String name) {
+        this.name = name;
+        return this;
+      }
+
+      public Builder statusUrl(String statusUrl) {
+        this.statusUrl = statusUrl;
+        return this;
+      }
+
+      public Builder statusUrlMethod(String statusUrlMethod) {
+        this.statusUrlMethod = statusUrlMethod;
+        return this;
+      }
+
+      public Builder track(String track) {
+        this.track = track;
         return this;
       }
 
@@ -2271,7 +2665,16 @@ public final class Calling {
 
       public StreamRequest build() {
         return new StreamRequest(
-            url, controlId, codec, track, authorizationBearerToken, customParameters, extras);
+            url,
+            authorizationBearerToken,
+            codec,
+            controlId,
+            customParameters,
+            name,
+            statusUrl,
+            statusUrlMethod,
+            track,
+            extras);
       }
     }
   }
@@ -2417,6 +2820,7 @@ public final class Calling {
       if (this.extras != null) {
         body.putAll(this.extras);
       }
+      body.putIfAbsent("control_id", java.util.UUID.randomUUID().toString());
       return body;
     }
 
@@ -2532,6 +2936,356 @@ public final class Calling {
 
       public AiStopRequest build() {
         return new AiStopRequest(controlId, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #aiSidecar} (builder + extras door). */
+  public static final class AiSidecarRequest {
+    private final String lang;
+    private final java.util.Map<String, Object> SWAIG;
+    private final java.util.Map<String, Object> action;
+    private final String customerRole;
+    private final java.util.List<Object> direction;
+    private final java.util.Map<String, Object> globalData;
+    private final java.util.List<Object> hints;
+    private final String model;
+    private final java.util.Map<String, Object> params;
+    private final java.util.Map<String, Object> permissions;
+    private final java.util.Map<String, Object> prompt;
+    private final String url;
+    private final java.util.Map<String, Object> extras;
+
+    private AiSidecarRequest(
+        String lang,
+        java.util.Map<String, Object> SWAIG,
+        java.util.Map<String, Object> action,
+        String customerRole,
+        java.util.List<Object> direction,
+        java.util.Map<String, Object> globalData,
+        java.util.List<Object> hints,
+        String model,
+        java.util.Map<String, Object> params,
+        java.util.Map<String, Object> permissions,
+        java.util.Map<String, Object> prompt,
+        String url,
+        java.util.Map<String, Object> extras) {
+      this.lang = lang;
+      this.SWAIG = SWAIG;
+      this.action = action;
+      this.customerRole = customerRole;
+      this.direction = direction;
+      this.globalData = globalData;
+      this.hints = hints;
+      this.model = model;
+      this.params = params;
+      this.permissions = permissions;
+      this.prompt = prompt;
+      this.url = url;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.lang != null) {
+        body.put("lang", this.lang);
+      }
+      if (this.SWAIG != null) {
+        body.put("SWAIG", this.SWAIG);
+      }
+      if (this.action != null) {
+        body.put("action", this.action);
+      }
+      if (this.customerRole != null) {
+        body.put("customer_role", this.customerRole);
+      }
+      if (this.direction != null) {
+        body.put("direction", this.direction);
+      }
+      if (this.globalData != null) {
+        body.put("global_data", this.globalData);
+      }
+      if (this.hints != null) {
+        body.put("hints", this.hints);
+      }
+      if (this.model != null) {
+        body.put("model", this.model);
+      }
+      if (this.params != null) {
+        body.put("params", this.params);
+      }
+      if (this.permissions != null) {
+        body.put("permissions", this.permissions);
+      }
+      if (this.prompt != null) {
+        body.put("prompt", this.prompt);
+      }
+      if (this.url != null) {
+        body.put("url", this.url);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String lang;
+      private java.util.Map<String, Object> SWAIG;
+      private java.util.Map<String, Object> action;
+      private String customerRole;
+      private java.util.List<Object> direction;
+      private java.util.Map<String, Object> globalData;
+      private java.util.List<Object> hints;
+      private String model;
+      private java.util.Map<String, Object> params;
+      private java.util.Map<String, Object> permissions;
+      private java.util.Map<String, Object> prompt;
+      private String url;
+      private java.util.Map<String, Object> extras;
+
+      public Builder lang(String lang) {
+        this.lang = lang;
+        return this;
+      }
+
+      public Builder SWAIG(java.util.Map<String, Object> SWAIG) {
+        this.SWAIG = SWAIG;
+        return this;
+      }
+
+      public Builder action(java.util.Map<String, Object> action) {
+        this.action = action;
+        return this;
+      }
+
+      public Builder customerRole(String customerRole) {
+        this.customerRole = customerRole;
+        return this;
+      }
+
+      public Builder direction(java.util.List<Object> direction) {
+        this.direction = direction;
+        return this;
+      }
+
+      public Builder globalData(java.util.Map<String, Object> globalData) {
+        this.globalData = globalData;
+        return this;
+      }
+
+      public Builder hints(java.util.List<Object> hints) {
+        this.hints = hints;
+        return this;
+      }
+
+      public Builder model(String model) {
+        this.model = model;
+        return this;
+      }
+
+      public Builder params(java.util.Map<String, Object> params) {
+        this.params = params;
+        return this;
+      }
+
+      public Builder permissions(java.util.Map<String, Object> permissions) {
+        this.permissions = permissions;
+        return this;
+      }
+
+      public Builder prompt(java.util.Map<String, Object> prompt) {
+        this.prompt = prompt;
+        return this;
+      }
+
+      public Builder url(String url) {
+        this.url = url;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AiSidecarRequest build() {
+        return new AiSidecarRequest(
+            lang,
+            SWAIG,
+            action,
+            customerRole,
+            direction,
+            globalData,
+            hints,
+            model,
+            params,
+            permissions,
+            prompt,
+            url,
+            extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #aiSidecarAsk} (builder + extras door). */
+  public static final class AiSidecarAskRequest {
+    private final String text;
+    private final java.util.Map<String, Object> extras;
+
+    private AiSidecarAskRequest(String text, java.util.Map<String, Object> extras) {
+      this.text = text;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.text != null) {
+        body.put("text", this.text);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String text;
+      private java.util.Map<String, Object> extras;
+
+      public Builder text(String text) {
+        this.text = text;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AiSidecarAskRequest build() {
+        return new AiSidecarAskRequest(text, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #aiSidecarPoke} (builder + extras door). */
+  public static final class AiSidecarPokeRequest {
+    private final String text;
+    private final java.util.Map<String, Object> extras;
+
+    private AiSidecarPokeRequest(String text, java.util.Map<String, Object> extras) {
+      this.text = text;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.text != null) {
+        body.put("text", this.text);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String text;
+      private java.util.Map<String, Object> extras;
+
+      public Builder text(String text) {
+        this.text = text;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AiSidecarPokeRequest build() {
+        return new AiSidecarPokeRequest(text, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #aiSidecarStop} (builder + extras door). */
+  public static final class AiSidecarStopRequest {
+    private final java.util.Map<String, Object> extras;
+
+    private AiSidecarStopRequest(java.util.Map<String, Object> extras) {
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private java.util.Map<String, Object> extras;
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AiSidecarStopRequest build() {
+        return new AiSidecarStopRequest(extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #aiSidecarStatus} (builder + extras door). */
+  public static final class AiSidecarStatusRequest {
+    private final java.util.Map<String, Object> extras;
+
+    private AiSidecarStatusRequest(java.util.Map<String, Object> extras) {
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private java.util.Map<String, Object> extras;
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AiSidecarStatusRequest build() {
+        return new AiSidecarStatusRequest(extras);
       }
     }
   }

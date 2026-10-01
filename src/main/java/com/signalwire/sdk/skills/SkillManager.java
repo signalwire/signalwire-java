@@ -18,8 +18,9 @@ public class SkillManager {
   }
 
   /**
-   * The agent this manager loads skills into (the {@code agent} construction param). The reference
-   * keeps it as a public back reference ({@code self.agent}, skill_manager.py).
+   * The agent this manager loads skills into (the {@code agent} construction param).
+   *
+   * @return the owning agent.
    */
   public AgentBase getAgent() {
     return agent;
@@ -143,10 +144,9 @@ public class SkillManager {
   /**
    * Load and setup a skill by name.
    *
-   * <p>Mirrors Python {@code SkillManager.load_skill}: resolves the skill from the registry, sets
-   * it up, and registers its tools/hints/global-data/prompt-sections with the agent. Delegates to
-   * {@link #addSkill(String, Map)} (the Java idiom for the same lifecycle) and reports success by
-   * whether the skill became active.
+   * <p>Resolves the skill from the registry, sets it up, and registers its
+   * tools/hints/global-data/prompt-sections with the agent. Delegates to {@link #addSkill(String,
+   * Map)} and reports success by whether the skill became active.
    *
    * @param skillName the registered skill name
    * @param params optional configuration parameters (may be null)
@@ -165,9 +165,8 @@ public class SkillManager {
   /**
    * Unload a skill and clean it up.
    *
-   * <p>Mirrors Python {@code SkillManager.unload_skill(skill_identifier)}: looks the skill up by
-   * its instance key, calls {@link SkillBase#cleanup()}, and removes it. Returns whether a skill
-   * was actually unloaded.
+   * <p>Looks the skill up by its instance key, calls {@link SkillBase#cleanup()}, and removes it.
+   * Returns whether a skill was actually unloaded.
    *
    * @param skillIdentifier a skill name or instance key
    * @return true if a loaded skill was found and unloaded
@@ -192,8 +191,6 @@ public class SkillManager {
   /**
    * Get a loaded skill instance by identifier.
    *
-   * <p>Mirrors Python {@code SkillManager.get_skill(skill_identifier)}.
-   *
    * @param skillIdentifier a skill name or instance key
    * @return the loaded skill instance, or null if not loaded
    */
@@ -204,8 +201,6 @@ public class SkillManager {
   /**
    * List the instance keys of currently loaded skills.
    *
-   * <p>Mirrors Python {@code SkillManager.list_loaded_skills}.
-   *
    * @return the loaded skill instance keys
    */
   public List<String> listLoadedSkills() {
@@ -214,8 +209,6 @@ public class SkillManager {
 
   /**
    * The map of loaded skills keyed by instance key.
-   *
-   * <p>Mirrors Python's {@code SkillManager.loaded_skills} attribute.
    *
    * @return an unmodifiable view of the loaded-skills map
    */

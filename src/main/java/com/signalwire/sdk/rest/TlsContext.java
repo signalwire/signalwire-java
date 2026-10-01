@@ -18,13 +18,12 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
- * Builds TLS material that trusts a custom CA bundle, for the fleet A5 CA-var contract.
+ * Builds TLS material that trusts a custom CA bundle.
  *
- * <p>The two fleet-standard env vars — {@code SIGNALWIRE_REST_CA_FILE} (REST HTTP transport, via
- * {@link #fromCaFile}) and {@code SIGNALWIRE_RELAY_CA_FILE} (RELAY WebSocket transport, via {@link
- * #socketFactory}) — each name a PEM CA bundle. When set, the owning transport loads that bundle
- * here and trusts ONLY it, so a private / self-signed CA is honored. Mirrors the Python reference
- * (rest/_base.py:163, relay/client.py:131).
+ * <p>Two env vars — {@code SIGNALWIRE_REST_CA_FILE} (REST HTTP transport, via {@link #fromCaFile})
+ * and {@code SIGNALWIRE_RELAY_CA_FILE} (RELAY WebSocket transport, via {@link #socketFactory}) —
+ * each name a PEM CA bundle. When set, the owning transport loads that bundle here and trusts ONLY
+ * it, so a private / self-signed CA is honored.
  */
 public final class TlsContext {
 
@@ -53,7 +52,7 @@ public final class TlsContext {
       ks.load(null, null);
       int i = 0;
       for (Certificate cert : certs) {
-        ks.setCertificateEntry("ca-" + (i++), cert);
+        ks.setCertificateEntry("ca-" + i++, cert);
       }
       TrustManagerFactory tmf =
           TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

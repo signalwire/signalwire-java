@@ -10,14 +10,20 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * AmazonBedrockObject — generated wire type ('calling' spec, components/schemas
  * 'AmazonBedrockObject').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AmazonBedrockObject {
+  public java.util.Map<String, Object> SWAIG;
+  public String app_name;
+  public String assistant_name;
+  public String assistant_prompt;
+  public String conversation_id;
   public java.util.Map<String, Object> global_data;
+  public java.util.Map<String, Object> greeting_prompt;
   public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> post_prompt;
   public String post_prompt_url;
   public java.util.Map<String, Object> prompt;
-  public java.util.Map<String, Object> SWAIG;
+  public String transcript_webhook_url;
 }

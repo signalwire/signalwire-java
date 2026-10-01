@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.voice;
 /**
  * RelayVoiceLog — generated wire type ('voice' spec, components/schemas 'RelayVoiceLog').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class RelayVoiceLog {
   public String id;
@@ -28,4 +28,23 @@ public final class RelayVoiceLog {
   public Long duration_ms;
   public Long billing_ms;
   public String parent_id;
+  public String audio_in_mos;
+  public java.util.Map<String, Object> audio_in_jitter_min;
+  public java.util.Map<String, Object> audio_in_jitter_max;
+  public java.util.Map<String, Object> audio_out_jitter_min;
+  public java.util.Map<String, Object> audio_out_jitter_max;
+  public java.util.Map<String, Object> audio_out_jitter_avg;
+  public java.util.Map<String, Object> audio_rtt_avg;
+  public java.util.Map<String, Object> audio_rtt_min;
+  public java.util.Map<String, Object> audio_rtt_max;
+  public java.util.Map<String, Object> audio_in_media_packet_count;
+  public java.util.Map<String, Object> audio_out_packet_count;
+  public java.util.Map<String, Object> audio_out_media_packet_count;
+  public java.util.Map<String, Object> audio_out_lost;
+  public java.util.Map<String, Object> audio_in_mean_interval;
+  public java.util.Map<String, Object> audio_in_dtmf_packet_count;
+  public java.util.Map<String, Object> audio_out_dtmf_packet_count;
+  public java.util.Map<String, Object> audio_in_skip_packet_count;
+  public java.util.Map<String, Object> audio_in_flush_packet_count;
+  public java.util.Map<String, Object> audio_in_largest_jb_size;
 }

@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.voice;
 /**
  * DialogflowVoiceLog — generated wire type ('voice' spec, components/schemas 'DialogflowVoiceLog').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class DialogflowVoiceLog {
   public String id;
@@ -21,7 +21,7 @@ public final class DialogflowVoiceLog {
   public java.util.List<Object> charge_details;
   public String created_at;
   public String type;
-  public Object url;
+  public Void url;
   public String status;
   public Long duration;
 }

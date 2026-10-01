@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * SIPRefer — generated wire type ('calling' spec, components/schemas 'SIPRefer').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SIPRefer {
   public java.util.Map<String, Object> sip_refer;

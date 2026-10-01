@@ -9,18 +9,19 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * Webhook — generated wire type ('fabric' spec, components/schemas 'Webhook').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Webhook {
-  public java.util.List<Object> expressions;
   public java.util.Map<String, Object> error_keys;
-  public String url;
+  public java.util.Map<String, Object> expressions;
   public java.util.Map<String, Object> foreach;
+  public String form_param;
   public java.util.Map<String, Object> headers;
+  public Boolean input_args_as_params;
   public String method;
-  public java.util.Map<String, Object> input_args_as_params;
+  public java.util.Map<String, Object> output;
   public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> require_args;
-  public java.util.Map<String, Object> output;
+  public String url;
 }

@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * SipProfileResponse — generated wire type ('relay_rest' spec, components/schemas
  * 'SipProfileResponse').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SipProfileResponse {
   public String domain;
@@ -20,4 +20,5 @@ public final class SipProfileResponse {
   public java.util.List<Object> default_ciphers;
   public String default_encryption;
   public String default_send_as;
+  public String default_outbound_policy;
 }

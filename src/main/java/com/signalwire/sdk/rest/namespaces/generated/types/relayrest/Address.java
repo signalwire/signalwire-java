@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
 /**
  * Address — generated wire type ('relay_rest' spec, components/schemas 'Address').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Address {
   public String id;
@@ -26,4 +26,7 @@ public final class Address {
   public String state;
   public String postal_code;
   public String zip_code;
+  public Boolean emergency_enabled;
+  public Boolean validated;
+  public String validated_at;
 }

@@ -10,10 +10,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * SubscriberTokenRequest — generated wire type ('fabric' spec, components/schemas
  * 'SubscriberTokenRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SubscriberTokenRequest {
+  public String ch;
   public String reference;
   public Long expire_at;
   public String application_id;
@@ -26,4 +27,6 @@ public final class SubscriberTokenRequest {
   public String country;
   public String region;
   public String company_name;
+  public String scope;
+  public String fingerprint;
 }

@@ -67,11 +67,9 @@ public class Call {
   private volatile Map<String, Object> device;
 
   /**
-   * Call identity carried on every RELAY call event and stored by the reference as public state
-   * ({@code self.project_id} / {@code self.context} / {@code self.segment_id},
-   * relay/call.py:357-363). The event frames already carry all three ({@link
-   * RelayEvent.CallReceiveEvent#getProjectId()} et al.); the port previously discarded them, so a
-   * Java caller could not read the project, context, or segment the call belongs to.
+   * Call identity carried on every RELAY call event: project id, context, and segment id. The event
+   * frames carry all three ({@link RelayEvent.CallReceiveEvent#getProjectId()} et al.), and they
+   * are retained here so a caller can read which project, context, and segment a call belongs to.
    */
   private volatile String projectId;
 
@@ -99,8 +97,8 @@ public class Call {
   }
 
   /**
-   * Full call identity, mirroring the reference's {@code Call(client, call_id, node_id, project_id,
-   * context, ..., segment_id)}.
+   * Full call identity: RELAY call id and node id plus the project, context, and segment the call
+   * belongs to.
    *
    * @param callId the RELAY call id
    * @param nodeId the RELAY node id
@@ -149,10 +147,23 @@ public class Call {
     this.segmentId = segmentId;
   }
 
+  /**
+   * The platform's identifier for this call leg. Supplied at construction and never absent, which
+   * is why it is not {@link java.util.Optional} like the other scalars here.
+   *
+   * @return the call id.
+   */
   public String getCallId() {
     return callId;
   }
 
+  /**
+   * The leg's current lifecycle state as sent on the wire — {@code created}, {@code ringing},
+   * {@code answered} or {@code ended}. Defaults to {@code created} so it is never absent; {@link
+   * #getCallState()} gives the typed view.
+   *
+   * @return the raw call state.
+   */
   public String getState() {
     return state;
   }
@@ -206,34 +217,78 @@ public class Call {
     return Optional.ofNullable(tag);
   }
 
+  /**
+   * Record the RELAY node hosting this leg, which every subsequent calling method must carry.
+   *
+   * @param nodeId the node id.
+   */
   public void setNodeId(String nodeId) {
     this.nodeId = nodeId;
   }
 
+  /**
+   * Overwrite the lifecycle state directly. Note this does NOT run the state-wait or listener
+   * machinery an incoming event does — {@code waitForAnswered()} and friends will not observe it.
+   *
+   * @param state the raw wire state.
+   */
   public void setState(String state) {
     this.state = state;
   }
 
+  /**
+   * Record why the leg terminated, e.g. {@code hangup}, {@code busy}, {@code noAnswer}.
+   *
+   * @param endReason the end reason.
+   */
   public void setEndReason(String endReason) {
     this.endReason = endReason;
   }
 
+  /**
+   * Record whether the leg is {@code inbound} or {@code outbound}.
+   *
+   * @param direction the call direction.
+   */
   public void setDirection(String direction) {
     this.direction = direction;
   }
 
+  /**
+   * Record the dial-correlation tag, which is how an outbound leg is matched back to the {@code
+   * calling.dial} that created it.
+   *
+   * @param tag the correlation tag.
+   */
   public void setTag(String tag) {
     this.tag = tag;
   }
 
+  /**
+   * Record the device object describing how this leg is reached ({@code phone}, {@code sip}, {@code
+   * webrtc}, {@code agora}) and its parameters.
+   *
+   * @param device the device object.
+   */
   public void setDevice(Map<String, Object> device) {
     this.device = device;
   }
 
+  /**
+   * Bind this call to the client that issues its RPCs. Without it the call has no transport to send
+   * calling methods on.
+   *
+   * @param client the owning RELAY client.
+   */
   public void setClient(RelayClient client) {
     this.client = client;
   }
 
+  /**
+   * Whether the leg has reached {@code ended}.
+   *
+   * @return {@code true} once the call has ended.
+   */
   public boolean isEnded() {
     return Constants.CALL_STATE_ENDED.equals(state);
   }
@@ -327,9 +382,35 @@ public class Call {
     return waitFor(Constants.CALL_STATE_ANSWERED);
   }
 
+  /**
+   * Block until the call is answered, or until {@code timeout} SECONDS elapse.
+   *
+   * <p>The unit is SECONDS and {@code null} means "wait indefinitely" — the boxed {@code Double} is
+   * the same spelling used for an optional timeout elsewhere in the SDK (see {@code
+   * RequestOptions.timeout}). The underlying {@link #waitFor(String, long)} takes milliseconds, so
+   * this converts.
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForAnswered(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ANSWERED, timeoutToMillis(timeout));
+  }
+
   /** Block until the call is ringing (immediate if already ringing or past it). */
   public RelayEvent waitForRinging() {
     return waitFor(Constants.CALL_STATE_RINGING);
+  }
+
+  /**
+   * Block until the call is ringing, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForRinging(Double timeout) {
+    return waitFor(Constants.CALL_STATE_RINGING, timeoutToMillis(timeout));
   }
 
   /** Block until the call is ending (immediate if already ending or past it). */
@@ -337,9 +418,43 @@ public class Call {
     return waitFor(Constants.CALL_STATE_ENDING);
   }
 
+  /**
+   * Block until the call is ending, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForEnding(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ENDING, timeoutToMillis(timeout));
+  }
+
   /** Block until the call has ended. */
   public RelayEvent waitForEnded() {
     return waitFor(Constants.CALL_STATE_ENDED);
+  }
+
+  /**
+   * Block until the call has ended, or until {@code timeout} SECONDS elapse (see {@link
+   * #waitForAnswered(Double)} for the unit/boxing rationale).
+   *
+   * @param timeout the maximum time to wait, in seconds ({@code null} = no timeout)
+   * @return the state event carrying the target state, or {@code null} on timeout
+   */
+  public RelayEvent waitForEnded(Double timeout) {
+    return waitFor(Constants.CALL_STATE_ENDED, timeoutToMillis(timeout));
+  }
+
+  /**
+   * Convert an optional {@code timeout} in SECONDS to the millisecond deadline {@link
+   * #waitFor(String, long)} takes. {@code null} and any non-positive value mean "wait
+   * indefinitely", which that method spells as {@code 0}.
+   */
+  private static long timeoutToMillis(Double timeout) {
+    if (timeout == null || timeout <= 0.0) {
+      return 0L;
+    }
+    return (long) (timeout * 1000.0);
   }
 
   // ── Event dispatch ───────────────────────────────────────────────
@@ -528,6 +643,11 @@ public class Call {
     return executeOnCall(Constants.METHOD_CLEAR_DIGIT_BINDINGS, params);
   }
 
+  /** Send a user event with no {@code event} name — the key is omitted from the request params. */
+  public Map<String, Object> userEvent() {
+    return userEvent(null);
+  }
+
   /** Send a user event. */
   public Map<String, Object> userEvent(String event) {
     Map<String, Object> params = callParams();
@@ -544,6 +664,14 @@ public class Call {
     return executeOnCall(Constants.METHOD_LIVE_TRANSCRIBE, params);
   }
 
+  /**
+   * Start live translation with no options — the optional params ({@code status_url} and any
+   * additional keys) are all left absent from the request.
+   */
+  public Map<String, Object> liveTranslate(Map<String, Object> action) {
+    return liveTranslate(action, null);
+  }
+
   /** Start live translation. */
   public Map<String, Object> liveTranslate(
       Map<String, Object> action, Map<String, Object> options) {
@@ -553,6 +681,14 @@ public class Call {
       params.putAll(options);
     }
     return executeOnCall(Constants.METHOD_LIVE_TRANSLATE, params);
+  }
+
+  /**
+   * SIP REFER transfer with no options — the optional params ({@code status_url} and any additional
+   * keys) are all left absent from the request.
+   */
+  public Map<String, Object> refer(Map<String, Object> deviceSpec) {
+    return refer(deviceSpec, null);
   }
 
   /** SIP REFER transfer. */
@@ -612,6 +748,14 @@ public class Call {
   }
 
   // ── Room methods ─────────────────────────────────────────────────
+
+  /**
+   * Join a room with no options — the optional params ({@code status_url} and any additional keys)
+   * are all left absent from the request.
+   */
+  public Map<String, Object> joinRoom(String name) {
+    return joinRoom(name, null);
+  }
 
   /** Join a room. */
   public Map<String, Object> joinRoom(String name, Map<String, Object> options) {
@@ -724,8 +868,7 @@ public class Call {
 
   /**
    * Record with an explicit control_id (test helper). The {@code audioConfig} is wrapped as {@code
-   * record: {audio: <config>}} on the wire to match the Python {@code call.record(audio=...,
-   * control_id=...)} pattern.
+   * record: {audio: <config>}} on the wire.
    */
   public Action.RecordAction recordAudio(Map<String, Object> audioConfig, String controlId) {
     Map<String, Object> recordCfg = new LinkedHashMap<>();
@@ -1357,6 +1500,14 @@ public class Call {
     return executeOnCall(Constants.METHOD_AI_HOLD, params);
   }
 
+  /**
+   * Resume AI from hold with no options — the optional params ({@code prompt} and any additional
+   * keys) are all left absent from the request.
+   */
+  public Map<String, Object> aiUnhold() {
+    return aiUnhold(null);
+  }
+
   /** Resume AI from hold. */
   public Map<String, Object> aiUnhold(Map<String, Object> options) {
     Map<String, Object> params = callParams();
@@ -1416,6 +1567,11 @@ public class Call {
     }
   }
 
+  /**
+   * A short diagnostic rendering carrying the call id, state, and direction.
+   *
+   * @return the diagnostic string.
+   */
   @Override
   public String toString() {
     return String.format("Call{id=%s, state=%s, direction=%s}", callId, state, direction);

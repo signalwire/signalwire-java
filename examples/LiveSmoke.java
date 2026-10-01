@@ -1,10 +1,10 @@
-/**
+/*
  * Live smoke driver (plan §6.5) — exercises the real SignalWire platform.
  *
- * <p>No-ops unless {@code SWSDK_LIVE_TESTS=1} AND real creds are present
- * ({@code SIGNALWIRE_PROJECT_ID} / {@code SIGNALWIRE_API_TOKEN} / {@code SIGNALWIRE_SPACE}),
- * so it is safe to invoke anywhere; the live-smoke CI workflow sets those from repo secrets and
- * skips when they are absent. Drives four things against the real platform:
+ * <p>No-ops unless {@code SWSDK_LIVE_TESTS=1} AND real creds are present ({@code
+ * SIGNALWIRE_PROJECT_ID} / {@code SIGNALWIRE_API_TOKEN} / {@code SIGNALWIRE_SPACE}), so it is safe
+ * to invoke anywhere; the live-smoke CI workflow sets those from repo secrets and skips when they
+ * are absent. Drives four things against the real platform:
  *
  * <ol>
  *   <li>auth + one REST list (phone numbers),
@@ -29,7 +29,8 @@ public class LiveSmoke {
     String token = System.getenv("SIGNALWIRE_API_TOKEN");
     String space = System.getenv("SIGNALWIRE_SPACE");
     if (isBlank(project) || isBlank(token) || isBlank(space)) {
-      System.out.println("[live-smoke] creds absent — skipped (SIGNALWIRE_PROJECT_ID/API_TOKEN/SPACE).");
+      System.out.println(
+          "[live-smoke] creds absent — skipped (SIGNALWIRE_PROJECT_ID/API_TOKEN/SPACE).");
       return;
     }
 
@@ -37,7 +38,8 @@ public class LiveSmoke {
     System.out.println("[live-smoke] REST: listing phone numbers ...");
     var rest = RestClient.builder().build();
     var numbers = rest.phoneNumbers().list();
-    System.out.println("[live-smoke]   REST OK (" + numbers.size() + " field(s) in list response).");
+    System.out.println(
+        "[live-smoke]   REST OK (" + numbers.size() + " field(s) in list response).");
 
     // 2. one SWML render.
     System.out.println("[live-smoke] SWML: rendering an AgentBase document ...");

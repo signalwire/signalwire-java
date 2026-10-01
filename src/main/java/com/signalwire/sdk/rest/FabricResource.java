@@ -45,18 +45,17 @@ public class FabricResource extends CrudResource {
   /**
    * List the addresses bound to this resource: GET {@code {base}/{id}/addresses}.
    *
-   * <p>Single {@code (id, params)} form (matching the generated per-resource {@code listAddresses}
-   * and the reference/Go {@code ListAddresses(id, params)}), so a fabric resource that OVERRIDES
-   * this with a non-standard address path ({@code CallFlows}, {@code ConferenceRooms}) fully
-   * replaces it — no inherited overload leaks the standard plural path.
+   * <p>Declared in a single {@code (id, params)} form — the same shape the generated per-resource
+   * {@code listAddresses} uses — so a fabric resource that OVERRIDES this with a non-standard
+   * address path ({@code CallFlows}, {@code ConferenceRooms}) fully replaces it: no inherited
+   * overload leaks the standard plural path.
    *
    * <p>Returns {@code Object} rather than a fixed {@code Map} so a subclass whose spec declares a
    * NAMED address-list response schema ({@code CallFlows}, {@code ConferenceRooms}, {@code
    * CxmlApplications}) can COVARIANTLY override with its typed {@code *AddressListResponse} DTO
    * (JAVA-1 typed-returns flip). The plain base copy still yields the decoded wire {@code
    * Map<String,Object>} at runtime; callers that want the typed view use the concrete resource's
-   * override. (This base method is a PORT_ADDITION — the reference records {@code list_addresses}
-   * only on the concrete subclasses.)
+   * override.
    */
   public Object listAddresses(String resourceId, Map<String, String> queryParams) {
     return restGet(getBasePath() + "/" + resourceId + "/addresses", queryParams);

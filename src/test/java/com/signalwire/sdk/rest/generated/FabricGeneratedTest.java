@@ -63,6 +63,33 @@ class FabricGeneratedTest {
   }
 
   @Test
+  void fabricAddressesDeleteSuccess() {
+    dispatch(() -> client.fabric().addresses().delete("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for fabric.delete_fabric_address");
+    assertEquals(
+        "fabric.delete_fabric_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_fabric_address");
+  }
+
+  @Test
+  void fabricAddressesDeleteError() {
+    mock.scenarioSet("fabric.delete_fabric_address", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.fabric().addresses().delete("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.delete_fabric_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.delete_fabric_address");
+    assertEquals(
+        "fabric.delete_fabric_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_fabric_address");
+  }
+
+  @Test
   void fabricAddressesGetSuccess() {
     dispatch(() -> client.fabric().addresses().get("x"));
     MockTest.JournalEntry j = mock.last();
@@ -234,6 +261,65 @@ class FabricGeneratedTest {
   }
 
   @Test
+  void fabricAiAgentsListConversationLogsSuccess() {
+    dispatch(() -> client.fabric().aiAgents().listConversationLogs("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.list_ai_agent_conversation_logs");
+    assertEquals(
+        "fabric.list_ai_agent_conversation_logs",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_ai_agent_conversation_logs");
+  }
+
+  @Test
+  void fabricAiAgentsListConversationLogsError() {
+    mock.scenarioSet("fabric.list_ai_agent_conversation_logs", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () -> client.fabric().aiAgents().listConversationLogs("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.list_ai_agent_conversation_logs");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.list_ai_agent_conversation_logs");
+    assertEquals(
+        "fabric.list_ai_agent_conversation_logs",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_ai_agent_conversation_logs");
+  }
+
+  @Test
+  void fabricAiAgentsListVoicesSuccess() {
+    dispatch(() -> client.fabric().aiAgents().listVoices(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.list_ai_agent_voices");
+    assertEquals(
+        "fabric.list_ai_agent_voices",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_ai_agent_voices");
+  }
+
+  @Test
+  void fabricAiAgentsListVoicesError() {
+    mock.scenarioSet("fabric.list_ai_agent_voices", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().aiAgents().listVoices(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.list_ai_agent_voices");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.list_ai_agent_voices");
+    assertEquals(
+        "fabric.list_ai_agent_voices",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_ai_agent_voices");
+  }
+
+  @Test
   void fabricAiAgentsUpdateSuccess() {
     dispatch(() -> client.fabric().aiAgents().update("x", java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();
@@ -254,6 +340,149 @@ class FabricGeneratedTest {
         Integer.valueOf(500), j.getResponseStatus(), "response_status for fabric.update_ai_agent");
     assertEquals(
         "fabric.update_ai_agent", j.getMatchedRoute(), "matched_route for fabric.update_ai_agent");
+  }
+
+  @Test
+  void fabricAliasAddressesCreateSuccess() {
+    dispatch(() -> client.fabric().aliasAddresses().create(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for fabric.create_alias_address");
+    assertEquals(
+        "fabric.create_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesCreateError() {
+    mock.scenarioSet("fabric.create_alias_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().aliasAddresses().create(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.create_alias_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.create_alias_address");
+    assertEquals(
+        "fabric.create_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesDeleteSuccess() {
+    dispatch(() -> client.fabric().aliasAddresses().delete("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for fabric.delete_alias_address");
+    assertEquals(
+        "fabric.delete_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesDeleteError() {
+    mock.scenarioSet("fabric.delete_alias_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.fabric().aliasAddresses().delete("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.delete_alias_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.delete_alias_address");
+    assertEquals(
+        "fabric.delete_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesGetSuccess() {
+    dispatch(() -> client.fabric().aliasAddresses().get("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.get_alias_address");
+    assertEquals(
+        "fabric.get_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.get_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesGetError() {
+    mock.scenarioSet("fabric.get_alias_address", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.fabric().aliasAddresses().get("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.get_alias_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.get_alias_address");
+    assertEquals(
+        "fabric.get_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.get_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesListSuccess() {
+    dispatch(() -> client.fabric().aliasAddresses().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.list_alias_addresses");
+    assertEquals(
+        "fabric.list_alias_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_alias_addresses");
+  }
+
+  @Test
+  void fabricAliasAddressesListError() {
+    mock.scenarioSet("fabric.list_alias_addresses", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().aliasAddresses().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.list_alias_addresses");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.list_alias_addresses");
+    assertEquals(
+        "fabric.list_alias_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_alias_addresses");
+  }
+
+  @Test
+  void fabricAliasAddressesUpdateSuccess() {
+    dispatch(() -> client.fabric().aliasAddresses().update("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PATCH", j.method, "method for fabric.update_alias_address");
+    assertEquals(
+        "fabric.update_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_alias_address");
+  }
+
+  @Test
+  void fabricAliasAddressesUpdateError() {
+    mock.scenarioSet("fabric.update_alias_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () -> client.fabric().aliasAddresses().update("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.update_alias_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.update_alias_address");
+    assertEquals(
+        "fabric.update_alias_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_alias_address");
   }
 
   @Test
@@ -1312,6 +1541,151 @@ class FabricGeneratedTest {
   }
 
   @Test
+  void fabricPhoneNumberAddressesCreateSuccess() {
+    dispatch(() -> client.fabric().phoneNumberAddresses().create(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for fabric.create_phone_number_address");
+    assertEquals(
+        "fabric.create_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesCreateError() {
+    mock.scenarioSet("fabric.create_phone_number_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () -> client.fabric().phoneNumberAddresses().create(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.create_phone_number_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.create_phone_number_address");
+    assertEquals(
+        "fabric.create_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesDeleteSuccess() {
+    dispatch(() -> client.fabric().phoneNumberAddresses().delete("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for fabric.delete_phone_number_address");
+    assertEquals(
+        "fabric.delete_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesDeleteError() {
+    mock.scenarioSet("fabric.delete_phone_number_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.fabric().phoneNumberAddresses().delete("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.delete_phone_number_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.delete_phone_number_address");
+    assertEquals(
+        "fabric.delete_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesGetSuccess() {
+    dispatch(() -> client.fabric().phoneNumberAddresses().get("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.get_phone_number_address");
+    assertEquals(
+        "fabric.get_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.get_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesGetError() {
+    mock.scenarioSet("fabric.get_phone_number_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.fabric().phoneNumberAddresses().get("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.get_phone_number_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.get_phone_number_address");
+    assertEquals(
+        "fabric.get_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.get_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesListSuccess() {
+    dispatch(() -> client.fabric().phoneNumberAddresses().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.list_phone_number_addresses");
+    assertEquals(
+        "fabric.list_phone_number_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_phone_number_addresses");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesListError() {
+    mock.scenarioSet("fabric.list_phone_number_addresses", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().phoneNumberAddresses().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.list_phone_number_addresses");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.list_phone_number_addresses");
+    assertEquals(
+        "fabric.list_phone_number_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_phone_number_addresses");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesUpdateSuccess() {
+    dispatch(() -> client.fabric().phoneNumberAddresses().update("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PATCH", j.method, "method for fabric.update_phone_number_address");
+    assertEquals(
+        "fabric.update_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_phone_number_address");
+  }
+
+  @Test
+  void fabricPhoneNumberAddressesUpdateError() {
+    mock.scenarioSet("fabric.update_phone_number_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () -> client.fabric().phoneNumberAddresses().update("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.update_phone_number_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.update_phone_number_address");
+    assertEquals(
+        "fabric.update_phone_number_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_phone_number_address");
+  }
+
+  @Test
   void fabricRelayApplicationsCreateSuccess() {
     dispatch(() -> client.fabric().relayApplications().create(java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();
@@ -1580,6 +1954,100 @@ class FabricGeneratedTest {
   }
 
   @Test
+  void fabricResourcesAssignSipEndpointSuccess() {
+    dispatch(
+        () ->
+            client
+                .fabric()
+                .resources()
+                .assignSipEndpoint(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                        .AssignSipEndpointRequest.builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for fabric.assign_resource_sip_endpoint");
+    assertEquals(
+        "fabric.assign_resource_sip_endpoint",
+        j.getMatchedRoute(),
+        "matched_route for fabric.assign_resource_sip_endpoint");
+  }
+
+  @Test
+  void fabricResourcesAssignSipEndpointError() {
+    mock.scenarioSet("fabric.assign_resource_sip_endpoint", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .fabric()
+                    .resources()
+                    .assignSipEndpoint(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                            .AssignSipEndpointRequest.builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.assign_resource_sip_endpoint");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.assign_resource_sip_endpoint");
+    assertEquals(
+        "fabric.assign_resource_sip_endpoint",
+        j.getMatchedRoute(),
+        "matched_route for fabric.assign_resource_sip_endpoint");
+  }
+
+  @Test
+  void fabricResourcesAssignWhatsappNumberSuccess() {
+    dispatch(
+        () ->
+            client
+                .fabric()
+                .resources()
+                .assignWhatsappNumber(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                        .AssignWhatsappNumberRequest.builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for fabric.assign_resource_whatsapp_number");
+    assertEquals(
+        "fabric.assign_resource_whatsapp_number",
+        j.getMatchedRoute(),
+        "matched_route for fabric.assign_resource_whatsapp_number");
+  }
+
+  @Test
+  void fabricResourcesAssignWhatsappNumberError() {
+    mock.scenarioSet("fabric.assign_resource_whatsapp_number", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .fabric()
+                    .resources()
+                    .assignWhatsappNumber(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.GenericResources
+                            .AssignWhatsappNumberRequest.builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.assign_resource_whatsapp_number");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.assign_resource_whatsapp_number");
+    assertEquals(
+        "fabric.assign_resource_whatsapp_number",
+        j.getMatchedRoute(),
+        "matched_route for fabric.assign_resource_whatsapp_number");
+  }
+
+  @Test
   void fabricResourcesDeleteSuccess() {
     dispatch(() -> client.fabric().resources().delete("x"));
     MockTest.JournalEntry j = mock.last();
@@ -1673,6 +2141,141 @@ class FabricGeneratedTest {
         "fabric.list_resource_addresses",
         j.getMatchedRoute(),
         "matched_route for fabric.list_resource_addresses");
+  }
+
+  @Test
+  void fabricSipAddressesCreateSuccess() {
+    dispatch(() -> client.fabric().sipAddresses().create(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for fabric.create_sip_address");
+    assertEquals(
+        "fabric.create_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesCreateError() {
+    mock.scenarioSet("fabric.create_sip_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().sipAddresses().create(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.create_sip_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.create_sip_address");
+    assertEquals(
+        "fabric.create_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.create_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesDeleteSuccess() {
+    dispatch(() -> client.fabric().sipAddresses().delete("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for fabric.delete_sip_address");
+    assertEquals(
+        "fabric.delete_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesDeleteError() {
+    mock.scenarioSet("fabric.delete_sip_address", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.fabric().sipAddresses().delete("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.delete_sip_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.delete_sip_address");
+    assertEquals(
+        "fabric.delete_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.delete_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesGetSuccess() {
+    dispatch(() -> client.fabric().sipAddresses().get("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.get_sip_address");
+    assertEquals(
+        "fabric.get_sip_address", j.getMatchedRoute(), "matched_route for fabric.get_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesGetError() {
+    mock.scenarioSet("fabric.get_sip_address", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.fabric().sipAddresses().get("x"));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.get_sip_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500), j.getResponseStatus(), "response_status for fabric.get_sip_address");
+    assertEquals(
+        "fabric.get_sip_address", j.getMatchedRoute(), "matched_route for fabric.get_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesListSuccess() {
+    dispatch(() -> client.fabric().sipAddresses().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for fabric.list_sip_addresses");
+    assertEquals(
+        "fabric.list_sip_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_sip_addresses");
+  }
+
+  @Test
+  void fabricSipAddressesListError() {
+    mock.scenarioSet("fabric.list_sip_addresses", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().sipAddresses().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.list_sip_addresses");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.list_sip_addresses");
+    assertEquals(
+        "fabric.list_sip_addresses",
+        j.getMatchedRoute(),
+        "matched_route for fabric.list_sip_addresses");
+  }
+
+  @Test
+  void fabricSipAddressesUpdateSuccess() {
+    dispatch(() -> client.fabric().sipAddresses().update("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PATCH", j.method, "method for fabric.update_sip_address");
+    assertEquals(
+        "fabric.update_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_sip_address");
+  }
+
+  @Test
+  void fabricSipAddressesUpdateError() {
+    mock.scenarioSet("fabric.update_sip_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.fabric().sipAddresses().update("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for fabric.update_sip_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for fabric.update_sip_address");
+    assertEquals(
+        "fabric.update_sip_address",
+        j.getMatchedRoute(),
+        "matched_route for fabric.update_sip_address");
   }
 
   @Test
@@ -2776,51 +3379,6 @@ class FabricGeneratedTest {
         "fabric.create_subscriber_guest_token",
         j.getMatchedRoute(),
         "matched_route for fabric.create_subscriber_guest_token");
-  }
-
-  @Test
-  void fabricTokensCreateInviteTokenSuccess() {
-    dispatch(
-        () ->
-            client
-                .fabric()
-                .tokens()
-                .createInviteToken(
-                    com.signalwire.sdk.rest.namespaces.generated.FabricTokens
-                        .CreateInviteTokenRequest.builder()
-                        .build()));
-    MockTest.JournalEntry j = mock.last();
-    assertEquals("POST", j.method, "method for fabric.create_subscriber_invite_token");
-    assertEquals(
-        "fabric.create_subscriber_invite_token",
-        j.getMatchedRoute(),
-        "matched_route for fabric.create_subscriber_invite_token");
-  }
-
-  @Test
-  void fabricTokensCreateInviteTokenError() {
-    mock.scenarioSet("fabric.create_subscriber_invite_token", 500, Map.of("error", "x"));
-    RestError ex =
-        assertThrows(
-            RestError.class,
-            () ->
-                client
-                    .fabric()
-                    .tokens()
-                    .createInviteToken(
-                        com.signalwire.sdk.rest.namespaces.generated.FabricTokens
-                            .CreateInviteTokenRequest.builder()
-                            .build()));
-    assertEquals(500, ex.getStatusCode(), "status for fabric.create_subscriber_invite_token");
-    MockTest.JournalEntry j = mock.last();
-    assertEquals(
-        Integer.valueOf(500),
-        j.getResponseStatus(),
-        "response_status for fabric.create_subscriber_invite_token");
-    assertEquals(
-        "fabric.create_subscriber_invite_token",
-        j.getMatchedRoute(),
-        "matched_route for fabric.create_subscriber_invite_token");
   }
 
   @Test

@@ -90,52 +90,49 @@ public class CxmlApplications extends BaseResource {
 
   /** Closed typed request for {@link #update} (builder + extras door). */
   public static final class UpdateRequest {
-    private final String displayName;
-    private final String accountSid;
-    private final String voiceUrl;
-    private final java.util.Map<String, Object> voiceMethod;
-    private final String voiceFallbackUrl;
-    private final java.util.Map<String, Object> voiceFallbackMethod;
-    private final String statusCallback;
-    private final java.util.Map<String, Object> statusCallbackMethod;
-    private final String smsUrl;
-    private final java.util.Map<String, Object> smsMethod;
-    private final String smsFallbackUrl;
-    private final java.util.Map<String, Object> smsFallbackMethod;
-    private final String smsStatusCallback;
-    private final java.util.Map<String, Object> smsStatusCallbackMethod;
+    private final String name;
+    private final String callRequestUrl;
+    private final String callRequestMethod;
+    private final String callFallbackUrl;
+    private final String callFallbackMethod;
+    private final String callStatusUrl;
+    private final String callStatusMethod;
+    private final String messageRequestUrl;
+    private final String messageRequestMethod;
+    private final String messageFallbackUrl;
+    private final String messageFallbackMethod;
+    private final String messageStatusUrl;
+    private final String messageStatusMethod;
     private final java.util.Map<String, Object> extras;
 
     private UpdateRequest(
-        String displayName,
-        String accountSid,
-        String voiceUrl,
-        java.util.Map<String, Object> voiceMethod,
-        String voiceFallbackUrl,
-        java.util.Map<String, Object> voiceFallbackMethod,
-        String statusCallback,
-        java.util.Map<String, Object> statusCallbackMethod,
-        String smsUrl,
-        java.util.Map<String, Object> smsMethod,
-        String smsFallbackUrl,
-        java.util.Map<String, Object> smsFallbackMethod,
-        String smsStatusCallback,
-        java.util.Map<String, Object> smsStatusCallbackMethod,
+        String name,
+        String callRequestUrl,
+        String callRequestMethod,
+        String callFallbackUrl,
+        String callFallbackMethod,
+        String callStatusUrl,
+        String callStatusMethod,
+        String messageRequestUrl,
+        String messageRequestMethod,
+        String messageFallbackUrl,
+        String messageFallbackMethod,
+        String messageStatusUrl,
+        String messageStatusMethod,
         java.util.Map<String, Object> extras) {
-      this.displayName = displayName;
-      this.accountSid = accountSid;
-      this.voiceUrl = voiceUrl;
-      this.voiceMethod = voiceMethod;
-      this.voiceFallbackUrl = voiceFallbackUrl;
-      this.voiceFallbackMethod = voiceFallbackMethod;
-      this.statusCallback = statusCallback;
-      this.statusCallbackMethod = statusCallbackMethod;
-      this.smsUrl = smsUrl;
-      this.smsMethod = smsMethod;
-      this.smsFallbackUrl = smsFallbackUrl;
-      this.smsFallbackMethod = smsFallbackMethod;
-      this.smsStatusCallback = smsStatusCallback;
-      this.smsStatusCallbackMethod = smsStatusCallbackMethod;
+      this.name = name;
+      this.callRequestUrl = callRequestUrl;
+      this.callRequestMethod = callRequestMethod;
+      this.callFallbackUrl = callFallbackUrl;
+      this.callFallbackMethod = callFallbackMethod;
+      this.callStatusUrl = callStatusUrl;
+      this.callStatusMethod = callStatusMethod;
+      this.messageRequestUrl = messageRequestUrl;
+      this.messageRequestMethod = messageRequestMethod;
+      this.messageFallbackUrl = messageFallbackUrl;
+      this.messageFallbackMethod = messageFallbackMethod;
+      this.messageStatusUrl = messageStatusUrl;
+      this.messageStatusMethod = messageStatusMethod;
       this.extras = extras;
     }
 
@@ -145,47 +142,44 @@ public class CxmlApplications extends BaseResource {
 
     java.util.Map<String, Object> toBody() {
       java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
-      if (this.displayName != null) {
-        body.put("display_name", this.displayName);
+      if (this.name != null) {
+        body.put("name", this.name);
       }
-      if (this.accountSid != null) {
-        body.put("account_sid", this.accountSid);
+      if (this.callRequestUrl != null) {
+        body.put("call_request_url", this.callRequestUrl);
       }
-      if (this.voiceUrl != null) {
-        body.put("voice_url", this.voiceUrl);
+      if (this.callRequestMethod != null) {
+        body.put("call_request_method", this.callRequestMethod);
       }
-      if (this.voiceMethod != null) {
-        body.put("voice_method", this.voiceMethod);
+      if (this.callFallbackUrl != null) {
+        body.put("call_fallback_url", this.callFallbackUrl);
       }
-      if (this.voiceFallbackUrl != null) {
-        body.put("voice_fallback_url", this.voiceFallbackUrl);
+      if (this.callFallbackMethod != null) {
+        body.put("call_fallback_method", this.callFallbackMethod);
       }
-      if (this.voiceFallbackMethod != null) {
-        body.put("voice_fallback_method", this.voiceFallbackMethod);
+      if (this.callStatusUrl != null) {
+        body.put("call_status_url", this.callStatusUrl);
       }
-      if (this.statusCallback != null) {
-        body.put("status_callback", this.statusCallback);
+      if (this.callStatusMethod != null) {
+        body.put("call_status_method", this.callStatusMethod);
       }
-      if (this.statusCallbackMethod != null) {
-        body.put("status_callback_method", this.statusCallbackMethod);
+      if (this.messageRequestUrl != null) {
+        body.put("message_request_url", this.messageRequestUrl);
       }
-      if (this.smsUrl != null) {
-        body.put("sms_url", this.smsUrl);
+      if (this.messageRequestMethod != null) {
+        body.put("message_request_method", this.messageRequestMethod);
       }
-      if (this.smsMethod != null) {
-        body.put("sms_method", this.smsMethod);
+      if (this.messageFallbackUrl != null) {
+        body.put("message_fallback_url", this.messageFallbackUrl);
       }
-      if (this.smsFallbackUrl != null) {
-        body.put("sms_fallback_url", this.smsFallbackUrl);
+      if (this.messageFallbackMethod != null) {
+        body.put("message_fallback_method", this.messageFallbackMethod);
       }
-      if (this.smsFallbackMethod != null) {
-        body.put("sms_fallback_method", this.smsFallbackMethod);
+      if (this.messageStatusUrl != null) {
+        body.put("message_status_url", this.messageStatusUrl);
       }
-      if (this.smsStatusCallback != null) {
-        body.put("sms_status_callback", this.smsStatusCallback);
-      }
-      if (this.smsStatusCallbackMethod != null) {
-        body.put("sms_status_callback_method", this.smsStatusCallbackMethod);
+      if (this.messageStatusMethod != null) {
+        body.put("message_status_method", this.messageStatusMethod);
       }
       if (this.extras != null) {
         body.putAll(this.extras);
@@ -194,90 +188,83 @@ public class CxmlApplications extends BaseResource {
     }
 
     public static final class Builder {
-      private String displayName;
-      private String accountSid;
-      private String voiceUrl;
-      private java.util.Map<String, Object> voiceMethod;
-      private String voiceFallbackUrl;
-      private java.util.Map<String, Object> voiceFallbackMethod;
-      private String statusCallback;
-      private java.util.Map<String, Object> statusCallbackMethod;
-      private String smsUrl;
-      private java.util.Map<String, Object> smsMethod;
-      private String smsFallbackUrl;
-      private java.util.Map<String, Object> smsFallbackMethod;
-      private String smsStatusCallback;
-      private java.util.Map<String, Object> smsStatusCallbackMethod;
+      private String name;
+      private String callRequestUrl;
+      private String callRequestMethod;
+      private String callFallbackUrl;
+      private String callFallbackMethod;
+      private String callStatusUrl;
+      private String callStatusMethod;
+      private String messageRequestUrl;
+      private String messageRequestMethod;
+      private String messageFallbackUrl;
+      private String messageFallbackMethod;
+      private String messageStatusUrl;
+      private String messageStatusMethod;
       private java.util.Map<String, Object> extras;
 
-      public Builder displayName(String displayName) {
-        this.displayName = displayName;
+      public Builder name(String name) {
+        this.name = name;
         return this;
       }
 
-      public Builder accountSid(String accountSid) {
-        this.accountSid = accountSid;
+      public Builder callRequestUrl(String callRequestUrl) {
+        this.callRequestUrl = callRequestUrl;
         return this;
       }
 
-      public Builder voiceUrl(String voiceUrl) {
-        this.voiceUrl = voiceUrl;
+      public Builder callRequestMethod(String callRequestMethod) {
+        this.callRequestMethod = callRequestMethod;
         return this;
       }
 
-      public Builder voiceMethod(java.util.Map<String, Object> voiceMethod) {
-        this.voiceMethod = voiceMethod;
+      public Builder callFallbackUrl(String callFallbackUrl) {
+        this.callFallbackUrl = callFallbackUrl;
         return this;
       }
 
-      public Builder voiceFallbackUrl(String voiceFallbackUrl) {
-        this.voiceFallbackUrl = voiceFallbackUrl;
+      public Builder callFallbackMethod(String callFallbackMethod) {
+        this.callFallbackMethod = callFallbackMethod;
         return this;
       }
 
-      public Builder voiceFallbackMethod(java.util.Map<String, Object> voiceFallbackMethod) {
-        this.voiceFallbackMethod = voiceFallbackMethod;
+      public Builder callStatusUrl(String callStatusUrl) {
+        this.callStatusUrl = callStatusUrl;
         return this;
       }
 
-      public Builder statusCallback(String statusCallback) {
-        this.statusCallback = statusCallback;
+      public Builder callStatusMethod(String callStatusMethod) {
+        this.callStatusMethod = callStatusMethod;
         return this;
       }
 
-      public Builder statusCallbackMethod(java.util.Map<String, Object> statusCallbackMethod) {
-        this.statusCallbackMethod = statusCallbackMethod;
+      public Builder messageRequestUrl(String messageRequestUrl) {
+        this.messageRequestUrl = messageRequestUrl;
         return this;
       }
 
-      public Builder smsUrl(String smsUrl) {
-        this.smsUrl = smsUrl;
+      public Builder messageRequestMethod(String messageRequestMethod) {
+        this.messageRequestMethod = messageRequestMethod;
         return this;
       }
 
-      public Builder smsMethod(java.util.Map<String, Object> smsMethod) {
-        this.smsMethod = smsMethod;
+      public Builder messageFallbackUrl(String messageFallbackUrl) {
+        this.messageFallbackUrl = messageFallbackUrl;
         return this;
       }
 
-      public Builder smsFallbackUrl(String smsFallbackUrl) {
-        this.smsFallbackUrl = smsFallbackUrl;
+      public Builder messageFallbackMethod(String messageFallbackMethod) {
+        this.messageFallbackMethod = messageFallbackMethod;
         return this;
       }
 
-      public Builder smsFallbackMethod(java.util.Map<String, Object> smsFallbackMethod) {
-        this.smsFallbackMethod = smsFallbackMethod;
+      public Builder messageStatusUrl(String messageStatusUrl) {
+        this.messageStatusUrl = messageStatusUrl;
         return this;
       }
 
-      public Builder smsStatusCallback(String smsStatusCallback) {
-        this.smsStatusCallback = smsStatusCallback;
-        return this;
-      }
-
-      public Builder smsStatusCallbackMethod(
-          java.util.Map<String, Object> smsStatusCallbackMethod) {
-        this.smsStatusCallbackMethod = smsStatusCallbackMethod;
+      public Builder messageStatusMethod(String messageStatusMethod) {
+        this.messageStatusMethod = messageStatusMethod;
         return this;
       }
 
@@ -288,20 +275,19 @@ public class CxmlApplications extends BaseResource {
 
       public UpdateRequest build() {
         return new UpdateRequest(
-            displayName,
-            accountSid,
-            voiceUrl,
-            voiceMethod,
-            voiceFallbackUrl,
-            voiceFallbackMethod,
-            statusCallback,
-            statusCallbackMethod,
-            smsUrl,
-            smsMethod,
-            smsFallbackUrl,
-            smsFallbackMethod,
-            smsStatusCallback,
-            smsStatusCallbackMethod,
+            name,
+            callRequestUrl,
+            callRequestMethod,
+            callFallbackUrl,
+            callFallbackMethod,
+            callStatusUrl,
+            callStatusMethod,
+            messageRequestUrl,
+            messageRequestMethod,
+            messageFallbackUrl,
+            messageFallbackMethod,
+            messageStatusUrl,
+            messageStatusMethod,
             extras);
       }
     }

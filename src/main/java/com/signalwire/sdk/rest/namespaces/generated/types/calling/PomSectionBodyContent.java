@@ -10,14 +10,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * PomSectionBodyContent — generated wire type ('calling' spec, components/schemas
  * 'PomSectionBodyContent').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PomSectionBodyContent {
   public String title;
-  public java.util.List<Object> subsections;
-  public java.util.Map<String, Object> numbered;
-  public java.util.Map<String, Object> numberedBullets;
   public String body;
   public java.util.List<Object> bullets;
+  public Boolean numbered;
+  public Boolean numberedBullets;
+  public java.util.List<Object> subsections;
 }

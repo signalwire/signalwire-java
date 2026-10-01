@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * SipEndpointUpdateRequest — generated wire type ('fabric' spec, components/schemas
  * 'SipEndpointUpdateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SipEndpointUpdateRequest {
   public String username;
@@ -22,4 +22,5 @@ public final class SipEndpointUpdateRequest {
   public String encryption;
   public String call_handler;
   public String calling_handler_resource_id;
+  public String password;
 }

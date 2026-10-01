@@ -181,6 +181,50 @@ class RelayRestGeneratedTest {
   }
 
   @Test
+  void addressesUpdateSuccess() {
+    dispatch(
+        () ->
+            client
+                .addresses()
+                .update(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.Addresses.UpdateRequest.builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PUT", j.method, "method for relay-rest.update_address");
+    assertEquals(
+        "relay-rest.update_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.update_address");
+  }
+
+  @Test
+  void addressesUpdateError() {
+    mock.scenarioSet("relay-rest.update_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .addresses()
+                    .update(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.Addresses.UpdateRequest
+                            .builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.update_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.update_address");
+    assertEquals(
+        "relay-rest.update_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.update_address");
+  }
+
+  @Test
   void importedNumbersCreateSuccess() {
     dispatch(
         () ->
@@ -644,6 +688,78 @@ class RelayRestGeneratedTest {
   }
 
   @Test
+  void phoneNumbersAssignE911AddressSuccess() {
+    dispatch(
+        () ->
+            client
+                .phoneNumbers()
+                .assignE911Address(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers
+                        .AssignE911AddressRequest.builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for relay-rest.assign_e911_address");
+    assertEquals(
+        "relay-rest.assign_e911_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.assign_e911_address");
+  }
+
+  @Test
+  void phoneNumbersAssignE911AddressError() {
+    mock.scenarioSet("relay-rest.assign_e911_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .phoneNumbers()
+                    .assignE911Address(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers
+                            .AssignE911AddressRequest.builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.assign_e911_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.assign_e911_address");
+    assertEquals(
+        "relay-rest.assign_e911_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.assign_e911_address");
+  }
+
+  @Test
+  void phoneNumbersClearCnamSuccess() {
+    dispatch(() -> client.phoneNumbers().clearCnam("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for relay-rest.clear_caller_id_name");
+    assertEquals(
+        "relay-rest.clear_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.clear_caller_id_name");
+  }
+
+  @Test
+  void phoneNumbersClearCnamError() {
+    mock.scenarioSet("relay-rest.clear_caller_id_name", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.phoneNumbers().clearCnam("x"));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.clear_caller_id_name");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.clear_caller_id_name");
+    assertEquals(
+        "relay-rest.clear_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.clear_caller_id_name");
+  }
+
+  @Test
   void phoneNumbersCreateSuccess() {
     dispatch(() -> client.phoneNumbers().create(java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();
@@ -726,6 +842,34 @@ class RelayRestGeneratedTest {
   }
 
   @Test
+  void phoneNumbersGetCnamSuccess() {
+    dispatch(() -> client.phoneNumbers().getCnam("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for relay-rest.retrieve_caller_id_name");
+    assertEquals(
+        "relay-rest.retrieve_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.retrieve_caller_id_name");
+  }
+
+  @Test
+  void phoneNumbersGetCnamError() {
+    mock.scenarioSet("relay-rest.retrieve_caller_id_name", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.phoneNumbers().getCnam("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.retrieve_caller_id_name");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.retrieve_caller_id_name");
+    assertEquals(
+        "relay-rest.retrieve_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.retrieve_caller_id_name");
+  }
+
+  @Test
   void phoneNumbersListSuccess() {
     dispatch(() -> client.phoneNumbers().list(java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();
@@ -751,6 +895,79 @@ class RelayRestGeneratedTest {
         "relay-rest.list_phone_numbers",
         j.getMatchedRoute(),
         "matched_route for relay-rest.list_phone_numbers");
+  }
+
+  @Test
+  void phoneNumbersRemoveE911AddressSuccess() {
+    dispatch(() -> client.phoneNumbers().removeE911Address("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for relay-rest.remove_e911_address");
+    assertEquals(
+        "relay-rest.remove_e911_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.remove_e911_address");
+  }
+
+  @Test
+  void phoneNumbersRemoveE911AddressError() {
+    mock.scenarioSet("relay-rest.remove_e911_address", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.phoneNumbers().removeE911Address("x"));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.remove_e911_address");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.remove_e911_address");
+    assertEquals(
+        "relay-rest.remove_e911_address",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.remove_e911_address");
+  }
+
+  @Test
+  void phoneNumbersRequestCnamSuccess() {
+    dispatch(
+        () ->
+            client
+                .phoneNumbers()
+                .requestCnam(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers.RequestCnamRequest
+                        .builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for relay-rest.request_caller_id_name");
+    assertEquals(
+        "relay-rest.request_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.request_caller_id_name");
+  }
+
+  @Test
+  void phoneNumbersRequestCnamError() {
+    mock.scenarioSet("relay-rest.request_caller_id_name", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .phoneNumbers()
+                    .requestCnam(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.PhoneNumbers.RequestCnamRequest
+                            .builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.request_caller_id_name");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.request_caller_id_name");
+    assertEquals(
+        "relay-rest.request_caller_id_name",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.request_caller_id_name");
   }
 
   @Test
@@ -1041,6 +1258,34 @@ class RelayRestGeneratedTest {
   }
 
   @Test
+  void recordingsDownloadSuccess() {
+    dispatch(() -> client.recordings().download("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for relay-rest.download_recording");
+    assertEquals(
+        "relay-rest.download_recording",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.download_recording");
+  }
+
+  @Test
+  void recordingsDownloadError() {
+    mock.scenarioSet("relay-rest.download_recording", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.recordings().download("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.download_recording");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for relay-rest.download_recording");
+    assertEquals(
+        "relay-rest.download_recording",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.download_recording");
+  }
+
+  @Test
   void recordingsGetSuccess() {
     dispatch(() -> client.recordings().get("x", java.util.Map.of()));
     MockTest.JournalEntry j = mock.last();
@@ -1231,6 +1476,51 @@ class RelayRestGeneratedTest {
         "relay-rest.list_campaigns",
         j.getMatchedRoute(),
         "matched_route for relay-rest.list_campaigns");
+  }
+
+  @Test
+  void registryBrandsUpdateSuccess() {
+    dispatch(
+        () ->
+            client
+                .registry()
+                .brands()
+                .update(
+                    "x",
+                    com.signalwire.sdk.rest.namespaces.generated.RegistryBrands.UpdateRequest
+                        .builder()
+                        .build()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PUT", j.method, "method for relay-rest.update_brand");
+    assertEquals(
+        "relay-rest.update_brand",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.update_brand");
+  }
+
+  @Test
+  void registryBrandsUpdateError() {
+    mock.scenarioSet("relay-rest.update_brand", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class,
+            () ->
+                client
+                    .registry()
+                    .brands()
+                    .update(
+                        "x",
+                        com.signalwire.sdk.rest.namespaces.generated.RegistryBrands.UpdateRequest
+                            .builder()
+                            .build()));
+    assertEquals(500, ex.getStatusCode(), "status for relay-rest.update_brand");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500), j.getResponseStatus(), "response_status for relay-rest.update_brand");
+    assertEquals(
+        "relay-rest.update_brand",
+        j.getMatchedRoute(),
+        "matched_route for relay-rest.update_brand");
   }
 
   @Test

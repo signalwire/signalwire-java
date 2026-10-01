@@ -6,19 +6,17 @@ import java.util.Map;
 /**
  * Package-private helper for building built-in skill parameter schemas.
  *
- * <p>Kept out of the public surface intentionally: it hosts the Java analog of Python's {@code
- * SkillBase.get_parameter_schema()} classmethod (which skills call via {@code super()}), without
- * being a public method that the cross-language audit would flag as an addition. Skills override
- * {@code getParameterSchema()} and start from {@link #base}, then add their own params.
+ * <p>Kept out of the public surface intentionally: it holds the shared base-schema construction
+ * that every built-in skill starts from, without adding a public method to the SDK's API. Skills
+ * override {@code getParameterSchema()} and start from {@link #base}, then add their own params.
  */
 final class SkillParams {
 
   private SkillParams() {}
 
   /**
-   * The base parameter schema shared by all skills, mirroring Python {@code
-   * SkillBase.get_parameter_schema}: {@code swaig_fields} and {@code skip_prompt} for every skill,
-   * plus {@code tool_name} when the skill supports multiple instances.
+   * The base parameter schema shared by all skills: {@code swaig_fields} and {@code skip_prompt}
+   * for every skill, plus {@code tool_name} when the skill supports multiple instances.
    *
    * @param supportsMultipleInstances whether the skill supports multiple instances
    * @param skillName the skill's name (used as the {@code tool_name} default)

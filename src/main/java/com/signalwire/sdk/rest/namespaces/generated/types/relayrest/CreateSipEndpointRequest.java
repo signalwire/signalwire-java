@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * CreateSipEndpointRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'CreateSipEndpointRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CreateSipEndpointRequest {
   public String username;
@@ -40,4 +40,5 @@ public final class CreateSipEndpointRequest {
   public String call_flow_version;
   public String call_ai_agent_id;
   public String call_relay_script_url;
+  public String call_relay_script_url_method;
 }

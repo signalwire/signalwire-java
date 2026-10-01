@@ -9,9 +9,37 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * HangupAction — generated wire type ('calling' spec, components/schemas 'HangupAction').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class HangupAction {
-  public java.util.Map<String, Object> hangup;
+  public java.util.Map<String, Object> SWML;
+  public java.util.List<Object> add_dynamic_hints;
+  public java.util.Map<String, Object> back_to_back_functions;
+  public String change_context;
+  public String change_step;
+  public java.util.Map<String, Object> change_voice;
+  public Boolean clear_dynamic_hints;
+  public java.util.Map<String, Object> context_switch;
+  public Long end_of_speech_timeout;
+  public Boolean extensive_data;
+  public Boolean functions_on_speaker_timeout;
+  public Boolean hangup;
+  public java.util.Map<String, Object> hold;
+  public java.util.Map<String, Object> playback_bg;
+  public java.util.Map<String, Object> replace_in_history;
+  public String say;
+  public java.util.Map<String, Object> set_global_data;
+  public java.util.Map<String, Object> set_meta_data;
+  public java.util.Map<String, Object> settings;
+  public Long speech_event_timeout;
+  public Boolean stop;
+  public Boolean stop_playback_bg;
+  public java.util.List<Object> toggle_functions;
+  public java.util.Map<String, Object> transfer;
+  public java.util.Map<String, Object> unset_global_data;
+  public java.util.Map<String, Object> unset_meta_data;
+  public java.util.Map<String, Object> user_event;
+  public String user_input;
+  public java.util.Map<String, Object> wait_for_user;
 }

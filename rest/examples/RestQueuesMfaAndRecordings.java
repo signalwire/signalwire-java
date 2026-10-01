@@ -1,66 +1,60 @@
-/**
+/*
  * Example: Queue and recording management via the REST API.
  *
- * The Java SDK exposes queue CRUD directly on {@code client.queues()}
- * (list/create/get/update/delete) and recordings (read-only list/get/delete)
- * directly on {@code client.recordings()}, matching Python parity. MFA
- * verification is not
- * surfaced on the Java port — see {@code PORT_OMISSIONS.md}; it is
- * typically invoked via the messaging or voice flows.
+ * <p>The Java SDK exposes queue CRUD directly on {@code client.queues()}
+ * (list/create/get/update/delete) and recordings (read-only list/get/delete) directly on {@code
+ * client.recordings()}, matching Python parity. MFA verification is not surfaced on the Java port —
+ * see {@code PORT_OMISSIONS.md}; it is typically invoked via the messaging or voice flows.
  *
- * Set these env vars:
- *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
- *   SIGNALWIRE_API_TOKEN    - your SignalWire API token
- *   SIGNALWIRE_SPACE        - your SignalWire space
+ * <p>Set these env vars: SIGNALWIRE_PROJECT_ID - your SignalWire project ID SIGNALWIRE_API_TOKEN -
+ * your SignalWire API token SIGNALWIRE_SPACE - your SignalWire space
  */
-
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.RestError;
-
 import java.util.Map;
 
 public class RestQueuesMfaAndRecordings {
 
-    public static void main(String[] args) {
-        var client = RestClient.builder().build();
+  public static void main(String[] args) {
+    var client = RestClient.builder().build();
 
-        // 1. List call queues via the queues namespace.
-        System.out.println("Listing queues...");
-        try {
-            var queues = client.queues().list();
-            System.out.println("  Queues: " + queues);
-        } catch (RestError e) {
-            System.out.println("  List failed: " + e.getStatusCode());
-        }
-
-        // 2. Create a queue.
-        System.out.println("\nCreating a queue...");
-        try {
-            var queue = client.queues().create(Map.of(
-                    "name", "support-queue",
-                    "max_size", 50
-            ));
-            System.out.println("  Queue created: " + queue);
-        } catch (RestError e) {
-            System.out.println("  Create failed: " + e.getStatusCode());
-        }
-
-        // 3. List recordings via the recordings namespace.
-        System.out.println("\nListing recordings...");
-        try {
-            var recordings = client.recordings().list(Map.of());
-            System.out.println("  Recordings: " + recordings);
-        } catch (RestError e) {
-            System.out.println("  List failed: " + e.getStatusCode());
-        }
-
-        // 4. Fetch a specific recording by ID (demo).
-        System.out.println("\nFetching a recording by ID (demo)...");
-        try {
-            var recording = client.recordings().get("example-recording-id", Map.of());
-            System.out.println("  Recording: " + recording);
-        } catch (RestError e) {
-            System.out.println("  Fetch failed (expected in demo): " + e.getStatusCode());
-        }
+    // 1. List call queues via the queues namespace.
+    System.out.println("Listing queues...");
+    try {
+      var queues = client.queues().list();
+      System.out.println("  Queues: " + queues);
+    } catch (RestError e) {
+      System.out.println("  List failed: " + e.getStatusCode());
     }
+
+    // 2. Create a queue.
+    System.out.println("\nCreating a queue...");
+    try {
+      var queue = client.queues().create(Map.of("name", "support-queue", "max_size", 50));
+      System.out.println("  Queue created: " + queue);
+    } catch (RestError e) {
+      System.out.println("  Create failed: " + e.getStatusCode());
+    }
+
+    // 3. List recordings via the recordings namespace.
+    System.out.println("\nListing recordings...");
+    try {
+      var recordings = client.recordings().list(Map.of());
+      // RecordingListResponse is a pure-data DTO with no toString(); concatenating it printed the
+      // identity hash ("RecordingListResponse@4488aabb") instead of any result. The results live on
+      // `data`.
+      System.out.println("  Recordings: " + recordings.data);
+    } catch (RestError e) {
+      System.out.println("  List failed: " + e.getStatusCode());
+    }
+
+    // 4. Fetch a specific recording by ID (demo).
+    System.out.println("\nFetching a recording by ID (demo)...");
+    try {
+      var recording = client.recordings().get("example-recording-id", Map.of());
+      System.out.println("  Recording: " + recording);
+    } catch (RestError e) {
+      System.out.println("  Fetch failed (expected in demo): " + e.getStatusCode());
+    }
+  }
 }

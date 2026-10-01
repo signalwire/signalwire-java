@@ -15,6 +15,7 @@ import com.signalwire.sdk.relay.Call;
 import com.signalwire.sdk.relay.RelayClient;
 import com.signalwire.sdk.relay.RelayEvent;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.LinkedHashMap;
@@ -27,13 +28,12 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * WaitLivenessDump — the Java port's WAIT-LIVENESS dump program for the cross-port liveness differ
- * (porting-sdk/scripts/diff_port_wait_liveness.py).
+ * WaitLivenessDump — this SDK's dump program for the WAIT-LIVENESS gate's liveness differ.
  *
  * <p>For each liveness case (play, record) it drives a REAL {@link Call} verb against a tiny
  * embedded RELAY WebSocket mock, arms the completing event to arrive {@code DELAY_MS} AFTER {@code
- * waitForCompletion()} begins, measures the wall-clock instants, and derives the same deterministic
- * LIVENESS CLASSIFICATION the differ compares against the Python golden:
+ * waitForCompletion()} begins, measures the wall-clock instants, and derives the deterministic
+ * LIVENESS CLASSIFICATION the differ compares against the shared golden:
  *
  * <pre>
  *   {"blocked_until_event": bool, "returned_after_event": bool,
@@ -70,6 +70,12 @@ final class WaitLivenessDump {
   private static final long DEADLINE_MS = 5_000;
   private static final long BLOCK_TOL_MS = 40;
 
+  /**
+   * Entry point: emits the WAIT-LIVENESS dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   * @throws Exception if the run fails; the gate reads the non-zero exit.
+   */
   public static void main(String[] args) throws Exception {
     Logger.setGlobalLevel(Logger.Level.OFF);
 
@@ -181,30 +187,57 @@ final class WaitLivenessDump {
     private volatile WebSocket conn;
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {
       // no-op
     }
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {
       System.err.println("mock relay error: " + ex.getMessage());
     }
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {
       // no-op
     }
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     @SuppressWarnings("unchecked")
     public void onMessage(WebSocket socket, String raw) {

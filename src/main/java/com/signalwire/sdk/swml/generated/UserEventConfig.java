@@ -2,15 +2,15 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'user_event' config
+// schema.json $defs schema 'UserEventConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * UserEventConfig — generated wire type (flattened SWMLMethod verb 'user_event' config).
+ * UserEventConfig — generated wire type (schema.json $defs schema 'UserEventConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class UserEventConfig {
   public java.util.Map<String, Object> event;

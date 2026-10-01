@@ -6,18 +6,27 @@ This is the JAVA realization of SESSION_CHANGESET_FOR_PORTS.md item I — the
 ``generate_relay_protocol``, php's ``generate_relay_protocol.py``, go's
 ``pkg/relay/protocol_types_generated.go`` and TS's ``protocol.types.generated.ts``.
 
-Source: the canonical porting-sdk ``relay-protocol/*.json`` — one standalone
-JSON-Schema file per RELAY WS method+phase, named
-``<domain>.<method>.(params|result).json`` (draft-2020-12, extracted from the C#
-switchblade Params/Result classes). NOT derived from openapi (a separate
-generator), which is why it lives in its own script rather than generate_rest.py.
+Source: the canonical porting-sdk ``combined-specs/relay.yaml``, read through the
+shared reader ``porting-sdk/scripts/relay_protocol_shapes.py`` (ledger row R11).
+That reader serves ``{method: schema_node}`` per phase, merging the shapes carried
+on a registered method (``methods.<name>.request.params_dto`` /
+``.response.result``) with the six per phase the extractor found for methods the
+vendored spec does not register (``<phase>_shapes_unattached.methods.<name>``) —
+64 methods per phase either way.
 
-The class name derives from the schema's ``x-method`` (fallback: the filename
-base) with dots/underscores folded and PascalCased, plus the phase suffix:
+This replaced a directory of standalone per-method JSON-Schema files
+(``relay-protocol/<domain>.<method>.(params|result).json``, draft-2020-12,
+extracted from the C# switchblade Params/Result classes). The method name now
+comes from the document's own key rather than from an ``x-method`` field with a
+filename fallback, and the phase from the block it was carried in rather than from
+a filename suffix. NOT derived from openapi (a separate generator), which is why
+this lives in its own script rather than generate_rest.py.
 
-  calling.ai_hold.params.json  (x-method "calling.ai_hold", x-phase "params")
-      -> class CallingAiHoldParams
-  signalwire.connect.result.json                             -> SignalwireConnectResult
+The class name is the PascalCased method identifier — dots and underscores folded
+— plus the phase suffix:
+
+  calling.ai_hold    (params phase) -> class CallingAiHoldParams
+  signalwire.connect (result phase) -> class SignalwireConnectResult
 
 The emit/drop rule is the SAME as generate_rest.py's / generate_swml_verbs.py's
 wire-type emitter (the shared ``is_object_schema`` test): an OBJECT schema WITH
@@ -25,12 +34,18 @@ properties becomes a method-less Java data class; an object schema with NO
 properties (or a non-object / scalar / union) is NOT surfaced — the reference
 records those as a module-level ``TypeAlias = dict[str, Any]`` its enumerator drops.
 
-That drop accounts for the 128 source files -> 123 surfaced classes exactly:
-  * 2 files are the ``.event.json`` phase (messaging.receive / messaging.state)
-    — NOT params/result, so not part of this params/result module at all.
-  * 126 params/result files -> 126 candidate names, of which 3 are empty-object
-    placeholder schemas with no properties -> aliases, NOT surfaced.
-  126 - 3 = 123 == the oracle's 123 method-less classes exactly (0/0).
+That drop accounts for 128 candidate shapes -> 123 surfaced classes exactly:
+  * 64 params shapes, of which 2 are permissive placeholders with no ``properties``
+    (calling.call, calling.conference — registered by the server but never given a
+    switchblade Params class) -> 62 classes.
+  * 64 result shapes, of which 3 have no ``properties`` (the same two, plus
+    signalwire.disconnect, whose Result class is genuinely empty) -> 61 classes.
+  62 + 61 = 123 == the oracle's 123 method-less classes exactly (0/0).
+
+(The combined document omits the ``type: object`` the per-file envelope used to
+declare; ``is_object_schema``'s ``(type is None and properties)`` branch covers
+that, so the emit verdict is unchanged. Pinned by
+``porting-sdk/tests/test_relay_protocol_shapes.py``.)
 
 Output layout: one class per file under
   src/main/java/com/signalwire/sdk/relay/generated/<ClassName>.java
@@ -44,11 +59,11 @@ Usage:
     python3 scripts/generate_relay_protocol.py --check    # GEN-FRESH: fail if stale
     python3 scripts/generate_relay_protocol.py --out DIR  # scratch: emit into DIR
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib.util
-import json
 import re
 import sys
 from pathlib import Path
@@ -56,7 +71,9 @@ from pathlib import Path
 
 def _load_rest_generator():
     here = Path(__file__).resolve().parent
-    spec = importlib.util.spec_from_file_location("generate_rest", here / "generate_rest.py")
+    spec = importlib.util.spec_from_file_location(
+        "generate_rest", here / "generate_rest.py"
+    )
     if spec is None or spec.loader is None:  # pragma: no cover
         raise SystemExit("generate_relay_protocol.py: cannot load generate_rest.py")
     mod = importlib.util.module_from_spec(spec)
@@ -78,8 +95,8 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
-# (filename phase tail, Java class-name suffix). Only params/result are surfaced;
-# the ``.event.json`` files (x-phase "event") are a different phase and excluded.
+# (phase, Java class-name suffix). Only params/result are surfaced; the ``event``
+# phase is a different phase and is not served by the shared reader at all.
 _PHASES = (("params", "Params"), ("result", "Result"))
 
 
@@ -92,30 +109,35 @@ def _pascal_method(method: str) -> str:
     return "".join(w[:1].upper() + w[1:] for w in parts)
 
 
-def build_outputs(psdk: Path) -> dict[str, str]:
-    relay_dir = psdk / "relay-protocol"
-    if not relay_dir.is_dir():
-        raise SystemExit(
-            f"generate_relay_protocol.py: {relay_dir} not found (need porting-sdk adjacency)"
-        )
+def _load_relay_shapes(psdk: Path):
+    """The shared porting-sdk reader for ``combined-specs/relay.yaml`` (ledger R11).
 
-    by_name: dict[str, Path] = {}
-    for p in relay_dir.iterdir():
-        if p.is_file() and p.suffix == ".json":
-            by_name[p.name] = p
+    Loaded by FILE PATH — the same way this script already loads generate_rest.py —
+    because porting-sdk is a sibling checkout, not an installed package.
+    """
+    path = psdk / "scripts" / "relay_protocol_shapes.py"
+    if not path.is_file():
+        raise SystemExit(
+            f"generate_relay_protocol.py: {path} not found (need porting-sdk adjacency)"
+        )
+    spec = importlib.util.spec_from_file_location("relay_protocol_shapes", path)
+    if spec is None or spec.loader is None:  # pragma: no cover
+        raise SystemExit(f"generate_relay_protocol.py: cannot load {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def build_outputs(psdk: Path) -> dict[str, str]:
+    RPS = _load_relay_shapes(psdk)
 
     outs: dict[str, str] = {}
     emitted_names: set[str] = set()
 
-    # Iterate params files first, then result files — sorted within each phase —
-    # to reproduce the reference decl order (Params block, then Result block).
+    # Params first, then result — each mapping already ordered by method name — to
+    # reproduce the reference decl order (Params block, then Result block).
     for phase, suffix in _PHASES:
-        tail = "." + phase + ".json"
-        for name in sorted(n for n in by_name if n.endswith(tail)):
-            node = json.loads(by_name[name].read_text())
-            if not isinstance(node, dict):
-                continue
-            method = node.get("x-method") or name[: -len(tail)]
+        for method, node in RPS.shapes(psdk, phase).items():
             java_name = GR.type_name(_pascal_method(method) + suffix)
             # Same object-vs-alias split as the REST / SWML wire-type emitters: an
             # object WITH properties -> data class; an empty-object / scalar / union
@@ -129,17 +151,22 @@ def build_outputs(psdk: Path) -> dict[str, str]:
             # The relay JSON schemas carry no in-file $ref (every nested object is
             # inline), so no schemas node is needed (inline objects collapse to Map).
             outs[f"{java_name}.java"] = GR.emit_type_class(
-                GEN_PACKAGE, java_name, node,
-                f"RELAY method {method!r}, {phase} phase", class_name=java_name)
+                GEN_PACKAGE,
+                java_name,
+                node,
+                f"RELAY method {method!r}, {phase} phase",
+                class_name=java_name,
+            )
 
-    for fn, formatted in GR.gjf_format_many(outs).items():
-        outs[fn] = formatted
+    outs.update(GR.gjf_format_many(outs))
     return outs
 
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true", help="GEN-FRESH: exit non-zero if stale")
+    ap.add_argument(
+        "--check", action="store_true", help="GEN-FRESH: exit non-zero if stale"
+    )
     ap.add_argument("--out", default="", help="scratch: emit into this dir")
     args = ap.parse_args(argv)
 
@@ -164,11 +191,15 @@ def main(argv: list[str]) -> int:
                 if rel not in expected:
                     stale.append(f"{p} (leftover — not in generator output)")
         if stale:
-            sys.stderr.write("GEN-FRESH FAIL: %d generated RELAY-protocol file(s) stale:\n" % len(stale))
+            sys.stderr.write(
+                f"GEN-FRESH FAIL: {len(stale)} generated RELAY-protocol file(s) stale:\n"
+            )
             for s in stale:
-                sys.stderr.write("  - %s\n" % s)
+                sys.stderr.write(f"  - {s}\n")
             return 1
-        print("GEN-FRESH: generated RELAY-protocol files match porting-sdk/relay-protocol/*.json.")
+        print(
+            "GEN-FRESH: generated RELAY-protocol files match porting-sdk/combined-specs/relay.yaml."
+        )
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)

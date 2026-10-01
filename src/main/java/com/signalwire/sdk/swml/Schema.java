@@ -41,6 +41,11 @@ public final class Schema {
     load();
   }
 
+  /**
+   * The process-wide SWML schema, loaded from the bundled {@code schema.json} on first use.
+   *
+   * @return the shared schema instance.
+   */
   public static Schema getInstance() {
     if (instance == null) {
       synchronized (Schema.class) {

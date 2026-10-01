@@ -10,12 +10,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * CreateManagedCampaignRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'CreateManagedCampaignRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CreateManagedCampaignRequest {
   public String name;
-  public String brand_id;
   public String sms_use_case;
   public java.util.List<Object> sub_use_cases;
   public String campaign_verify_token;
@@ -42,4 +41,6 @@ public final class CreateManagedCampaignRequest {
   public Boolean lead_generation;
   public Boolean terms_and_conditions;
   public String status_callback_url;
+  public String csp_campaign_reference;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

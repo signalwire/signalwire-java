@@ -9,13 +9,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * EnterQueueObject — generated wire type ('calling' spec, components/schemas 'EnterQueueObject').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class EnterQueueObject {
+  public String execute_after_queue;
   public String queue_name;
-  public java.util.Map<String, Object> transfer_after_bridge;
   public String status_url;
-  public java.util.Map<String, Object> wait_url;
   public java.util.Map<String, Object> wait_time;
+  public String wait_url;
+  public String whisper_url;
 }

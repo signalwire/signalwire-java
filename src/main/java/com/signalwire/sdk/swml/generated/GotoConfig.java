@@ -2,18 +2,18 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'goto' config
+// schema.json $defs schema 'GotoConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * GotoConfig — generated wire type (flattened SWMLMethod verb 'goto' config).
+ * GotoConfig — generated wire type (schema.json $defs schema 'GotoConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class GotoConfig {
   public String label;
-  public String when;
   public java.util.Map<String, Object> max;
+  public String when;
 }

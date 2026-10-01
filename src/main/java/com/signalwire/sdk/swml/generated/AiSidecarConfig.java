@@ -2,27 +2,27 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'ai_sidecar' config
+// schema.json $defs schema 'AiSidecarConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * AiSidecarConfig — generated wire type (flattened SWMLMethod verb 'ai_sidecar' config).
+ * AiSidecarConfig — generated wire type (schema.json $defs schema 'AiSidecarConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AiSidecarConfig {
-  public java.util.Map<String, Object> prompt;
+  public java.util.Map<String, Object> SWAIG;
+  public java.util.Map<String, Object> action;
+  public String customer_role;
+  public java.util.Map<String, Object> direction;
+  public java.util.Map<String, Object> global_data;
+  public java.util.Map<String, Object> hints;
   public String lang;
   public String model;
-  public java.util.List<Object> direction;
-  public String customer_role;
-  public String url;
-  public java.util.Map<String, Object> SWAIG;
-  public java.util.Map<String, Object> permissions;
-  public java.util.Map<String, Object> global_data;
-  public java.util.List<Object> hints;
   public java.util.Map<String, Object> params;
-  public java.util.Map<String, Object> action;
+  public java.util.Map<String, Object> permissions;
+  public java.util.Map<String, Object> prompt;
+  public String url;
 }

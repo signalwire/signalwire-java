@@ -124,9 +124,26 @@ class SecurityTest {
 
   @Test
   void testDefaultExpiry() {
-    var sm = new SessionManager(); // default 3600
+    // The no-arg default is the reference's `token_expiry_secs: int = 900`
+    // (session_manager.py:30) — 15 minutes, NOT an hour. Owner ruling 2026-07-27; four ports
+    // (ruby/java/rust/dotnet) had drifted to 3600 while go/ts/php/perl/cpp already matched.
+    //
+    // Asserting the VALUE is the point: this test previously only minted a token and validated
+    // it, which passes at ANY default and so could never have caught the divergence.
+    var sm = new SessionManager();
+    assertEquals(900, sm.getTokenExpirySecs(), "expected default expiry 900");
+
+    // The minted token must still round-trip at the new default.
     String token = sm.createToken("func", "call");
     assertTrue(sm.validateToken(token, "func", "call"));
+  }
+
+  @Test
+  void testExplicitExpiryIsUnaffectedByTheDefault() {
+    // Only the DEFAULT folded to 900; an explicitly-passed value must pass through untouched
+    // (including the old 3600, so existing callers are unchanged).
+    assertEquals(3600, new SessionManager(3600).getTokenExpirySecs());
+    assertEquals(60, new SessionManager(60).getTokenExpirySecs());
   }
 
   @Test

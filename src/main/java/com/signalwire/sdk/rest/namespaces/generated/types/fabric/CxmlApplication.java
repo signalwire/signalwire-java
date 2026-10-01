@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * CxmlApplication — generated wire type ('fabric' spec, components/schemas 'CxmlApplication').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CxmlApplication {
   public String id;
@@ -28,4 +28,7 @@ public final class CxmlApplication {
   public java.util.Map<String, Object> sms_fallback_method;
   public String sms_status_callback;
   public java.util.Map<String, Object> sms_status_callback_method;
+  public String message_status_callback;
+  public String api_version;
+  public String uri;
 }

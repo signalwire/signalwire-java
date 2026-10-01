@@ -8,28 +8,61 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Current date, time, and timezone information.
+ *
+ * <p>Registered under the name {@code datetime}; load it with {@code agent.addSkill("datetime",
+ * params)}.
+ */
 public class DatetimeSkill implements SkillBase {
 
+  /**
+   * The registry name this skill is loaded by: {@code datetime}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "datetime";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Get current date, time, and timezone information";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return false;
   }
 
+  /**
+   * Configure the skill from its parameters. This skill needs no configuration, so setup always
+   * succeeds.
+   *
+   * @param params the skill's configuration (unused).
+   * @return {@code true}.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     return true;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> tzParam = new LinkedHashMap<>();

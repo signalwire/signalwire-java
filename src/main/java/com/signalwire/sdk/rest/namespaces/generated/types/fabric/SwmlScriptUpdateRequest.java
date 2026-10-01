@@ -10,11 +10,12 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * SwmlScriptUpdateRequest — generated wire type ('fabric' spec, components/schemas
  * 'SwmlScriptUpdateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SwmlScriptUpdateRequest {
-  public String display_name;
   public String contents;
   public String status_callback_url;
+  public String name;
+  public String script_type;
 }

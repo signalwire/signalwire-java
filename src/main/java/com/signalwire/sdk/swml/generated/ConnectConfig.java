@@ -2,37 +2,46 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'connect' config
+// schema.json $defs schema 'ConnectConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * ConnectConfig — generated wire type (flattened SWMLMethod verb 'connect' config).
+ * ConnectConfig — generated wire type (schema.json $defs schema 'ConnectConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ConnectConfig {
-  public String from;
-  public java.util.List<Object> headers;
-  public String codecs;
-  public java.util.Map<String, Object> webrtc_media;
-  public java.util.Map<String, Object> session_timeout;
-  public java.util.Map<String, Object> ringback;
-  public java.util.Map<String, Object> result;
-  public java.util.Map<String, Object> timeout;
-  public java.util.Map<String, Object> max_duration;
   public java.util.Map<String, Object> answer_on_bridge;
+  public String authorization_bearer_token;
+  public java.util.Map<String, Object> call_state_events;
+  public String call_state_url;
+  public String codec;
+  public java.util.Map<String, Object> codecs;
   public java.util.Map<String, Object> confirm;
   public java.util.Map<String, Object> confirm_timeout;
-  public String username;
-  public String password;
-  public java.util.Map<String, Object> encryption;
-  public String call_state_url;
-  public java.util.Map<String, Object> transfer_after_bridge;
-  public java.util.List<Object> call_state_events;
-  public String to;
-  public java.util.List<Object> serial;
+  public java.util.Map<String, Object> custom_parameters;
+  public String encryption;
+  public String execute_after_queue;
+  public String from;
+  public String from_name;
+  public java.util.List<Object> headers;
+  public java.util.Map<String, Object> max_duration;
+  public String name;
   public java.util.List<Object> parallel;
+  public String password;
+  public java.util.Map<String, Object> realtime;
+  public java.util.Map<String, Object> result;
+  public java.util.Map<String, Object> ringback;
+  public java.util.List<Object> serial;
   public java.util.List<Object> serial_parallel;
+  public java.util.Map<String, Object> session_timeout;
+  public String status_url;
+  public String status_url_method;
+  public java.util.Map<String, Object> stop_all_on_reject;
+  public java.util.Map<String, Object> timeout;
+  public String to;
+  public String username;
+  public java.util.Map<String, Object> webrtc_media;
 }

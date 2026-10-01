@@ -9,8 +9,8 @@ package com.signalwire.sdk.relay.generated;
 /**
  * CallingBindDigitParams — generated wire type (RELAY method 'calling.bind_digit', params phase).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallingBindDigitParams {
   public String bind_method;

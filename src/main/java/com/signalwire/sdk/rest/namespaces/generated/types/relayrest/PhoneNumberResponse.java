@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * PhoneNumberResponse — generated wire type ('relay_rest' spec, components/schemas
  * 'PhoneNumberResponse').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PhoneNumberResponse {
   public String id;
@@ -20,6 +20,8 @@ public final class PhoneNumberResponse {
   public java.util.List<Object> capabilities;
   public String number_type;
   public String e911_address_id;
+  public String e911_status;
+  public String cnam;
   public String created_at;
   public String updated_at;
   public String next_billed_at;

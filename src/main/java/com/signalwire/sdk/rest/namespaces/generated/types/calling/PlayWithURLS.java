@@ -9,15 +9,17 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * PlayWithURLS — generated wire type ('calling' spec, components/schemas 'PlayWithURLS').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PlayWithURLS {
   public java.util.Map<String, Object> auto_answer;
-  public java.util.Map<String, Object> volume;
-  public String say_voice;
-  public String say_language;
+  public java.util.Map<String, Object> loop;
   public String say_gender;
+  public String say_language;
+  public String say_voice;
   public String status_url;
-  public java.util.Map<String, Object> urls;
+  public String url;
+  public java.util.List<Object> urls;
+  public java.util.Map<String, Object> volume;
 }

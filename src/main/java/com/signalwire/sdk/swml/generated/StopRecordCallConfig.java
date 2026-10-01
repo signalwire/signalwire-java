@@ -2,15 +2,15 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'stop_record_call' config
+// schema.json $defs schema 'StopRecordCallConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * StopRecordCallConfig — generated wire type (flattened SWMLMethod verb 'stop_record_call' config).
+ * StopRecordCallConfig — generated wire type (schema.json $defs schema 'StopRecordCallConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class StopRecordCallConfig {
   public String control_id;

@@ -20,8 +20,6 @@ package com.signalwire.sdk.runtime;
  * callers (e.g. {@code AgentBase.buildWebhookUrl}) are responsible for appending the agent's route
  * + endpoint path. This keeps the route-preservation invariant intact regardless of which source
  * produced the base URL.
- *
- * <p>Mirrors the Lambda branch of {@code get_full_url()} in the Python SDK.
  */
 public final class LambdaUrlResolver {
 

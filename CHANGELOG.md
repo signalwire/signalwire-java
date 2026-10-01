@@ -1,6 +1,6 @@
 # Changelog
 
-## [4.0.0] - 2026-07-15
+## [3.0.0]
 
 - REST (BREAKING): `RestError` now carries the full request `url` (including the
   query string) alongside the existing `path`, so a caller can see the exact
@@ -32,7 +32,6 @@
   `maxActiveCalls(int)` builder option — inbound calls past the cap are logged and
   dropped, matching the reference `Client(max_active_calls=...)`.
 
-## [3.2.0] - 2026-07-14
 
 - REST: added the `Messages` resource (`client.messages()`) — send and redact
   messages over `/api/messaging/messages` (`create` → POST, `update` → PATCH
@@ -41,7 +40,6 @@
   the shared mock. Distinct from the message logs namespace (`client.logs()`
   `.messages()`).
 
-## [3.1.0] - 2026-07-14
 
 - REST: added the `Projects` resource (`client.projects()`) — full CRUD over
   `/api/projects` (list/get/create/update/delete) plus `rotateSigningKey`, with
@@ -49,7 +47,6 @@
   (success and error) against the shared mock. Distinct from the singular
   `project` token namespace (`client.project()`).
 
-## [3.0.2] - 2026-07-13
 
 - REST: the client's resource surface is now fully generated from the shared
   SignalWire OpenAPI specs, replacing the hand-written resource classes — every

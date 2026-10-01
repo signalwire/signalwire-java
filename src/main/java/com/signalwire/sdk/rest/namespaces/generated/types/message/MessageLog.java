@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.message;
 /**
  * MessageLog — generated wire type ('message' spec, components/schemas 'MessageLog').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class MessageLog {
   public String id;
@@ -26,4 +26,6 @@ public final class MessageLog {
   public Double charge;
   public java.util.List<Object> charge_details;
   public String created_at;
+  public String error_code;
+  public String error_message;
 }

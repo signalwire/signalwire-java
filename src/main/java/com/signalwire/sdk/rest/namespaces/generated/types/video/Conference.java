@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
 /**
  * Conference — generated wire type ('video' spec, components/schemas 'Conference').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Conference {
   public String id;

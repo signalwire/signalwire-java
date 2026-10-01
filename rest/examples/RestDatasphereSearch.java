@@ -1,50 +1,59 @@
-/**
+/*
  * Example: Upload a document to Datasphere and run a semantic search.
  *
- * Set these env vars:
- *   SIGNALWIRE_PROJECT_ID   - your SignalWire project ID
- *   SIGNALWIRE_API_TOKEN    - your SignalWire API token
- *   SIGNALWIRE_SPACE        - your SignalWire space
+ * <p>Set these env vars: SIGNALWIRE_PROJECT_ID - your SignalWire project ID SIGNALWIRE_API_TOKEN -
+ * your SignalWire API token SIGNALWIRE_SPACE - your SignalWire space
  */
-
 import com.signalwire.sdk.rest.RestClient;
 import com.signalwire.sdk.rest.namespaces.generated.DatasphereDocuments;
-
 import java.util.Map;
 
 public class RestDatasphereSearch {
 
-    public static void main(String[] args) {
-        var client = RestClient.builder().build();
+  public static void main(String[] args) {
+    var client = RestClient.builder().build();
 
-        // 1. Create a document. Datasphere ingests documents by URL (the server
-        //    fetches + chunks the content); the request carries `url` (+ optional
-        //    `tags`), not inline text.
-        System.out.println("Creating document...");
-        var doc = client.datasphere().documents().create(Map.of(
-                "url", "https://example.com/faq.pdf",
-                "tags", java.util.List.of("faq", "support")
-        ));
-        String docId = (String) doc.get("id");
-        System.out.println("  Created document: " + docId);
+    // 1. Create a document. Datasphere ingests documents by URL (the server
+    //    fetches + chunks the content); the request carries `url` (+ optional
+    //    `tags`), not inline text.
+    System.out.println("Creating document...");
+    var doc =
+        client
+            .datasphere()
+            .documents()
+            .create(
+                Map.of(
+                    "url",
+                    "https://example.com/faq.pdf",
+                    "tags",
+                    java.util.List.of("faq", "support")));
+    String docId = (String) doc.get("id");
+    System.out.println("  Created document: " + docId);
 
-        // 2. Search
-        System.out.println("\nSearching for 'voice API'...");
-        var results = client.datasphere().documents().search(
+    // 2. Search
+    System.out.println("\nSearching for 'voice API'...");
+    var results =
+        client
+            .datasphere()
+            .documents()
+            .search(
                 DatasphereDocuments.SearchRequest.builder()
-                        .queryString("voice API")
-                        .count(5L)
-                        .build());
-        System.out.println("  Results: " + results);
+                    .queryString("voice API")
+                    .count(5L)
+                    .build());
+    // SearchResponse is a pure-data DTO with no toString(); concatenating it printed the
+    // identity hash ("SearchResponse@4488aabb") instead of any result. The results live on
+    // `chunks`.
+    System.out.println("  Results: " + results.chunks);
 
-        // 3. List all documents
-        System.out.println("\nListing documents...");
-        var docs = client.datasphere().documents().list();
-        System.out.println("  Documents: " + docs);
+    // 3. List all documents
+    System.out.println("\nListing documents...");
+    var docs = client.datasphere().documents().list();
+    System.out.println("  Documents: " + docs);
 
-        // 4. Clean up
-        System.out.println("\nDeleting document " + docId + "...");
-        client.datasphere().documents().delete(docId);
-        System.out.println("  Deleted.");
-    }
+    // 4. Clean up
+    System.out.println("\nDeleting document " + docId + "...");
+    client.datasphere().documents().delete(docId);
+    System.out.println("  Deleted.");
+  }
 }

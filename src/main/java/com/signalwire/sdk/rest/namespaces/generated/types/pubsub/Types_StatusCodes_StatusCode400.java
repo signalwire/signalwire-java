@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.pubsub;
  * Types_StatusCodes_StatusCode400 — generated wire type ('pubsub' spec, components/schemas
  * 'Types.StatusCodes.StatusCode400').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Types_StatusCodes_StatusCode400 {
   public String error;

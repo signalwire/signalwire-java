@@ -10,23 +10,26 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * StartUpHookSWAIGFunction — generated wire type ('calling' spec, components/schemas
  * 'StartUpHookSWAIGFunction').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class StartUpHookSWAIGFunction {
   public String description;
-  public String purpose;
-  public java.util.Map<String, Object> parameters;
-  public java.util.Map<String, Object> fillers;
-  public java.util.Map<String, Object> argument;
   public java.util.Map<String, Object> active;
+  public java.util.Map<String, Object> argument;
+  public java.util.Map<String, Object> data_map;
+  public java.util.Map<String, Object> fillers;
+  public String function;
   public java.util.Map<String, Object> meta_data;
   public String meta_data_token;
-  public java.util.Map<String, Object> data_map;
+  public java.util.Map<String, Object> parameters;
+  public String purpose;
   public java.util.Map<String, Object> skip_fillers;
-  public String web_hook_url;
   public String wait_file;
   public java.util.Map<String, Object> wait_file_loops;
   public java.util.Map<String, Object> wait_for_fillers;
-  public String function;
+  public String web_hook_auth_pass;
+  public String web_hook_auth_password;
+  public String web_hook_auth_user;
+  public String web_hook_url;
 }

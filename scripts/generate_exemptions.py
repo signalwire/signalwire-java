@@ -70,7 +70,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "handled by phone_numbers.set_* helpers per porting-sdk/"
         "phone-binding.md",
     ),
-
     # --- Whole subsystems intentionally not ported ---
     (
         "signalwire.search.",
@@ -103,7 +102,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "POM (Prompt Object Model) is embedded directly in Java's "
         "AgentBase.setPromptPom / addPomSection helpers; no separate class",
     ),
-
     # --- CLI & tooling ---
     (
         "signalwire.cli.init_project.",
@@ -126,8 +124,7 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.cli.output.",
-        "CLI pretty-print helpers; Java's SwaigTest prints via the standard "
-        "logger",
+        "CLI pretty-print helpers; Java's SwaigTest prints via the standard logger",
     ),
     (
         "signalwire.cli.simulation.",
@@ -147,7 +144,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "signalwire.cli.",
         "Python-only CLI helper not mirrored in Java's SwaigTest",
     ),
-
     # --- Core internals / mixins ---
     (
         "signalwire.core.mixins.",
@@ -252,7 +248,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "constructor is package-private in Java — public initialization "
         "goes through AgentBase.builder() to enforce required fields",
     ),
-
     # --- REST namespaces: Java merges Python's *Resource/*Namespace pairs ---
     (
         "signalwire.rest._base.",
@@ -352,8 +347,7 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.rest.namespaces.queues.",
-        "Java's QueueNamespace exposes the queues API via CrudResource "
-        "accessors",
+        "Java's QueueNamespace exposes the queues API via CrudResource accessors",
     ),
     (
         "signalwire.rest.namespaces.recordings.",
@@ -379,7 +373,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "signalwire.rest.namespaces.",
         "Python-only REST namespace not yet ported to Java",
     ),
-
     # --- Skills ---
     (
         "signalwire.skills.web_search.skill_improved.",
@@ -428,14 +421,12 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "Java ships a leaner skill class with the same public surface; "
         "helper methods from Python's skill modules are inlined",
     ),
-
     # --- Prefabs ---
     (
         "signalwire.prefabs.",
         "Python prefab exposes additional internal helpers not needed in "
         "Java's equivalent prefab class",
     ),
-
     # --- Relay internals ---
     (
         "signalwire.relay.call.",
@@ -458,14 +449,12 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "Python Message exposes additional internal helpers; Java's Message "
         "sticks to the public send/reply API",
     ),
-
     # --- Utilities ---
     (
         "signalwire.utils.schema_utils.",
         "Python's schema utils include load/validate helpers used by the "
         "SWMLService; Java does schema loading inline in Document/Schema",
     ),
-
     # --- Top-level re-exports ---
     (
         "signalwire.RestClient",
@@ -492,15 +481,13 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.run_agent",
-        "Python top-level helper; Java users call AgentBase.run() on their "
-        "built agent",
+        "Python top-level helper; Java users call AgentBase.run() on their built agent",
     ),
     (
         "signalwire.start_agent",
         "Python top-level helper; Java users call AgentBase.run() or "
         "AgentServer.register() + run()",
     ),
-
     # --- Other specific symbols ---
     (
         "signalwire.core.agent.tools.type_inference.",
@@ -556,7 +543,6 @@ OMISSION_RATIONALES: list[tuple[str, str]] = [
         "Python URL-validation helper used by SWMLService; Java's "
         "Document.addExternal / addWebhook validate URLs at call time",
     ),
-
     # --- AgentServer extras ---
     (
         "signalwire.agent_server.AgentServer.get_agents",
@@ -593,8 +579,10 @@ def rationale_for(sym: str) -> str:
     for prefix, rationale in OMISSION_RATIONALES:
         if prefix.endswith(".") and sym.startswith(prefix):
             return rationale
-    return ("not_yet_implemented: Python surface has no matching Java "
-            "symbol — a follow-up PR will add equivalent functionality")
+    return (
+        "not_yet_implemented: Python surface has no matching Java "
+        "symbol — a follow-up PR will add equivalent functionality"
+    )
 
 
 # -- Additions rationales --------------------------------------------------
@@ -643,8 +631,7 @@ ADDITIONS_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.relay.relay_client_builder.",
-        "Java builder pattern — RelayClient.builder() is the idiomatic "
-        "constructor",
+        "Java builder pattern — RelayClient.builder() is the idiomatic constructor",
     ),
     (
         "signalwire.rest.client.RestClient.Builder",
@@ -682,8 +669,7 @@ ADDITIONS_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.cli.simulation.serverless_simulator_platform.",
-        "Java enum for ServerlessSimulator.Platform; Python uses string "
-        "constants",
+        "Java enum for ServerlessSimulator.Platform; Python uses string constants",
     ),
     (
         "signalwire.cli.simulation.mock_env.ServerlessSimulator.parse_platform",
@@ -818,8 +804,7 @@ ADDITIONS_RATIONALES: list[tuple[str, str]] = [
     ),
     (
         "signalwire.agent_server.AgentServer.get_routes",
-        "Java accessor exposing the registered-agent route list for "
-        "diagnostics",
+        "Java accessor exposing the registered-agent route list for diagnostics",
     ),
     (
         "signalwire.agent_server.AgentServer.get_sip_route",
@@ -847,11 +832,14 @@ def rationale_for_addition(sym: str) -> str:
     for prefix, rationale in ADDITIONS_RATIONALES:
         if prefix.endswith(".") and sym.startswith(prefix):
             return rationale
-    return ("idiomatic Java surface extension (builder, getter/setter, "
-            "or overload) not present in Python")
+    return (
+        "idiomatic Java surface extension (builder, getter/setter, "
+        "or overload) not present in Python"
+    )
 
 
 # -- IO --------------------------------------------------------------------
+
 
 def run_diff(diff_script: Path, reference: Path, port_surface: Path) -> dict:
     """Run the diff in --json mode and return its parsed payload.
@@ -861,9 +849,12 @@ def run_diff(diff_script: Path, reference: Path, port_surface: Path) -> dict:
     """
     result = subprocess.run(
         [
-            sys.executable, str(diff_script),
-            "--reference", str(reference),
-            "--port-surface", str(port_surface),
+            sys.executable,
+            str(diff_script),
+            "--reference",
+            str(reference),
+            "--port-surface",
+            str(port_surface),
             "--json",
         ],
         capture_output=True,
@@ -872,15 +863,17 @@ def run_diff(diff_script: Path, reference: Path, port_surface: Path) -> dict:
     )
     if result.returncode not in (0, 1):
         raise SystemExit(
-            f"diff_port_surface.py failed (code {result.returncode}): "
-            f"{result.stderr}"
+            f"diff_port_surface.py failed (code {result.returncode}): {result.stderr}"
         )
     return json.loads(result.stdout)
 
 
 def write_exemption_file(
-    path: Path, title: str, intro: str,
-    symbols: list[str], rationale: callable,
+    path: Path,
+    title: str,
+    intro: str,
+    symbols: list[str],
+    rationale: callable,
 ) -> None:
     """Write an ordered markdown file keyed on symbol name."""
     lines: list[str] = []
@@ -888,22 +881,23 @@ def write_exemption_file(
     lines.append(intro.rstrip() + "\n")
     lines.append("")
     lines.append("# Format: `<fully.qualified.symbol>: <rationale>`")
-    lines.append(
-        "# Regenerate with `python3 scripts/generate_exemptions.py` after")
+    lines.append("# Regenerate with `python3 scripts/generate_exemptions.py` after")
     lines.append("# a surface change.")
     lines.append("")
-    for sym in sorted(symbols):
-        lines.append(f"{sym}: {rationale(sym)}")
+    lines.extend(f"{sym}: {rationale(sym)}" for sym in sorted(symbols))
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--repo", type=Path, default=Path(__file__).resolve().parent.parent,
+        "--repo",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent,
     )
     parser.add_argument(
-        "--porting-sdk", type=Path,
+        "--porting-sdk",
+        type=Path,
         default=Path.home() / "src" / "porting-sdk",
     )
     args = parser.parse_args(argv)
@@ -913,8 +907,10 @@ def main(argv: list[str]) -> int:
         [
             sys.executable,
             str(args.repo / "scripts" / "enumerate_surface.py"),
-            "--output", str(args.repo / "port_surface.json"),
-            "--reference", str(args.porting_sdk / "python_surface.json"),
+            "--output",
+            str(args.repo / "port_surface.json"),
+            "--reference",
+            str(args.porting_sdk / "python_surface.json"),
         ]
     )
 
@@ -960,10 +956,7 @@ def main(argv: list[str]) -> int:
         symbols=additions,
         rationale=rationale_for_addition,
     )
-    print(
-        f"Wrote {len(omissions)} omission(s) and {len(additions)} "
-        f"addition(s)."
-    )
+    print(f"Wrote {len(omissions)} omission(s) and {len(additions)} addition(s).")
     return 0
 
 

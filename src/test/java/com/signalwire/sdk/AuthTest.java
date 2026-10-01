@@ -128,10 +128,19 @@ class AuthTest {
   @SuppressWarnings("unchecked")
   void testSecureToolRendersWebhookToken() {
     // A1 secure contract (SECURE-DEFAULT gate): the per-tool SWAIG token is a WIRE artifact — a
-    // secure tool's RENDERED webhook carries a meta_data_token; an insecure one does not. (Matching
-    // the Python reference, onFunctionCall dispatches WITHOUT validating the token; the /swaig HTTP
-    // handler validates the round-tripped token, so it is the rendered surface that is pinned
-    // here.)
+    // secure tool's RENDERED webhook carries a `__token` QUERY PARAMETER on its own web_hook_url,
+    // and an insecure tool gets NO per-tool web_hook_url at all (it falls back to
+    // SWAIG.defaults.web_hook_url). Matching the Python reference (agent_base.py:1096-1100).
+    //
+    // This test previously asserted `meta_data_token`, which is a DIFFERENT SWML field: schema.json
+    // defines it as the "Scoping token for meta_data", the engine MD5-derives it from
+    // web_hook_url+auth when the SWML omits it (mod_openai/app_config.c:1031-1042) and uses it only
+    // as a key into the per-function metadata store (actions.c:2085-2093). Nothing validates it as
+    // a credential, so a token placed there left the callback unauthenticated.
+    //
+    // (Matching the Python reference, onFunctionCall dispatches WITHOUT validating the token; the
+    // /swaig HTTP handler validates the round-tripped token, so it is the rendered surface that is
+    // pinned here.)
     AgentBase agent = AgentBase.builder().name("test").authUser("u").authPassword("p").build();
     agent.setPromptText("Test");
     agent.defineTool(
@@ -171,10 +180,87 @@ class AuthTest {
             .findFirst()
             .orElseThrow();
 
-    // secure tool (the A1 default) → rendered webhook carries a token; insecure tool → none.
-    assertNotNull(secure.get("meta_data_token"), "secure tool must render a webhook token");
-    assertFalse(String.valueOf(secure.get("meta_data_token")).isEmpty(), "token must be non-empty");
+    // secure tool (the A1 default) → its OWN web_hook_url carries ?__token=<hmac>.
+    String secureUrl = (String) secure.get("web_hook_url");
+    assertNotNull(secureUrl, "secure tool must render its own web_hook_url");
+    assertTrue(
+        secureUrl.contains("__token="),
+        "secure tool's webhook must carry the __token query param: " + secureUrl);
+    assertFalse(
+        secureUrl.endsWith("__token="), "the __token query param must have a value: " + secureUrl);
+
+    // The token must NOT be written to meta_data_token — that is the SWML metadata SCOPING key,
+    // not a credential (see the comment above).
+    assertNull(
+        secure.get("meta_data_token"),
+        "the security token must not be emitted as meta_data_token (a metadata scoping key)");
+
+    // insecure tool → NO per-tool webhook at all, so no token anywhere.
+    assertNull(
+        insecure.get("web_hook_url"),
+        "insecure tool must render NO per-tool web_hook_url (it falls back to SWAIG.defaults)");
     assertNull(insecure.get("meta_data_token"), "insecure tool must NOT render a webhook token");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSwaigDefaultsWebHookUrlIsEmittedWhenFunctionsExist() {
+    // The other half of the secure contract. Because an INSECURE tool deliberately renders no
+    // per-tool web_hook_url, `SWAIG.defaults.web_hook_url` is the ONLY endpoint it has — so a
+    // missing defaults block does not merely differ from the reference, it leaves the tool with
+    // no callback at all. The reference emits it alongside functions (agent_base.py:1108-1113).
+    AgentBase agent =
+        AgentBase.builder().name("test").route("/a").authUser("u").authPassword("p").build();
+    agent.setPromptText("Test");
+    agent.defineTool(
+        new com.signalwire.sdk.swaig.ToolDefinition(
+                "insecure_tool",
+                "insecure",
+                java.util.Map.of(),
+                (a, r) -> new com.signalwire.sdk.swaig.FunctionResult("ok"))
+            .setSecure(false));
+
+    var swml = agent.renderSwml("http://localhost:3000");
+    var swaig = swaigOf(swml);
+
+    var defaults = (java.util.Map<String, Object>) swaig.get("defaults");
+    assertNotNull(defaults, "SWAIG.defaults must be emitted when functions exist");
+    assertEquals(
+        "http://localhost:3000/a/swaig",
+        defaults.get("web_hook_url"),
+        "defaults.web_hook_url is the shared fallback endpoint, WITHOUT a per-tool token");
+
+    // And the insecure tool really does rely on it: it has no webhook of its own.
+    var fns = (java.util.List<java.util.Map<String, Object>>) swaig.get("functions");
+    assertNull(fns.get(0).get("web_hook_url"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testSwaigDefaultsAbsentWhenNoFunctions() {
+    // Gated on `if functions:` in the reference — no functions, no defaults block.
+    AgentBase agent =
+        AgentBase.builder().name("test").route("/a").authUser("u").authPassword("p").build();
+    agent.setPromptText("Test");
+
+    var swml = agent.renderSwml("http://localhost:3000");
+    var swaig = swaigOf(swml);
+    assertNull(swaig.get("defaults"), "no functions → no SWAIG.defaults");
+  }
+
+  /** Pull the {@code ai.SWAIG} object out of a rendered SWML document, or an empty map. */
+  @SuppressWarnings("unchecked")
+  private static java.util.Map<String, Object> swaigOf(java.util.Map<String, Object> swml) {
+    var sections = (java.util.Map<String, Object>) swml.get("sections");
+    var main = (java.util.List<java.util.Map<String, Object>>) sections.get("main");
+    for (var verb : main) {
+      if (verb.containsKey("ai")) {
+        var ai = (java.util.Map<String, Object>) verb.get("ai");
+        var swaig = (java.util.Map<String, Object>) ai.get("SWAIG");
+        return swaig == null ? java.util.Map.of() : swaig;
+      }
+    }
+    return java.util.Map.of();
   }
 
   // ======== Environment variable auth ========

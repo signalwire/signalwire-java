@@ -30,7 +30,7 @@ public class CallFlows extends FabricResourcePUT {
       listAddresses(
           String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
     return asType(
-        restGet("/fabric/resources/call_flow/" + id + "/addresses", params, requestOptions),
+        restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
             .class);
   }
@@ -45,7 +45,7 @@ public class CallFlows extends FabricResourcePUT {
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
       listVersions(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
     return asType(
-        restGet("/fabric/resources/call_flow/" + id + "/versions", params, requestOptions),
+        restGet(getBasePath() + "/" + id + "/" + "versions", params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
             .class);
   }
@@ -60,7 +60,7 @@ public class CallFlows extends FabricResourcePUT {
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
       deployVersion(String id, java.util.Map<String, Object> body, RequestOptions requestOptions) {
     return asType(
-        restPost("/fabric/resources/call_flow/" + id + "/versions", body, requestOptions),
+        restPost(getBasePath() + "/" + id + "/" + "versions", body, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionDeployResponse
             .class);
   }

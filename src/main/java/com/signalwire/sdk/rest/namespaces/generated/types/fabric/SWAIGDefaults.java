@@ -9,9 +9,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * SWAIGDefaults — generated wire type ('fabric' spec, components/schemas 'SWAIGDefaults').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SWAIGDefaults {
+  public java.util.Map<String, Object> meta_data;
+  public String meta_data_token;
+  public String web_hook_auth_pass;
+  public String web_hook_auth_password;
+  public String web_hook_auth_user;
   public String web_hook_url;
 }

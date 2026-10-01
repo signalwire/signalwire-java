@@ -32,6 +32,73 @@ public class PhoneNumbers extends CrudResource {
             .class);
   }
 
+  /** assignE911Address (generated from operation 'assign_e911_address'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      assignE911Address(String id, AssignE911AddressRequest request) {
+    return assignE911Address(id, request, (RequestOptions) null);
+  }
+
+  /** assignE911Address with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      assignE911Address(
+          String id, AssignE911AddressRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "e911_address", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
+  }
+
+  /** removeE911Address (generated from operation 'remove_e911_address'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      removeE911Address(String id) {
+    return removeE911Address(id, (RequestOptions) null);
+  }
+
+  /** removeE911Address with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
+      removeE911Address(String id, RequestOptions requestOptions) {
+    return asType(
+        restDelete(getBasePath() + "/" + id + "/" + "e911_address", requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
+  }
+
+  /** getCnam (generated from operation 'retrieve_caller_id_name'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse
+      getCnam(String id, java.util.Map<String, String> params) {
+    return getCnam(id, params, (RequestOptions) null);
+  }
+
+  /** getCnam with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse
+      getCnam(String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "cnam", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse.class);
+  }
+
+  /** requestCnam (generated from operation 'request_caller_id_name'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse
+      requestCnam(String id, RequestCnamRequest request) {
+    return requestCnam(id, request, (RequestOptions) null);
+  }
+
+  /** requestCnam with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse
+      requestCnam(String id, RequestCnamRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(getBasePath() + "/" + id + "/" + "cnam", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberCnamResponse.class);
+  }
+
+  /** clearCnam (generated from operation 'clear_caller_id_name'). */
+  public java.util.Map<String, Object> clearCnam(String id) {
+    return clearCnam(id, (RequestOptions) null);
+  }
+
+  /** clearCnam with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> clearCnam(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id + "/" + "cnam", requestOptions);
+  }
+
   /** setSwmlWebhook — sets call_handler='relay_script' + bound update fields (§7). */
   public com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse
       setSwmlWebhook(String resourceId, String url, java.util.Map<String, Object> extra) {
@@ -226,5 +293,95 @@ public class PhoneNumbers extends CrudResource {
     return asType(
         update(resourceId, body, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.relayrest.PhoneNumberResponse.class);
+  }
+
+  /** Closed typed request for {@link #assignE911Address} (builder + extras door). */
+  public static final class AssignE911AddressRequest {
+    private final String e911AddressId;
+    private final java.util.Map<String, Object> extras;
+
+    private AssignE911AddressRequest(String e911AddressId, java.util.Map<String, Object> extras) {
+      this.e911AddressId = e911AddressId;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.e911AddressId != null) {
+        body.put("e911_address_id", this.e911AddressId);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String e911AddressId;
+      private java.util.Map<String, Object> extras;
+
+      public Builder e911AddressId(String e911AddressId) {
+        this.e911AddressId = e911AddressId;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AssignE911AddressRequest build() {
+        return new AssignE911AddressRequest(e911AddressId, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #requestCnam} (builder + extras door). */
+  public static final class RequestCnamRequest {
+    private final String name;
+    private final java.util.Map<String, Object> extras;
+
+    private RequestCnamRequest(String name, java.util.Map<String, Object> extras) {
+      this.name = name;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.name != null) {
+        body.put("name", this.name);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String name;
+      private java.util.Map<String, Object> extras;
+
+      public Builder name(String name) {
+        this.name = name;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public RequestCnamRequest build() {
+        return new RequestCnamRequest(name, extras);
+      }
+    }
   }
 }

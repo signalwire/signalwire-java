@@ -9,15 +9,17 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * BedrockParams — generated wire type ('calling' spec, components/schemas 'BedrockParams').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class BedrockParams {
   public java.util.Map<String, Object> attention_timeout;
-  public java.util.Map<String, Object> hard_stop_time;
-  public java.util.Map<String, Object> inactivity_timeout;
-  public String video_listening_file;
-  public String video_idle_file;
-  public String video_talking_file;
+  public String compact_conversation_time;
+  public String compact_strategy;
   public String hard_stop_prompt;
+  public String hard_stop_time;
+  public java.util.Map<String, Object> inactivity_timeout;
+  public String video_idle_file;
+  public String video_listening_file;
+  public String video_talking_file;
 }

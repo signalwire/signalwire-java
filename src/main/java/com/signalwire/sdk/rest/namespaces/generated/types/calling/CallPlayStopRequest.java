@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * CallPlayStopRequest — generated wire type ('calling' spec, components/schemas
  * 'CallPlayStopRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallPlayStopRequest {
   public String id;

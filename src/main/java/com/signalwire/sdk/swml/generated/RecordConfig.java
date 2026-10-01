@@ -2,25 +2,25 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'record' config
+// schema.json $defs schema 'RecordConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * RecordConfig — generated wire type (flattened SWMLMethod verb 'record' config).
+ * RecordConfig — generated wire type (schema.json $defs schema 'RecordConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class RecordConfig {
-  public java.util.Map<String, Object> stereo;
-  public java.util.Map<String, Object> format;
-  public java.util.Map<String, Object> direction;
-  public String terminators;
+  public String format;
   public java.util.Map<String, Object> beep;
-  public java.util.Map<String, Object> input_sensitivity;
-  public java.util.Map<String, Object> initial_timeout;
+  public String direction;
   public java.util.Map<String, Object> end_silence_timeout;
+  public java.util.Map<String, Object> initial_timeout;
+  public java.util.Map<String, Object> input_sensitivity;
   public java.util.Map<String, Object> max_length;
   public String status_url;
+  public java.util.Map<String, Object> stereo;
+  public String terminators;
 }

@@ -2,20 +2,20 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'execute' config
+// schema.json $defs schema 'ExecuteConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * ExecuteConfig — generated wire type (flattened SWMLMethod verb 'execute' config).
+ * ExecuteConfig — generated wire type (schema.json $defs schema 'ExecuteConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ExecuteConfig {
   public String dest;
-  public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> meta;
-  public java.util.List<Object> on_return;
+  public java.util.Map<String, Object> on_return;
+  public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> result;
 }

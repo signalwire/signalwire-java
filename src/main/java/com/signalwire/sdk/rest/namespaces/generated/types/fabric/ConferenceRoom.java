@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * ConferenceRoom — generated wire type ('fabric' spec, components/schemas 'ConferenceRoom').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ConferenceRoom {
   public String id;
@@ -19,7 +19,7 @@ public final class ConferenceRoom {
   public String display_name;
   public Long max_members;
   public String quality;
-  public Double fps;
+  public Long fps;
   public String join_from;
   public String join_until;
   public String remove_at;

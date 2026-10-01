@@ -28,12 +28,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * SchemaUtils — Java port of {@code signalwire.utils.schema_utils.SchemaUtils}.
+ * SchemaUtils — loads the SWML JSON Schema, extracts verb metadata, and validates either a single
+ * verb config or a complete SWML document.
  *
- * <p>Loads the SWML JSON Schema, extracts verb metadata, and validates either a single verb config
- * or a complete SWML document.
- *
- * <p>Construction rules mirror Python:
+ * <p>Construction rules:
  *
  * <ul>
  *   <li>Pass {@code schemaPath=null} to use the embedded {@code schema.json}.
@@ -43,10 +41,10 @@ import java.util.TreeSet;
  *       regardless of the constructor argument.
  * </ul>
  *
- * <p>The Java port currently ships only the lightweight validator (verb existence +
- * required-property check). Full JSON Schema validation can be wired in by extending {@link
- * #initFullValidator()}. The lightweight contract matches Python's {@code
- * _validate_verb_lightweight()} exactly.
+ * <p>Only the lightweight validator ships today: it checks that the verb exists in the schema and
+ * that every required property is present, but does not enforce property types or nested
+ * constraints. Full JSON Schema validation can be wired in by extending {@link
+ * #initFullValidator()}.
  */
 public class SchemaUtils {
 
@@ -72,8 +70,7 @@ public class SchemaUtils {
   }
 
   /**
-   * Construct a SchemaUtils. Mirrors Python's {@code SchemaUtils(schema_path=None,
-   * schema_validation=True)}.
+   * Construct a SchemaUtils.
    *
    * @param schemaPath optional path to a schema.json file; pass null to use the embedded resource
    *     bundled with the SDK jar.
@@ -100,8 +97,7 @@ public class SchemaUtils {
 
   /**
    * The explicit schema file path this instance was constructed with, or {@code null} when the
-   * embedded resource is used. Mirrors Python's {@code schema_utils.schema_path} attribute (read by
-   * {@code AgentBase.__init__} at agent_base.py:210).
+   * embedded resource is used. {@code AgentBase} reads this when it builds its own schema view.
    *
    * @return the configured schema path, or null.
    */
@@ -109,7 +105,11 @@ public class SchemaUtils {
     return schemaPath;
   }
 
-  /** Read and parse the JSON Schema. Mirrors Python's {@code load_schema()}. */
+  /**
+   * Read and parse the JSON Schema — from {@code schemaPath} when one was given, otherwise from the
+   * {@code schema.json} resource bundled in the jar. Returns an empty object rather than throwing
+   * when the schema cannot be read.
+   */
   public JsonObject loadSchema() {
     try {
       InputStream is;
@@ -176,21 +176,53 @@ public class SchemaUtils {
   }
 
   /**
-   * Whether full JSON Schema validation is wired up. Mirrors Python's {@code
-   * full_validation_available} property.
+   * Whether full JSON Schema validation is wired up. When {@code false}, {@link #validateVerb}
+   * falls back to the required-property-only check.
    */
   public boolean isFullValidationAvailable() {
     return this.fullValidator != null;
   }
 
-  /** Sorted list of all known verb names. Mirrors Python's {@code get_all_verb_names()}. */
+  /** Sorted list of the verb names the SDK exposes (deprecated verbs left out). */
   public List<String> getAllVerbNames() {
-    return new ArrayList<>(new TreeSet<>(verbs.keySet()));
+    TreeSet<String> names = new TreeSet<>();
+    for (VerbInfo v : verbs.values()) {
+      if (!isDeprecated(v)) {
+        names.add(v.name);
+      }
+    }
+    return new ArrayList<>(names);
+  }
+
+  /**
+   * Whether a verb wrapper is marked {@code "deprecated": true} in the schema — on the wrapper or
+   * on its verb property. A deprecated verb (dial / eval / if) is not SDK surface, so it is left
+   * out of {@link #getAllVerbNames()}; it stays known to validation, so a document that already
+   * carries it still validates.
+   */
+  private static boolean isDeprecated(VerbInfo v) {
+    JsonObject def = v.definition;
+    if (def.has("deprecated")
+        && def.get("deprecated").isJsonPrimitive()
+        && def.get("deprecated").getAsJsonPrimitive().isBoolean()
+        && def.get("deprecated").getAsBoolean()) {
+      return true;
+    }
+    if (def.has("properties") && def.get("properties").isJsonObject()) {
+      JsonElement prop = def.getAsJsonObject("properties").get(v.name);
+      if (prop != null && prop.isJsonObject()) {
+        JsonElement d = prop.getAsJsonObject().get("deprecated");
+        return d != null
+            && d.isJsonPrimitive()
+            && d.getAsJsonPrimitive().isBoolean()
+            && d.getAsBoolean();
+      }
+    }
+    return false;
   }
 
   /**
    * The {@code properties[verb_name]} block for a verb, or an empty map when the verb is unknown.
-   * Mirrors Python's {@code get_verb_properties(verb_name)}.
    */
   public Map<String, Object> getVerbProperties(String verbName) {
     VerbInfo v = verbs.get(verbName);
@@ -204,7 +236,7 @@ public class SchemaUtils {
 
   /**
    * The {@code required} list for a verb, or an empty list when the verb is unknown or has no
-   * required properties. Mirrors Python's {@code get_verb_required_properties(verb_name)}.
+   * required properties.
    */
   public List<String> getVerbRequiredProperties(String verbName) {
     VerbInfo v = verbs.get(verbName);
@@ -226,10 +258,7 @@ public class SchemaUtils {
     return out;
   }
 
-  /**
-   * Parameter-definition block used by code-gen tooling. Mirrors Python's {@code
-   * get_verb_parameters(verb_name)}.
-   */
+  /** Parameter-definition block used by code-gen tooling. */
   public Map<String, Object> getVerbParameters(String verbName) {
     Map<String, Object> inner = getVerbProperties(verbName);
     Object props = inner.get("properties");
@@ -242,11 +271,10 @@ public class SchemaUtils {
   }
 
   /**
-   * Validate a verb config against the schema. Mirrors Python's {@code validate_verb(verb_name,
-   * verb_config)}.
+   * Validate a verb config against the schema.
    *
-   * @return ({@code valid}, {@code errors}) entry; mirrors Python's {@code Tuple[bool, List[str]]}
-   *     return.
+   * @return an entry of ({@code valid}, {@code errors}) — the flag is {@code true} only when the
+   *     error list is empty.
    */
   public Map.Entry<Boolean, List<String>> validateVerb(
       String verbName, Map<String, Object> verbConfig) {
@@ -261,6 +289,37 @@ public class SchemaUtils {
       return validateVerbFull(verbName, verbConfig);
     }
     return validateVerbLightweight(verbName, verbConfig);
+  }
+
+  // Validate a verb config of ANY JSON shape — not just an object. PACKAGE-PRIVATE on
+  // purpose: it is the Service.addVerb implementation detail that lets Java match what
+  // Python's dynamically-typed validate_verb already accepts, so it must NOT widen the
+  // public surface (the reference declares only validate_verb(verb_name, verb_config)).
+  //
+  // validateVerb takes a Map because most verb configs are objects, but the schema says
+  // otherwise for several: cond and toggle_functions are ARRAYS, label/say/change_context
+  // are STRINGS, and sleep/hangup/unset union a primitive with an object. A caller that
+  // assumes "config must be a Map" therefore rejects legal documents. This entry point
+  // serialises whatever it is given — a Map, a List, a boxed primitive, or a generated
+  // typed config POJO — to the exact JSON the wire will carry, and validates THAT.
+  Map.Entry<Boolean, List<String>> validateVerbValue(String verbName, Object verbConfig) {
+    if (!validationEnabled) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    if (!verbs.containsKey(verbName)) {
+      return new AbstractMap.SimpleImmutableEntry<>(
+          false, Collections.singletonList("Unknown verb: " + verbName));
+    }
+    if (fullValidator == null) {
+      // The lightweight path only knows how to check required keys on an object.
+      if (verbConfig instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> asMap = (Map<String, Object>) verbConfig;
+        return validateVerbLightweight(verbName, asMap);
+      }
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    return validateVerbElement(verbName, new Gson().toJsonTree(verbConfig));
   }
 
   private Map.Entry<Boolean, List<String>> validateVerbFull(
@@ -290,8 +349,21 @@ public class SchemaUtils {
     if (!outerProps.has(verbName) || !outerProps.get(verbName).isJsonObject()) {
       return validateVerbLightweight(verbName, verbConfig);
     }
+    return validateVerbElement(verbName, new Gson().toJsonTree(verbConfig));
+  }
+
+  /** Validate an already-serialised config element against the verb's inner schema. */
+  private Map.Entry<Boolean, List<String>> validateVerbElement(
+      String verbName, JsonElement configEl) {
+    VerbInfo v = verbs.get(verbName);
+    if (v == null || !v.definition.has("properties")) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
+    JsonObject outerProps = v.definition.getAsJsonObject("properties");
+    if (!outerProps.has(verbName) || !outerProps.get(verbName).isJsonObject()) {
+      return new AbstractMap.SimpleImmutableEntry<>(true, Collections.emptyList());
+    }
     JsonObject innerSchema = outerProps.getAsJsonObject(verbName);
-    JsonElement configEl = new Gson().toJsonTree(verbConfig);
     List<String> errors = new ArrayList<>();
     // The ai verb is validated TOP-LEVEL-KEYS ONLY (reject unknown/misspelled
     // top-level keys + require `prompt`; ai.params stays open). Its deep
@@ -321,18 +393,59 @@ public class SchemaUtils {
   }
 
   /**
-   * If {@code verbName} is the {@code ai} verb and its inner schema is a {@code $ref} to a closed
-   * object (AIObject), return that resolved object so the ai verb can be validated top-level-only.
-   * Returns {@code null} for every other verb (which gets full validation).
+   * If {@code verbName} is the {@code ai} verb, return the single object schema its body resolves
+   * to (see {@link #singleObjectArm}) so the ai verb can be validated top-level-only — or an empty
+   * schema (no checks) when there is no single object arm. Returns {@code null} for every other
+   * verb (which gets full validation).
    */
   private JsonObject aiTopLevelSchema(String verbName, JsonObject innerSchema) {
     if (!"ai".equals(verbName)) {
       return null;
     }
-    if (innerSchema.has("$ref") && innerSchema.get("$ref").isJsonPrimitive()) {
-      return resolveRef(innerSchema.get("$ref").getAsString());
+    JsonObject arm = singleObjectArm(innerSchema, 0);
+    // No single object arm: disengage (an empty schema checks nothing) rather than guess.
+    return arm != null ? arm : new JsonObject();
+  }
+
+  /** Bound on {@code $ref} hops while resolving a verb body, so a self-reference cannot spin. */
+  private static final int MAX_SCHEMA_RESOLVE_DEPTH = 8;
+
+  /**
+   * The ONE object schema a verb body resolves to, per the #223 contract: follow {@code $ref}; for
+   * an {@code anyOf}/{@code oneOf} union, return its object arm only when there is EXACTLY one (the
+   * ai body is {@code anyOf: [<config object>, <positional array>, number, <bare string>]}); with
+   * zero or several object arms there is no single key set to check, so return {@code null}
+   * (disengage) — never the union of the arms' keys, which would admit a document mixing two arms
+   * that no single arm accepts.
+   */
+  private JsonObject singleObjectArm(JsonObject node, int depth) {
+    if (node == null || depth > MAX_SCHEMA_RESOLVE_DEPTH) {
+      return null;
     }
-    return innerSchema;
+    if (node.has("$ref") && node.get("$ref").isJsonPrimitive()) {
+      return singleObjectArm(resolveRef(node.get("$ref").getAsString()), depth + 1);
+    }
+    for (String comb : new String[] {"anyOf", "oneOf"}) {
+      if (node.has(comb) && node.get(comb).isJsonArray()) {
+        JsonObject only = null;
+        int objectArms = 0;
+        for (JsonElement el : node.getAsJsonArray(comb)) {
+          if (!el.isJsonObject()) {
+            continue;
+          }
+          JsonObject arm = singleObjectArm(el.getAsJsonObject(), depth + 1);
+          if (arm != null) {
+            objectArms++;
+            only = arm;
+          }
+        }
+        return objectArms == 1 ? only : null;
+      }
+    }
+    if (node.has("properties") && node.get("properties").isJsonObject()) {
+      return node;
+    }
+    return null;
   }
 
   /**
@@ -669,9 +782,9 @@ public class SchemaUtils {
   }
 
   /**
-   * Validate a complete SWML document. Mirrors Python's {@code validate_document(document)}.
-   * Returns {@code (false, ["Schema validator not initialized"])} when no full validator is wired
-   * in — same contract as Python.
+   * Validate a complete SWML document. Returns {@code (false, ["Schema validator not
+   * initialized"])} when no full validator is wired in — note this is a FAILURE, not a pass:
+   * document validation has no lightweight fallback the way {@link #validateVerb} does.
    */
   public Map.Entry<Boolean, List<String>> validateDocument(Map<String, Object> document) {
     if (fullValidator == null) {
@@ -694,10 +807,7 @@ public class SchemaUtils {
         false, Collections.singletonList("Document validation error: " + joined));
   }
 
-  /**
-   * Generate a Python-style method signature string for a verb. Mirrors Python's {@code
-   * generate_method_signature(verb_name)}.
-   */
+  /** Generate a Python-style method signature string for a verb, for code-generation tooling. */
   public String generateMethodSignature(String verbName) {
     Map<String, Object> params = getVerbParameters(verbName);
     Set<String> required = new LinkedHashSet<>(getVerbRequiredProperties(verbName));
@@ -734,10 +844,7 @@ public class SchemaUtils {
     return "def " + verbName + "(" + String.join(", ", parts) + ") -> bool:\n" + doc;
   }
 
-  /**
-   * Generate a Python-style method body string for a verb. Mirrors Python's {@code
-   * generate_method_body(verb_name)}.
-   */
+  /** Generate a Python-style method body string for a verb, for code-generation tooling. */
   public String generateMethodBody(String verbName) {
     Map<String, Object> params = getVerbParameters(verbName);
     List<String> keys = new ArrayList<>(params.keySet());

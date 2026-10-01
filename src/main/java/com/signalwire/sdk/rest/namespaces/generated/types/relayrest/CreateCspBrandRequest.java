@@ -10,12 +10,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * CreateCspBrandRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'CreateCspBrandRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CreateCspBrandRequest {
   public Boolean csp_self_registered;
   public String name;
   public String csp_brand_reference;
   public String status_callback_url;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

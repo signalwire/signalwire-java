@@ -222,10 +222,9 @@ public final class Constants {
   }
 
   /**
-   * Whether a RELAY result {@code code} is a 2xx success. Mirrors the Python reference {@code
-   * _SUCCESS_CODE_RE = re.compile(r"^2\d{2}$")} (relay/client.py:77): any {@code 2xx} string is
-   * success; every other code (including 404/410/500) is a non-success the response dispatcher
-   * raises on. {@code null}/empty is treated as success (no code = handshake-style result).
+   * Whether a RELAY result {@code code} is a 2xx success. Any {@code 2xx} string is success; every
+   * other code (including 404/410/500) is a non-success the response dispatcher raises on. {@code
+   * null}/empty is treated as success (no code = handshake-style result).
    */
   public static boolean isSuccessCode(String code) {
     return code == null

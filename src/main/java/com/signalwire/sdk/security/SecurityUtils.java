@@ -15,9 +15,8 @@ import java.util.regex.Pattern;
 /**
  * Standalone security hygiene utilities.
  *
- * <p>These mirror the Python reference's security_utils module (and the TypeScript SDK's
- * SecurityUtils) so the same protections are available in every port: keeping credentials out of
- * user callbacks and logs, plus a reusable hostname validation check.
+ * <p>Two protections plus a check: keeping credentials out of user callbacks, keeping them out of
+ * logs, and a reusable hostname validation check.
  *
  * <p>This is a stateless utility — every method is static and the class is not intended to be
  * instantiated.

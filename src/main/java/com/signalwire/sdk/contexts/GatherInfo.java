@@ -52,6 +52,17 @@ public class GatherInfo {
     return this;
   }
 
+  /**
+   * Add a question to gather, without the isolated flag.
+   *
+   * @param key the field name the answer is stored under.
+   * @param question the question put to the caller.
+   * @param type the expected answer type, e.g. {@code "string"}.
+   * @param confirm whether to read the answer back for confirmation.
+   * @param prompt an optional prompt override for this question.
+   * @param functions tools callable while this question is being answered.
+   * @return this gather info, for chaining.
+   */
   public GatherInfo addQuestion(
       String key,
       String question,
@@ -62,14 +73,31 @@ public class GatherInfo {
     return addQuestion(key, question, type, confirm, prompt, functions, null);
   }
 
+  /**
+   * Add a plain string question with no confirmation, prompt override, or per-question tools.
+   *
+   * @param key the field name the answer is stored under.
+   * @param question the question put to the caller.
+   * @return this gather info, for chaining.
+   */
   public GatherInfo addQuestion(String key, String question) {
     return addQuestion(key, question, "string", false, null, null, null);
   }
 
+  /**
+   * The questions to be asked, in order.
+   *
+   * @return an unmodifiable view of the questions.
+   */
   public List<GatherQuestion> getQuestions() {
     return Collections.unmodifiableList(questions);
   }
 
+  /**
+   * What happens once every question has an answer.
+   *
+   * @return the completion action, or {@code null} when none was configured.
+   */
   public String getCompletionAction() {
     return completionAction;
   }

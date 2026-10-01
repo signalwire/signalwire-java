@@ -9,10 +9,43 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.FabricResource;
 import com.signalwire.sdk.rest.HttpClient;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** AiAgents — REST resource client for the 'fabric' API namespace. */
 public class AiAgents extends FabricResource {
   public AiAgents(HttpClient httpClient) {
     super(httpClient, "/fabric/resources/ai_agents");
+  }
+
+  /** listVoices (generated from operation 'list_ai_agent_voices'). */
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice>
+      listVoices(java.util.Map<String, String> params) {
+    return listVoices(params, (RequestOptions) null);
+  }
+
+  /** listVoices with a per-request {@link RequestOptions} override. */
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice>
+      listVoices(java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asTypeList(
+        restGetList(getBasePath() + "/" + "voices", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice.class);
+  }
+
+  /** listConversationLogs (generated from operation 'list_ai_agent_conversation_logs'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .AIAgentConversationLogListResponse
+      listConversationLogs(String id, java.util.Map<String, String> params) {
+    return listConversationLogs(id, params, (RequestOptions) null);
+  }
+
+  /** listConversationLogs with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric
+          .AIAgentConversationLogListResponse
+      listConversationLogs(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "conversation_logs", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentConversationLogListResponse
+            .class);
   }
 }

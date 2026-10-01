@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * DomainApplicationAssignRequest — generated wire type ('fabric' spec, components/schemas
  * 'DomainApplicationAssignRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class DomainApplicationAssignRequest {
   public String domain_application_id;

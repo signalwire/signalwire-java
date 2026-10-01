@@ -1,0 +1,61 @@
+# REPO-LINT / REPO-FMT — the Python bar for signalwire-java.
+#
+# This repo is a Java SDK, but it carries hand-written Python under scripts/ that
+# is fully load-bearing: the enumerators that produce port_signatures.json /
+# port_surface.json (the inputs to the SIGNATURES, SURFACE and DRIFT gates) and
+# the code generators that emit the committed REST/RELAY/SWML/SWAIG trees. Until
+# now NO gate linted or formatted any of it — the tooling that enforces the Java
+# bar was itself unchecked.
+#
+# The rule selection is copied from the reference implementation
+# (signalwire-python/pyproject.toml [tool.ruff.lint]) so the fleet has ONE Python
+# bar rather than ten invented ones. E501 is deliberately absent: line length is
+# owned by `ruff format`, not the linter.
+#
+# SCOPE: the whole tree. Nothing is excluded — there is no vendored third-party
+# Python here. `build/` and `.gradle/` are build output, not source, and ruff's
+# own defaults already skip them along with the gitignored dirs.
+#
+# WHY eng/ AND NOT THE REPO ROOT: every other port keeps its linter config at the
+# root (.golangci.yml, .rubocop.yml, phpstan.neon, clippy.toml, .clang-tidy), but
+# porting-sdk's ROOT-HYGIENE gate has no allowlist entry for `ruff.toml` and reds
+# on it as root clutter. Since ruff accepts --config, filing it here is the honest
+# fix rather than an allowlist entry for a file that can simply move. ruff is
+# always invoked from the repo root by scripts/_env.sh's sw_ruff, which supplies
+# `--config eng/ruff.toml` exactly once so no call site can forget it and silently
+# lint under ruff's defaults instead. (Adding `ruff.toml` to ROOT_HYGIENE's
+# ALLOWED_ROOT_EXACT set alongside the other nine ports' linter configs is the
+# better upstream fix — reported as a cross-repo finding.)
+
+target-version = "py310"
+line-length = 88
+
+[format]
+# Pin STABLE formatting explicitly, matching the reference. Without this, a CI
+# `ruff format --check` can resolve preview-mode formatting while a local stable
+# run leaves the file unchanged — a local-vs-CI split with no visible cause.
+preview = false
+
+[lint]
+# E4/E7/E9 + F are the ruff defaults. B = flake8-bugbear (likely-bug patterns),
+# S = flake8-bandit (security smells). Identical to the reference's selection.
+select = ["E4", "E7", "E9", "F", "B", "S", "C4", "PERF", "SIM", "PTH", "RET", "RUF", "UP"]
+
+[lint.per-file-ignores]
+# S603 (subprocess call) / S607 (partial executable path) across the enumerators
+# and generators. Every one of these sites is a LIST-FORM invocation with the
+# default shell=False, so there is no shell to interpolate into, and every argv
+# vector is fixed at the call site — the only varying arguments are paths this
+# repo computed for itself (the SDK jar, build/scripts, the google-java-format
+# classpath, a spec file) or `sys.executable`, never network or user input. S607
+# fires on `javac` / `java` / `git` resolved via PATH, which is the normal and
+# correct way a build tool invokes its own toolchain — pinning absolute paths
+# would break every machine whose JDK is not where this one's is. Same rationale
+# and same per-file (not blanket) scoping as the reference's
+# signalwire/cli/dokku.py entry, so a NEW subprocess call in any OTHER file still
+# reds the gate.
+"scripts/enumerate_signatures.py" = ["S603", "S607"]
+"scripts/enumerate_surface.py" = ["S603", "S607"]
+"scripts/generate_exemptions.py" = ["S603"]
+"scripts/generate_rest.py" = ["S603", "S607"]
+"scripts/generate_rest_tests.py" = ["S603", "S607"]

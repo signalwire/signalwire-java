@@ -54,6 +54,11 @@ public class Messages extends BaseResource {
     private final Boolean sendAsMms;
     private final String statusCallback;
     private final java.util.Map<String, Object> customVariables;
+    private final String messageType;
+    private final String templateId;
+    private final java.util.Map<String, Object> headerTemplateParameters;
+    private final java.util.Map<String, Object> bodyTemplateParameters;
+    private final java.util.List<Object> buttonTemplateParameters;
     private final java.util.Map<String, Object> extras;
 
     private CreateRequest(
@@ -64,6 +69,11 @@ public class Messages extends BaseResource {
         Boolean sendAsMms,
         String statusCallback,
         java.util.Map<String, Object> customVariables,
+        String messageType,
+        String templateId,
+        java.util.Map<String, Object> headerTemplateParameters,
+        java.util.Map<String, Object> bodyTemplateParameters,
+        java.util.List<Object> buttonTemplateParameters,
         java.util.Map<String, Object> extras) {
       this.to = to;
       this.from = from;
@@ -72,6 +82,11 @@ public class Messages extends BaseResource {
       this.sendAsMms = sendAsMms;
       this.statusCallback = statusCallback;
       this.customVariables = customVariables;
+      this.messageType = messageType;
+      this.templateId = templateId;
+      this.headerTemplateParameters = headerTemplateParameters;
+      this.bodyTemplateParameters = bodyTemplateParameters;
+      this.buttonTemplateParameters = buttonTemplateParameters;
       this.extras = extras;
     }
 
@@ -102,6 +117,21 @@ public class Messages extends BaseResource {
       if (this.customVariables != null) {
         body.put("custom_variables", this.customVariables);
       }
+      if (this.messageType != null) {
+        body.put("message_type", this.messageType);
+      }
+      if (this.templateId != null) {
+        body.put("template_id", this.templateId);
+      }
+      if (this.headerTemplateParameters != null) {
+        body.put("header_template_parameters", this.headerTemplateParameters);
+      }
+      if (this.bodyTemplateParameters != null) {
+        body.put("body_template_parameters", this.bodyTemplateParameters);
+      }
+      if (this.buttonTemplateParameters != null) {
+        body.put("button_template_parameters", this.buttonTemplateParameters);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -116,6 +146,11 @@ public class Messages extends BaseResource {
       private Boolean sendAsMms;
       private String statusCallback;
       private java.util.Map<String, Object> customVariables;
+      private String messageType;
+      private String templateId;
+      private java.util.Map<String, Object> headerTemplateParameters;
+      private java.util.Map<String, Object> bodyTemplateParameters;
+      private java.util.List<Object> buttonTemplateParameters;
       private java.util.Map<String, Object> extras;
 
       public Builder to(String to) {
@@ -153,6 +188,32 @@ public class Messages extends BaseResource {
         return this;
       }
 
+      public Builder messageType(String messageType) {
+        this.messageType = messageType;
+        return this;
+      }
+
+      public Builder templateId(String templateId) {
+        this.templateId = templateId;
+        return this;
+      }
+
+      public Builder headerTemplateParameters(
+          java.util.Map<String, Object> headerTemplateParameters) {
+        this.headerTemplateParameters = headerTemplateParameters;
+        return this;
+      }
+
+      public Builder bodyTemplateParameters(java.util.Map<String, Object> bodyTemplateParameters) {
+        this.bodyTemplateParameters = bodyTemplateParameters;
+        return this;
+      }
+
+      public Builder buttonTemplateParameters(java.util.List<Object> buttonTemplateParameters) {
+        this.buttonTemplateParameters = buttonTemplateParameters;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
@@ -160,7 +221,19 @@ public class Messages extends BaseResource {
 
       public CreateRequest build() {
         return new CreateRequest(
-            to, from, body, media, sendAsMms, statusCallback, customVariables, extras);
+            to,
+            from,
+            body,
+            media,
+            sendAsMms,
+            statusCallback,
+            customVariables,
+            messageType,
+            templateId,
+            headerTemplateParameters,
+            bodyTemplateParameters,
+            buttonTemplateParameters,
+            extras);
       }
     }
   }

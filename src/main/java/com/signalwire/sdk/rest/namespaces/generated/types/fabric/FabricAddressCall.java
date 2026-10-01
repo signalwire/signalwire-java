@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * FabricAddressCall — generated wire type ('fabric' spec, components/schemas 'FabricAddressCall').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class FabricAddressCall {
   public String id;
@@ -20,6 +20,6 @@ public final class FabricAddressCall {
   public String preview_url;
   public Boolean locked;
   public java.util.Map<String, Object> channels;
-  public String created_at;
   public String type;
+  public String resource_id;
 }

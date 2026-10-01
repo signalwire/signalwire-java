@@ -2,33 +2,35 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'pay' config
+// schema.json $defs schema 'PayConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * PayConfig — generated wire type (flattened SWMLMethod verb 'pay' config).
+ * PayConfig — generated wire type (schema.json $defs schema 'PayConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class PayConfig {
-  public String payment_connector_url;
+  public String description;
+  public String bank_account_type;
   public String charge_amount;
   public String currency;
-  public String description;
   public String input;
   public String language;
-  public java.util.Map<String, Object> max_attempts;
-  public java.util.Map<String, Object> min_postal_code_length;
-  public java.util.List<Object> parameters;
+  public String max_attempts;
+  public String min_postal_code_length;
+  public java.util.Map<String, Object> parameters;
+  public String payment_connector_url;
   public String payment_method;
-  public java.util.Map<String, Object> postal_code;
-  public java.util.List<Object> prompts;
-  public java.util.Map<String, Object> security_code;
+  public String postal_code;
+  public java.util.Map<String, Object> prompts;
+  public String say_voice;
+  public String security_code;
   public String status_url;
-  public java.util.Map<String, Object> timeout;
-  public java.util.Map<String, Object> token_type;
+  public String timeout;
+  public String token_type;
   public String valid_card_types;
   public String voice;
 }

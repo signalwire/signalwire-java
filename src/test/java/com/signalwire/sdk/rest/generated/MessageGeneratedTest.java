@@ -114,4 +114,228 @@ class MessageGeneratedTest {
         j.getMatchedRoute(),
         "matched_route for message.list_message_logs");
   }
+
+  @Test
+  void whatsappBusinessesListSuccess() {
+    dispatch(() -> client.whatsapp().businesses().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for message.list_whatsapp_businesses");
+    assertEquals(
+        "message.list_whatsapp_businesses",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_businesses");
+  }
+
+  @Test
+  void whatsappBusinessesListError() {
+    mock.scenarioSet("message.list_whatsapp_businesses", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.whatsapp().businesses().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for message.list_whatsapp_businesses");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.list_whatsapp_businesses");
+    assertEquals(
+        "message.list_whatsapp_businesses",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_businesses");
+  }
+
+  @Test
+  void whatsappNumbersGetSuccess() {
+    dispatch(() -> client.whatsapp().numbers().get("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for message.retrieve_whatsapp_number");
+    assertEquals(
+        "message.retrieve_whatsapp_number",
+        j.getMatchedRoute(),
+        "matched_route for message.retrieve_whatsapp_number");
+  }
+
+  @Test
+  void whatsappNumbersGetError() {
+    mock.scenarioSet("message.retrieve_whatsapp_number", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.whatsapp().numbers().get("x"));
+    assertEquals(500, ex.getStatusCode(), "status for message.retrieve_whatsapp_number");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.retrieve_whatsapp_number");
+    assertEquals(
+        "message.retrieve_whatsapp_number",
+        j.getMatchedRoute(),
+        "matched_route for message.retrieve_whatsapp_number");
+  }
+
+  @Test
+  void whatsappNumbersListSuccess() {
+    dispatch(() -> client.whatsapp().numbers().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for message.list_whatsapp_numbers");
+    assertEquals(
+        "message.list_whatsapp_numbers",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_numbers");
+  }
+
+  @Test
+  void whatsappNumbersListError() {
+    mock.scenarioSet("message.list_whatsapp_numbers", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.whatsapp().numbers().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for message.list_whatsapp_numbers");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.list_whatsapp_numbers");
+    assertEquals(
+        "message.list_whatsapp_numbers",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_numbers");
+  }
+
+  @Test
+  void whatsappTemplatesCreateSuccess() {
+    dispatch(() -> client.whatsapp().templates().create(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("POST", j.method, "method for message.create_whatsapp_template");
+    assertEquals(
+        "message.create_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.create_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesCreateError() {
+    mock.scenarioSet("message.create_whatsapp_template", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.whatsapp().templates().create(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for message.create_whatsapp_template");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.create_whatsapp_template");
+    assertEquals(
+        "message.create_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.create_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesDeleteSuccess() {
+    dispatch(() -> client.whatsapp().templates().delete("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("DELETE", j.method, "method for message.delete_whatsapp_template");
+    assertEquals(
+        "message.delete_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.delete_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesDeleteError() {
+    mock.scenarioSet("message.delete_whatsapp_template", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.whatsapp().templates().delete("x"));
+    assertEquals(500, ex.getStatusCode(), "status for message.delete_whatsapp_template");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.delete_whatsapp_template");
+    assertEquals(
+        "message.delete_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.delete_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesGetSuccess() {
+    dispatch(() -> client.whatsapp().templates().get("x"));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for message.retrieve_whatsapp_template");
+    assertEquals(
+        "message.retrieve_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.retrieve_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesGetError() {
+    mock.scenarioSet("message.retrieve_whatsapp_template", 500, Map.of("error", "x"));
+    RestError ex = assertThrows(RestError.class, () -> client.whatsapp().templates().get("x"));
+    assertEquals(500, ex.getStatusCode(), "status for message.retrieve_whatsapp_template");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.retrieve_whatsapp_template");
+    assertEquals(
+        "message.retrieve_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.retrieve_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesListSuccess() {
+    dispatch(() -> client.whatsapp().templates().list(java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("GET", j.method, "method for message.list_whatsapp_templates");
+    assertEquals(
+        "message.list_whatsapp_templates",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_templates");
+  }
+
+  @Test
+  void whatsappTemplatesListError() {
+    mock.scenarioSet("message.list_whatsapp_templates", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(RestError.class, () -> client.whatsapp().templates().list(java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for message.list_whatsapp_templates");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.list_whatsapp_templates");
+    assertEquals(
+        "message.list_whatsapp_templates",
+        j.getMatchedRoute(),
+        "matched_route for message.list_whatsapp_templates");
+  }
+
+  @Test
+  void whatsappTemplatesUpdateSuccess() {
+    dispatch(() -> client.whatsapp().templates().update("x", java.util.Map.of()));
+    MockTest.JournalEntry j = mock.last();
+    assertEquals("PATCH", j.method, "method for message.update_whatsapp_template");
+    assertEquals(
+        "message.update_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.update_whatsapp_template");
+  }
+
+  @Test
+  void whatsappTemplatesUpdateError() {
+    mock.scenarioSet("message.update_whatsapp_template", 500, Map.of("error", "x"));
+    RestError ex =
+        assertThrows(
+            RestError.class, () -> client.whatsapp().templates().update("x", java.util.Map.of()));
+    assertEquals(500, ex.getStatusCode(), "status for message.update_whatsapp_template");
+    MockTest.JournalEntry j = mock.last();
+    assertEquals(
+        Integer.valueOf(500),
+        j.getResponseStatus(),
+        "response_status for message.update_whatsapp_template");
+    assertEquals(
+        "message.update_whatsapp_template",
+        j.getMatchedRoute(),
+        "matched_route for message.update_whatsapp_template");
+  }
 }

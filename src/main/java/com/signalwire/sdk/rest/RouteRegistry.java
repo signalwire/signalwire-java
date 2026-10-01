@@ -42,14 +42,13 @@ import java.util.TreeMap;
  *
  * <p>The client is built with project id = the sentinel so compat's {@code {AccountSid}} path
  * segment (which the SDK fills from the project id) normalises to {@code {id}} and the spec matcher
- * resolves it from config, exactly as Go's registry does.
+ * resolves it from config.
  *
  * <p>A method that cannot be invoked is NOT silently skipped — a dropped method is a route missing
  * from Set B, which would turn a real divergence into a false "Java matches the spec" pass. Methods
  * that genuinely do not map to a single canonical route must be listed explicitly in {@link
  * #REGISTRY_SKIP} with a reason; everything else that fails to invoke, or invokes but issues no
- * HTTP request, is a hard ERROR (non-zero exit + recorded in {@code "errors"}), mirroring
- * python_route_registry.py / cmd/route-registry / route-registry.ts.
+ * HTTP request, is a hard ERROR (non-zero exit + recorded in {@code "errors"}).
  *
  * <p>Output: JSON {@code {"routes":[{"method","path_template","via"}],"skipped":[...],
  * "errors":[...]}} on stdout. Exit 1 if any uninvokable, un-skip-listed method (Set B incomplete).
@@ -113,8 +112,8 @@ final class RouteRegistry {
    * /fabric/resources}); the SDK's {@link HttpClient#buildUrl} prepends the base URL's path
    * component ({@code /api}) before dispatch. We record that SAME on-the-wire path so Set B lines
    * up with the spec's {@code path_template}, which carries the server prefix (e.g. {@code
-   * /api/relay/rest/…}). This mirrors Go's registry recording {@code req.URL.Path} (the full
-   * dispatched path) rather than the resource-relative argument.
+   * /api/relay/rest/…}). Recording the resource-relative argument instead would leave every
+   * captured route missing its prefix and matching nothing in the spec.
    */
   private static final class RecordingHttpClient extends HttpClient {
     /** The base URL's path component (e.g. {@code /api}) — the prefix buildUrl prepends. */
@@ -215,6 +214,42 @@ final class RouteRegistry {
       CALLS.add(new Call("DELETE", wire(path)));
       return Collections.emptyMap();
     }
+
+    @Override
+    public Map<String, Object> post(
+        String path,
+        Map<String, Object> body,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("POST", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    /** Records the GET route; returns an empty body. */
+    @Override
+    public String getText(
+        String path,
+        Map<String, String> queryParams,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
+
+    @Override
+    java.util.List<Object> getList(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return Collections.emptyList();
+    }
+
+    /** Records the GET route; returns an empty location. */
+    @Override
+    public String getRedirectLocation(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
   }
 
   /** Aggregated route record (de-duped by method+path, accumulating the {@code via} accessors). */
@@ -276,6 +311,23 @@ final class RouteRegistry {
    * typed DTO). All three shapes are the wire response — recognise them so a flipped route is not
    * silently dropped from Set B (which would masquerade as "the SDK is missing this route").
    */
+  /**
+   * A generated resource verb whose success is not a JSON object: a text body or a redirect's
+   * Location ({@code String}, e.g. {@code download(id, params)}) or a top-level JSON array ({@code
+   * List}). Only methods declared on a generated resource that take arguments qualify, so plain
+   * getters such as {@code getBasePath()} never do.
+   */
+  private static boolean isGeneratedNonJsonRoute(Method m) {
+    Class<?> rt = m.getReturnType();
+    if (rt != String.class && !List.class.isAssignableFrom(rt)) {
+      return false;
+    }
+    Package p = m.getDeclaringClass().getPackage();
+    return m.getParameterCount() > 0
+        && p != null
+        && p.getName().equals("com.signalwire.sdk.rest.namespaces.generated");
+  }
+
   private static boolean isWireResponseType(Class<?> rt) {
     if (Map.class.isAssignableFrom(rt)) {
       return true;
@@ -289,7 +341,7 @@ final class RouteRegistry {
 
   /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!isWireResponseType(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType()) && !isGeneratedNonJsonRoute(m)) {
       return false;
     }
     // Every generated verb ships a convenience overload + a RequestOptions-carrying full
@@ -468,6 +520,7 @@ final class RouteRegistry {
             .token("t")
             .space("recording.invalid")
             .httpClient(new RecordingHttpClient())
+            .patHttpClient(new RecordingHttpClient())
             .build();
 
     // Walk every public namespace accessor on the client (fabric(), calling(), …).
@@ -533,6 +586,11 @@ final class RouteRegistry {
     return payload;
   }
 
+  /**
+   * Entry point: emits the REST route registry this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     RouteRegistry reg = new RouteRegistry();
     Map<String, Object> payload = reg.build();

@@ -10,22 +10,21 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * CxmlApplicationUpdateRequest — generated wire type ('fabric' spec, components/schemas
  * 'CxmlApplicationUpdateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CxmlApplicationUpdateRequest {
-  public String display_name;
-  public String account_sid;
-  public String voice_url;
-  public java.util.Map<String, Object> voice_method;
-  public String voice_fallback_url;
-  public java.util.Map<String, Object> voice_fallback_method;
-  public String status_callback;
-  public java.util.Map<String, Object> status_callback_method;
-  public String sms_url;
-  public java.util.Map<String, Object> sms_method;
-  public String sms_fallback_url;
-  public java.util.Map<String, Object> sms_fallback_method;
-  public String sms_status_callback;
-  public java.util.Map<String, Object> sms_status_callback_method;
+  public String name;
+  public String call_request_url;
+  public String call_request_method;
+  public String call_fallback_url;
+  public String call_fallback_method;
+  public String call_status_url;
+  public String call_status_method;
+  public String message_request_url;
+  public String message_request_method;
+  public String message_fallback_url;
+  public String message_fallback_method;
+  public String message_status_url;
+  public String message_status_method;
 }

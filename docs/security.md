@@ -83,6 +83,9 @@ trust store is used.
 |----------|---------|-------------|
 | `SWML_SKIP_SCHEMA_VALIDATION` | `false` | Set to `1`/`true`/`yes` to skip SWML JSON-schema validation. Intended for development; leave unset in production so malformed documents are rejected. |
 | `SWML_ALLOW_PRIVATE_URLS` | `false` | Set to `1`/`true`/`yes` to allow webhook/fetch URLs that resolve to private, loopback, or link-local addresses. This **bypasses the SSRF guard** — leave unset in production. |
+| `SWML_URL_FETCH_USE_PROXY` | `false` | Set to `1`/`true`/`yes` to let user-URL fetches (the spider skill's `PublicSession`) go through the JVM's configured proxy. By default they connect directly so the SSRF address check applies; use a proxy only if it restricts destinations itself. |
+| `SIGNALWIRE_CHAT_GATEWAY_KEY` | unset | The AI Chat gateway (`ChatGateway`) key when none is passed in its options; the key a browser must present to use the gateway. |
+| `SIGNALWIRE_CHAT_GATEWAY_SECRET` | unset | The secret `ChatGateway` signs conversation handles with when none is passed in its options; set it so handles stay valid across restarts and replicas. |
 
 ## Service-Specific Usage
 

@@ -9,11 +9,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * Pronounce — generated wire type ('calling' spec, components/schemas 'Pronounce').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Pronounce {
+  public java.util.Map<String, Object> ignore_case;
   public String replace;
   public String with;
-  public java.util.Map<String, Object> ignore_case;
 }

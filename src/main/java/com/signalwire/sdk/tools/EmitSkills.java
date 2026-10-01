@@ -21,24 +21,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * EmitSkills — the Java port's SKILL-DUMP program for the cross-port SKILL-CONTRACT differ
- * (porting-sdk/scripts/diff_skill_contracts.py).
+ * EmitSkills — this SDK's dump program for the SKILL-CONTRACT gate's differ.
  *
  * <p>The sibling of {@link EmitCorpus}, for built-in SKILLS rather than {@code FunctionResult}. For
  * each covered skill it looks up the skill's factory in the {@link SkillRegistry}, instantiates it,
- * runs {@code setup(config)} with the canonical config from the shared corpus
- * (porting-sdk/scripts/skill_contract_corpus.py — the single source of truth), collects the tool
- * contracts the skill registers, and prints ONE JSON object mapping
+ * runs {@code setup(config)} with the canonical config from the shared skill-contract corpus (the
+ * single source of truth for both the config and the covered id set), collects the tool contracts
+ * the skill registers, and prints ONE JSON object mapping
  *
  * <pre>
  *   skill-id -&gt; [ { "name": ..., "parameters": {...}, "required"?: [...] }, ... ]
  * </pre>
  *
  * to stdout. The differ runs this program, parses that object, and structurally compares each
- * skill's tool contract against the Python reference (which registers the same tools). The differ
- * normalises both sides (flat vs wrapped params, required list, enum order); this program emits
- * each tool's name + parameters verbatim. DESCRIPTIONS are not part of the compared contract.
- * Mirrors Go's {@code cmd/emit-skills/main.go} and Ruby's {@code bin/emit-skills}.
+ * skill's tool contract against the shared golden. The differ normalises both sides (flat vs
+ * wrapped params, required list, enum order); this program emits each tool's name + parameters
+ * verbatim. DESCRIPTIONS are not part of the compared contract.
  *
  * <p>A skill registers tools in one of two shapes, and a skill may use either or both:
  *
@@ -52,7 +50,7 @@ import java.util.Map;
  *       datasphere_serverless, swml_transfer, joke, api_ninjas_trivia, play_background_file).
  * </ul>
  *
- * <p>CONTRACT (mirrors the per-port dump contract in the differ's {@code --help}):
+ * <p>CONTRACT (the differ's {@code --help} states the same requirements):
  *
  * <ul>
  *   <li>The id set MUST equal {@code corpus_ids()} (the differ rejects a mismatch).
@@ -73,12 +71,14 @@ final class EmitSkills {
 
   private EmitSkills() {}
 
-  /** One entry of skill_contract_corpus.py's CORPUS: {id, skill, config}. */
+  /** One entry of the shared skill-contract CORPUS: {id, skill, config}. */
   private record CorpusEntry(String id, String skill, Map<String, Object> config) {}
 
   /**
-   * Locate porting-sdk/scripts/skill_contract_corpus.py via $PORTING_SDK / $PORTING_SDK_PATH or the
-   * sibling ../porting-sdk (the adjacency convention), run it, and return its CORPUS entries.
+   * Locate the shared skill-contract corpus script under {@code $PORTING_SDK} / {@code
+   * $PORTING_SDK_PATH}, else the sibling {@code ../porting-sdk} checkout (the adjacency
+   * convention), run it, and return its CORPUS entries. Fails loudly if no candidate base contains
+   * the script.
    */
   private static List<CorpusEntry> loadCorpus() throws Exception {
     List<String> bases = new ArrayList<>();
@@ -176,6 +176,11 @@ final class EmitSkills {
     return contracts;
   }
 
+  /**
+   * Entry point: emits the SKILL-DUMP contract corpus this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     try {
       List<CorpusEntry> corpus = loadCorpus();

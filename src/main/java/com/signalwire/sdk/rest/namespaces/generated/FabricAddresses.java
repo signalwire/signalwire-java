@@ -9,10 +9,21 @@ package com.signalwire.sdk.rest.namespaces.generated;
 
 import com.signalwire.sdk.rest.HttpClient;
 import com.signalwire.sdk.rest.ReadResource;
+import com.signalwire.sdk.rest.RequestOptions;
 
 /** FabricAddresses — REST resource client for the 'fabric' API namespace. */
 public class FabricAddresses extends ReadResource {
   public FabricAddresses(HttpClient httpClient) {
     super(httpClient, "/fabric/addresses");
+  }
+
+  /** delete (generated from operation 'delete_fabric_address'). */
+  public java.util.Map<String, Object> delete(String id) {
+    return delete(id, (RequestOptions) null);
+  }
+
+  /** delete with a per-request {@link RequestOptions} override. */
+  public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
+    return restDelete(getBasePath() + "/" + id, requestOptions);
   }
 }

@@ -25,7 +25,7 @@ jobs:
         with:
           repository: signalwire/porting-sdk
           # Publish always builds against porting-sdk main — deliberately NOT the
-          # coordinated-pass PORTING_SDK_REF variable, so a release can never ship from
+          # coordinated-pass .github/porting-sdk-ref pin, so a release can never ship from
           # an unmerged wave branch (see porting-sdk/COORDINATED_PASS.md).
           ref: main
           path: porting-sdk
@@ -49,6 +49,20 @@ jobs:
         run: |
           pip install -e porting-sdk/test_harness/mock_relay
           pip install -e porting-sdk/test_harness/mock_signalwire
+
+      # ruff is the Python half of the FMT and LINT gates (scripts/ enumerators +
+      # generators). scripts/_env.sh fails LOUD without it. Config: ./ruff.toml.
+      - name: Install ruff (Python half of FMT + LINT)
+        run: |
+          # PINNED EXACT: an unbounded `pip install ruff` resolves the newest release
+          # at CI time, so a ruff release that adds a rule or changes a format
+          # heuristic reds FMT/LINT on a commit that was green locally. Keep in
+          # lockstep with SW_RUFF_VERSION in scripts/_env.sh.
+          pip install "ruff==0.15.21"
+          # Assert the pin took — pip can satisfy a spec from an unexpected
+          # index or cache, so verify rather than assume.
+          ruff --version
+          ruff --version | grep -qw '0\.15\.21' || { echo "FATAL: ruff is not the pinned 0.15.21" >&2; exit 1; }
 
       - name: Run CI gate script (full gate set)
         working-directory: signalwire-java

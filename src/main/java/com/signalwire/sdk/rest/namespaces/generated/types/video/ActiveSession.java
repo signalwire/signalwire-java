@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.video;
 /**
  * ActiveSession — generated wire type ('video' spec, components/schemas 'ActiveSession').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class ActiveSession {
   public String id;
@@ -32,5 +32,14 @@ public final class ActiveSession {
   public Boolean record_on_start;
   public Boolean enable_room_previews;
   public String preview_url;
-  public Boolean audio_video_sync;
+  public Boolean sync_audio_video;
+  public Boolean tone_on_entry_and_exit;
+  public Boolean room_join_video_off;
+  public Boolean user_join_video_off;
+  public Boolean locked;
+  public Double cost_in_dollars;
+  public String created_at;
+  public String updated_at;
+  public String locked_cover;
+  public Boolean prioritize_handraise;
 }

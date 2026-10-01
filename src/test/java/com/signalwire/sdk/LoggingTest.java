@@ -3,6 +3,11 @@ package com.signalwire.sdk;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.signalwire.sdk.logging.Logger;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -103,5 +108,66 @@ class LoggingTest {
     log.info("suppressed");
     log.warn("suppressed");
     log.error("suppressed");
+  }
+
+  // --- control-char scrub: contract + WIRING -------------------------------
+
+  @Test
+  void stripControlCharsScrubsStringValuesInTheEventDict() {
+    // The PUBLIC contract, matching the reference: an event map in, the same map
+    // out with every STRING value scrubbed.
+    Map<String, Object> ev = new LinkedHashMap<>();
+    ev.put("event", "hello\u0000world");
+    ev.put("field", "a\u0007b\u001fc");
+    ev.put("n", 42);
+
+    Map<String, Object> out = Logger.stripControlChars(ev);
+
+    assertEquals("helloworld", out.get("event"));
+    assertEquals("abc", out.get("field"));
+    // Non-string values pass through untouched (the reference's
+    // `isinstance(value, str)` guard).
+    assertEquals(42, out.get("n"));
+  }
+
+  /**
+   * The scrub must be ON THE EMISSION PATH, not merely available. This captures what the logger
+   * ACTUALLY writes, so deleting the scrub from the emitter turns it RED. A test that called the
+   * scrub helper directly would pass even with the wiring removed — which is exactly how this
+   * shipped unprotected: the method was public, correct, and called by nothing.
+   */
+  @Test
+  void logOutputHasControlCharsStripped() {
+    PrintStream savedOut = System.out;
+    ByteArrayOutputStream captured = new ByteArrayOutputStream();
+    try {
+      System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+      Logger.getLogger("inject.test").info("user\u0000said\u001b[31mRED\u0007");
+    } finally {
+      System.setOut(savedOut);
+    }
+
+    String line = captured.toString(StandardCharsets.UTF_8);
+    assertFalse(line.contains("\u0000"), "NUL survived into the emitted line: " + line);
+    assertFalse(line.contains("\u001b"), "ESC survived into the emitted line: " + line);
+    assertFalse(line.contains("\u0007"), "BEL survived into the emitted line: " + line);
+    assertTrue(line.contains("usersaid[31mRED"), "unexpected line: " + line);
+  }
+
+  /**
+   * Tab/newline/CR are LEGAL in a log line and must survive — a scrub that ate them would mangle
+   * multi-line messages while still passing the assertion above.
+   */
+  @Test
+  void logOutputKeepsLegalWhitespace() {
+    PrintStream savedOut = System.out;
+    ByteArrayOutputStream captured = new ByteArrayOutputStream();
+    try {
+      System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+      Logger.getLogger("inject.test").info("line1\tcol\nline2\r end");
+    } finally {
+      System.setOut(savedOut);
+    }
+    assertTrue(captured.toString(StandardCharsets.UTF_8).contains("line1\tcol\nline2\r end"));
   }
 }

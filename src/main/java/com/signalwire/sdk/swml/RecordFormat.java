@@ -34,7 +34,6 @@ public enum RecordFormat implements WireEnum {
 
   /**
    * The canonical wire string for this format ({@code "mp3"} / {@code "wav"} / {@code "mp4"}).
-   * Equivalent to PHP's backed-enum {@code ->value}.
    *
    * @return the lower-case format name as it appears on the wire.
    */

@@ -9,14 +9,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
 /**
  * AssignedNumber — generated wire type ('relay_rest' spec, components/schemas 'AssignedNumber').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AssignedNumber {
   public String id;
   public String state;
   public String campaign_id;
   public java.util.Map<String, Object> phone_number;
+  public String status_callback_url;
   public String created_at;
   public String updated_at;
 }

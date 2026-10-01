@@ -51,4 +51,15 @@ public class Recordings extends BaseResource {
   public java.util.Map<String, Object> delete(String id, RequestOptions requestOptions) {
     return restDelete(getBasePath() + "/" + id, requestOptions);
   }
+
+  /** download (generated from operation 'download_recording'). */
+  public String download(String id, java.util.Map<String, String> params) {
+    return download(id, params, (RequestOptions) null);
+  }
+
+  /** download with a per-request {@link RequestOptions} override. */
+  public String download(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGetRedirectLocation(getBasePath() + "/" + id + ".mp3", params, requestOptions);
+  }
 }

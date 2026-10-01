@@ -10,14 +10,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * AvailablePhoneNumber — generated wire type ('relay_rest' spec, components/schemas
  * 'AvailablePhoneNumber').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AvailablePhoneNumber {
-  public String number;
   public String region;
-  public String city;
   public String rate_center;
-  public String lata;
-  public java.util.Map<String, Object> capabilities;
+  public java.util.List<Object> capabilities;
+  public String e164;
+  public String national_number_formatted;
+  public String international_number_formatted;
+  public String country_code;
 }

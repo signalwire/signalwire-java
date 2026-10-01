@@ -52,6 +52,7 @@ public class SipProfile extends BaseResource {
     private final java.util.List<Object> defaultCiphers;
     private final String defaultEncryption;
     private final String defaultSendAs;
+    private final String defaultOutboundPolicy;
     private final java.util.Map<String, Object> extras;
 
     private UpdateRequest(
@@ -60,12 +61,14 @@ public class SipProfile extends BaseResource {
         java.util.List<Object> defaultCiphers,
         String defaultEncryption,
         String defaultSendAs,
+        String defaultOutboundPolicy,
         java.util.Map<String, Object> extras) {
       this.domainIdentifier = domainIdentifier;
       this.defaultCodecs = defaultCodecs;
       this.defaultCiphers = defaultCiphers;
       this.defaultEncryption = defaultEncryption;
       this.defaultSendAs = defaultSendAs;
+      this.defaultOutboundPolicy = defaultOutboundPolicy;
       this.extras = extras;
     }
 
@@ -90,6 +93,9 @@ public class SipProfile extends BaseResource {
       if (this.defaultSendAs != null) {
         body.put("default_send_as", this.defaultSendAs);
       }
+      if (this.defaultOutboundPolicy != null) {
+        body.put("default_outbound_policy", this.defaultOutboundPolicy);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -102,6 +108,7 @@ public class SipProfile extends BaseResource {
       private java.util.List<Object> defaultCiphers;
       private String defaultEncryption;
       private String defaultSendAs;
+      private String defaultOutboundPolicy;
       private java.util.Map<String, Object> extras;
 
       public Builder domainIdentifier(String domainIdentifier) {
@@ -129,6 +136,11 @@ public class SipProfile extends BaseResource {
         return this;
       }
 
+      public Builder defaultOutboundPolicy(String defaultOutboundPolicy) {
+        this.defaultOutboundPolicy = defaultOutboundPolicy;
+        return this;
+      }
+
       public Builder extras(java.util.Map<String, Object> extras) {
         this.extras = extras;
         return this;
@@ -141,6 +153,7 @@ public class SipProfile extends BaseResource {
             defaultCiphers,
             defaultEncryption,
             defaultSendAs,
+            defaultOutboundPolicy,
             extras);
       }
     }

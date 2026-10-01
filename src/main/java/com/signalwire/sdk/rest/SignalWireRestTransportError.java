@@ -11,20 +11,15 @@ package com.signalwire.sdk.rest;
  * refused, DNS failure, connection reset, TLS error).
  *
  * <p>A member of the {@link RestError} family: there is no HTTP response, so there is no status
- * code ({@link #getStatusCode()} returns {@code 0}, this port's sentinel for "no HTTP status" —
- * mapped to {@code null} by tooling that compares against the Python reference's {@code
- * status_code=None}) and the response body is empty. The underlying transport exception (an {@link
- * java.io.IOException} or similar) is preserved via the standard {@link Throwable} cause chain, the
- * Java equivalent of Python's {@code raise ... from exc}. Because it extends {@link RestError}, a
- * caller catching that one type handles both an HTTP-error response and a transport failure with a
- * single {@code catch} — instead of a bare {@code IOException} leaking through.
- *
- * <p>Mirrors the Python reference's {@code SignalWireRestTransportError(SignalWireRestError)} (plan
- * 1.3b).
+ * code ({@link #getStatusCode()} returns {@link #NO_STATUS}, the sentinel for "no HTTP status") and
+ * the response body is empty. The underlying transport exception (an {@link java.io.IOException} or
+ * similar) is preserved via the standard {@link Throwable} cause chain. Because it extends {@link
+ * RestError}, a caller catching that one type handles both an HTTP-error response and a transport
+ * failure with a single {@code catch} — instead of a bare {@code IOException} leaking through.
  */
 public class SignalWireRestTransportError extends RestError {
 
-  /** This port's sentinel {@code statusCode} for "no HTTP response reached". */
+  /** Sentinel {@code statusCode} meaning "no HTTP response was ever reached". */
   public static final int NO_STATUS = 0;
 
   /**

@@ -49,10 +49,9 @@ public class CrudResource extends BaseResource {
   }
 
   /**
-   * Create a CRUD resource with an explicit update verb. Mirrors Python's {@code
-   * CrudResource._update_method} class attribute: the base default here is PUT (preserving the
-   * historical Java behavior of every namespace), and subclasses that map onto a PATCH route (e.g.
-   * Fabric resources, Datasphere documents) opt in via {@link UpdateMethod#PATCH}.
+   * Create a CRUD resource with an explicit update verb. The base default is PUT, which is what
+   * every namespace uses; subclasses that map onto a PATCH route (e.g. Fabric resources, Datasphere
+   * documents) opt in via {@link UpdateMethod#PATCH}.
    *
    * @param httpClient the HTTP client
    * @param basePath base path for this resource
@@ -128,10 +127,9 @@ public class CrudResource extends BaseResource {
   /**
    * Percent-encode a resource id for safe use as a single URL PATH segment (NB-5). A raw id
    * containing a space / {@code #} / non-ASCII would make {@code URI.create} throw, and one
-   * containing {@code /} or {@code ?} would silently reroute the request; encoding the segment
-   * matches how the Python reference (requests) treats path input. {@code /} and other reserved
-   * characters are encoded so the id can never escape its segment; {@code null} is left as the
-   * literal path (a missing-id error surfaces from the server, not a client-side NPE).
+   * containing {@code /} or {@code ?} would silently reroute the request. {@code /} and other
+   * reserved characters are encoded so the id can never escape its segment; {@code null} is left as
+   * the literal path (a missing-id error surfaces from the server, not a client-side NPE).
    */
   static String pathSegment(String id) {
     if (id == null) {

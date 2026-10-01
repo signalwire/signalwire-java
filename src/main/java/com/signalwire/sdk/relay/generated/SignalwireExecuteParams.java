@@ -9,8 +9,8 @@ package com.signalwire.sdk.relay.generated;
 /**
  * SignalwireExecuteParams — generated wire type (RELAY method 'signalwire.execute', params phase).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SignalwireExecuteParams {
   public java.util.List<Object> attempted;

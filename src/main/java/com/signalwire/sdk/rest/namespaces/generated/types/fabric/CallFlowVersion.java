@@ -9,14 +9,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * CallFlowVersion — generated wire type ('fabric' spec, components/schemas 'CallFlowVersion').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallFlowVersion {
   public String id;
-  public String version;
+  public Long document_version;
   public String created_at;
   public String updated_at;
-  public String flow_data;
-  public String relayml;
+  public java.util.Map<String, Object> flow_data;
+  public java.util.Map<String, Object> relayml;
 }

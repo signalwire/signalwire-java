@@ -10,12 +10,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * CXMLScriptCreateRequest — generated wire type ('fabric' spec, components/schemas
  * 'CXMLScriptCreateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CXMLScriptCreateRequest {
-  public String display_name;
   public String contents;
   public String status_callback_url;
   public java.util.Map<String, Object> status_callback_method;
+  public String name;
+  public String script_type;
 }

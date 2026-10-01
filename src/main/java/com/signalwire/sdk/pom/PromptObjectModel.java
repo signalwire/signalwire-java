@@ -14,22 +14,17 @@ import org.yaml.snakeyaml.Yaml;
 
 /**
  * A structured data format for composing, organising, and rendering prompt instructions for large
- * language models. Java port of the Python reference {@code signalwire.pom.pom.PromptObjectModel}
- * (signalwire-python: {@code pom/pom.py}).
+ * language models.
  *
  * <p>The Prompt Object Model provides a tree-based representation of a prompt document composed of
  * nested {@link Section}s. Each section can include a title, body text, bullet points, and
  * arbitrarily nested subsections.
  *
- * <p>Idiom mapping:
- *
- * <ul>
- *   <li>Python {@code to_dict()} ↔ Java {@link #toMap()} (returns {@code List<Map<String,Object>>})
- *   <li>Python {@code from_json(str|dict)} ↔ Java {@link #fromJson(String)} and {@link
- *       #fromJsonMap(List)}
- *   <li>Python {@code from_yaml(str|dict)} ↔ Java {@link #fromYaml(String)} and {@link
- *       #fromYamlMap(List)}
- * </ul>
+ * <p>A model can be built from serialized text or from already-parsed data, and each factory comes
+ * in both forms: {@link #fromJson(String)} / {@link #fromJsonMap(List)} and {@link
+ * #fromYaml(String)} / {@link #fromYamlMap(List)}. {@link #toMap()} renders the tree back to the
+ * {@code List<Map<String,Object>>} form those {@code *Map} factories accept, so a round trip needs
+ * no intermediate serialization.
  */
 public class PromptObjectModel {
 
@@ -52,8 +47,7 @@ public class PromptObjectModel {
   }
 
   /**
-   * Construct from a list of section dicts. Mirrors Python's positional {@code
-   * PromptObjectModel(data)} pattern via {@link #fromJsonMap}.
+   * Construct from a list of section maps — the same input {@link #fromJsonMap} accepts.
    *
    * @param data list of section maps (each entry is one top-level section)
    */
@@ -65,10 +59,20 @@ public class PromptObjectModel {
     }
   }
 
+  /**
+   * The top-level sections of this prompt, in render order.
+   *
+   * @return the sections.
+   */
   public List<Section> getSections() {
     return sections;
   }
 
+  /**
+   * Whether debug rendering is on for this POM.
+   *
+   * @return the debug flag.
+   */
   public boolean isDebug() {
     return debug;
   }
@@ -77,7 +81,7 @@ public class PromptObjectModel {
   // Static factories.
   // ------------------------------------------------------------------
 
-  /** Parse a JSON string into a model. Mirrors Python {@code PromptObjectModel.from_json(str)}. */
+  /** Parse a JSON string into a model. */
   public static PromptObjectModel fromJson(String json) {
     if (json == null) {
       throw new IllegalArgumentException("json must not be null");
@@ -86,10 +90,7 @@ public class PromptObjectModel {
     return fromJsonMap(data);
   }
 
-  /**
-   * Build a model from an already-parsed list-of-maps. Mirrors Python's dict-input branch of {@code
-   * from_json}.
-   */
+  /** Build a model from an already-parsed list-of-maps, skipping the JSON parse step. */
   public static PromptObjectModel fromJsonMap(List<Map<String, Object>> data) {
     PromptObjectModel pom = new PromptObjectModel();
     if (data != null) {
@@ -98,7 +99,7 @@ public class PromptObjectModel {
     return pom;
   }
 
-  /** Parse a YAML string into a model. Mirrors Python {@code from_yaml(str)}. */
+  /** Parse a YAML string into a model. The YAML root must be a list of section maps. */
   public static PromptObjectModel fromYaml(String yaml) {
     if (yaml == null) {
       throw new IllegalArgumentException("yaml must not be null");
@@ -116,8 +117,7 @@ public class PromptObjectModel {
   }
 
   /**
-   * Build a model from an already-parsed list-of-maps (YAML form). Mirrors Python's dict-input
-   * branch of {@code from_yaml}.
+   * Build a model from an already-parsed list-of-maps (YAML form), skipping the YAML parse step.
    */
   public static PromptObjectModel fromYamlMap(List<Map<String, Object>> data) {
     return fromJsonMap(data);
@@ -128,7 +128,7 @@ public class PromptObjectModel {
   // ------------------------------------------------------------------
 
   /**
-   * Add a top-level section. Mirrors Python {@code add_section(...)}.
+   * Add a top-level section.
    *
    * @return the newly created {@link Section}
    * @throws IllegalArgumentException if a null-title section is added after the first section
@@ -158,10 +158,7 @@ public class PromptObjectModel {
     return addSection(title, body, bullets, null, false);
   }
 
-  /**
-   * Recursively search for a section with the given title. Mirrors Python {@code
-   * find_section(title)}.
-   */
+  /** Recursively search for a section with the given title, depth-first over subsections. */
   public Optional<Section> findSection(String title) {
     return findRecursive(sections, title);
   }
@@ -180,9 +177,8 @@ public class PromptObjectModel {
   }
 
   /**
-   * Add another POM's top-level sections as subsections of an existing section. Mirrors Python
-   * {@code add_pom_as_subsection(target, pom)} where {@code target} is either a title (String) or a
-   * {@link Section}.
+   * Add another POM's top-level sections as subsections of an existing section. {@code target} is
+   * either a section title ({@link String}) or the {@link Section} itself.
    *
    * @throws IllegalArgumentException when {@code target} is not a String or {@link Section}, or
    *     when the title is not found
@@ -211,8 +207,8 @@ public class PromptObjectModel {
   // ------------------------------------------------------------------
 
   /**
-   * Convert the entire model to a list of maps. Mirrors Python {@code to_dict()} (named {@code
-   * toMap} here because the Java return type is {@code List<Map<String,Object>>}).
+   * Convert the entire model to a list of maps — one entry per top-level section, in render order.
+   * This is the form {@link #fromJsonMap(List)} and {@link #fromYamlMap(List)} accept.
    */
   public List<Map<String, Object>> toMap() {
     List<Map<String, Object>> out = new ArrayList<>(sections.size());
@@ -222,14 +218,14 @@ public class PromptObjectModel {
     return out;
   }
 
-  /** Convert to a JSON string with 2-space indent. Mirrors Python {@code to_json}. */
+  /** Convert to a JSON string with 2-space indent. */
   public String toJson() {
     return GSON_PRETTY.toJson(toMap());
   }
 
   /**
-   * Convert to a YAML string. Output matches Python's {@code yaml.dump(...,
-   * default_flow_style=False, sort_keys=False)}.
+   * Convert to a YAML string in block style (not inline flow), with key order preserved as authored
+   * rather than sorted.
    */
   public String toYaml() {
     DumperOptions opts = new DumperOptions();
@@ -243,7 +239,7 @@ public class PromptObjectModel {
     return yaml.dump(toMap());
   }
 
-  /** Render the entire model as Markdown. Mirrors Python {@code render_markdown()}. */
+  /** Render the entire model as Markdown. */
   public String renderMarkdown() {
     boolean anySectionNumbered = false;
     for (Section s : sections) {
@@ -272,7 +268,7 @@ public class PromptObjectModel {
     return String.join("\n", md);
   }
 
-  /** Render the entire model as XML. Mirrors Python {@code render_xml()}. */
+  /** Render the entire model as XML. */
   public String renderXml() {
     List<String> xml = new ArrayList<>();
     xml.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");

@@ -112,6 +112,11 @@ public class ContextBuilder {
     return contexts.get(name);
   }
 
+  /**
+   * Whether any context has been defined yet. An empty builder renders no contexts at all.
+   *
+   * @return {@code true} when no contexts have been added.
+   */
   public boolean isEmpty() {
     return contexts.isEmpty();
   }

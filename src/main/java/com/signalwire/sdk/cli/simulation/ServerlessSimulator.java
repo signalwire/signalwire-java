@@ -12,17 +12,16 @@ import java.util.Set;
  * Build a layered {@link EnvProvider} that overlays simulated serverless environment values on top
  * of the real process environment.
  *
- * <p>Java cannot mutate {@link System#getenv()} at runtime (the map it returns is an immutable
- * snapshot of the OS env). To implement the {@code swaig-test --simulate-serverless} flag in the
- * same spirit as Python's {@code mock_env.py}, we therefore cannot "set env vars then clean up" —
- * we instead compose an injectable {@link EnvProvider} and thread it through every code path in the
- * SDK that reads env vars.
+ * <p>Java cannot mutate {@link System#getenv()} at runtime — the map it returns is an immutable
+ * snapshot of the OS env. So the {@code swaig-test --simulate-serverless} flag cannot be
+ * implemented by "set env vars, then clean up"; instead this class composes an injectable {@link
+ * EnvProvider} that is threaded through every code path in the SDK that reads env vars.
  *
- * <p>Accepts only the platforms the port actually implements. Ports that add CGI / GCF / Azure
- * support later should extend {@link #presetFor(Platform)}.
+ * <p>Only the platforms listed in {@link Platform} can be simulated. Adding another means extending
+ * {@link #presetFor(Platform)}.
  *
- * <p>Mirrors the clear-and-warn semantics of Python's {@code _clear_conflicting_env}: {@code
- * SWML_PROXY_URL_BASE} is masked in the simulated view so that platform-specific URL generation is
+ * <p>Conflicting real-environment values are masked rather than cleared: {@code
+ * SWML_PROXY_URL_BASE} is hidden in the simulated view so that platform-specific URL generation is
  * actually exercised. If the caller's real OS env has {@code SWML_PROXY_URL_BASE} set, the
  * simulator does <b>not</b> mutate the real env — it simply returns {@code null} for that key
  * through the layered {@link EnvProvider}. Callers that want to surface the mismatch to the user
@@ -30,7 +29,7 @@ import java.util.Set;
  */
 public final class ServerlessSimulator {
 
-  /** Platforms the Java port supports simulating today. */
+  /** Platforms this SDK supports simulating today. */
   public enum Platform {
     /** AWS Lambda. */
     LAMBDA,
@@ -67,8 +66,8 @@ public final class ServerlessSimulator {
   private final Set<String> masked;
 
   /**
-   * Parse the CLI-string form of a platform. Accepts only values this port supports; unknown
-   * strings throw {@link IllegalArgumentException} so the CLI can surface a clear error instead of
+   * Parse the CLI-string form of a platform. Accepts only the supported values; an unknown string
+   * throws {@link IllegalArgumentException} so the CLI can surface a clear error instead of
    * silently falling back.
    *
    * @param s user-supplied platform string.
@@ -139,8 +138,8 @@ public final class ServerlessSimulator {
   }
 
   /**
-   * Default env-var preset for a platform, mirroring Python's {@code
-   * ServerlessSimulator.PLATFORM_PRESETS}.
+   * Default env-var preset for a platform — the values a real deployment on that platform would
+   * expose, enough for {@code ExecutionMode.detect()} to identify it.
    *
    * @param platform platform.
    * @return the preset map (never null).
@@ -195,7 +194,7 @@ public final class ServerlessSimulator {
   /**
    * @return {@code true} if the real process env has {@code SWML_PROXY_URL_BASE} set — i.e. the
    *     simulated view is hiding a real value the user might not have intended. The CLI uses this
-   *     to print a warning that mirrors Python's behaviour.
+   *     to print a warning.
    */
   public boolean proxyUrlBaseMaskedFromRealEnv() {
     String real = realEnv.get("SWML_PROXY_URL_BASE");

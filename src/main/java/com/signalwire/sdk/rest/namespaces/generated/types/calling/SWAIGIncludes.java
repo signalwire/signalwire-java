@@ -9,11 +9,13 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * SWAIGIncludes — generated wire type ('calling' spec, components/schemas 'SWAIGIncludes').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SWAIGIncludes {
+  public String auth_password;
+  public String auth_user;
   public java.util.List<Object> functions;
-  public String url;
   public java.util.Map<String, Object> meta_data;
+  public String url;
 }

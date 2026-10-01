@@ -98,13 +98,23 @@ class DataMapTest {
     assertTrue(webhooks.get(0).containsKey("headers"));
   }
 
+  /**
+   * {@code params()} writes the {@code params} webhook key — the one in the contract.
+   *
+   * <p>Replaces {@code testDataMapWebhookWithBody}, which asserted {@code
+   * webhooks.get(0).containsKey("body")} — it PINNED a schema-forbidden key as correct. {@code
+   * porting-sdk/schema.json} {@code $defs/Webhook} declares exactly ten properties under {@code
+   * unevaluatedProperties: {"not": {}}} and {@code body} is not among them, and {@code
+   * mod_openai/actions.c:735-739} / {@code bedrock.c:4920-4926} read url, method, form_param,
+   * {@code params} and {@code headers} and nothing else.
+   */
   @Test
-  void testDataMapWebhookWithBody() {
+  void testDataMapWebhookWithParams() {
     var dm =
         new DataMap("search")
             .purpose("Search")
             .webhook("POST", "https://api.example.com/search")
-            .body(Map.of("query", "${args.query}", "limit", 3))
+            .params(Map.of("query", "${args.query}", "limit", 3))
             .output(new FunctionResult("Found: ${response.title}"));
 
     var func = dm.toSwaigFunction();
@@ -113,13 +123,41 @@ class DataMapTest {
     var dataMap = (Map<String, Object>) func.get("data_map");
     @SuppressWarnings("unchecked")
     var webhooks = (List<Map<String, Object>>) dataMap.get("webhooks");
-    assertTrue(webhooks.get(0).containsKey("body"));
+    assertEquals(Map.of("query", "${args.query}", "limit", 3), webhooks.get(0).get("params"));
+    assertFalse(webhooks.get(0).containsKey("body"));
   }
 
   @Test
-  void testDataMapBodyRequiresWebhook() {
+  void testDataMapParamsRequiresWebhook() {
     assertThrows(
-        IllegalStateException.class, () -> new DataMap("test").body(Map.of("key", "value")));
+        IllegalStateException.class, () -> new DataMap("test").params(Map.of("key", "value")));
+  }
+
+  /**
+   * {@code DataMap.body()} is restored as the same as {@code params()}: the platform reads a
+   * webhook's request body from its {@code params} field and has no {@code body} field, so {@code
+   * body()} writes {@code params} (reference {@code signalwire-python core/data_map.py:310}).
+   */
+  @Test
+  void testBodySetsParams() {
+    var dm =
+        new DataMap("search")
+            .purpose("Search")
+            .webhook("POST", "https://api.example.com/search")
+            .body(Map.of("query", "${args.query}"))
+            .output(new FunctionResult("Found: ${response.title}"));
+
+    @SuppressWarnings("unchecked")
+    var dataMap = (Map<String, Object>) dm.toSwaigFunction().get("data_map");
+    @SuppressWarnings("unchecked")
+    var webhooks = (List<Map<String, Object>>) dataMap.get("webhooks");
+    assertEquals(Map.of("query", "${args.query}"), webhooks.get(0).get("params"));
+    assertFalse(webhooks.get(0).containsKey("body"));
+  }
+
+  @Test
+  void testBodyRequiresWebhook() {
+    assertThrows(IllegalStateException.class, () -> new DataMap("t").body(Map.of("k", "v")));
   }
 
   @Test

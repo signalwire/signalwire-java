@@ -98,7 +98,7 @@ class MediaEnumTest {
 
   @Test
   void recordDirectionFromWireRejectsOutOfSet() {
-    // "hear" belongs to TapDirection, NOT record_call (the 3-vocab trap).
+    // "hear" is neither a record_call nor a tap direction.
     assertNull(RecordDirection.fromWire("hear"));
     assertNull(RecordDirection.fromWire("listenn"));
     assertNull(RecordDirection.fromWire("SPEAK")); // case-sensitive
@@ -109,7 +109,7 @@ class MediaEnumTest {
   @Test
   void recordCallRejectsOutOfSetDirectionString() {
     // The method's OWN existing validation still rejects a bad string,
-    // independent of the enum. "hear" is valid for tap, never record_call.
+    // independent of the enum. "hear" is not a record_call direction.
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class,
@@ -125,12 +125,12 @@ class MediaEnumTest {
         () -> new FunctionResult("Recording").recordCall("c", false, "wav", "sideways"));
   }
 
-  // ===================== TapDirection {speak, hear, both} =====================
+  // ===================== TapDirection {speak, listen, both} =====================
 
   @Test
   void tapDirectionConstantWireValues() {
     assertEquals("speak", TapDirection.SPEAK.getValue());
-    assertEquals("hear", TapDirection.HEAR.getValue());
+    assertEquals("listen", TapDirection.LISTEN.getValue());
     assertEquals("both", TapDirection.BOTH.getValue());
   }
 
@@ -139,12 +139,12 @@ class MediaEnumTest {
     // direction != "both" so it is actually emitted (the full method only
     // emits direction when it differs from the "both" default).
     FunctionResult viaEnum =
-        new FunctionResult("Tapping").tap("wss://x.example", "t1", TapDirection.HEAR, "PCMU");
+        new FunctionResult("Tapping").tap("wss://x.example", "t1", TapDirection.LISTEN, "PCMU");
     FunctionResult viaString =
-        new FunctionResult("Tapping").tap("wss://x.example", "t1", "hear", "PCMU");
+        new FunctionResult("Tapping").tap("wss://x.example", "t1", "listen", "PCMU");
 
     assertEquals(viaString.toMap(), viaEnum.toMap());
-    assertEquals("hear", verbParams(viaEnum, "tap").get("direction"));
+    assertEquals("listen", verbParams(viaEnum, "tap").get("direction"));
   }
 
   @Test
@@ -170,23 +170,23 @@ class MediaEnumTest {
 
   @Test
   void tapDirectionFromWireRejectsOutOfSet() {
-    // "listen" belongs to RecordDirection, NOT tap (the 3-vocab trap).
-    assertNull(TapDirection.fromWire("listen"));
+    // "hear" was never a tap direction: the verb's enum is speak/listen/both.
+    assertNull(TapDirection.fromWire("hear"));
     assertNull(TapDirection.fromWire("haer"));
-    assertNull(TapDirection.fromWire("HEAR"));
+    assertNull(TapDirection.fromWire("LISTEN"));
     assertNull(TapDirection.fromWire(null));
   }
 
   @Test
   void tapRejectsOutOfSetDirectionString() {
-    // "listen" is valid for record_call, never tap — method validation rejects it.
+    // "hear" was never a tap direction (the verb's enum is speak/listen/both) — rejected.
     IllegalArgumentException ex =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new FunctionResult("Tapping").tap("wss://x.example", "t1", "listen", "PCMU"));
+            () -> new FunctionResult("Tapping").tap("wss://x.example", "t1", "hear", "PCMU"));
     assertTrue(
         ex.getMessage().contains("speak")
-            && ex.getMessage().contains("hear")
+            && ex.getMessage().contains("listen")
             && ex.getMessage().contains("both"),
         "unexpected message: " + ex.getMessage());
   }

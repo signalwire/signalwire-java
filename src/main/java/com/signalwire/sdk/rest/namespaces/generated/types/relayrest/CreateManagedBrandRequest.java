@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * CreateManagedBrandRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'CreateManagedBrandRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CreateManagedBrandRequest {
   public String name;
@@ -25,4 +25,6 @@ public final class CreateManagedBrandRequest {
   public String company_vertical;
   public String company_website;
   public String status_callback_url;
+  public String csp_brand_reference;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

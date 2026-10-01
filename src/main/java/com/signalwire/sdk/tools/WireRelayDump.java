@@ -14,6 +14,7 @@ import com.signalwire.sdk.relay.Action;
 import com.signalwire.sdk.relay.Call;
 import com.signalwire.sdk.relay.RelayClient;
 import com.signalwire.sdk.relay.RelayEvent;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -27,8 +28,7 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 /**
- * WireRelayDump — the Java port's WIRE-RELAY dump program for the cross-port relay differ
- * (porting-sdk/scripts/diff_port_wire_relay.py).
+ * WireRelayDump — this SDK's dump program for the WIRE-RELAY gate's relay differ.
  *
  * <p>It captures, for each {@code wire_relay_corpus} case, the observable RELAY artifact:
  *
@@ -41,8 +41,8 @@ import org.java_websocket.server.WebSocketServer;
  * </ul>
  *
  * <p>It prints ONE JSON object mapping case-id -&gt; artifact to stdout; the differ canonicalizes
- * both sides (normalizing the random control_id to a sentinel) and byte-compares against the Python
- * oracle. Only stdout carries JSON. Mirrors Go's {@code cmd/wire-relay-dump/main.go}.
+ * both sides (normalizing the random control_id to a sentinel) and byte-compares against the shared
+ * golden. Only stdout carries JSON.
  *
  * <p>Frame capture: verb/client verbs send over a real WebSocket, so this program stands up a tiny
  * in-process mock RELAY WS server on a loopback port (pointed to via {@code .space("ws://host:port/
@@ -80,7 +80,7 @@ final class WireRelayDump {
     private volatile String dialArm; // when set, resolve dial for this tag on the next calling.dial
 
     MockRelay(int port) {
-      super(new InetSocketAddress("127.0.0.1", port));
+      super(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
       setReuseAddr(true);
     }
 
@@ -88,27 +88,54 @@ final class WireRelayDump {
       return frames.get(method);
     }
 
+    /**
+     * A mock client connected.
+     *
+     * @param socket the connected client socket.
+     * @param handshake the client's handshake.
+     */
     @Override
     public void onOpen(WebSocket socket, ClientHandshake handshake) {
       this.conn = socket;
     }
 
+    /**
+     * A mock client disconnected.
+     *
+     * @param socket the client socket.
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the client initiated the close.
+     */
     @Override
     public void onClose(WebSocket socket, int code, String reason, boolean remote) {
       // no-op
     }
 
+    /**
+     * The mock server hit a transport error.
+     *
+     * @param socket the socket the error occurred on, or {@code null} for a server-level error.
+     * @param ex the error.
+     */
     @Override
     public void onError(WebSocket socket, Exception ex) {
       // logged to stderr only; never stdout
       System.err.println("mock relay error: " + ex.getMessage());
     }
 
+    /** The mock server finished binding and is accepting connections. */
     @Override
     public void onStart() {
       // no-op
     }
 
+    /**
+     * A frame arrived from a mock client; drives the dump's scripted exchange.
+     *
+     * @param socket the client socket the frame arrived on.
+     * @param raw the raw frame text.
+     */
     @Override
     @SuppressWarnings("unchecked")
     public void onMessage(WebSocket socket, String raw) {
@@ -141,7 +168,7 @@ final class WireRelayDump {
           frames.put(method, params);
           reply(socket, id, map("code", "200", "message", "Dialing"));
           if (dialArm != null) {
-            pushDialAnswered(socket, dialArm);
+            pushDialAnswered(dialArm);
           }
           break;
         case "messaging.send":
@@ -183,7 +210,9 @@ final class WireRelayDump {
           map("call_id", CALL, "node_id", NODE, "direction", "inbound", "call_state", "created"));
     }
 
-    private void pushDialAnswered(WebSocket socket, String tag) {
+    // No `socket` parameter: push() broadcasts to the connection this mock is
+    // holding, so the caller's socket was never consulted.
+    private void pushDialAnswered(String tag) {
       sleep(20);
       push(
           "calling.call.dial",
@@ -222,6 +251,12 @@ final class WireRelayDump {
     return map("method", method, "params", params);
   }
 
+  /**
+   * Entry point: emits the WIRE-RELAY dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   * @throws Exception if the run fails; the gate reads the non-zero exit.
+   */
   public static void main(String[] args) throws Exception {
     Logger.setGlobalLevel(Logger.Level.OFF);
 
@@ -268,8 +303,19 @@ final class WireRelayDump {
     runner.start();
 
     // Wait for the handshake, then push the inbound call.
+    //
+    // Both barriers are required, in this order. `waitConn` only observes the mock's `onOpen`,
+    // i.e. the TCP/WS socket being ACCEPTED — at that instant the client has not necessarily sent
+    // `signalwire.connect`, let alone processed its reply. `RelayClient.execute` routes a request
+    // to `executeQueue` (instead of the socket) whenever `connected` is false, and that queue is
+    // drained only by a RECONNECT, which never happens here — so a `calling.play` issued in that
+    // window is buffered forever and fails 30s later with "Request timeout for calling.play".
+    // Waiting on `isConnected()` closes the window.
     if (!waitConn(mock)) {
       throw new IllegalStateException("client did not connect");
+    }
+    if (!waitReady(client)) {
+      throw new IllegalStateException("client did not complete the signalwire.connect handshake");
     }
     mock.pushInboundCall();
 
@@ -443,6 +489,23 @@ final class WireRelayDump {
     long deadline = System.currentTimeMillis() + 3_000;
     while (System.currentTimeMillis() < deadline) {
       if (mock.conn != null) {
+        return true;
+      }
+      sleep(10);
+    }
+    return false;
+  }
+
+  /**
+   * Wait until the client has PROCESSED the {@code signalwire.connect} reply, not merely opened the
+   * socket. Until {@code isConnected()} is true, {@link
+   * com.signalwire.sdk.relay.RelayClient#execute} buffers requests on its disconnected-queue, which
+   * only a reconnect drains — so anything sent early hangs until the 30s execute timeout.
+   */
+  private static boolean waitReady(RelayClient client) {
+    long deadline = System.currentTimeMillis() + 3_000;
+    while (System.currentTimeMillis() < deadline) {
+      if (client.isConnected()) {
         return true;
       }
       sleep(10);

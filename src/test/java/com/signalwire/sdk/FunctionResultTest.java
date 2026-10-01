@@ -536,7 +536,9 @@ class FunctionResultTest {
     var action = result.getActions().get(0);
     @SuppressWarnings("unchecked")
     var swmlData = (Map<String, Object>) action.get("SWML");
-    assertEquals("true", swmlData.get("transfer"));
+    // transfer rides BESIDE the SWML document, never inside it (not a SWML key).
+    assertEquals("true", action.get("transfer"));
+    assertFalse(swmlData.containsKey("transfer"));
   }
 
   // ======== Join Conference ========
@@ -635,7 +637,7 @@ class FunctionResultTest {
                 true,
                 false,
                 null,
-                250,
+                null,
                 "do-not-record",
                 null,
                 "trim-silence",
@@ -678,7 +680,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "trim-silence",
@@ -694,35 +696,58 @@ class FunctionResultTest {
   }
 
   @Test
-  void testJoinConferenceMaxParticipantsTooHigh() {
-    // Parity: test_join_conference_max_participants_too_high.
-    var ex =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                new FunctionResult("test")
-                    .joinConference(
-                        "conf",
-                        false,
-                        "true",
-                        true,
-                        false,
-                        null,
-                        300,
-                        "do-not-record",
-                        null,
-                        "trim-silence",
-                        null,
-                        null,
-                        null,
-                        "POST",
-                        null,
-                        "POST",
-                        "completed",
-                        null));
-    assertTrue(
-        ex.getMessage().contains("max_participants must be a positive integer <= 250"),
-        ex.getMessage());
+  void testJoinConferenceMaxParticipantsHasNoUpperLimit() {
+    // Parity: test_join_conference_max_participants_has_no_upper_limit (the platform sets no
+    // upper bound; the old 250 cap was the SDK's own).
+    var fr =
+        new FunctionResult("test")
+            .joinConference(
+                "conf",
+                false,
+                "true",
+                true,
+                false,
+                null,
+                100001,
+                "do-not-record",
+                null,
+                "trim-silence",
+                null,
+                null,
+                null,
+                "POST",
+                null,
+                "POST",
+                "completed",
+                null);
+    assertTrue(fr.toJson().contains("\"max_participants\":100001"), fr.toJson());
+  }
+
+  @Test
+  void testJoinConferenceExplicit250IsSent() {
+    // An explicit 250 is a caller's choice, not the old default to be dropped.
+    var fr =
+        new FunctionResult("test")
+            .joinConference(
+                "conf",
+                false,
+                "true",
+                true,
+                false,
+                null,
+                250,
+                "do-not-record",
+                null,
+                "trim-silence",
+                null,
+                null,
+                null,
+                "POST",
+                null,
+                "POST",
+                "completed",
+                null);
+    assertTrue(fr.toJson().contains("\"max_participants\":250"), fr.toJson());
   }
 
   @Test
@@ -753,7 +778,7 @@ class FunctionResultTest {
                         "completed",
                         null));
     assertTrue(
-        ex.getMessage().contains("max_participants must be a positive integer <= 250"),
+        ex.getMessage().contains("max_participants must be an integer of at least 2"),
         ex.getMessage());
   }
 
@@ -785,7 +810,7 @@ class FunctionResultTest {
                         "completed",
                         null));
     assertTrue(
-        ex.getMessage().contains("max_participants must be a positive integer <= 250"),
+        ex.getMessage().contains("max_participants must be an integer of at least 2"),
         ex.getMessage());
   }
 
@@ -804,7 +829,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "always",
                         null,
                         "trim-silence",
@@ -834,7 +859,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "bad-value",
@@ -864,7 +889,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "trim-silence",
@@ -894,7 +919,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "trim-silence",
@@ -924,7 +949,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "trim-silence",
@@ -954,7 +979,7 @@ class FunctionResultTest {
                         true,
                         false,
                         null,
-                        250,
+                        null,
                         "do-not-record",
                         null,
                         "trim-silence",
@@ -999,11 +1024,12 @@ class FunctionResultTest {
 
   @Test
   void testTapDefaultParams() {
-    // Parity: test_tap_default_params. Default params are absent.
+    // Parity: test_tap_default_params. direction is always emitted (the verb defaults to
+    // "speak", not the helper's "both"); the other defaults are absent.
     var tap =
         swmlVerb(new FunctionResult().tap("rtp://192.168.1.1:5000", null, "both", "PCMU"), "tap");
     assertEquals("rtp://192.168.1.1:5000", tap.get("uri"));
-    assertFalse(tap.containsKey("direction"));
+    assertEquals("both", tap.get("direction"));
     assertFalse(tap.containsKey("codec"));
     assertFalse(tap.containsKey("rtp_ptime"));
   }
@@ -1071,10 +1097,21 @@ class FunctionResultTest {
   }
 
   @Test
-  void testTapDirectionHear() {
-    // Parity: test_tap_direction_hear.
-    var tap = swmlVerb(new FunctionResult().tap("rtp://1.2.3.4:5000", null, "hear", "PCMU"), "tap");
-    assertEquals("hear", tap.get("direction"));
+  void testTapDirectionListen() {
+    // Parity: test_tap_direction_listen.
+    var tap =
+        swmlVerb(new FunctionResult().tap("rtp://1.2.3.4:5000", null, "listen", "PCMU"), "tap");
+    assertEquals("listen", tap.get("direction"));
+  }
+
+  @Test
+  void testTapDirectionHearIsRejected() {
+    // Parity: test_tap_direction_hear_is_rejected ("hear" was never a SWML tap direction).
+    var ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new FunctionResult().tap("rtp://1.2.3.4:5000", null, "hear", "PCMU"));
+    assertTrue(ex.getMessage().contains("direction must be one of"), ex.getMessage());
   }
 
   @Test

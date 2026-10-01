@@ -18,8 +18,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * SwmlDump — the Java port's SWML dump program for the cross-port SWML differ
- * (porting-sdk/scripts/diff_port_swml.py).
+ * SwmlDump — the SWML dump program consumed by the SDK's SWML-conformance differ.
  *
  * <p>For each {@code swml_corpus} case it builds an {@link AgentBase}, applies the setter chain,
  * renders the SWML document, and extracts the observed dotted path (e.g. {@code "ai.prompt.pom"}) —
@@ -29,8 +28,8 @@ import java.util.function.Supplier;
  *   case-id -&gt; extracted-fragment
  * </pre>
  *
- * to stdout. The differ canonicalizes both sides and byte-compares against the Python oracle. Only
- * stdout carries JSON. Mirrors Go's {@code cmd/swml-dump/main.go}.
+ * to stdout. The differ canonicalizes both sides and byte-compares against the expected fragment.
+ * Only stdout carries JSON.
  *
  * <p>Run via the {@code swmlDump} Gradle task:
  *
@@ -89,8 +88,8 @@ final class SwmlDump {
 
   /**
    * From an {@code ai.SWAIG.functions} list, pick the function whose {@code function} equals {@code
-   * fnName} and return its {@code field} (mirrors the oracle's {@code swaig_fn}/{@code field}
-   * observe filter and Go's {@code swaigFnField}).
+   * fnName} and return its {@code field} — the {@code swaig_fn}/{@code field} observe filter used
+   * by the corpus.
    */
   @SuppressWarnings("unchecked")
   private static Object swaigFnField(Object frag, String fnName, String field) {
@@ -108,7 +107,7 @@ final class SwmlDump {
     return null;
   }
 
-  /** Reduce a map fragment to the listed keys (mirrors the oracle's `pick`). */
+  /** Reduce a map fragment to the listed keys — the corpus's {@code pick} observe filter. */
   @SuppressWarnings("unchecked")
   private static Object pick(Object frag, String... keys) {
     if (!(frag instanceof Map)) {
@@ -242,6 +241,11 @@ final class SwmlDump {
     return c;
   }
 
+  /**
+   * Entry point: emits the SWML dump this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     // Silence the SDK's INFO logging (which writes to stdout) so ONLY the JSON
     // artifact reaches stdout — the differ parses stdout as one JSON object.

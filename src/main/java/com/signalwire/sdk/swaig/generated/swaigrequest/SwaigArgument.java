@@ -9,8 +9,8 @@ package com.signalwire.sdk.swaig.generated.swaigrequest;
 /**
  * SwaigArgument — generated wire type (inline swaig-request `argument` object).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SwaigArgument {
   public java.util.List<Object> parsed;

@@ -9,15 +9,14 @@ package com.signalwire.sdk.rest.namespaces.generated.types.projects;
 /**
  * Project — generated wire type ('projects' spec, components/schemas 'Project').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Project {
   public String id;
   public String name;
   public String parent_project_id;
   public Boolean subproject;
-  public String region_preference;
   public Boolean protect_recordings;
   public Boolean protect_message_media;
   public Boolean protect_fax_media;

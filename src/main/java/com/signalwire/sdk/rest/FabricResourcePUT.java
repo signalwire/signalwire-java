@@ -10,9 +10,8 @@ package com.signalwire.sdk.rest;
  * Fabric CRUD resource (with address listing) whose {@link #update(String, java.util.Map)} sends
  * PUT instead of PATCH.
  *
- * <p>Mirrors Python's {@code signalwire.rest.namespaces.fabric.FabricResourcePUT} (which overrides
- * {@code _update_method = "PUT"}). Used for resources whose canonical OpenAPI update route is PUT:
- * cxml_scripts, freeswitch_connectors, relay_applications, sip_endpoints, swml_scripts.
+ * <p>Used for the Fabric resources whose canonical OpenAPI update route is PUT: cxml_scripts,
+ * freeswitch_connectors, relay_applications, sip_endpoints, swml_scripts.
  */
 public class FabricResourcePUT extends FabricResource {
 

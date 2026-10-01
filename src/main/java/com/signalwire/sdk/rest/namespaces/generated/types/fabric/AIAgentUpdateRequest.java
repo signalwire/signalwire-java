@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * AIAgentUpdateRequest — generated wire type ('fabric' spec, components/schemas
  * 'AIAgentUpdateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AIAgentUpdateRequest {
   public java.util.Map<String, Object> global_data;
@@ -23,6 +23,8 @@ public final class AIAgentUpdateRequest {
   public java.util.List<Object> pronounce;
   public java.util.Map<String, Object> prompt;
   public java.util.Map<String, Object> SWAIG;
-  public String agent_id;
   public String name;
+  public String post_prompt_auth_user;
+  public String post_prompt_auth_password;
+  public java.util.Map<String, Object> multilingual;
 }

@@ -153,7 +153,9 @@ class ActionTest {
   @Test
   void testAwaitWithTimeoutReturnsNullWhenNotDone() {
     Action action = new Action("ctrl-1", dummyCall());
-    assertNull(action.await(50));
+    // await(Double) takes SECONDS (reference parity: timeout: float | None); 0.05s == the 50ms
+    // this previously passed as await(long).
+    assertNull(action.await(0.05));
   }
 
   /**

@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.messages;
  * MessagesUpdateStatusCode422 — generated wire type ('messages' spec, components/schemas
  * 'MessagesUpdateStatusCode422').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class MessagesUpdateStatusCode422 {
   public java.util.List<Object> errors;

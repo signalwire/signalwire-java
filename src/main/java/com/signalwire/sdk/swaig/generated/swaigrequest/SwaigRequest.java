@@ -9,10 +9,12 @@ package com.signalwire.sdk.swaig.generated.swaigrequest;
 /**
  * SwaigRequest — generated wire type (swaig-request `SwaigRequest` schema).
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SwaigRequest {
+  public java.util.Map<String, Object> SWMLCall;
+  public java.util.Map<String, Object> SWMLVars;
   public String ai_session_id;
   public String app_name;
   public String args;

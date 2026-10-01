@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * LiveTranscribe — generated wire type ('calling' spec, components/schemas 'LiveTranscribe').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class LiveTranscribe {
   public java.util.Map<String, Object> live_transcribe;

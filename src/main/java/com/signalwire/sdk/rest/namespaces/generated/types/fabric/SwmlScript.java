@@ -9,14 +9,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * SwmlScript — generated wire type ('fabric' spec, components/schemas 'SwmlScript').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SwmlScript {
   public String id;
-  public String contents;
+  public java.util.Map<String, Object> contents;
   public String request_url;
   public String display_name;
   public String status_callback_url;
   public String status_callback_method;
+  public String script_type;
 }

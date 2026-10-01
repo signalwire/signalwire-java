@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * UpdatePhoneNumberRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'UpdatePhoneNumberRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class UpdatePhoneNumberRequest {
   public String name;
@@ -28,6 +28,7 @@ public final class UpdatePhoneNumberRequest {
   public String call_relay_topic;
   public String call_relay_topic_status_callback_url;
   public String call_relay_script_url;
+  public String call_relay_script_url_method;
   public String call_relay_context;
   public String call_relay_context_status_callback_url;
   public String call_relay_application;

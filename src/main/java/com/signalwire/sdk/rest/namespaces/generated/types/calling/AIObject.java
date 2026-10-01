@@ -9,17 +9,23 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * AIObject — generated wire type ('calling' spec, components/schemas 'AIObject').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class AIObject {
+  public java.util.Map<String, Object> SWAIG;
+  public String agent;
+  public String engine;
   public java.util.Map<String, Object> global_data;
   public java.util.List<Object> hints;
   public java.util.List<Object> languages;
+  public java.util.Map<String, Object> multilingual;
   public java.util.Map<String, Object> params;
   public java.util.Map<String, Object> post_prompt;
+  public String post_prompt_auth_password;
+  public String post_prompt_auth_user;
   public String post_prompt_url;
-  public java.util.List<Object> pronounce;
   public java.util.Map<String, Object> prompt;
-  public java.util.Map<String, Object> SWAIG;
+  public java.util.List<Object> pronounce;
+  public String voice;
 }

@@ -2,15 +2,15 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'send_digits' config
+// schema.json $defs schema 'SendDigitsConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * SendDigitsConfig — generated wire type (flattened SWMLMethod verb 'send_digits' config).
+ * SendDigitsConfig — generated wire type (schema.json $defs schema 'SendDigitsConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SendDigitsConfig {
   public String digits;

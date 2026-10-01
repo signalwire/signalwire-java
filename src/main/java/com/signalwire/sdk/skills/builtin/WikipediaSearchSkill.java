@@ -15,6 +15,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Wikipedia article search and summaries.
+ *
+ * <p>Registered under the name {@code wikipedia_search}; load it with {@code
+ * agent.addSkill("wikipedia_search", params)}.
+ */
 public class WikipediaSearchSkill implements SkillBase {
 
   private static final Logger log = Logger.getLogger(WikipediaSearchSkill.class);
@@ -22,16 +28,33 @@ public class WikipediaSearchSkill implements SkillBase {
   private int numResults = 1;
   private String noResultsMessage = "No Wikipedia articles found for the query.";
 
+  /**
+   * The registry name this skill is loaded by: {@code wikipedia_search}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "wikipedia_search";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Search Wikipedia for information about a topic and get article summaries";
   }
 
+  /**
+   * Configure the skill from its parameters. This skill needs no configuration, so setup always
+   * succeeds.
+   *
+   * @param params the skill's configuration (unused).
+   * @return {@code true}.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     if (params.containsKey("num_results")) {
@@ -44,6 +67,11 @@ public class WikipediaSearchSkill implements SkillBase {
     return true;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     Map<String, Object> parameters = new LinkedHashMap<>();

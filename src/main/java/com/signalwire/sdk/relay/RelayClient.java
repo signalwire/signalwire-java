@@ -105,10 +105,11 @@ public class RelayClient implements AutoCloseable {
 
   /**
    * Server-assigned session id captured from the {@code signalwire.connect} handshake result
-   * ({@code result.sessionid}). Kept OFF the public surface — the Python reference does not expose
-   * it either. Tests read it through the package-private {@link #sessionIdForTesting()} accessor to
-   * scope a mock-relay harness view to this client's own frames (parallel-test isolation).
-   * Production code never needs it.
+   * ({@code result.sessionid}). Deliberately kept OFF the public surface: it is a transport detail
+   * re-issued by the server on each handshake, so no caller should build on it. Tests read it
+   * through the package-private {@link #sessionIdForTesting()} accessor to scope a mock-relay
+   * harness view to this client's own frames (parallel-test isolation). Production code never needs
+   * it.
    */
   private volatile String sessionId;
 
@@ -128,8 +129,7 @@ public class RelayClient implements AutoCloseable {
   /**
    * JSON-RPC id -> request method, so the response dispatcher can skip result-code checking for the
    * {@code signalwire.connect} handshake (whose result carries no {@code code}) while raising
-   * {@link RelayError} on a non-2xx code for every calling/messaging verb. Mirrors the Python
-   * reference's {@code _pending_methods} (relay/client.py:749).
+   * {@link RelayError} on a non-2xx code for every calling/messaging verb.
    */
   private final ConcurrentHashMap<String, String> pendingMethods = new ConcurrentHashMap<>();
 
@@ -154,22 +154,22 @@ public class RelayClient implements AutoCloseable {
   private record QueuedRequest(String json, CompletableFuture<Map<String, Object>> future) {}
 
   /**
-   * Per-request response deadline (ms). Mirrors the reference {@code _EXECUTE_TIMEOUT}. Not final
-   * so the relay-liveness dump can tighten it to keep the bounded-window fixtures fast (mirroring
-   * the python driver monkeypatching {@code _EXECUTE_TIMEOUT}); production callers never change it.
+   * Per-request response deadline (ms): how long {@link #execute} waits for the matching JSON-RPC
+   * response before failing. Not {@code final} only so the relay-liveness dump can tighten it and
+   * keep its bounded-window fixtures fast; production callers never change it.
    */
   private volatile long executeTimeoutMs = 30_000;
 
-  /** Max requests buffered while disconnected before {@link #execute} raises (reference cap). */
+  /** Max requests buffered while disconnected before {@link #execute} raises. */
   private static final int EXECUTE_QUEUE_MAX = 100;
 
   // ── Client-side ping / half-open detection ───────────────────────
   /**
    * Client ping interval (ms) + max consecutive ping failures before the connection is declared
-   * half-open and force-closed for reconnect. Mirrors the reference {@code _CLIENT_PING_INTERVAL} /
-   * {@code _MAX_PING_FAILURES} (client.py:86-88). A half-open peer (socket still open, peer stopped
-   * answering) is otherwise undetectable — the client would hang forever. Package-settable so the
-   * relay-liveness dump can drive detection inside the bounded test window.
+   * half-open and force-closed for reconnect. A half-open peer (socket still open, peer stopped
+   * answering) is otherwise undetectable — the client would hang forever waiting on a response that
+   * can never arrive. Package-settable so the relay-liveness dump can drive detection inside the
+   * bounded test window.
    */
   private volatile long clientPingIntervalMs = 30_000;
 
@@ -187,14 +187,13 @@ public class RelayClient implements AutoCloseable {
   private long reconnectDelay = Constants.RECONNECT_INITIAL_DELAY_MS;
 
   /**
-   * Max concurrent inbound calls this client will accept before dropping. Mirrors the reference
-   * {@code Client(max_active_calls=...)} / {@code RELAY_MAX_ACTIVE_CALLS} env var (relay/client.py:
-   * 90,150-160,914) — when the tracked call count reaches this cap, an inbound call is logged and
-   * dropped rather than dispatched.
+   * Max concurrent inbound calls this client will accept before dropping. Settable on the builder
+   * or via the {@code RELAY_MAX_ACTIVE_CALLS} environment variable — when the tracked call count
+   * reaches this cap, an inbound call is logged and dropped rather than dispatched.
    */
   private final int maxActiveCalls;
 
-  /** Default cap, matching Python's {@code _DEFAULT_MAX_ACTIVE_CALLS} (relay/client.py:90). */
+  /** Default concurrent-inbound-call cap when neither the builder nor the env var sets one. */
   private static final int DEFAULT_MAX_ACTIVE_CALLS = 1000;
 
   // ── Thread pool ──────────────────────────────────────────────────
@@ -220,10 +219,22 @@ public class RelayClient implements AutoCloseable {
 
   // ── Builder ──────────────────────────────────────────────────────
 
+  /**
+   * Start configuring a RELAY client.
+   *
+   * @return a fresh {@link Builder}.
+   */
   public static Builder builder() {
     return new Builder();
   }
 
+  /**
+   * Fluent constructor for {@link RelayClient}.
+   *
+   * <p>Every credential falls back to an environment variable at {@link #build()} — {@code
+   * SIGNALWIRE_PROJECT_ID}, {@code SIGNALWIRE_API_TOKEN}, {@code SIGNALWIRE_JWT_TOKEN}, {@code
+   * SIGNALWIRE_SPACE} — so a deployed client need not hard-code any of them.
+   */
   public static class Builder {
     private String project;
     private String token;
@@ -233,40 +244,81 @@ public class RelayClient implements AutoCloseable {
     private Integer maxActiveCallsOverride;
     private int maxActiveCalls; // resolved in build(): override > env > default
 
+    /**
+     * The SignalWire project UUID to authenticate as. Falls back to {@code SIGNALWIRE_PROJECT_ID};
+     * not required on the JWT path, where the project is carried inside the token.
+     *
+     * @param project the project id.
+     * @return this builder.
+     */
     public Builder project(String project) {
       this.project = project;
       return this;
     }
 
+    /**
+     * The API token to authenticate with. Falls back to {@code SIGNALWIRE_API_TOKEN}. This is a
+     * long-lived credential for the whole project — keep it out of source and out of logs.
+     *
+     * @param token the API token.
+     * @return this builder.
+     */
     public Builder token(String token) {
       this.token = token;
       return this;
     }
 
+    /**
+     * A JWT to authenticate with instead of a project/token pair. Falls back to {@code
+     * SIGNALWIRE_JWT_TOKEN}. Supplying it makes {@link #project(String)} and {@link #token(String)}
+     * unnecessary, since the project is inside the token.
+     *
+     * @param jwtToken the JWT.
+     * @return this builder.
+     */
     public Builder jwtToken(String jwtToken) {
       this.jwtToken = jwtToken;
       return this;
     }
 
+    /**
+     * The RELAY host to connect to. Falls back to {@code SIGNALWIRE_SPACE}, then to {@code
+     * relay.signalwire.com}, so it never itself causes a build failure.
+     *
+     * @param space the space hostname.
+     * @return this builder.
+     */
     public Builder space(String space) {
       this.space = space;
       return this;
     }
 
+    /**
+     * Alias of {@link #space(String)} — sets the same RELAY host.
+     *
+     * @param host the space hostname.
+     * @return this builder.
+     */
     public Builder host(String host) {
       this.space = host;
       return this;
     }
 
+    /**
+     * Contexts to subscribe to at connect time. Inbound calls and messages are only delivered for
+     * contexts the client subscribed to, so an empty list means nothing inbound arrives.
+     *
+     * @param contexts the context names.
+     * @return this builder.
+     */
     public Builder contexts(List<String> contexts) {
       this.contexts = contexts;
       return this;
     }
 
     /**
-     * Cap on concurrent inbound calls before new inbound calls are dropped. Mirrors the reference
-     * {@code Client(max_active_calls=...)} (relay/client.py:125). When unset here, the {@code
-     * RELAY_MAX_ACTIVE_CALLS} env var is consulted, then the default of {@value
+     * Cap on concurrent inbound calls before new inbound calls are dropped. When unset here, the
+     * {@code RELAY_MAX_ACTIVE_CALLS} env var is consulted, then the default of {@value
      * #DEFAULT_MAX_ACTIVE_CALLS}.
      *
      * @param maxActiveCalls the cap; clamped to at least 1
@@ -276,9 +328,24 @@ public class RelayClient implements AutoCloseable {
       return this;
     }
 
-    /** Default RELAY host, matching Python's DEFAULT_RELAY_HOST (relay/constants.py). */
+    /**
+     * Default RELAY host, used when neither {@link #space} nor {@code SIGNALWIRE_SPACE} supplies
+     * one — so the space is never missing at connect time.
+     */
     private static final String DEFAULT_RELAY_HOST = "relay.signalwire.com";
 
+    /**
+     * Resolve credentials and construct the client.
+     *
+     * <p>Credentials fail PRE-CONNECT rather than at connect time, with a message naming the
+     * missing credential and its environment variable. An EMPTY value counts as missing — the
+     * client will not attempt to connect with one. On the JWT path neither project nor token is
+     * required.
+     *
+     * @return the constructed client.
+     * @throws IllegalArgumentException when no JWT was supplied and either the project or the API
+     *     token is missing or empty.
+     */
     public RelayClient build() {
       // Env-var fallback for any credential not set explicitly — parity with
       // Python's relay Client() (relay/client.py), which reads
@@ -342,37 +409,61 @@ public class RelayClient implements AutoCloseable {
 
   // ── Public API ───────────────────────────────────────────────────
 
+  /**
+   * The project UUID this client authenticates as.
+   *
+   * @return the project id, or {@code null} on the JWT-only path.
+   */
   public String getProject() {
     return project;
   }
 
+  /**
+   * The RELAY host this client connects to.
+   *
+   * @return the space hostname, defaulted to {@code relay.signalwire.com} when nothing set it.
+   */
   public String getSpace() {
     return space;
   }
 
   /**
    * The API token (the {@code token} construction param), resolved from {@code
-   * SIGNALWIRE_API_TOKEN} when not passed explicitly. The reference stores this as a public
-   * attribute ({@code self.token}, relay/client.py:172) and a caller that supplied it must be able
-   * to read it back — the same value it just provided.
+   * SIGNALWIRE_API_TOKEN} when not passed explicitly. Readable so a caller that let the environment
+   * supply the credential can see which one the client actually resolved.
+   *
+   * @return the API token; may be {@code null} on the JWT auth path, where it is not required.
    */
   public String getToken() {
     return token;
   }
 
   /**
-   * The JWT token (the {@code jwt_token} construction param), resolved from {@code
-   * SIGNALWIRE_JWT_TOKEN} when not passed explicitly; empty when JWT auth is not in use. Mirrors
-   * the reference's public {@code self.jwt_token} (relay/client.py:173).
+   * The JWT token (the {@code jwtToken} construction param), resolved from {@code
+   * SIGNALWIRE_JWT_TOKEN} when not passed explicitly.
+   *
+   * @return the JWT; {@code null} or empty when JWT auth is not in use, in which case the client
+   *     authenticates with the project/token pair instead.
    */
   public String getJwtToken() {
     return jwtToken;
   }
 
+  /**
+   * The contexts this client subscribed to. Inbound traffic arrives only for these.
+   *
+   * @return an unmodifiable view of the subscribed context names.
+   */
   public List<String> getContexts() {
     return Collections.unmodifiableList(contexts);
   }
 
+  /**
+   * Whether the WebSocket is currently up AND the {@code signalwire.connect} handshake has
+   * completed.
+   *
+   * @return {@code true} when the client is connected.
+   */
   public boolean isConnected() {
     return connected;
   }
@@ -403,10 +494,10 @@ public class RelayClient implements AutoCloseable {
 
   /**
    * Package-private, test-only accessor for the server-assigned session id captured at the {@code
-   * signalwire.connect} handshake. NOT part of the public API surface (the Python reference keeps
-   * {@code sessionid} internal too) — it exists so the in-package {@code RelayMockTest} harness can
-   * scope its journal reads / resets / pushes to this client's own session, making mock-backed
-   * tests parallel-safe. Returns {@code null} until the handshake completes.
+   * signalwire.connect} handshake. NOT part of the public API surface — it exists so the in-package
+   * {@code RelayMockTest} harness can scope its journal reads / resets / pushes to this client's
+   * own session, making mock-backed tests parallel-safe. Returns {@code null} until the handshake
+   * completes.
    */
   String sessionIdForTesting() {
     return sessionId;
@@ -444,8 +535,8 @@ public class RelayClient implements AutoCloseable {
    * Open the WebSocket connection and complete the signalwire.connect handshake without blocking
    * the caller.
    *
-   * <p>Mirrors the Python {@code RelayClient.connect()} coroutine. Tests use this directly;
-   * production code typically uses {@link #run()} instead.
+   * <p>Returns once the handshake completes rather than parking the thread for the connection's
+   * lifetime; production code typically uses {@link #run()} instead, which does block.
    *
    * @param timeoutMs how long to wait for the handshake to complete
    * @throws RelayError if connect fails or times out (like {@link #dial}, which also throws {@code
@@ -500,9 +591,8 @@ public class RelayClient implements AutoCloseable {
    * }</pre>
    *
    * Releases the same resources as {@link #disconnect()} — closes the RELAY WebSocket, releases the
-   * {@link #run()} latch, and shuts the worker {@link java.util.concurrent.ExecutorService} down —
-   * so the client is the rough Java parallel of Python's {@code async with RelayClient(...)}
-   * context manager. Idempotent: a second call is a harmless no-op.
+   * {@link #run()} latch, and shuts the worker {@link java.util.concurrent.ExecutorService} down.
+   * Idempotent: a second call is a harmless no-op.
    */
   @Override
   public void close() {
@@ -654,10 +744,9 @@ public class RelayClient implements AutoCloseable {
   /**
    * Execute an RPC method and wait for the response.
    *
-   * <p>Mirrors the Python reference {@code RelayClient._send_request} (relay/client.py:730): a
-   * request timeout, an error frame, a non-2xx result code, or a dead/half-open connection RAISES
-   * {@link RelayError} — the failure is NEVER swallowed into an empty map (the old behavior that
-   * made a dead-connection {@code play()}/{@code hangup()} "succeed" silently). On timeout the
+   * <p>A request timeout, an error frame, a non-2xx result code, or a dead/half-open connection
+   * RAISES {@link RelayError} — the failure is NEVER swallowed into an empty map, which would make
+   * a dead-connection {@code play()} / {@code hangup()} appear to succeed. On timeout the
    * connection is force-closed for reconnect (a timeout signals a half-open peer). A request issued
    * while disconnected is QUEUED for delivery after reconnect rather than dropped.
    *
@@ -733,9 +822,9 @@ public class RelayClient implements AutoCloseable {
   }
 
   /**
-   * Execute an RPC method on a call, swallowing ONLY the call-gone codes 404/410. Mirrors the
-   * Python reference contract (A2): a 404/410 result means the call is already gone, so the verb is
-   * a no-op; any OTHER non-2xx (e.g. 500) propagates as a {@link RelayError} from {@link #execute}.
+   * Execute an RPC method on a call, swallowing ONLY the call-gone codes 404/410: those mean the
+   * call has already ended, so the verb is a harmless no-op. Any OTHER non-2xx (e.g. 500)
+   * propagates as a {@link RelayError} from {@link #execute}.
    */
   Map<String, Object> executeOnCall(String method, Map<String, Object> params) {
     try {
@@ -935,8 +1024,8 @@ public class RelayClient implements AutoCloseable {
 
   /**
    * Force-close the WebSocket to trigger reconnect. Called when a request times out (a half-open
-   * peer): the socket looks open but the peer is dead. Mirrors the reference {@code _force_close}
-   * (client.py:1284).
+   * peer): the socket looks open but the peer is dead, so only tearing it down gets a working
+   * connection back.
    */
   private void forceClose() {
     connected = false;
@@ -952,8 +1041,9 @@ public class RelayClient implements AutoCloseable {
   }
 
   /**
-   * Send any requests buffered while disconnected, once the connection is (re)established. Mirrors
-   * the reference {@code _flush_execute_queue} (client.py:776).
+   * Send any requests buffered while disconnected, once the connection is (re)established. A queued
+   * request whose send fails has its awaiting future completed exceptionally rather than being
+   * silently dropped.
    */
   private void flushExecuteQueue() {
     InternalWebSocket ws = webSocket;
@@ -979,8 +1069,8 @@ public class RelayClient implements AutoCloseable {
   /**
    * Start the client-side ping watchdog: every {@link #clientPingIntervalMs} send a {@code
    * signalwire.ping} and require a timely response; after {@link #maxPingFailures} consecutive
-   * failures the peer is half-open and the connection is force-closed for reconnect. Mirrors the
-   * reference {@code _ping_loop} (client.py:1217). Idempotent per connection.
+   * failures the peer is half-open and the connection is force-closed for reconnect. Idempotent per
+   * connection: starting it again stops the previous watchdog first.
    */
   private void startPingWatchdog() {
     stopPingWatchdog();
@@ -1056,9 +1146,9 @@ public class RelayClient implements AutoCloseable {
   }
 
   /**
-   * Timing knobs for the relay-liveness dump (mirror the reference monkeypatch of {@code
-   * _EXECUTE_TIMEOUT}/{@code _CLIENT_PING_INTERVAL}/{@code _MAX_PING_FAILURES}). Package- private
-   * so it stays off the public surface; the relay-liveness dump lives in this package.
+   * Tighten the execute timeout, the ping interval, and the ping-failure threshold so the
+   * relay-liveness dump can exercise half-open detection inside a bounded test window. Package-
+   * private so it stays off the public surface; the relay-liveness dump lives in this package.
    */
   void setLivenessTimingsForTesting(long execTimeoutMs, long pingIntervalMs, int maxPings) {
     this.executeTimeoutMs = execTimeoutMs;
@@ -1410,12 +1500,25 @@ public class RelayClient implements AutoCloseable {
       super(serverUri);
     }
 
+    /**
+     * WebSocket opened: begins the RELAY authentication handshake. Being open is not yet being
+     * connected — {@link RelayClient#isConnected()} stays false until the handshake completes.
+     *
+     * @param handshakedata the server's handshake.
+     */
     @Override
     public void onOpen(ServerHandshake handshakedata) {
       log.info("WebSocket connected to %s", getURI());
       authenticate();
     }
 
+    /**
+     * A frame arrived: dispatched to the RELAY message handler. Any exception the handler raises is
+     * logged and swallowed, so one bad frame cannot kill the reader thread and take the session
+     * with it.
+     *
+     * @param message the raw frame text.
+     */
     @Override
     public void onMessage(String message) {
       try {
@@ -1425,12 +1528,25 @@ public class RelayClient implements AutoCloseable {
       }
     }
 
+    /**
+     * WebSocket closed: runs the disconnect path, which is what drives reconnection.
+     *
+     * @param code the close code.
+     * @param reason the close reason.
+     * @param remote whether the far end initiated the close.
+     */
     @Override
     public void onClose(int code, String reason, boolean remote) {
       log.info("WebSocket closed: code=%d reason=%s remote=%s", code, reason, remote);
       handleDisconnect();
     }
 
+    /**
+     * A transport-level error occurred. It is logged only — the close that follows is what actually
+     * drives the disconnect handling.
+     *
+     * @param ex the transport error.
+     */
     @Override
     public void onError(Exception ex) {
       log.error("WebSocket error", ex);

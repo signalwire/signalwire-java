@@ -36,9 +36,14 @@ public abstract class ResourceTree {
   private VideoNamespace video;
   private DatasphereNamespace datasphere;
   private LogsNamespace logs;
+  private WhatsappNamespace whatsapp;
   private ProjectNamespace project;
+  private SpaceNamespace space;
 
   protected abstract HttpClient generatedHttpClient();
+
+  /** The Personal Access Token HttpClient for the PAT-authenticated namespaces. */
+  protected abstract HttpClient generatedPatHttpClient();
 
   public Addresses addresses() {
     if (addresses == null) {
@@ -187,10 +192,24 @@ public abstract class ResourceTree {
     return logs;
   }
 
+  public WhatsappNamespace whatsapp() {
+    if (whatsapp == null) {
+      whatsapp = new WhatsappNamespace(generatedHttpClient());
+    }
+    return whatsapp;
+  }
+
   public ProjectNamespace project() {
     if (project == null) {
       project = new ProjectNamespace(generatedHttpClient());
     }
     return project;
+  }
+
+  public SpaceNamespace space() {
+    if (space == null) {
+      space = new SpaceNamespace(generatedPatHttpClient());
+    }
+    return space;
   }
 }

@@ -23,7 +23,7 @@ class VerbTest {
   @Test
   @SuppressWarnings("unchecked")
   void testPreAnswerVerbBeforeAnswer() {
-    agent.addPreAnswerVerb("play", Map.of("url", "ringback.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/ringback.wav"));
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
     // First verb should be the pre-answer play
@@ -33,8 +33,8 @@ class VerbTest {
   @Test
   @SuppressWarnings("unchecked")
   void testMultiplePreAnswerVerbs() {
-    agent.addPreAnswerVerb("play", Map.of("url", "a.wav"));
-    agent.addPreAnswerVerb("play", Map.of("url", "b.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/a.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/b.wav"));
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
     assertTrue(main.get(0).containsKey("play"));
@@ -44,7 +44,7 @@ class VerbTest {
   @Test
   @SuppressWarnings("unchecked")
   void testClearPreAnswerVerbs() {
-    agent.addPreAnswerVerb("play", Map.of("url", "a.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/a.wav"));
     agent.clearPreAnswerVerbs();
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
@@ -149,7 +149,7 @@ class VerbTest {
   @Test
   @SuppressWarnings("unchecked")
   void testAnswerVerb() {
-    agent.addAnswerVerb("play", Map.of("url", "welcome.wav"));
+    agent.addAnswerVerb("play", Map.of("url", "https://cdn.example.com/welcome.wav"));
     Map<String, Object> swml = agent.renderSwml("http://localhost:3000");
     List<Map<String, Object>> main = getMain(swml);
     // The play verb should appear after answer
@@ -189,7 +189,7 @@ class VerbTest {
   @Test
   @SuppressWarnings("unchecked")
   void testPhaseOrdering() {
-    agent.addPreAnswerVerb("play", Map.of("url", "pre.wav"));
+    agent.addPreAnswerVerb("play", Map.of("url", "https://cdn.example.com/pre.wav"));
     agent.addPostAnswerVerb("sleep", 100);
     agent.addPostAiVerb("hangup", Map.of());
 
@@ -221,8 +221,8 @@ class VerbTest {
   void testVerbMethodChaining() {
     AgentBase result =
         agent
-            .addPreAnswerVerb("play", Map.of())
-            .addAnswerVerb("play", Map.of())
+            .addPreAnswerVerb("play", Map.of("url", "say:hi"))
+            .addAnswerVerb("play", Map.of("url", "say:hi"))
             .addPostAnswerVerb("sleep", 100)
             .addPostAiVerb("hangup", Map.of())
             .clearPreAnswerVerbs()

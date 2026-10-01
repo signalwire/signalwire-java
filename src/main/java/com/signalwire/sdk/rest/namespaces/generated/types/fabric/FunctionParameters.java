@@ -10,11 +10,75 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * FunctionParameters — generated wire type ('fabric' spec, components/schemas
  * 'FunctionParameters').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class FunctionParameters {
-  public String type;
+  public String title;
+  public String description;
+  public java.util.Map<String, Object> type;
+
+  /** wire key: const */
+  @com.google.gson.annotations.SerializedName("const")
+  public java.util.Map<String, Object> const_;
+
+  /** wire key: enum */
+  @com.google.gson.annotations.SerializedName("enum")
+  public java.util.List<Object> enum_;
+
+  public String format;
+  public String pattern;
+  public Double minimum;
+  public Double maximum;
+  public Double exclusiveMinimum;
+  public Double exclusiveMaximum;
+  public Long minLength;
+  public Long maxLength;
+  public Long minItems;
+  public Long maxItems;
+  public Long minProperties;
+  public Long maxProperties;
+
+  /** wire key: default */
+  @com.google.gson.annotations.SerializedName("default")
+  public java.util.Map<String, Object> default_;
+
+  public java.util.List<Object> examples;
+  public Boolean deprecated;
+  public Boolean nullable;
   public java.util.Map<String, Object> properties;
   public java.util.List<Object> required;
+  public java.util.List<Object> prefixItems;
+  public java.util.Map<String, Object> items;
+  public java.util.Map<String, Object> propertyNames;
+  public java.util.Map<String, Object> additionalProperties;
+  public java.util.Map<String, Object> unevaluatedProperties;
+  public java.util.List<Object> oneOf;
+  public java.util.List<Object> anyOf;
+  public java.util.List<Object> allOf;
+  public java.util.Map<String, Object> not;
+  public java.util.Map<String, Object> contains;
+  public java.util.Map<String, Object> dependentRequired;
+  public java.util.Map<String, Object> dependentSchemas;
+
+  /** wire key: else */
+  @com.google.gson.annotations.SerializedName("else")
+  public java.util.Map<String, Object> else_;
+
+  public java.util.Map<String, Object> example;
+
+  /** wire key: if */
+  @com.google.gson.annotations.SerializedName("if")
+  public java.util.Map<String, Object> if_;
+
+  public Long maxContains;
+  public Long minContains;
+  public Double multipleOf;
+  public java.util.Map<String, Object> patternProperties;
+  public java.util.List<Object> propertyOrdering;
+  public Boolean readOnly;
+  public java.util.Map<String, Object> then;
+  public java.util.Map<String, Object> unevaluatedItems;
+  public Boolean uniqueItems;
+  public Boolean writeOnly;
 }

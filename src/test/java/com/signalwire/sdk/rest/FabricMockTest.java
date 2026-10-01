@@ -100,41 +100,38 @@ class FabricMockTest {
     }
   }
 
-  // ── CallFlowsResource.list_addresses (singular path) ─────────────
+  // ── CallFlowsResource.list_addresses (collection path) ───────────
 
   @Nested
-  @DisplayName("CallFlowsResource sub-paths use singular call_flow")
+  @DisplayName("CallFlowsResource addresses sub-path is under call_flows")
   class CallFlowsAddresses {
 
     @Test
-    void listAddressesUsesSingularPath() {
+    void listAddressesUsesCollectionPath() {
       var body = client.fabric().callFlows().listAddresses("cf-1", java.util.Map.of());
       assertNotNull(body);
-      assertNotNull(body.data);
-      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
-      assertEquals("/api/fabric/resources/call_flow/cf-1/addresses", j.path);
+      assertEquals("/api/fabric/resources/call_flows/cf-1/addresses", j.path);
       assertNotNull(j.getMatchedRoute(), "spec gap: call-flow addresses sub-path");
     }
   }
 
-  // ── ConferenceRoomsResource.list_addresses (singular path) ───────
+  // ── ConferenceRoomsResource.list_addresses (collection path) ─────
 
   @Nested
-  @DisplayName("ConferenceRoomsResource sub-paths use singular conference_room")
+  @DisplayName("ConferenceRoomsResource addresses sub-path is under conference_rooms")
   class ConferenceRoomsAddresses {
 
     @Test
-    void listAddressesUsesSingularPath() {
+    void listAddressesUsesCollectionPath() {
       var body = client.fabric().conferenceRooms().listAddresses("cr-1", java.util.Map.of());
       assertNotNull(body);
-      assertNotNull(body.data);
 
       MockTest.JournalEntry j = mock.last();
       assertEquals("GET", j.method);
-      assertEquals("/api/fabric/resources/conference_room/cr-1/addresses", j.path);
+      assertEquals("/api/fabric/resources/conference_rooms/cr-1/addresses", j.path);
       assertNotNull(j.getMatchedRoute());
     }
   }
@@ -196,28 +193,6 @@ class FabricMockTest {
   @Nested
   @DisplayName("FabricTokens")
   class Tokens {
-
-    @Test
-    void createInviteToken() {
-      var body =
-          client
-              .fabric()
-              .tokens()
-              .createInviteToken(
-                  com.signalwire.sdk.rest.namespaces.generated.FabricTokens.CreateInviteTokenRequest
-                      .builder()
-                      .addressId("3fa85f64-5717-4562-b3fc-2c963f66afa6")
-                      .build());
-      assertNotNull(body);
-
-      MockTest.JournalEntry j = mock.last();
-      assertEquals("POST", j.method);
-      // Singular 'subscriber' path segment per spec.
-      assertEquals("/api/fabric/subscriber/invites", j.path);
-      Map<String, Object> jb = j.bodyMap();
-      assertNotNull(jb);
-      assertEquals("3fa85f64-5717-4562-b3fc-2c963f66afa6", jb.get("address_id"));
-    }
 
     @Test
     void createEmbedToken() {

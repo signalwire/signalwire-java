@@ -9,11 +9,7 @@ package com.signalwire.sdk.swml;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * SchemaValidationError — Java port of {@code signalwire.utils.schema_utils.SchemaValidationError}.
- *
- * <p>Raised when SWML schema validation of a verb config fails.
- */
+/** Raised when SWML schema validation of a verb config fails. */
 public class SchemaValidationError extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
@@ -22,8 +18,7 @@ public class SchemaValidationError extends RuntimeException {
   private final List<String> errors;
 
   /**
-   * Construct a SchemaValidationError. Mirrors Python's {@code SchemaValidationError(verb_name,
-   * errors)} signature.
+   * Construct a SchemaValidationError.
    *
    * @param verbName the verb whose validation failed
    * @param errors the list of human-readable error messages
@@ -34,10 +29,20 @@ public class SchemaValidationError extends RuntimeException {
     this.errors = errors == null ? Collections.emptyList() : Collections.unmodifiableList(errors);
   }
 
+  /**
+   * The SWML verb whose arguments failed validation.
+   *
+   * @return the verb name.
+   */
   public String getVerbName() {
     return verbName;
   }
 
+  /**
+   * Every validation failure found, not just the first.
+   *
+   * @return the error messages.
+   */
   public List<String> getErrors() {
     return errors;
   }

@@ -25,10 +25,9 @@ public final class SkillRegistry {
   private final List<String> externalPaths = new ArrayList<>();
 
   /**
-   * Per-instance skill registrations, keyed by name. Mirrors Python's instance-level {@code
-   * self._skills} dict (skills/registry.py): a fresh {@code SkillRegistry()} starts EMPTY, and
-   * {@link #registerSkill(String, Supplier)} adds to it idempotently. Distinct from the static
-   * built-in {@code registry} (the Java idiom for on-demand built-in lookup). Insertion-ordered.
+   * Per-instance skill registrations, keyed by name. A fresh {@code SkillRegistry()} starts EMPTY,
+   * and {@link #registerSkill(String, Supplier)} adds to it idempotently. Distinct from the static
+   * built-in {@code registry}, which backs on-demand built-in lookup. Insertion-ordered.
    */
   private final Map<String, Supplier<SkillBase>> instanceSkills = new LinkedHashMap<>();
 
@@ -54,18 +53,17 @@ public final class SkillRegistry {
     register("mcp_gateway", McpGatewaySkill::new);
   }
 
-  /** Env var seeding external skill-search directories. Mirrors Python's registry.py. */
+  /** Env var seeding external skill-search directories. */
   private static final String ENV_SKILL_PATHS = "SIGNALWIRE_SKILL_PATHS";
 
   /**
    * Public no-arg constructor so callers can manage their own external-paths list. The static
    * registry is unaffected.
    *
-   * <p>Seeds {@code externalPaths} from the {@code SIGNALWIRE_SKILL_PATHS} environment variable (a
-   * {@link File#pathSeparator}-delimited list of directories), mirroring Python's {@code
-   * SkillRegistry}, which scans {@code os.environ["SIGNALWIRE_SKILL_PATHS"]} for external skill
-   * directories. Non-existent or non-directory entries are skipped (env seeding is best-effort,
-   * unlike the explicit {@link #addSkillDirectory(String)} which validates and throws).
+   * <p>Seeds {@code externalPaths} from the {@code SIGNALWIRE_SKILL_PATHS} environment variable — a
+   * {@link File#pathSeparator}-delimited list of directories to search for external skills.
+   * Non-existent or non-directory entries are skipped: env seeding is best-effort, unlike the
+   * explicit {@link #addSkillDirectory(String)}, which validates and throws.
    */
   public SkillRegistry() {
     seedExternalPathsFromEnv();
@@ -76,7 +74,9 @@ public final class SkillRegistry {
     if (raw == null || raw.isEmpty()) {
       return;
     }
-    for (String path : raw.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+    // limit 0 == drop trailing empty segments (a PATH ending in the separator
+    // contributes no entry); the loop below skips empties anyway.
+    for (String path : raw.split(java.util.regex.Pattern.quote(File.pathSeparator), 0)) {
       if (path.isEmpty()) {
         continue;
       }
@@ -120,10 +120,9 @@ public final class SkillRegistry {
   /**
    * Add a directory to search for skills.
    *
-   * <p>Mirrors Python's {@code signalwire.skills.registry.SkillRegistry.add_skill_directory}:
-   * validate that the path exists and is a directory, then append it (de-duplicated) to {@code
-   * externalPaths}. Throws {@link IllegalArgumentException} (the Java analog of Python's {@code
-   * ValueError}) for non-existent paths or non-directories.
+   * <p>Validates that the path exists and is a directory, then appends it (de-duplicated) to {@code
+   * externalPaths}. Throws {@link IllegalArgumentException} for a non-existent path or a
+   * non-directory.
    *
    * @param path absolute or relative path to a directory containing skill subdirectories
    * @throws IllegalArgumentException when the path doesn't exist or isn't a directory.
@@ -149,9 +148,8 @@ public final class SkillRegistry {
   /**
    * List metadata for all available (registered) skills.
    *
-   * <p>Mirrors Python {@code SkillRegistry.list_skills}: returns one entry per skill with its name,
-   * description, and version. Java skills are registered eagerly (no on-demand directory scan), so
-   * this enumerates the static registry.
+   * <p>Returns one entry per skill with its name, description, and version. Skills are registered
+   * eagerly (there is no on-demand directory scan), so this enumerates the static registry.
    *
    * @return a list of skill metadata maps
    */
@@ -176,8 +174,8 @@ public final class SkillRegistry {
   /**
    * Discover and return all available skills.
    *
-   * <p>Mirrors Python {@code SkillRegistry.discover_skills}, which returns the same enumeration as
-   * {@code list_skills} (skills load on-demand, so discovery is the same scan).
+   * <p>Returns the same enumeration as {@link #listSkills()} — skills load on demand, so discovery
+   * is the same scan.
    *
    * @return a list of skill metadata maps
    */
@@ -188,9 +186,8 @@ public final class SkillRegistry {
   /**
    * Get the skill class registered under a name.
    *
-   * <p>Mirrors Python {@code SkillRegistry.get_skill_class(skill_name)}: returns the concrete
-   * {@link SkillBase} subclass registered for {@code skillName}, or {@code null} if none is
-   * registered.
+   * <p>Returns the concrete {@link SkillBase} subclass registered for {@code skillName}, or {@code
+   * null} if none is registered.
    *
    * @param skillName the registered skill name
    * @return the skill's implementation class, or null if not registered
@@ -203,10 +200,9 @@ public final class SkillRegistry {
   /**
    * Register a skill class directly.
    *
-   * <p>Mirrors Python {@code SkillRegistry.register_skill(skill_class)}: instantiate the class,
-   * derive its name from {@link SkillBase#getName()}, and register a factory for it. Throws {@link
-   * IllegalArgumentException} (the Java analog of Python's {@code ValueError}) if the class cannot
-   * be instantiated with a public no-arg constructor.
+   * <p>Instantiates the class, derives its name from {@link SkillBase#getName()}, and registers a
+   * factory for it. Throws {@link IllegalArgumentException} if the class cannot be instantiated
+   * with a public no-arg constructor.
    *
    * @param skillClass a concrete {@link SkillBase} subclass with a public no-arg constructor
    * @throws IllegalArgumentException if the class cannot be instantiated
@@ -227,11 +223,10 @@ public final class SkillRegistry {
   }
 
   /**
-   * Register a skill factory by name into THIS instance's registry, idempotently. Mirrors Python
-   * {@code SkillRegistry.register_skill}, which skips re-registration of an already-present name
-   * ({@code if skill_class.SKILL_NAME in self._skills: return}). The first registration wins; a
-   * repeat with the same name is a no-op. Returns {@code true} if this call added the name, {@code
-   * false} if it was already present.
+   * Register a skill factory by name into THIS instance's registry, idempotently. Re-registering an
+   * already-present name is skipped: the first registration wins and a repeat with the same name is
+   * a no-op. Returns {@code true} if this call added the name, {@code false} if it was already
+   * present.
    *
    * @param name the skill name
    * @param factory a factory producing a fresh {@link SkillBase} instance
@@ -247,7 +242,6 @@ public final class SkillRegistry {
 
   /**
    * The names registered into THIS instance via {@link #registerSkill(String, Supplier)}, sorted.
-   * Mirrors reading Python's {@code sorted(self._skills.keys())}.
    *
    * @return a sorted list of this instance's registered skill names
    */
@@ -266,10 +260,11 @@ public final class SkillRegistry {
   /**
    * List all skill sources and the skills available from each.
    *
-   * <p>Mirrors Python {@code SkillRegistry.list_all_skill_sources}: a map from source type ({@code
-   * built-in}, {@code external_paths}, {@code entry_points}, {@code registered}) to the skill names
-   * from that source. Java has no entry-point mechanism, so all registered skills report as {@code
-   * built-in} and external directories are listed under {@code external_paths}.
+   * <p>A map from source type ({@code built-in}, {@code external_paths}, {@code entry_points},
+   * {@code registered}) to the skill names from that source. There is no plugin entry-point
+   * mechanism here, so all registered skills report as {@code built-in}, external directories are
+   * listed under {@code external_paths}, and {@code entry_points} is always empty — the key is
+   * still present so the returned shape is stable.
    *
    * @return a map of source name to the list of skill names from that source
    */
@@ -285,11 +280,10 @@ public final class SkillRegistry {
   /**
    * Get complete schema for all registered skills.
    *
-   * <p>Mirrors Python's instance-method {@code SkillRegistry.get_all_skills_schema()} — returns a
-   * map keyed by skill name where each value contains parameter metadata. Java skills don't carry
-   * rich Python-style parameter introspection in v1, so the value defaults to a minimal shape with
-   * the skill name; built-in skills that expose {@code getSkillDescription} / {@code
-   * getSkillVersion} get those merged in.
+   * <p>Returns a map keyed by skill name where each value contains parameter metadata. Skills do
+   * not yet carry rich parameter introspection, so each value defaults to a minimal shape with the
+   * skill name and an empty {@code parameters} map; built-in skills that expose {@code
+   * getSkillDescription} / {@code getSkillVersion} get those merged in.
    *
    * @return ordered map of skill name to schema metadata
    */

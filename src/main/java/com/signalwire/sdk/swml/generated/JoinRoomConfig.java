@@ -2,15 +2,15 @@
 //
 // AUTO-GENERATED from porting-sdk/ (schemas) — regenerate with the generator.
 //
-// flattened SWMLMethod verb 'join_room' config
+// schema.json $defs schema 'JoinRoomConfig'
 
 package com.signalwire.sdk.swml.generated;
 
 /**
- * JoinRoomConfig — generated wire type (flattened SWMLMethod verb 'join_room' config).
+ * JoinRoomConfig — generated wire type (schema.json $defs schema 'JoinRoomConfig').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class JoinRoomConfig {
   public String name;

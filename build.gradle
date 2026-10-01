@@ -18,7 +18,7 @@ plugins {
 }
 
 group = 'com.signalwire'
-version = '4.0.0'
+version = '3.0.0'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
@@ -31,6 +31,15 @@ java {
 // arg0/arg1/... and the diff against the Python reference loses them.
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += '-parameters'
+    // javac caps its diagnostic output at 100 warnings per compilation by
+    // default, so a source set with more findings than that reports exactly
+    // "100 warnings" and silently drops the rest. That makes the LINT gate
+    // UNDER-REPORT: the examples source set was sitting at 100-capped while its
+    // true count was higher, so a burndown driven off the log would have looked
+    // finished while findings remained. Raise the cap so the gate always prints
+    // every finding it found.
+    options.compilerArgs += '-Xmaxwarns'
+    options.compilerArgs += '100000'
 }
 
 repositories {
@@ -67,19 +76,90 @@ dependencies {
     testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
 }
 
+// EXECUTION RECEIPT (the TEST gate's proof-of-execution).
+//
+// `gradle test` reports BUILD SUCCESSFUL for THREE different outcomes, and only
+// one of them ran any test:
+//   * `:test` executed        — tests actually ran.
+//   * `:test UP-TO-DATE`      — incremental skip; nothing ran.
+//   * `:test FROM-CACHE`      — the build cache replayed a previous run's
+//                               outputs; nothing ran.
+// Exit status cannot tell them apart, so a run-ci TEST PASS was previously ZERO
+// evidence that the suite executed. That matters most exactly when it is least
+// obvious: a commit that changes GENERATED types can be handed a replayed green
+// (measured: a SWAIG regen that changed HoldAction.timeout Long->Double reported
+// PASS off `1 from cache` in 6s, having executed nothing).
+//
+// Why a receipt and not one of the alternatives:
+//   * Requiring a fresh build/test-results/ tree DOES NOT WORK — FROM-CACHE
+//     RESTORES that tree, files and all, with a current mtime. It is a task
+//     OUTPUT, so the cache's whole job is to reproduce it. (Verified: deleting
+//     the tree and re-running printed `:test FROM-CACHE` and put all 208 XML
+//     files back.)
+//   * Parsing `> Task :test UP-TO-DATE` out of the log means the gate's
+//     correctness depends on Gradle's console formatting (log level, --console
+//     mode, rich-vs-plain output), which is presentation, not contract.
+// A doLast action, by contrast, is part of the task's ACTIONS: Gradle skips the
+// action list entirely when the task is up-to-date or served from cache, and runs
+// it exactly when the task really executed. So the receipt's presence is a
+// first-class execution signal from the build tool itself.
+//
+// The receipt lives OUTSIDE build/test-results/ and is deliberately NOT declared
+// as a task output, so it is neither cached nor restored — the cache can replay
+// the test XML but it can never forge the receipt. scripts/run-tests.sh deletes
+// it before invoking gradle and requires it afterwards.
+//
+// It also carries the COUNTS (from a TestListener, which likewise only fires on
+// real execution), so the gate can print what actually ran instead of asserting
+// against a summary line.
 test {
     useJUnitPlatform()
+
+    // Counters live on the task's extra properties so the doLast closure and the
+    // listener share state without a script-level mutable global (which would be
+    // wrong under Gradle's configuration cache).
+    ext.swExecutedTests = 0
+    ext.swFailedTests = 0
+    ext.swSkippedTests = 0
+
+    afterTest { desc, result ->
+        switch (result.resultType.toString()) {
+            case 'FAILURE': ext.swFailedTests++; break
+            case 'SKIPPED': ext.swSkippedTests++; break
+            default: break
+        }
+        ext.swExecutedTests++
+    }
+
+    doLast {
+        // Reached ONLY when the test task really executed (Gradle skips a task's
+        // actions wholesale on UP-TO-DATE / FROM-CACHE).
+        def receipt = new File(project.layout.buildDirectory.get().asFile,
+                              'sw-test-execution-receipt.txt')
+        receipt.parentFile.mkdirs()
+        receipt.text = [
+            "executed=${ext.swExecutedTests}",
+            "failed=${ext.swFailedTests}",
+            "skipped=${ext.swSkippedTests}",
+            "finished_at=${new Date().format('yyyy-MM-dd HH:mm:ss')}",
+        ].join('\n') + '\n'
+    }
 }
 
-// FMT gate — Spotless + google-java-format over every Java source set (main,
-// test, and the tools/CLI sources that live under src/main + src/test). The
-// formatter is source-style only and proven surface/emission-neutral (a
+// FMT gate — Spotless + google-java-format over EVERY Java source in the repo:
+// the SDK (src/main), the tests (src/test), all three example trees (examples/,
+// rest/examples/, relay/examples/) and the audit helper (scripts/
+// SignatureDump.java). There is ONE formatting bar and every directory meets it
+// — examples and tests are shipping code too, so nothing is carved out. The only
+// thing NOT formatted is build output (build/, .gradle/), which is not source.
+// The formatter is source-style only and proven surface/emission-neutral (a
 // reformat leaves port_signatures.json + port_surface.json byte-identical and
 // EMISSION 81/81 — verified during the rollout). run-ci.sh's FMT gate runs
 // `spotlessApply` locally and `spotlessCheck` in CI.
 spotless {
     java {
-        target 'src/**/*.java'
+        target 'src/**/*.java', 'examples/**/*.java', 'rest/examples/**/*.java',
+               'relay/examples/**/*.java', 'scripts/**/*.java'
         googleJavaFormat('1.22.0')
         removeUnusedImports()
         trimTrailingWhitespace()
@@ -124,12 +204,41 @@ tasks.withType(JavaCompile).configureEach {
         //   * IterableAndIterator — PaginatedIterator is a public final SDK type
         //     using the standard self-iterable pattern (implements both); the
         //     only "fix" is dropping a public interface = a surface change.
-        //   * JdkObsolete — WebhookFilterTest's HttpServletRequest proxy MUST
-        //     return a StringBuffer from getRequestURL() (the servlet contract's
-        //     declared type); a StringBuilder would ClassCastException.
+        // (JdkObsolete is NOT in this list: it used to be, to accommodate ONE
+        //  test site, which turned a per-site fact into a repo-wide blind spot.
+        //  It is now ON everywhere and suppressed at that single site with its
+        //  reason — see WebhookFilterTest.Handler#invoke.)
         check('AnnotateFormatMethod', CheckSeverity.OFF)
         check('IterableAndIterator', CheckSeverity.OFF)
-        check('JdkObsolete', CheckSeverity.OFF)
+        //   * DefaultPackage — the 73 example mains and scripts/SignatureDump
+        //     are default-package BY CONTRACT, in three places that would all
+        //     break together if a package were added:
+        //       1. examples/README.md:112 and docs/agent_guide.md tell users to
+        //          run an example with `java -cp "$CP:examples" SimpleAgent` —
+        //          the simple name IS the main class. A package would also force
+        //          a matching directory layout on anyone copying the single file,
+        //          which is the whole point of a one-file example.
+        //       2. build.gradle's own `runExample -PexampleClass=<ClassName>`
+        //          task resolves mainClass from that bare simple name.
+        //       3. porting-sdk/scripts/examples_run.py (the EXAMPLES-RUN gate, in
+        //          a DIFFERENT repo) hardcodes `-PexampleClass={f.stem}`, i.e.
+        //          the file stem is the fully-qualified main class.
+        //     scripts/SignatureDump.java is the same story: enumerate_signatures.py
+        //     runs it as `java -cp <cp> SignatureDump`, and it feeds
+        //     port_signatures.json — the input to the SIGNATURES and DRIFT gates.
+        //     So this is a deliberate structural choice, not undone work; the
+        //     check is OFF rather than suppressed at 74 sites.
+        check('DefaultPackage', CheckSeverity.OFF)
+        // PROMOTED to ERROR. ObjectToString ships as a mere WARNING, so it did
+        // not fail the gate — and it caught a real defect the moment lint first
+        // reached examples/: RestDemo printed an AvailablePhoneNumbersResponse
+        // (a final DTO with no toString()) by concatenation, so the demo emitted
+        // "AvailablePhoneNumbersResponse@4488aabb" instead of any phone number.
+        // The whole REST surface is generated pure-data DTOs with no toString(),
+        // so this is a repeatable trap for anyone writing an example or a log
+        // line. Repo-wide cost of the promotion: zero — that one site was the
+        // only occurrence, and it is fixed.
+        check('ObjectToString', CheckSeverity.ERROR)
     }
 }
 
@@ -188,16 +297,30 @@ sourceSets {
     }
 }
 
-// Examples are illustrative user code, NOT part of the SDK's shipped surface,
-// so they are exempt from the SDK's LINT floor (Error Prone warnings-as-errors
-// + Checkstyle). Turn both OFF on the examples source set — an unused import in
-// a demo must not fail the SDK build/gates. (Spotless already skips examples/:
-// its target is src/**/*.java only.)
-tasks.named('compileExamplesJava') {
-    options.errorprone.enabled = false
-}
-tasks.matching { it.name == 'checkstyleExamples' }.configureEach {
-    enabled = false
+// LINT/FMT SCOPE: the WHOLE tree. The `examples` source set above is linted at
+// exactly the bar src/main and src/test meet — Error Prone warnings-as-errors
+// plus Checkstyle, zero findings — and formatted by Spotless. Examples and tests
+// are shipping code: a user copies an example verbatim, so a real bug in one is a
+// real bug shipped. Nothing here is excluded; there is no vendored third-party
+// Java in this repo, so there is nothing that could legitimately be.
+//
+// (This replaced a carve-out that set `options.errorprone.enabled = false` on
+//  compileExamplesJava and disabled checkstyleExamples outright, on the rationale
+//  that "an unused import in a demo must not fail the SDK build". Removing it
+//  found real defects in the example trees — see the commits that burned it down.)
+
+// The audit helper scripts/SignatureDump.java sits outside src/ and is compiled
+// by raw javac from scripts/enumerate_signatures.py, so no Gradle source set saw
+// it and NO lint ran on it — an undocumented carve-out by omission. It is
+// load-bearing (it produces port_signatures.json, the input to the SIGNATURES and
+// DRIFT gates), so it gets the same bar as everything else. This source set exists
+// only to lint+compile it; nothing depends on its output.
+sourceSets {
+    auditTools {
+        java {
+            srcDir 'scripts'
+        }
+    }
 }
 
 // runExample — compile every example, run the one named by -PexampleClass.
@@ -423,14 +546,29 @@ tasks.register('relayLivenessDump', JavaExec) {
 }
 
 // secureDefaultDump — SECURE-DEFAULT differ (porting-sdk/scripts/diff_port_secure_default.py).
-// Renders SWML for a default (secure) tool + a secure=false tool with the fixed corpus call_id and
-// emits, per tool, whether it is secure and whether the rendered webhook reflects that (a __token /
-// meta_data_token present iff secure).
+// Renders SWML for a default (secure) tool + a secure=false tool and emits, per tool, the
+// SDK-recorded secure flag plus that tool's SWAIG functions[] entry VERBATIM (token values
+// redacted to <TOKEN>). The DIFFER classifies the payload; this task reports no verdict of its own.
 tasks.register('secureDefaultDump', JavaExec) {
     group = 'verification'
-    description = 'Dump the secure-default SWML render classifications as JSON (cross-port secure-default differ).'
+    description = 'Dump the secure-default SWML rendered payloads as JSON (cross-port secure-default differ).'
     mainClass = 'com.signalwire.sdk.tools.SecureDefaultDump'
     classpath = sourceSets.main.runtimeClasspath
+}
+
+// tokenInteropMint — TOKEN-INTEROP checker (porting-sdk/scripts/diff_port_token_interop.py).
+// Mints ONE token with the FIXED inputs the checker supplies in the environment and prints just
+// that token, so the checker can validate it under the reference's own decoder — property 3 of the
+// SWAIG tool-token contract (a correct key and a correct HMAC still leave the ENVELOPE encoding
+// able to be wrong, and an unpadded token is unusable to every other implementation).
+tasks.register('tokenInteropMint', JavaExec) {
+    group = 'verification'
+    description = 'Mint one SWAIG tool token with the checker-supplied fixed inputs (cross-port token-interop checker).'
+    mainClass = 'com.signalwire.sdk.tools.TokenInteropMint'
+    classpath = sourceSets.main.runtimeClasspath
+    // Inherit the invoking process env — the checker exports SW_TOKEN_INTEROP_* into it, and
+    // the fixture fails loud if they are missing (same convention as runExample above).
+    environment System.getenv()
 }
 
 // secretScrubDump — SECRET-SCRUB-LIVE differ (porting-sdk/scripts/diff_port_secret_scrub.py).

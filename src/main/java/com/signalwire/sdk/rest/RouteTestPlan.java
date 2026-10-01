@@ -20,15 +20,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * RouteTestPlan — the per-{@code via} call plan for the REST wire-test generator ({@code
- * scripts/generate_rest_tests.py}).
+ * RouteTestPlan — the per-{@code via} call plan for the REST wire-test generator.
  *
  * <p>Companion capture to {@link RouteRegistry}. {@code RouteRegistry} answers "which (method,
  * path) routes does the SDK implement" (deduped, via-merged); this program answers the sibling
  * question the TEST generator needs: for EVERY {@code via} route method, what is the exact Java
  * call expression that reaches it off the live {@link RestClient}, AND what type-correct literal
- * argument tokens must be passed. It is the Java realisation of the reflection the ruby/php/go/ts
- * generators do (rest_test_plan.rb / rest_test_plan.php / buildCallIndex).
+ * argument tokens must be passed.
  *
  * <p>It REUSES {@code RouteRegistry}'s live-client walk shape (a {@link RestClient} backed by a
  * recording {@link HttpClient}; reflection over namespace → sub-resource accessors → route methods)
@@ -183,6 +181,42 @@ final class RouteTestPlan {
       CALLS.add(new Call("DELETE", wire(path)));
       return Collections.emptyMap();
     }
+
+    @Override
+    public Map<String, Object> post(
+        String path,
+        Map<String, Object> body,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("POST", wire(path)));
+      return Collections.emptyMap();
+    }
+
+    /** Records the GET route; returns an empty body. */
+    @Override
+    public String getText(
+        String path,
+        Map<String, String> queryParams,
+        RequestOptions requestOptions,
+        Map<String, String> headers) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
+
+    @Override
+    java.util.List<Object> getList(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return Collections.emptyList();
+    }
+
+    /** Records the GET route; returns an empty location. */
+    @Override
+    public String getRedirectLocation(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return "";
+    }
   }
 
   private record PlanRec(
@@ -221,6 +255,23 @@ final class RouteTestPlan {
    * listAddresses} base, covariantly overridden to a DTO). Recognising all three keeps a flipped
    * route in the test plan instead of silently dropping it.
    */
+  /**
+   * A generated resource verb whose success is not a JSON object: a text body or a redirect's
+   * Location ({@code String}, e.g. {@code download(id, params)}) or a top-level JSON array ({@code
+   * List}). Only methods declared on a generated resource that take arguments qualify, so plain
+   * getters such as {@code getBasePath()} never do.
+   */
+  private static boolean isGeneratedNonJsonRoute(Method m) {
+    Class<?> rt = m.getReturnType();
+    if (rt != String.class && !List.class.isAssignableFrom(rt)) {
+      return false;
+    }
+    Package p = m.getDeclaringClass().getPackage();
+    return m.getParameterCount() > 0
+        && p != null
+        && p.getName().equals("com.signalwire.sdk.rest.namespaces.generated");
+  }
+
   private static boolean isWireResponseType(Class<?> rt) {
     if (Map.class.isAssignableFrom(rt) || rt == Object.class) {
       return true;
@@ -231,7 +282,7 @@ final class RouteTestPlan {
 
   /** Is this a route method (returns the SDK's wire response — a Map or a typed response DTO)? */
   private static boolean isRoute(Method m) {
-    if (!isWireResponseType(m.getReturnType())) {
+    if (!isWireResponseType(m.getReturnType()) && !isGeneratedNonJsonRoute(m)) {
       return false;
     }
     // Skip the RequestOptions-carrying full overload (plan 4.2 / PY-9); its no-RO
@@ -328,10 +379,30 @@ final class RouteTestPlan {
       // class is not needed since we fully-qualify it).
       String fqn = t.getCanonicalName();
       if (fqn != null) {
-        return fqn + ".builder().build()";
+        StringBuilder expr = new StringBuilder(fqn).append(".builder()");
+        for (String setter : requiredHeaderSetters(t)) {
+          expr.append('.').append(setter).append("(\"x\")");
+        }
+        return expr.append(".build()").toString();
       }
     }
     return null;
+  }
+
+  /**
+   * The builder setters of a generated request's REQUIRED header params (e.g. the space top-up
+   * {@code Idempotency-Key}), which the server answers 400 without — read from the request's
+   * generated {@code REQUIRED_HEADER_SETTERS}; empty when it has none.
+   */
+  @SuppressWarnings("unchecked")
+  private static List<String> requiredHeaderSetters(Class<?> t) {
+    try {
+      java.lang.reflect.Field f = t.getDeclaredField("REQUIRED_HEADER_SETTERS");
+      f.setAccessible(true);
+      return (List<String>) f.get(null);
+    } catch (ReflectiveOperationException e) {
+      return List.of();
+    }
   }
 
   private static boolean isBuilderBackedRequest(Class<?> t) {
@@ -455,6 +526,7 @@ final class RouteTestPlan {
             .token("t")
             .space("recording.invalid")
             .httpClient(new RecordingHttpClient())
+            .patHttpClient(new RecordingHttpClient())
             .build();
 
     for (Method m : publicMethods(client)) {
@@ -508,6 +580,11 @@ final class RouteTestPlan {
     return payload;
   }
 
+  /**
+   * Entry point: emits the REST route test plan this gate compares across ports.
+   *
+   * @param args the command-line arguments.
+   */
   public static void main(String[] args) {
     RouteTestPlan tp = new RouteTestPlan();
     Map<String, Object> payload = tp.build();

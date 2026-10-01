@@ -30,7 +30,7 @@ public class ConferenceRooms extends FabricResourcePUT {
       listAddresses(
           String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
     return asType(
-        restGet("/fabric/resources/conference_room/" + id + "/addresses", params, requestOptions),
+        restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.ConferenceRoomAddressListResponse
             .class);
   }

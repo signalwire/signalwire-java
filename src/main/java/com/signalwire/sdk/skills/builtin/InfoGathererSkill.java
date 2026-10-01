@@ -5,6 +5,12 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Collects answers to a configurable list of questions from the caller.
+ *
+ * <p>Registered under the name {@code info_gatherer}; load it with {@code
+ * agent.addSkill("info_gatherer", params)}.
+ */
 public class InfoGathererSkill implements SkillBase {
 
   private String prefix = "";
@@ -12,21 +18,43 @@ public class InfoGathererSkill implements SkillBase {
   private List<Map<String, Object>> questions = new ArrayList<>();
   private String namespace = "info_gatherer";
 
+  /**
+   * The registry name this skill is loaded by: {@code info_gatherer}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "info_gatherer";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Gather answers to a configurable list of questions";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code questions} list; {@code false}
+   *     otherwise, which leaves the skill unloaded.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public boolean setup(Map<String, Object> params) {
@@ -42,6 +70,11 @@ public class InfoGathererSkill implements SkillBase {
     return !questions.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     String startName = prefix.isEmpty() ? "start_questions" : prefix + "_start_questions";

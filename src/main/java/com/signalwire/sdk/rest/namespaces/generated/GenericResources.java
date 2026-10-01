@@ -100,6 +100,40 @@ public class GenericResources extends BaseResource {
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.DomainApplicationResponse.class);
   }
 
+  /** assignSipEndpoint (generated from operation 'assign_resource_sip_endpoint'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceResponseSipEndpoint
+      assignSipEndpoint(String id, AssignSipEndpointRequest request) {
+    return assignSipEndpoint(id, request, (RequestOptions) null);
+  }
+
+  /** assignSipEndpoint with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceResponseSipEndpoint
+      assignSipEndpoint(
+          String id, AssignSipEndpointRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + id + "/" + "sip_endpoints", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.ResourceResponseSipEndpoint
+            .class);
+  }
+
+  /** assignWhatsappNumber (generated from operation 'assign_resource_whatsapp_number'). */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.WhatsappNumberAddressResponse
+      assignWhatsappNumber(String id, AssignWhatsappNumberRequest request) {
+    return assignWhatsappNumber(id, request, (RequestOptions) null);
+  }
+
+  /** assignWhatsappNumber with a per-request {@link RequestOptions} override. */
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.WhatsappNumberAddressResponse
+      assignWhatsappNumber(
+          String id, AssignWhatsappNumberRequest request, RequestOptions requestOptions) {
+    return asType(
+        restPost(
+            getBasePath() + "/" + id + "/" + "whatsapp_numbers", request.toBody(), requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.WhatsappNumberAddressResponse
+            .class);
+  }
+
   /** Closed typed request for {@link #assignPhoneRoute} (builder + extras door). */
   public static final class AssignPhoneRouteRequest {
     private final String phoneRouteId;
@@ -199,6 +233,108 @@ public class GenericResources extends BaseResource {
 
       public AssignDomainApplicationRequest build() {
         return new AssignDomainApplicationRequest(domainApplicationId, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #assignSipEndpoint} (builder + extras door). */
+  public static final class AssignSipEndpointRequest {
+    private final String sipEndpointId;
+    private final java.util.Map<String, Object> extras;
+
+    private AssignSipEndpointRequest(String sipEndpointId, java.util.Map<String, Object> extras) {
+      this.sipEndpointId = sipEndpointId;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.sipEndpointId != null) {
+        body.put("sip_endpoint_id", this.sipEndpointId);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String sipEndpointId;
+      private java.util.Map<String, Object> extras;
+
+      public Builder sipEndpointId(String sipEndpointId) {
+        this.sipEndpointId = sipEndpointId;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AssignSipEndpointRequest build() {
+        return new AssignSipEndpointRequest(sipEndpointId, extras);
+      }
+    }
+  }
+
+  /** Closed typed request for {@link #assignWhatsappNumber} (builder + extras door). */
+  public static final class AssignWhatsappNumberRequest {
+    private final String whatsappNumberId;
+    private final String handler;
+    private final java.util.Map<String, Object> extras;
+
+    private AssignWhatsappNumberRequest(
+        String whatsappNumberId, String handler, java.util.Map<String, Object> extras) {
+      this.whatsappNumberId = whatsappNumberId;
+      this.handler = handler;
+      this.extras = extras;
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    java.util.Map<String, Object> toBody() {
+      java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+      if (this.whatsappNumberId != null) {
+        body.put("whatsapp_number_id", this.whatsappNumberId);
+      }
+      if (this.handler != null) {
+        body.put("handler", this.handler);
+      }
+      if (this.extras != null) {
+        body.putAll(this.extras);
+      }
+      return body;
+    }
+
+    public static final class Builder {
+      private String whatsappNumberId;
+      private String handler;
+      private java.util.Map<String, Object> extras;
+
+      public Builder whatsappNumberId(String whatsappNumberId) {
+        this.whatsappNumberId = whatsappNumberId;
+        return this;
+      }
+
+      public Builder handler(String handler) {
+        this.handler = handler;
+        return this;
+      }
+
+      public Builder extras(java.util.Map<String, Object> extras) {
+        this.extras = extras;
+        return this;
+      }
+
+      public AssignWhatsappNumberRequest build() {
+        return new AssignWhatsappNumberRequest(whatsappNumberId, handler, extras);
       }
     }
   }

@@ -6,22 +6,45 @@ import com.signalwire.sdk.swaig.FunctionResult;
 import com.signalwire.sdk.swaig.ToolDefinition;
 import java.util.*;
 
+/**
+ * Current weather from WeatherAPI.com.
+ *
+ * <p>Registered under the name {@code weather_api}; load it with {@code
+ * agent.addSkill("weather_api", params)}.
+ */
 public class WeatherApiSkill implements SkillBase {
 
   private String apiKey;
   private String toolName = "get_weather";
   private String temperatureUnit = "fahrenheit";
 
+  /**
+   * The registry name this skill is loaded by: {@code weather_api}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "weather_api";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Get current weather information from WeatherAPI.com";
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied a non-empty {@code api_key}; {@code false} otherwise,
+   *     which leaves the skill unloaded.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     this.apiKey = (String) params.get("api_key");
@@ -34,6 +57,11 @@ public class WeatherApiSkill implements SkillBase {
     return apiKey != null && !apiKey.isEmpty();
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   public List<ToolDefinition> registerTools() {
     return Collections.emptyList();

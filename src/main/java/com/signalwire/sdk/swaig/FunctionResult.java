@@ -31,7 +31,9 @@ public class FunctionResult {
 
   private static final Gson gson = new Gson();
 
-  private String response;
+  /** The plain-string response, or the structured {@code {tool_result, tool_prompt}} map. */
+  private Object response;
+
   private final List<Map<String, Object>> actions;
   private boolean postProcess;
 
@@ -44,18 +46,83 @@ public class FunctionResult {
   }
 
   public FunctionResult(String response, boolean postProcess) {
+    this(response, postProcess, null, null);
+  }
+
+  /**
+   * A result in the structured response form: when {@code toolResult} or {@code toolPrompt} is
+   * given, the response is set by {@link #setToolResponse(String, String)}.
+   *
+   * @param response the plain-string response (may be {@code null})
+   * @param postProcess whether the model takes another turn before the actions run
+   * @param toolResult factual outcome of the call (may be {@code null})
+   * @param toolPrompt instruction for what the model should say next (may be {@code null})
+   */
+  public FunctionResult(
+      String response, boolean postProcess, String toolResult, String toolPrompt) {
     this.response = response != null ? response : "";
     this.actions = new ArrayList<>();
     this.postProcess = postProcess;
+    if (toolResult != null || toolPrompt != null) {
+      setToolResponse(toolResult, toolPrompt);
+    }
   }
 
   // -------- Core Setters --------
 
+  /**
+   * Set the text handed back to the model as this tool's result — what the LLM reads and speaks
+   * from. A {@code null} is stored as the empty string.
+   *
+   * @param response the response text.
+   * @return this result, for chaining.
+   */
   public FunctionResult setResponse(String response) {
     this.response = response != null ? response : "";
     return this;
   }
 
+  /**
+   * Set the structured response form, separating outcome from instruction: {@code {"tool_result":
+   * ..., "tool_prompt": ...}}. {@code toolResult} is what the tool DID (a factual status line for
+   * the model to reason from); {@code toolPrompt} is what the model should now SAY. Splitting them
+   * keeps the model from reading a status line aloud. A {@code null} argument is omitted.
+   *
+   * @param toolResult factual outcome of the call (may be {@code null})
+   * @param toolPrompt instruction for what to say next (may be {@code null})
+   * @return this result, for chaining.
+   */
+  /** Structured response with neither half set (an empty {@code {}} response object). */
+  public FunctionResult setToolResponse() {
+    return setToolResponse(null, null);
+  }
+
+  /** Structured response with only the factual outcome (no instruction). */
+  public FunctionResult setToolResponse(String toolResult) {
+    return setToolResponse(toolResult, null);
+  }
+
+  /** Structured response form; see {@link #setToolResponse(String, String)}. */
+  public FunctionResult setToolResponse(String toolResult, String toolPrompt) {
+    Map<String, Object> payload = new LinkedHashMap<>();
+    if (toolResult != null) {
+      payload.put("tool_result", toolResult);
+    }
+    if (toolPrompt != null) {
+      payload.put("tool_prompt", toolPrompt);
+    }
+    this.response = payload;
+    return this;
+  }
+
+  /**
+   * Whether the model gets another turn to speak AFTER this result's actions run, rather than the
+   * actions taking effect immediately. Only serialized when {@code true} AND at least one action
+   * was added.
+   *
+   * @param postProcess whether to post-process.
+   * @return this result, for chaining.
+   */
   public FunctionResult setPostProcess(boolean postProcess) {
     this.postProcess = postProcess;
     return this;
@@ -98,8 +165,25 @@ public class FunctionResult {
     return this;
   }
 
+  /**
+   * Bridge the call to another destination, with the caller ID left to the platform. Equivalent to
+   * {@link #connect(String, boolean, String)} with a {@code null} {@code from}.
+   *
+   * @param destination the SIP URI or phone number to dial.
+   * @param isFinal {@code true} for a permanent transfer that does not come back; {@code false} to
+   *     return to the agent when the far leg ends.
+   * @return this result, for chaining.
+   */
   public FunctionResult connect(String destination, boolean isFinal) {
     return connect(destination, isFinal, null);
+  }
+
+  /**
+   * SWML transfer with AI response setup, defaulting {@code isFinal} to {@code true} — a permanent
+   * transfer that does not return to the agent.
+   */
+  public FunctionResult swmlTransfer(String dest, String aiResponse) {
+    return swmlTransfer(dest, aiResponse, true);
   }
 
   /** SWML transfer with AI response setup. */
@@ -126,9 +210,72 @@ public class FunctionResult {
     return addAction("hangup", true);
   }
 
+  /** Put the call on hold with the default 300-second timeout. */
+  public FunctionResult hold() {
+    return hold(300);
+  }
+
   /** Put the call on hold (timeout clamped 0-900). */
   public FunctionResult hold(int timeout) {
-    return addAction("hold", Math.max(0, Math.min(timeout, 900)));
+    return hold(null, timeout, null, null);
+  }
+
+  /** Announce, then put the call on hold with the default 300-second timeout. */
+  public FunctionResult hold(String prompt) {
+    return hold(prompt, 300, null, null);
+  }
+
+  /** Announce, then put the call on hold. */
+  public FunctionResult hold(String prompt, int timeout) {
+    return hold(prompt, timeout, null, null);
+  }
+
+  /**
+   * Put the call on hold, optionally announcing it and routing what happens next.
+   *
+   * <p>During hold, speech detection is paused and the agent does not respond, so anything the
+   * caller needs to hear must be said BEFORE the action lands. A {@code prompt} becomes the
+   * structured response ({@code tool_result: "status: on hold"}, {@code tool_prompt: prompt}) and
+   * switches on post-processing, so the model speaks before the hold executes. {@code step} /
+   * {@code timeoutStep} move the caller to a chosen step when the hold ends (taken off hold / timed
+   * out); with neither, the bare integer form is emitted and the caller resumes in place.
+   *
+   * @param prompt instruction for the model to deliver before the hold (may be {@code null})
+   * @param timeout timeout in seconds, clamped to 0-900
+   * @param step step to move to when the call is taken off hold (may be {@code null})
+   * @param timeoutStep step to move to when the hold times out (may be {@code null})
+   * @return this result, for chaining.
+   */
+  public FunctionResult hold(String prompt, int timeout, String step, String timeoutStep) {
+    if (prompt != null) {
+      setToolResponse("status: on hold", prompt);
+      this.postProcess = true;
+    }
+    int clamped = Math.max(0, Math.min(timeout, 900));
+    if (step == null && timeoutStep == null) {
+      return addAction("hold", clamped);
+    }
+    Map<String, Object> holdConfig = new LinkedHashMap<>();
+    holdConfig.put("timeout", clamped);
+    if (step != null) {
+      holdConfig.put("step", step);
+    }
+    if (timeoutStep != null) {
+      holdConfig.put("timeout_step", timeoutStep);
+    }
+    return addAction("hold", holdConfig);
+  }
+
+  /**
+   * Change the agent's voice for the rest of the call. The voice is an {@code engine.voice:model}
+   * spec (the {@code engine.} prefix and {@code :model} suffix are optional); it replaces the voice
+   * of the language currently in use, applied at the next speech batch boundary.
+   *
+   * @param voice voice spec in {@code engine.voice:model} form
+   * @return this result, for chaining.
+   */
+  public FunctionResult changeVoice(String voice) {
+    return addAction("change_voice", voice);
   }
 
   /** Control how agent waits for user input. */
@@ -146,6 +293,13 @@ public class FunctionResult {
     return addAction("wait_for_user", waitValue);
   }
 
+  /**
+   * Make the agent wait for the caller to speak before it does. Equivalent to {@link
+   * #waitForUser(Boolean, Integer, boolean)} with no timeout and no answer-first, which emits
+   * {@code wait_for_user: true}.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult waitForUser() {
     return waitForUser(null, null, false);
   }
@@ -157,18 +311,44 @@ public class FunctionResult {
 
   // ======== State & Data Management ========
 
+  /**
+   * Merge keys into the call's {@code global_data}, visible to the model and to DataMap expressions
+   * for the rest of the call. Emits the {@code set_global_data} action.
+   *
+   * @param data the keys to set.
+   * @return this result, for chaining.
+   */
   public FunctionResult updateGlobalData(Map<String, Object> data) {
     return addAction("set_global_data", data);
   }
 
+  /**
+   * Delete keys from the call's {@code global_data}. Emits the {@code unset_global_data} action.
+   *
+   * @param keys a single key name or a list of them.
+   * @return this result, for chaining.
+   */
   public FunctionResult removeGlobalData(Object keys) {
     return addAction("unset_global_data", keys);
   }
 
+  /**
+   * Merge keys into the call's metadata — per-call scratch state the tools share, kept out of what
+   * the model sees. Emits the {@code set_meta_data} action.
+   *
+   * @param data the keys to set.
+   * @return this result, for chaining.
+   */
   public FunctionResult setMetadata(Map<String, Object> data) {
     return addAction("set_meta_data", data);
   }
 
+  /**
+   * Delete keys from the call's metadata. Emits the {@code unset_meta_data} action.
+   *
+   * @param keys a single key name or a list of them.
+   * @return this result, for chaining.
+   */
   public FunctionResult removeMetadata(Object keys) {
     return addAction("unset_meta_data", keys);
   }
@@ -218,8 +398,25 @@ public class FunctionResult {
     return addAction("context_switch", contextData);
   }
 
+  /**
+   * Replace the agent's system prompt for the rest of the call, keeping the conversation history.
+   * Shorthand for {@link #switchContext(String, String, boolean, boolean)} with no user prompt and
+   * neither reset flag, which emits {@code context_switch} carrying the prompt as a bare string
+   * rather than an object.
+   *
+   * @param systemPrompt the new system prompt.
+   * @return this result, for chaining.
+   */
   public FunctionResult switchContext(String systemPrompt) {
     return switchContext(systemPrompt, null, false, false);
+  }
+
+  /**
+   * Replace the tool_call+result pair in conversation history, defaulting to {@code true} — i.e.
+   * REMOVE the pair entirely rather than substituting replacement text.
+   */
+  public FunctionResult replaceInHistory() {
+    return replaceInHistory(true);
   }
 
   /** Replace tool_call+result pair in conversation history. */
@@ -227,12 +424,28 @@ public class FunctionResult {
     return addAction("replace_in_history", text);
   }
 
+  /**
+   * Rewrite this tool call and its result in the conversation history, so the model's later turns
+   * do not re-read them. Pass {@code true} to remove the pair entirely; the {@link
+   * #replaceInHistory(String)} overload substitutes replacement text instead. Useful when a tool
+   * handled sensitive data that should not persist in the transcript the model sees.
+   *
+   * @param summary {@code true} to drop the pair from history.
+   * @return this result, for chaining.
+   */
   public FunctionResult replaceInHistory(boolean summary) {
     return addAction("replace_in_history", summary);
   }
 
   // ======== Media Control ========
 
+  /**
+   * Have the agent speak this text immediately, independently of the {@code response} the model
+   * will generate from.
+   *
+   * @param text the text to speak.
+   * @return this result, for chaining.
+   */
   public FunctionResult say(String text) {
     return addAction("say", text);
   }
@@ -248,10 +461,23 @@ public class FunctionResult {
     return addAction("playback_bg", filename);
   }
 
+  /**
+   * Start playing an audio file UNDER the conversation and return at once — the agent keeps talking
+   * over it. Equivalent to {@link #playBackgroundFile(String, boolean)} with {@code wait} off. Stop
+   * it with {@link #stopBackgroundFile()}.
+   *
+   * @param filename the audio file URL.
+   * @return this result, for chaining.
+   */
   public FunctionResult playBackgroundFile(String filename) {
     return playBackgroundFile(filename, false);
   }
 
+  /**
+   * Stop the background audio started by {@link #playBackgroundFile(String)}.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopBackgroundFile() {
     return addAction("stop_playback_bg", true);
   }
@@ -415,6 +641,13 @@ public class FunctionResult {
         direction != null ? direction.getValue() : null);
   }
 
+  /**
+   * Start background call recording with the defaults: mono, {@code wav}, both directions, and no
+   * control id (so {@link #stopRecordCall()} stops it). Recording call audio carries consent and
+   * retention obligations in most jurisdictions.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult recordCall() {
     return recordCall(null, false, "wav", "both");
   }
@@ -434,24 +667,56 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Stop the background recording, without naming a control id — the platform stops the recording
+   * running on the call. Use {@link #stopRecordCall(String)} to target one of several.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopRecordCall() {
     return stopRecordCall(null);
   }
 
   // ======== Speech & AI Configuration ========
 
+  /**
+   * Add speech-recognition hints mid-call, biasing the recognizer toward words that only became
+   * relevant now — a name or an account number the caller just supplied.
+   *
+   * @param hints the hint strings or structured hint objects.
+   * @return this result, for chaining.
+   */
   public FunctionResult addDynamicHints(List<Object> hints) {
     return addAction("add_dynamic_hints", hints);
   }
 
+  /**
+   * Drop every hint added by {@link #addDynamicHints(List)}, leaving the agent's statically
+   * configured hints untouched.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult clearDynamicHints() {
     return addAction("clear_dynamic_hints", new LinkedHashMap<>());
   }
 
+  /**
+   * How long the recognizer waits in silence before deciding the caller has finished speaking.
+   * Shorter is snappier but cuts off people who pause mid-sentence.
+   *
+   * @param milliseconds the silence threshold.
+   * @return this result, for chaining.
+   */
   public FunctionResult setEndOfSpeechTimeout(int milliseconds) {
     return addAction("end_of_speech_timeout", milliseconds);
   }
 
+  /**
+   * How long to wait between speech events before treating the utterance as over.
+   *
+   * @param milliseconds the timeout.
+   * @return this result, for chaining.
+   */
   public FunctionResult setSpeechEventTimeout(int milliseconds) {
     return addAction("speech_event_timeout", milliseconds);
   }
@@ -461,10 +726,40 @@ public class FunctionResult {
     return addAction("toggle_functions", toggles);
   }
 
+  /**
+   * Enable function calls on speaker timeout — {@link #enableFunctionsOnTimeout(boolean)} with
+   * {@code true}.
+   */
+  public FunctionResult enableFunctionsOnTimeout() {
+    return enableFunctionsOnTimeout(true);
+  }
+
+  /**
+   * Whether the model may call tools on a speaker timeout — when the caller has gone quiet rather
+   * than said something.
+   *
+   * @param enabled whether to allow tool calls on timeout.
+   * @return this result, for chaining.
+   */
   public FunctionResult enableFunctionsOnTimeout(boolean enabled) {
     return addAction("functions_on_speaker_timeout", enabled);
   }
 
+  /**
+   * Send full data to the LLM for this turn only — {@link #enableExtensiveData(boolean)} with
+   * {@code true}.
+   */
+  public FunctionResult enableExtensiveData() {
+    return enableExtensiveData(true);
+  }
+
+  /**
+   * Send the full data set to the LLM for THIS turn only, instead of the usual trimmed context.
+   * Costs tokens, so it is a per-turn opt-in rather than a mode.
+   *
+   * @param enabled whether to send extensive data this turn.
+   * @return this result, for chaining.
+   */
   public FunctionResult enableExtensiveData(boolean enabled) {
     return addAction("extensive_data", enabled);
   }
@@ -495,12 +790,29 @@ public class FunctionResult {
     } else {
       throw new IllegalArgumentException("swmlContent must be a String or Map");
     }
+    // transfer rides BESIDE the SWML document, not inside it — the same shape connect() and
+    // swmlTransfer() emit. Inside the document it is not a SWML key and the call never exits
+    // the agent.
+    Map<String, Object> action = new LinkedHashMap<>();
+    action.put("SWML", swmlData);
     if (transfer) {
-      swmlData.put("transfer", "true");
+      action.put("transfer", "true");
     }
-    return addAction("SWML", swmlData);
+    actions.add(action);
+    return this;
   }
 
+  /**
+   * Execute a SWML document from this tool result, WITHOUT transferring — control returns to the
+   * agent afterwards. Equivalent to {@link #executeSwml(Object, boolean)} with {@code transfer}
+   * off.
+   *
+   * @param swmlContent the SWML as a {@link Map}, or as a JSON {@link String} (which is parsed;
+   *     unparseable text is passed through under {@code raw_swml}).
+   * @return this result, for chaining.
+   * @throws IllegalArgumentException if {@code swmlContent} is neither a {@code String} nor a
+   *     {@code Map}.
+   */
   public FunctionResult executeSwml(Object swmlContent) {
     return executeSwml(swmlContent, false);
   }
@@ -508,9 +820,9 @@ public class FunctionResult {
   /**
    * Join an ad-hoc audio conference with RELAY and CXML calls using SWML.
    *
-   * <p>Every optional parameter the reference exposes is a positional argument here, with the same
-   * default and the same validation. Hold music is {@code waitUrl} (snake_case wire key {@code
-   * wait_url}) — there is no separate "hold audio" parameter; the reference uses {@code wait_url}.
+   * <p>Every option is a positional argument here; the parameter list below states each default.
+   * Hold music is {@code waitUrl} (wire key {@code wait_url}) — there is no separate "hold audio"
+   * parameter.
    *
    * @param name conference name (required, must be non-blank)
    * @param muted join muted (default {@code false})
@@ -518,7 +830,8 @@ public class FunctionResult {
    * @param startOnEnter conference starts when this participant enters (default {@code true})
    * @param endOnExit conference ends when this participant exits (default {@code false})
    * @param waitUrl SWML URL for hold music ({@code null} for default)
-   * @param maxParticipants maximum participants, 1..250 (default 250)
+   * @param maxParticipants maximum participants, 2 or more; {@code null} (the default) leaves it
+   *     out so the platform's default applies
    * @param record "do-not-record" or "record-from-start" (default "do-not-record")
    * @param region conference region ({@code null} for default)
    * @param trim "trim-silence" or "do-not-trim" (default "trim-silence")
@@ -540,7 +853,7 @@ public class FunctionResult {
       boolean startOnEnter,
       boolean endOnExit,
       String waitUrl,
-      int maxParticipants,
+      Integer maxParticipants,
       String record,
       String region,
       String trim,
@@ -561,9 +874,11 @@ public class FunctionResult {
           "beep must be one of ['true', 'false', 'onEnter', 'onExit']");
     }
 
-    // Validate max_participants.
-    if (maxParticipants <= 0 || maxParticipants > 250) {
-      throw new IllegalArgumentException("max_participants must be a positive integer <= 250");
+    // The platform requires a positive number, and its conference refuses fewer than 2; it sets
+    // no upper limit.
+    if (maxParticipants != null && maxParticipants < 2) {
+      throw new IllegalArgumentException(
+          "max_participants must be an integer of at least 2, got " + maxParticipants);
     }
 
     // Validate record.
@@ -603,7 +918,7 @@ public class FunctionResult {
             && startOnEnter
             && !endOnExit
             && waitUrl == null
-            && maxParticipants == 250
+            && maxParticipants == null
             && "do-not-record".equals(record)
             && region == null
             && "trim-silence".equals(trim)
@@ -627,7 +942,7 @@ public class FunctionResult {
       if (!startOnEnter) params.put("start_on_enter", false);
       if (endOnExit) params.put("end_on_exit", true);
       if (waitUrl != null) params.put("wait_url", waitUrl);
-      if (maxParticipants != 250) params.put("max_participants", maxParticipants);
+      if (maxParticipants != null) params.put("max_participants", maxParticipants);
       if (!"do-not-record".equals(record)) params.put("record", record);
       if (region != null) params.put("region", region);
       if (!"trim-silence".equals(trim)) params.put("trim", trim);
@@ -668,7 +983,7 @@ public class FunctionResult {
         true,
         false,
         null,
-        250,
+        null,
         "do-not-record",
         null,
         "trim-silence",
@@ -707,16 +1022,17 @@ public class FunctionResult {
   /**
    * Start a background call tap via SWML.
    *
-   * <p>Validates {@code direction} ∈ {speak, hear, both}, {@code codec} ∈ {PCMU, PCMA}, and {@code
-   * rtp_ptime > 0} with byte-exact Python {@code ValueError} messages (rendered through {@link
-   * IllegalArgumentException}). Only {@code uri} is always emitted; each other key is emitted only
-   * when it differs from its reference default ({@code direction != "both"}, {@code codec !=
-   * "PCMU"}, {@code rtp_ptime != 20}), plus {@code control_id} and {@code status_url} when
+   * <p>Validates {@code direction} ∈ {speak, listen, both}, {@code codec} ∈ {PCMU, PCMA}, and
+   * {@code rtp_ptime > 0} with byte-exact Python {@code ValueError} messages (rendered through
+   * {@link IllegalArgumentException}). Only {@code uri} is always emitted; each other key is
+   * emitted only when it differs from its reference default ({@code direction != "both"}, {@code
+   * codec != "PCMU"}, {@code rtp_ptime != 20}), plus {@code control_id} and {@code status_url} when
    * supplied.
    *
    * @param uri tap media-stream destination (required; rtp://, ws://, wss://)
    * @param controlId tap identifier ({@code null} for an auto-generated one)
-   * @param direction "speak", "hear" or "both" (default "both")
+   * @param direction "speak", "listen" or "both" (default "both"); always emitted, because the
+   *     verb's own default is "speak"
    * @param codec "PCMU" or "PCMA" (default "PCMU")
    * @param rtpPtime RTP packetization time in ms, &gt; 0 (default 20)
    * @param statusUrl URL for status-change requests ({@code null} to omit)
@@ -732,9 +1048,9 @@ public class FunctionResult {
       String statusUrl) {
     // Validate direction. Error strings mirror Python's f-string list
     // rendering (single-quoted members) so a ported substring match passes.
-    List<String> validDirections = List.of("speak", "hear", "both");
+    List<String> validDirections = List.of("speak", "listen", "both");
     if (!validDirections.contains(direction)) {
-      throw new IllegalArgumentException("direction must be one of ['speak', 'hear', 'both']");
+      throw new IllegalArgumentException("direction must be one of ['speak', 'listen', 'both']");
     }
     // Validate codec.
     List<String> validCodecs = List.of("PCMU", "PCMA");
@@ -749,7 +1065,8 @@ public class FunctionResult {
     Map<String, Object> tapParams = new LinkedHashMap<>();
     tapParams.put("uri", uri);
     if (controlId != null && !controlId.isEmpty()) tapParams.put("control_id", controlId);
-    if (!"both".equals(direction)) tapParams.put("direction", direction);
+    // Always emitted: the tap verb defaults to "speak", not the helper's "both".
+    tapParams.put("direction", direction);
     if (!"PCMU".equals(codec)) tapParams.put("codec", codec);
     if (rtpPtime != 20) tapParams.put("rtp_ptime", rtpPtime);
     if (statusUrl != null && !statusUrl.isEmpty()) tapParams.put("status_url", statusUrl);
@@ -786,9 +1103,32 @@ public class FunctionResult {
   }
 
   /**
+   * Start a call tap with every optional param at its default: no control id, {@code
+   * direction="both"}, {@code codec="PCMU"}, {@code rtpPtime=20}, and no status URL.
+   */
+  public FunctionResult tap(String uri) {
+    return tap(uri, null, "both", "PCMU", 20, null);
+  }
+
+  /**
+   * Start a call tap, supplying {@code controlId} and defaulting the rest: {@code
+   * direction="both"}, {@code codec="PCMU"}, {@code rtpPtime=20}, and no status URL.
+   */
+  public FunctionResult tap(String uri, String controlId) {
+    return tap(uri, controlId, "both", "PCMU", 20, null);
+  }
+
+  /**
+   * Start a call tap, supplying {@code direction} and defaulting {@code codec="PCMU"}, {@code
+   * rtpPtime=20}, and no status URL.
+   */
+  public FunctionResult tap(String uri, String controlId, String direction) {
+    return tap(uri, controlId, direction, "PCMU", 20, null);
+  }
+
+  /**
    * Start a call tap (convenience form). Delegates to the full-arity {@link #tap(String, String,
-   * String, String, int, String)} with {@code rtp_ptime} at its reference default (20) and no
-   * {@code status_url}.
+   * String, String, int, String)} with {@code rtpPtime} at its default (20) and no status URL.
    */
   public FunctionResult tap(String uri, String controlId, String direction, String codec) {
     return tap(uri, controlId, direction, codec, 20, null);
@@ -844,6 +1184,12 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Stop the media tap without naming a control id — the platform stops the tap running on the
+   * call. Use {@link #stopTap(String)} to target one of several.
+   *
+   * @return this result, for chaining.
+   */
   public FunctionResult stopTap() {
     return stopTap(null);
   }
@@ -895,6 +1241,26 @@ public class FunctionResult {
   }
 
   /**
+   * Send SMS with every optional param defaulted to {@code null} — no body, media, tags, or region.
+   * Because at least one of {@code body} or {@code media} must be supplied, this arity always
+   * throws; it exists so the optional parameters are discoverable from the shortest overload.
+   */
+  public FunctionResult sendSms(String toNumber, String fromNumber) {
+    return sendSms(toNumber, fromNumber, null, null, null, null);
+  }
+
+  /** Send SMS supplying {@code body}, with no media, tags, or region. */
+  public FunctionResult sendSms(String toNumber, String fromNumber, String body) {
+    return sendSms(toNumber, fromNumber, body, null, null, null);
+  }
+
+  /** Send SMS supplying {@code body} and {@code media}, with no tags or region. */
+  public FunctionResult sendSms(
+      String toNumber, String fromNumber, String body, List<String> media) {
+    return sendSms(toNumber, fromNumber, body, media, null, null);
+  }
+
+  /**
    * Default {@code ai_response} for {@link #pay}. Set as a {@code set} verb ahead of the {@code
    * pay} verb so the AI relays the payment outcome via the {@code ${pay_result}} variable.
    * Caller-overridable through the full-arity {@code pay(...)} overload.
@@ -905,15 +1271,14 @@ public class FunctionResult {
   /**
    * Process payment via SWML pay action.
    *
-   * <p>Every optional parameter the reference exposes is a positional argument here, in the same
-   * order, with the same default and the same emitted wire key. The reference ALWAYS emits {@code
-   * payment_connector_url}, {@code input}, {@code payment_method}, {@code timeout}, {@code
+   * <p>Every option is a positional argument here; the parameter list below states each default.
+   * {@code payment_connector_url}, {@code input}, {@code payment_method}, {@code timeout}, {@code
    * max_attempts}, {@code security_code}, {@code min_postal_code_length}, {@code token_type},
    * {@code currency}, {@code language}, {@code voice}, {@code valid_card_types} and {@code
-   * postal_code}; {@code status_url}, {@code charge_amount}, {@code description}, {@code
-   * parameters} and {@code prompts} are emitted only when supplied. Numeric values are stringified
-   * to match Python's {@code str(...)}. A {@code set} verb carrying {@code ai_response} is emitted
-   * before the {@code pay} verb.
+   * postal_code} are ALWAYS emitted, even at their defaults; {@code status_url}, {@code
+   * charge_amount}, {@code description}, {@code parameters} and {@code prompts} are emitted only
+   * when supplied. Numeric values go on the wire as strings, not JSON numbers. A {@code set} verb
+   * carrying {@code ai_response} is emitted before the {@code pay} verb.
    *
    * @param connectorUrl payment connector URL (required)
    * @param inputMethod "dtmf" (the SWML schema is {@code const:"dtmf"}; default "dtmf")
@@ -1005,10 +1370,41 @@ public class FunctionResult {
   }
 
   /**
+   * Process payment with every optional param at its default: {@code inputMethod="dtmf"}, no status
+   * URL, {@code paymentMethod="credit-card"}, {@code timeout=5}, {@code maxAttempts=1}, {@code
+   * securityCode=true}, {@code postalCode=true}, {@code minPostalCodeLength=0}, {@code
+   * tokenType="reusable"}, no charge amount, {@code currency="usd"}, {@code language="en-US"},
+   * {@code voice="woman"}, no description, {@code validCardTypes="visa mastercard amex"}, no extra
+   * parameters or prompts, and {@link #DEFAULT_PAY_AI_RESPONSE} as the AI response.
+   */
+  public FunctionResult pay(String connectorUrl) {
+    return pay(
+        connectorUrl,
+        "dtmf",
+        null,
+        "credit-card",
+        5,
+        1,
+        true,
+        Boolean.TRUE,
+        0,
+        "reusable",
+        null,
+        "usd",
+        "en-US",
+        "woman",
+        null,
+        "visa mastercard amex",
+        null,
+        null,
+        DEFAULT_PAY_AI_RESPONSE);
+  }
+
+  /**
    * Process payment (convenience form). Delegates to the full-arity {@link #pay(String, String,
    * String, String, int, int, boolean, Object, int, String, String, String, String, String, String,
-   * String, List, List, String)} with every other option at its reference default, so the emitted
-   * SWML is identical to the reference with those defaults.
+   * String, List, List, String)} with every other option at the default listed on {@link
+   * #pay(String)}.
    */
   public FunctionResult pay(
       String connectorUrl, String inputMethod, String statusUrl, int timeout, int maxAttempts) {
@@ -1053,6 +1449,15 @@ public class FunctionResult {
         false);
   }
 
+  /**
+   * Invoke a RELAY RPC method from this tool result, letting the platform infer the call and node
+   * from the current call. Use {@link #executeRpc(String, Map, String, String)} to target a
+   * different leg explicitly.
+   *
+   * @param method the RELAY method name, e.g. {@code calling.play}.
+   * @param params the method's parameters; omitted from the wire when null or empty.
+   * @return this result, for chaining.
+   */
   public FunctionResult executeRpc(String method, Map<String, Object> params) {
     return executeRpc(method, params, null, null);
   }
@@ -1100,11 +1505,47 @@ public class FunctionResult {
    * @return this, for chaining
    */
   public FunctionResult rpcAiMessage(String callId, String messageText, String role) {
-    return executeRpc(
-        "ai_message",
-        Map.of("role", role != null ? role : "system", "message_text", messageText),
-        callId,
-        null);
+    return rpcAiMessage(callId, messageText, role, null);
+  }
+
+  /**
+   * Send a message and/or global_data to an AI agent on another call. {@code messageText} lands as
+   * a conversation turn; {@code globalData} is MERGED into the other call's global_data, silent
+   * until a prompt expands it ({@code ${global_data.key}}). Either or both may be given.
+   *
+   * @param callId target call ID (required)
+   * @param messageText message to inject (may be {@code null})
+   * @param role message role (default "system"; sent only with a message)
+   * @param globalData object merged into the target call's global_data (may be {@code null})
+   * @return this, for chaining
+   * @throws IllegalArgumentException when neither a message nor global_data is given
+   */
+  public FunctionResult rpcAiMessage(
+      String callId, String messageText, String role, Map<String, Object> globalData) {
+    Map<String, Object> params = new LinkedHashMap<>();
+    if (messageText != null) {
+      params.put("role", role != null ? role : "system");
+      params.put("message_text", messageText);
+    }
+    if (globalData != null) {
+      params.put("global_data", globalData);
+    }
+    if (params.isEmpty()) {
+      throw new IllegalArgumentException("rpc_ai_message needs message_text, global_data, or both");
+    }
+    return executeRpc("ai_message", params, callId, null);
+  }
+
+  /**
+   * Merge data into another call's global_data, with no conversation turn — the same as {@link
+   * #rpcAiMessage(String, String, String, Map)} with only {@code globalData}.
+   *
+   * @param callId target call ID (required)
+   * @param data object merged into that call's global_data
+   * @return this, for chaining
+   */
+  public FunctionResult rpcAiGlobalData(String callId, Map<String, Object> data) {
+    return rpcAiMessage(callId, null, "system", data);
   }
 
   /**
@@ -1126,6 +1567,21 @@ public class FunctionResult {
   }
 
   // ======== Payment Helpers (static) ========
+
+  /**
+   * Create a payment prompt with no {@code cardType} and no {@code errorType} — neither key is
+   * emitted.
+   */
+  public static Map<String, Object> createPaymentPrompt(
+      String forSituation, List<Map<String, String>> payActions) {
+    return createPaymentPrompt(forSituation, payActions, null, null);
+  }
+
+  /** Create a payment prompt supplying {@code cardType}, with no {@code errorType}. */
+  public static Map<String, Object> createPaymentPrompt(
+      String forSituation, List<Map<String, String>> payActions, String cardType) {
+    return createPaymentPrompt(forSituation, payActions, cardType, null);
+  }
 
   public static Map<String, Object> createPaymentPrompt(
       String forSituation,
@@ -1153,7 +1609,7 @@ public class FunctionResult {
   /** Convert to the Map structure expected by SWAIG. */
   public Map<String, Object> toMap() {
     Map<String, Object> result = new LinkedHashMap<>();
-    if (response != null && !response.isEmpty()) {
+    if (response instanceof String str ? !str.isEmpty() : !((Map<?, ?>) response).isEmpty()) {
       result.put("response", response);
     }
     if (!actions.isEmpty()) {
@@ -1175,14 +1631,27 @@ public class FunctionResult {
 
   // ======== Getters for testing ========
 
+  /**
+   * The text handed back to the model as this tool's result. For the structured form set by {@link
+   * #setToolResponse(String, String)} this is that {@code {tool_result, tool_prompt}} object
+   * rendered as JSON — exactly the value {@link #toMap()} carries on the wire.
+   *
+   * @return the response text, never {@code null}.
+   */
   public String getResponse() {
-    return response;
+    return response instanceof String str ? str : gson.toJson(response);
   }
 
   public List<Map<String, Object>> getActions() {
     return Collections.unmodifiableList(actions);
   }
 
+  /**
+   * Whether the model gets another turn after this result's actions run. Note this only reaches the
+   * wire when it is {@code true} AND at least one action was added.
+   *
+   * @return the post-process flag.
+   */
   public boolean isPostProcess() {
     return postProcess;
   }

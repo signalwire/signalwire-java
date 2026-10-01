@@ -91,10 +91,18 @@ public class RegistryCampaigns extends BaseResource {
   /** Closed typed request for {@link #update} (builder + extras door). */
   public static final class UpdateRequest {
     private final String name;
+    private final String statusCallbackUrl;
+    private final java.util.Map<String, Object> signalwireContactEmails;
     private final java.util.Map<String, Object> extras;
 
-    private UpdateRequest(String name, java.util.Map<String, Object> extras) {
+    private UpdateRequest(
+        String name,
+        String statusCallbackUrl,
+        java.util.Map<String, Object> signalwireContactEmails,
+        java.util.Map<String, Object> extras) {
       this.name = name;
+      this.statusCallbackUrl = statusCallbackUrl;
+      this.signalwireContactEmails = signalwireContactEmails;
       this.extras = extras;
     }
 
@@ -107,6 +115,12 @@ public class RegistryCampaigns extends BaseResource {
       if (this.name != null) {
         body.put("name", this.name);
       }
+      if (this.statusCallbackUrl != null) {
+        body.put("status_callback_url", this.statusCallbackUrl);
+      }
+      if (this.signalwireContactEmails != null) {
+        body.put("signalwire_contact_emails", this.signalwireContactEmails);
+      }
       if (this.extras != null) {
         body.putAll(this.extras);
       }
@@ -115,10 +129,23 @@ public class RegistryCampaigns extends BaseResource {
 
     public static final class Builder {
       private String name;
+      private String statusCallbackUrl;
+      private java.util.Map<String, Object> signalwireContactEmails;
       private java.util.Map<String, Object> extras;
 
       public Builder name(String name) {
         this.name = name;
+        return this;
+      }
+
+      public Builder statusCallbackUrl(String statusCallbackUrl) {
+        this.statusCallbackUrl = statusCallbackUrl;
+        return this;
+      }
+
+      public Builder signalwireContactEmails(
+          java.util.Map<String, Object> signalwireContactEmails) {
+        this.signalwireContactEmails = signalwireContactEmails;
         return this;
       }
 
@@ -128,7 +155,7 @@ public class RegistryCampaigns extends BaseResource {
       }
 
       public UpdateRequest build() {
-        return new UpdateRequest(name, extras);
+        return new UpdateRequest(name, statusCallbackUrl, signalwireContactEmails, extras);
       }
     }
   }

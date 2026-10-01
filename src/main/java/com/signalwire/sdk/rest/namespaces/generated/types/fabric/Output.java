@@ -9,10 +9,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * Output — generated wire type ('fabric' spec, components/schemas 'Output').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Output {
-  public String response;
-  public java.util.List<Object> action;
+  public java.util.Map<String, Object> action;
+  public Boolean post_process;
+  public java.util.Map<String, Object> response;
 }

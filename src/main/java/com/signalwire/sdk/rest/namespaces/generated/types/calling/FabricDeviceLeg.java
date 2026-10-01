@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * FabricDeviceLeg — generated wire type ('calling' spec, components/schemas 'FabricDeviceLeg').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class FabricDeviceLeg {
   public String id;
@@ -22,6 +22,6 @@ public final class FabricDeviceLeg {
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;
-  public Object status;
+  public Void status;
   public String type;
 }

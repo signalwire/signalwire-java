@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
  * CallCreateParamsURL — generated wire type ('calling' spec, components/schemas
  * 'CallCreateParamsURL').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CallCreateParamsURL {
   public String from;
@@ -21,5 +21,15 @@ public final class CallCreateParamsURL {
   public String status_url;
   public java.util.List<Object> status_events;
   public String url_method;
+  public java.util.Map<String, Object> codecs;
+  public java.util.Map<String, Object> to_script;
+  public Long timeout;
+  public Double max_price_per_minute;
+  public String send_digits;
+  public java.util.Map<String, Object> region;
+  public String username;
+  public String password;
+  public java.util.List<Object> headers;
+  public java.util.Map<String, Object> custom_variables;
   public String url;
 }

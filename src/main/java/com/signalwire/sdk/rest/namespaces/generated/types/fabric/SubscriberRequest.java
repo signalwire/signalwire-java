@@ -9,8 +9,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
 /**
  * SubscriberRequest — generated wire type ('fabric' spec, components/schemas 'SubscriberRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SubscriberRequest {
   public String password;
@@ -19,8 +19,7 @@ public final class SubscriberRequest {
   public String last_name;
   public String display_name;
   public String job_title;
-  public String timezone;
   public String country;
-  public String region;
   public String company_name;
+  public String time_zone;
 }

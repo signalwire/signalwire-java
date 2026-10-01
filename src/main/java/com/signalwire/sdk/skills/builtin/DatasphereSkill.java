@@ -14,6 +14,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 
+/**
+ * Knowledge search over the SignalWire DataSphere RAG stack.
+ *
+ * <p>Registered under the name {@code datasphere}; load it with {@code agent.addSkill("datasphere",
+ * params)}.
+ */
 public class DatasphereSkill implements SkillBase {
 
   private static final Logger log = Logger.getLogger(DatasphereSkill.class);
@@ -27,21 +33,44 @@ public class DatasphereSkill implements SkillBase {
   private String toolName = "search_knowledge";
   private String noResultsMessage = "No results found in the knowledge base.";
 
+  /**
+   * The registry name this skill is loaded by: {@code datasphere}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "datasphere";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Search knowledge using SignalWire DataSphere RAG stack";
   }
 
+  /**
+   * Whether an agent may load this skill more than once under different configurations.
+   *
+   * @return whether multiple instances are supported.
+   */
   @Override
   public boolean supportsMultipleInstances() {
     return true;
   }
 
+  /**
+   * Configure the skill from its parameters.
+   *
+   * @param params the skill's configuration.
+   * @return {@code true} when setup supplied all four of {@code space_name}, {@code project_id},
+   *     {@code token}, and {@code document_id}; {@code false} otherwise, which leaves the skill
+   *     unloaded.
+   */
   @Override
   public boolean setup(Map<String, Object> params) {
     this.spaceName = (String) params.get("space_name");
@@ -58,6 +87,11 @@ public class DatasphereSkill implements SkillBase {
     return spaceName != null && projectId != null && token != null && documentId != null;
   }
 
+  /**
+   * The tools this skill contributes to the agent, offered to the model alongside the agent's own.
+   *
+   * @return the tool definitions.
+   */
   @Override
   @SuppressWarnings("unchecked")
   public List<ToolDefinition> registerTools() {

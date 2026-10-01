@@ -59,26 +59,60 @@ public class Message {
 
   // ── Getters ──────────────────────────────────────────────────────
 
+  /**
+   * The platform's identifier for this message, returned by {@code messaging.send} and echoed on
+   * every {@code messaging.state} event — the key state updates are routed on.
+   *
+   * @return the message id.
+   */
   public String getMessageId() {
     return messageId;
   }
 
+  /**
+   * URLs of the MMS attachments carried by the message.
+   *
+   * @return the media URLs, never {@code null} (empty when there are none).
+   */
   public List<String> getMedia() {
     return media;
   }
 
+  /**
+   * How many SMS segments the message occupied — the unit billing is charged in.
+   *
+   * @return the segment count.
+   */
   public int getSegments() {
     return segments;
   }
 
+  /**
+   * The message's current delivery state as sent on the wire, progressing {@code queued} to {@code
+   * initiated} to {@code sent} to {@code delivered}, or ending at {@code failed} / {@code
+   * undelivered}. Kept as a string so a server-side addition to the set does not break dispatch.
+   *
+   * @return the raw state, or {@code null} before the first event.
+   */
   public String getState() {
     return state;
   }
 
+  /**
+   * Client-supplied correlation tags carried on the message.
+   *
+   * @return the tags, never {@code null} (empty when none were set).
+   */
   public List<String> getTags() {
     return tags;
   }
 
+  /**
+   * Whether the message has reached a terminal state ({@code delivered}, {@code undelivered}, or
+   * {@code failed}).
+   *
+   * @return {@code true} once the message has settled.
+   */
   public boolean isDone() {
     return done;
   }
@@ -147,44 +181,113 @@ public class Message {
 
   // ── Setters ──────────────────────────────────────────────────────
 
+  /**
+   * Update the context from a later event frame.
+   *
+   * @param context the messaging context.
+   */
   public void setContext(String context) {
     this.context = context;
   }
 
+  /**
+   * Update the direction ({@code inbound} or {@code outbound}) from a later event frame.
+   *
+   * @param direction the message direction.
+   */
   public void setDirection(String direction) {
     this.direction = direction;
   }
 
+  /**
+   * Update the sender number (E.164) from a later event frame.
+   *
+   * @param fromNumber the sender number.
+   */
   public void setFromNumber(String fromNumber) {
     this.fromNumber = fromNumber;
   }
 
+  /**
+   * Update the destination number (E.164) from a later event frame.
+   *
+   * @param toNumber the destination number.
+   */
   public void setToNumber(String toNumber) {
     this.toNumber = toNumber;
   }
 
+  /**
+   * Update the message text from a later event frame. For an inbound message this is untrusted
+   * end-user input.
+   *
+   * @param body the message text.
+   */
   public void setBody(String body) {
     this.body = body;
   }
 
+  /**
+   * Update the MMS attachment URLs from a later event frame.
+   *
+   * @param media the media URLs; {@code null} is stored as an empty list.
+   */
   public void setMedia(List<String> media) {
     this.media = media != null ? media : Collections.emptyList();
   }
 
+  /**
+   * Update the segment count from a later event frame.
+   *
+   * @param segments the segment count.
+   */
   public void setSegments(int segments) {
     this.segments = segments;
   }
 
+  /**
+   * Update the correlation tags from a later event frame.
+   *
+   * @param tags the tags; {@code null} is stored as an empty list.
+   */
   public void setTags(List<String> tags) {
     this.tags = tags != null ? tags : Collections.emptyList();
   }
 
+  /**
+   * Overwrite the delivery state directly. Note this does NOT evaluate terminality — it will not
+   * resolve the message or fire the completion callback the way an incoming state event does.
+   *
+   * @param state the raw wire state.
+   */
   public void setState(String state) {
     this.state = state;
   }
 
+  /**
+   * Register a callback to fire when the message reaches a terminal state.
+   *
+   * <p>Safe against the genuine race where the terminal event lands on the RELAY reader thread
+   * before this registration: if the message has ALREADY resolved, the callback fires immediately
+   * rather than being silently dropped. It fires exactly once either way. Matches {@link
+   * com.signalwire.sdk.relay.Action#setOnCompleted(java.util.function.Consumer)}.
+   *
+   * @param onCompleted the callback, invoked with this message.
+   */
   public void setOnCompleted(Consumer<Message> onCompleted) {
-    this.onCompleted = onCompleted;
+    // If the message has ALREADY resolved (the terminal event landed on the RELAY
+    // reader thread before this registration — a genuine race for a caller that
+    // sets the callback after dispatching the message), fire immediately so a late
+    // registration is never silently dropped. Otherwise store it for resolve() to
+    // fire. Guarded on `done` (set inside resolve()) so exactly one fire happens.
+    synchronized (this) {
+      this.onCompleted = onCompleted;
+      if (done && onCompleted != null) {
+        Consumer<Message> cb = this.onCompleted;
+        this.onCompleted = null; // prevent a double-fire if resolve() also races
+        cb.accept(this);
+      }
+    }
   }
 
   /** Register a state change listener. */
@@ -237,52 +340,72 @@ public class Message {
 
   /**
    * The terminal {@link RelayEvent}, or {@code null} if the message has not yet reached a terminal
-   * state. Python-surface name for the reference's {@code Message.result} property (the {@link
-   * #getResult()} accessor returns the same value wrapped in an {@link Optional}).
+   * state. The {@link #getResult()} accessor returns the same value wrapped in an {@link Optional}.
+   *
+   * @return the terminal event, or {@code null}.
    */
   public RelayEvent result() {
     return done ? result : null;
   }
 
   /**
-   * Block until the message reaches a terminal state, returning the terminal event. Java-idiom name
-   * for the reference's {@code Message.wait}: the bare name {@code wait} collides with {@code
-   * java.lang.Object.wait()} (final, non-overridable), so this port names it {@code await} and the
-   * enumerator's rename table maps {@code await} → {@code wait} (adapter rename, not omission).
+   * Block until the message reaches a terminal state, returning the terminal event. The name is
+   * {@code await} because the bare name {@code wait} collides with {@code java.lang.Object.wait()},
+   * which is final and cannot be overridden.
+   *
+   * @return the terminal event.
    */
   public RelayEvent await() {
     return waitForCompletion();
   }
 
   /**
-   * Block until the message reaches a terminal state, with a timeout. Java-idiom name for the
-   * reference's {@code Message.wait(timeout)} (see {@link #await()}).
+   * Block until the message reaches a terminal state, with a timeout (see {@link #await()} for why
+   * the name is {@code await} rather than {@code wait}).
    *
-   * @param timeoutMs timeout in milliseconds
+   * <p>The unit is SECONDS and the type is boxed {@code Double} — the same spelling as {@code
+   * RequestOptions.timeout}; {@code null} means "wait indefinitely". Note that {@link
+   * #waitForCompletion(long)} takes MILLISECONDS instead.
+   *
+   * @param timeout timeout in seconds ({@code null} = no timeout)
    * @return the terminal event, or null on timeout
    */
-  public RelayEvent await(long timeoutMs) {
-    return waitForCompletion(timeoutMs);
+  public RelayEvent await(Double timeout) {
+    if (timeout == null || timeout <= 0.0) {
+      return waitForCompletion();
+    }
+    return waitForCompletion((long) (timeout * 1000.0));
   }
 
   /** Resolve the message completion. */
   void resolve(RelayEvent event) {
-    if (!done) {
+    // Set `done` + fire the callback atomically vs setOnCompleted(): the terminal
+    // event arrives on the RELAY reader thread and can race a caller registering
+    // its callback on another thread. The lock guarantees exactly one of the two
+    // fires the callback (resolve() here, or setOnCompleted() when it observes
+    // done==true), never zero and never twice.
+    synchronized (this) {
+      if (done) {
+        return;
+      }
       this.done = true;
       this.result = event;
-      this.completionFuture.complete(event);
-      fireOnCompleted();
-    }
-  }
-
-  private void fireOnCompleted() {
-    if (onCompleted != null) {
-      try {
-        onCompleted.accept(this);
-      } catch (Exception e) {
-        log.error("Error in onCompleted callback for message " + messageId, e);
+      // Fire onCompleted BEFORE completing the future. The Python reference is
+      // async single-threaded, so its `_done.set_result()` then `_on_completed()`
+      // ordering guarantees any `await`-er resumes only after the callback has run.
+      // Firing first preserves that guarantee (callback observed no later than
+      // completion) race-free.
+      Consumer<Message> cb = this.onCompleted;
+      this.onCompleted = null; // one-shot: a later setOnCompleted sees done and fires itself
+      if (cb != null) {
+        try {
+          cb.accept(this);
+        } catch (Exception e) {
+          log.error("Error in onCompleted callback for message " + messageId, e);
+        }
       }
     }
+    this.completionFuture.complete(event);
   }
 
   /** Create a Message from an inbound receive event. */
@@ -300,6 +423,12 @@ public class Message {
     return msg;
   }
 
+  /**
+   * A short diagnostic rendering carrying the message id, state, and the two numbers — deliberately
+   * excludes the body, which for an inbound message is end-user content.
+   *
+   * @return the diagnostic string.
+   */
   @Override
   public String toString() {
     return String.format(

@@ -9,13 +9,15 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * SMSWithBody — generated wire type ('calling' spec, components/schemas 'SMSWithBody').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SMSWithBody {
-  public String to_number;
-  public String from_number;
-  public String region;
-  public java.util.List<Object> tags;
   public String body;
+  public String from_number;
+  public java.util.List<Object> media;
+  public String region;
+  public String status_callback;
+  public java.util.List<Object> tags;
+  public String to_number;
 }

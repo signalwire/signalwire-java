@@ -38,7 +38,7 @@ public enum RecordDirection implements WireEnum {
 
   /**
    * The canonical wire string for this direction ({@code "speak"} / {@code "listen"} / {@code
-   * "both"}). Equivalent to PHP's backed-enum {@code ->value}.
+   * "both"}).
    *
    * @return the lower-case direction name as it appears on the wire.
    */
@@ -49,9 +49,8 @@ public enum RecordDirection implements WireEnum {
 
   /**
    * Parse a wire string into a {@link RecordDirection}, or return {@code null} if it is not a
-   * recognised direction (the same strings the Python reference would reject with {@code
-   * ValueError}). Note {@code "hear"} is valid for {@link TapDirection} but NOT for {@code
-   * record_call}, so it returns {@code null} here. The Java analog of Rust's {@code from_str}.
+   * recognised direction — the same strings the server rejects. Note {@code "hear"} is valid for
+   * {@link TapDirection} but NOT for {@code record_call}, so it returns {@code null} here.
    *
    * @param wire the candidate wire string (case-sensitive).
    * @return the matching constant, or {@code null} if none matches.

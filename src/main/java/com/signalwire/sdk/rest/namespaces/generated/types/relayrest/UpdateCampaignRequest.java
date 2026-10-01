@@ -10,9 +10,11 @@ package com.signalwire.sdk.rest.namespaces.generated.types.relayrest;
  * UpdateCampaignRequest — generated wire type ('relay_rest' spec, components/schemas
  * 'UpdateCampaignRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class UpdateCampaignRequest {
   public String name;
+  public String status_callback_url;
+  public java.util.Map<String, Object> signalwire_contact_emails;
 }

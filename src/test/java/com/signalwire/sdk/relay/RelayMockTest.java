@@ -47,6 +47,13 @@ public final class RelayMockTest {
   private static volatile Harness sharedHarness;
   private static volatile Throwable startupFailure;
 
+  /**
+   * Body of the most recent {@code /__mock__/health} response that returned HTTP 200, so a startup
+   * failure can quote what the server actually said (e.g. {@code schemas_loaded:0}) instead of a
+   * bare timeout.
+   */
+  private static volatile String lastHealthBody;
+
   private RelayMockTest() {
     // static helper
   }
@@ -655,17 +662,29 @@ public final class RelayMockTest {
           }
         }
         p.destroy();
-        startupFailure =
-            new IllegalStateException(
-                "RelayMockTest: `python -m mock_relay` did not become ready within "
-                    + STARTUP_TIMEOUT
-                    + " on http port "
-                    + httpPort
-                    + " / ws port "
-                    + wsPort
-                    + " (clone porting-sdk next to signalwire-java so tests can find "
-                    + "porting-sdk/test_harness/mock_relay/, or pip install the "
-                    + "mock_relay package)");
+        StringBuilder sb = new StringBuilder();
+        sb.append("RelayMockTest: `python -m mock_relay` did not become ready within ")
+            .append(STARTUP_TIMEOUT)
+            .append(" on http port ")
+            .append(httpPort)
+            .append(" / ws port ")
+            .append(wsPort)
+            .append(". adjacency discovery: ");
+        String pkgDir = discoverPortingSdkPackage("mock_relay");
+        sb.append(
+            pkgDir == null ? "NO adjacent porting-sdk found (PYTHONPATH not injected)" : pkgDir);
+        String body = lastHealthBody;
+        if (body != null) {
+          sb.append(". The server DID answer /__mock__/health but is unusable")
+              .append(" (readiness requires schemas_loaded>0); it said: ")
+              .append(body.length() > 800 ? body.substring(0, 800) + "..." : body)
+              .append(". A mock reporting schemas_loaded:0 is a DIFFERENT mock_relay than this")
+              .append(" repo's — typically a stale copy installed in an unrelated venv.");
+        }
+        sb.append(" Fix: clone porting-sdk next to signalwire-java so tests can find")
+            .append(" porting-sdk/test_harness/mock_relay/, or pip install THIS repo's")
+            .append(" mock_relay package.");
+        startupFailure = new IllegalStateException(sb.toString());
         throw (IllegalStateException) startupFailure;
       } catch (IOException e) {
         startupFailure =
@@ -765,13 +784,45 @@ public final class RelayMockTest {
       }
       byte[] body = resp.body().readAllBytes();
       String text = new String(body, StandardCharsets.UTF_8);
-      // The health endpoint emits a JSON object containing
-      // "schemas_loaded"; treat any other shape as a probe failure.
-      return text.contains("\"schemas_loaded\"");
+      // A mock that answers is NOT necessarily a mock that can serve this
+      // suite. Readiness requires schemas_loaded > 0, not merely that the
+      // key is present: a mock_relay resolved from an unrelated venv (no
+      // relay-protocol/ schema tree adjacent) still answers 200 with
+      // schemas_loaded:0 and then fails every scenario. Refuse it here
+      // rather than diagnose it as an SDK bug later. (The REST twin of this
+      // bug cost a full run: 547 bogus failures, all "no route for ...",
+      // from a stale mock_signalwire serving 0 specs / 0 routes.)
+      lastHealthBody = text;
+      return healthIsUsable(text);
     } catch (IOException e) {
       return false;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+      return false;
+    }
+  }
+
+  /**
+   * Decide whether a {@code /__mock__/health} payload describes a mock_relay this suite can run
+   * against: {@code schemas_loaded} must be strictly positive. A mock that loaded no RELAY schemas
+   * answers HTTP 200 all the same and then fails every scenario. Package-private so {@link
+   * com.signalwire.sdk.rest.MockHealthContractTest} can pin the contract without a live server.
+   *
+   * @param healthJson the raw body of {@code GET /__mock__/health}
+   * @return true only when the payload declares at least one loaded schema
+   */
+  public static boolean healthIsUsable(String healthJson) {
+    if (healthJson == null) {
+      return false;
+    }
+    java.util.regex.Matcher m =
+        java.util.regex.Pattern.compile("\"schemas_loaded\"\\s*:\\s*(-?\\d+)").matcher(healthJson);
+    if (!m.find()) {
+      return false;
+    }
+    try {
+      return Long.parseLong(m.group(1)) > 0;
+    } catch (NumberFormatException e) {
       return false;
     }
   }

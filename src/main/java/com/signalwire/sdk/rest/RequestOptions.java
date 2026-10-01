@@ -11,7 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * RequestOptions — the REST request-options envelope (plan 4.2).
+ * RequestOptions — the REST request-options envelope.
  *
  * <p>An immutable value object controlling per-request transport behavior: timeout, retries (with
  * an idempotency-aware retry policy + exponential backoff), and cooperative cancellation. Supplied
@@ -27,13 +27,12 @@ import java.util.Set;
  *
  * <p>Every field is optional; a {@code null} field means "inherit" and resolves at apply-time to
  * the client default and then the built-in floor (see {@link RequestOptionsSupport#resolve}). The
- * timeout + retry semantics are the reference-pinned, wire-observable contract (the mock sees N
- * attempts and honors the backoff ordering + the POST/PATCH idempotency asymmetry). {@code
- * abortSignal} fidelity is per-port idiom (see {@link AbortSignal}).
+ * timeout + retry semantics are wire-observable: the server sees exactly N attempts, in the backoff
+ * ordering, with the POST/PATCH idempotency asymmetry applied. {@code abortSignal} is client-side
+ * only and never changes what goes on the wire (see {@link AbortSignal}).
  *
  * <p>Instances are created via {@link #builder()} (all fields optional) and are deeply immutable
- * (the {@code retryOnStatus} set is defensively copied and returned unmodifiable). Mirrors the
- * Python reference's frozen {@code RequestOptions} dataclass.
+ * (the {@code retryOnStatus} set is defensively copied and returned unmodifiable).
  */
 public final class RequestOptions {
 
@@ -101,7 +100,7 @@ public final class RequestOptions {
    *
    * <p>This is the per-request-over-client-default shallow merge: an unset field on {@code
    * override} leaves this instance's value intact. A {@code null} {@code override} returns this
-   * unchanged. Mirrors the Python reference's {@code RequestOptions.merge}.
+   * unchanged.
    *
    * @param override the per-request options whose set fields win (may be {@code null})
    * @return the merged options
@@ -126,7 +125,7 @@ public final class RequestOptions {
 
   /**
    * Fluent builder for {@link RequestOptions}. Every setter is optional; an unset field is {@code
-   * null} ("inherit"). Mirrors the Python reference's keyword-only dataclass constructor.
+   * null} ("inherit").
    */
   public static final class Builder {
     private Double timeout;

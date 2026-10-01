@@ -25,20 +25,18 @@ import javax.net.ssl.X509TrustManager;
  * <p>This is the CLIENT half of the mcp_gateway subsystem. It connects to an already-running MCP
  * Gateway service over HTTP, authenticates (bearer token OR HTTP-basic), enumerates the gateway's
  * services and their tools, and registers each MCP tool as a SWAIG function whose handler proxies
- * the tool call back through the gateway. Mirrors the Python reference {@code MCPGatewaySkill}
- * ({@code signalwire/skills/mcp_gateway/skill.py}).
+ * the tool call back through the gateway.
  *
  * <p><b>Client half only.</b> This skill is the gateway CLIENT. The gateway SERVER (the standalone
  * service that hosts the MCP servers and exposes the {@code /services} / {@code /call} HTTP
  * surface) is not part of the Java SDK — Java agents talk to an externally-run gateway; they do not
  * host one.
  *
- * <p><b>TLS verification ({@code verify_ssl}).</b> Config param, default {@code true} (verification
- * ON — the secure default, matching the Python reference {@code verify=self.verify_ssl}). Setting
- * {@code verify_ssl=false} is the explicit opt-out for self-signed-cert gateways: only then is a
- * permissive {@link SSLContext} installed on the {@link HttpClient}. Every request is issued
- * through {@link #httpClient()}, so the flag governs the actual peer-certificate check, not just a
- * stored boolean.
+ * <p><b>TLS verification ({@code verify_ssl}).</b> Config param, default {@code true} — the secure
+ * default, with verification ON. Setting {@code verify_ssl=false} is the explicit opt-out for
+ * self-signed-cert gateways: only then is a permissive {@link SSLContext} installed on the {@link
+ * HttpClient}. Every request is issued through {@link #httpClient()}, so the flag governs the
+ * actual peer-certificate check, not just a stored boolean.
  */
 public class McpGatewaySkill implements SkillBase {
 
@@ -60,21 +58,41 @@ public class McpGatewaySkill implements SkillBase {
   // Python reference's self.session_id = None at setup).
   private String sessionId;
 
+  /**
+   * The registry name this skill is loaded by: {@code mcp_gateway}.
+   *
+   * @return the skill name.
+   */
   @Override
   public String getName() {
     return "mcp_gateway";
   }
 
+  /**
+   * Human-readable summary of what this skill adds to an agent.
+   *
+   * @return the description.
+   */
   @Override
   public String getDescription() {
     return "Bridge MCP servers with SWAIG functions";
   }
 
+  /**
+   * This skill's semantic version.
+   *
+   * @return the version string.
+   */
   @Override
   public String getVersion() {
     return "1.0.0";
   }
 
+  /**
+   * Packages this skill needs at runtime, reported for diagnostics rather than enforced.
+   *
+   * @return the required package names.
+   */
   @Override
   public List<String> getRequiredPackages() {
     // Java resolves HTTP/JSON deps at build time; informational only.
@@ -87,7 +105,8 @@ public class McpGatewaySkill implements SkillBase {
    * <p>Auth is either a bearer token ({@code auth_token}) OR HTTP-basic ({@code auth_user} + {@code
    * auth_password}); {@code gateway_url} is always required. Reads {@code verify_ssl} (default
    * {@code true}) and threads it to the HTTP client. Finally performs a {@code GET /health} to
-   * confirm the gateway is reachable, exactly like the Python reference.
+   * confirm the gateway is reachable, so a misconfigured URL fails at setup rather than on the
+   * first tool call.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -402,6 +421,12 @@ public class McpGatewaySkill implements SkillBase {
     return callId == null ? "unknown" : callId.toString();
   }
 
+  /**
+   * Speech-recognition hints this skill contributes, biasing the recognizer toward the vocabulary
+   * its tools deal in.
+   *
+   * @return the hint phrases.
+   */
   @Override
   public List<String> getHints() {
     List<String> hints = new ArrayList<>();
@@ -563,18 +588,38 @@ public class McpGatewaySkill implements SkillBase {
    * The all-trusting {@link X509TrustManager} used ONLY on the {@code verify_ssl=false} opt-out
    * path (constructed inside the {@code if (!verifySsl)} guard in {@link #httpClient()}). A named
    * nested class rather than an inline anonymous one so the surface enumerator scopes its interface
-   * methods to THIS class, not the public {@code MCPGatewaySkill} surface. This deliberately-empty
-   * trust manager is the self-signed opt-out the python reference endorses via {@code
-   * verify=self.verify_ssl}; it is allowlisted in {@code TLS_VERIFY_ALLOW.md} as a
-   * secure-default-gated site (the only legitimate allowlist reason per the TLS-VERIFY gate).
+   * methods to THIS class, not the public {@code McpGatewaySkill} surface. It is deliberately empty
+   * because it exists solely to implement the documented {@code verify_ssl=false} opt-out for
+   * self-signed-certificate gateways; it is never reachable when {@code verify_ssl} is left at its
+   * secure default.
    */
   private static final class InsecureTrustManager implements X509TrustManager {
+    /**
+     * Accepts any client certificate without checking it. Deliberately empty — see the class
+     * comment: this trust manager exists only for the {@code verify_ssl=false} opt-out.
+     *
+     * @param chain the presented certificate chain (ignored).
+     * @param authType the authentication type (ignored).
+     */
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
+    /**
+     * Accepts any server certificate without checking it, which means no verification that the
+     * gateway is who it claims to be and no protection against an interposed party. Deliberately
+     * empty — reachable only through the {@code verify_ssl=false} opt-out.
+     *
+     * @param chain the presented certificate chain (ignored).
+     * @param authType the authentication type (ignored).
+     */
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) {}
 
+    /**
+     * Returns no issuers, since this trust manager accepts every certificate regardless of issuer.
+     *
+     * @return an empty array.
+     */
     @Override
     public X509Certificate[] getAcceptedIssuers() {
       return new X509Certificate[0];

@@ -13,15 +13,18 @@ import java.util.Map;
 /**
  * Fluent builder for SWML documents.
  *
- * <p>Mirrors the Python reference {@code signalwire.core.swml_builder.SWMLBuilder} (which wraps an
- * {@code SWMLService}) and the Ruby {@code SignalWire::SWML::SWMLBuilder}. It delegates to an
- * underlying {@link Service} instance for the actual document creation.
+ * <p>Delegates to an underlying {@link Service} instance for the actual document creation.
  *
  * <p>The explicit verb helpers ({@link #answer()}, {@link #hangup()}, {@link #play(Map)}, {@link
  * #ai(Map)}, {@link #say(String)}) cover the common verbs; every other schema verb is dispatched
- * through {@link #verb(String, Map)} / {@link #sleepVerb(int)} — the Java analog of the Python
- * reference's runtime {@code __getattr__} verb dispatch (Java has no {@code __getattr__} / {@code
- * method_missing}, so the catch-all is a named method).
+ * through {@link #verb(String, Map)} / {@link #sleepVerb(int)}, which take the verb name as an
+ * argument.
+ *
+ * <p><b>Every verb goes through {@link Service#addVerb} — the validating choke point.</b> The
+ * builder must never reach past it to {@code service.getDocument().addVerb(...)}: the raw Document
+ * entry point writes whatever it is handed, which is how schema-invalid configs shipped silently
+ * (an empty {@code play} with no url, an {@code ai} with no prompt, LLM tuning keys at the {@code
+ * ai} verb's top level).
  */
 public class SWMLBuilder {
 
@@ -62,6 +65,38 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder answer(Integer maxDuration, String codecs) {
+    return answer(maxDuration, codecs, null, null);
+  }
+
+  /**
+   * Add an 'answer' verb to the main section, with SIP authentication credentials.
+   *
+   * @param maxDuration maximum duration in seconds, or {@code null} to omit
+   * @param codecs the codecs to offer, as a list, or {@code null} to omit
+   * @param username username to use for SIP authentication, or {@code null} to omit
+   * @param password password to use for SIP authentication, or {@code null} to omit
+   * @return this for chaining
+   */
+  public SWMLBuilder answer(
+      Integer maxDuration, List<String> codecs, String username, String password) {
+    return answerConfig(maxDuration, codecs, username, password);
+  }
+
+  /**
+   * Add an 'answer' verb to the main section, with SIP authentication credentials.
+   *
+   * @param maxDuration maximum duration in seconds, or {@code null} to omit
+   * @param codecs comma-separated list of codecs, or {@code null} to omit
+   * @param username username to use for SIP authentication, or {@code null} to omit
+   * @param password password to use for SIP authentication, or {@code null} to omit
+   * @return this for chaining
+   */
+  public SWMLBuilder answer(Integer maxDuration, String codecs, String username, String password) {
+    return answerConfig(maxDuration, codecs, username, password);
+  }
+
+  private SWMLBuilder answerConfig(
+      Integer maxDuration, Object codecs, String username, String password) {
     Map<String, Object> config = new LinkedHashMap<>();
     if (maxDuration != null) {
       config.put("max_duration", maxDuration);
@@ -69,7 +104,13 @@ public class SWMLBuilder {
     if (codecs != null) {
       config.put("codecs", codecs);
     }
-    service.getDocument().addVerb("answer", config);
+    if (username != null) {
+      config.put("username", username);
+    }
+    if (password != null) {
+      config.put("password", password);
+    }
+    service.addVerb("answer", config);
     return this;
   }
 
@@ -93,7 +134,7 @@ public class SWMLBuilder {
     if (reason != null) {
       config.put("reason", reason);
     }
-    service.getDocument().addVerb("hangup", config);
+    service.addVerb("hangup", config);
     return this;
   }
 
@@ -108,7 +149,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder ai(Map<String, Object> config) {
-    service.getDocument().addVerb("ai", config != null ? config : new LinkedHashMap<>());
+    service.addVerb("ai", config != null ? config : new LinkedHashMap<>());
     return this;
   }
 
@@ -163,7 +204,7 @@ public class SWMLBuilder {
       config.putAll(kwargs);
     }
 
-    service.getDocument().addVerb("ai", config);
+    service.addVerb("ai", config);
     return this;
   }
 
@@ -174,7 +215,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder play(Map<String, Object> config) {
-    service.getDocument().addVerb("play", config != null ? config : new LinkedHashMap<>());
+    service.addVerb("play", config != null ? config : new LinkedHashMap<>());
     return this;
   }
 
@@ -222,7 +263,7 @@ public class SWMLBuilder {
     if (autoAnswer != null) {
       config.put("auto_answer", autoAnswer);
     }
-    service.getDocument().addVerb("play", config);
+    service.addVerb("play", config);
     return this;
   }
 
@@ -321,7 +362,7 @@ public class SWMLBuilder {
         }
       }
     }
-    service.getDocument().addVerb(name, clean);
+    service.addVerb(name, clean);
     return this;
   }
 
@@ -333,7 +374,7 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder sleepVerb(int milliseconds) {
-    service.getDocument().addVerb("sleep", milliseconds);
+    service.addVerb("sleep", milliseconds);
     return this;
   }
 }

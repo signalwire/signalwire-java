@@ -13,12 +13,11 @@ import java.util.Map;
  * Base interface for SWML verb handlers.
  *
  * <p>Verb handlers provide specialized logic for complex SWML verbs that cannot be handled
- * generically. Mirrors the Python reference {@code signalwire.core.swml_handler.SWMLVerbHandler}
- * (an ABC) and the Ruby {@code SignalWire::SWML::SWMLVerbHandler}.
+ * generically.
  *
- * <p>This is an abstract class whose methods throw {@link UnsupportedOperationException} — the Java
- * analog of Python's {@code @abstractmethod} / Ruby's {@code NotImplementedError}: a subclass that
- * forgets to override them fails loudly.
+ * <p>Every method on this abstract class throws {@link UnsupportedOperationException} rather than
+ * returning a default, so a subclass that forgets to override one fails loudly at the call site
+ * instead of silently emitting an empty verb config.
  */
 public abstract class SWMLVerbHandler {
 
@@ -54,10 +53,7 @@ public abstract class SWMLVerbHandler {
         getClass().getSimpleName() + "#buildConfig must be implemented");
   }
 
-  /**
-   * Result of {@link #validateConfig(Map)} — the Java analog of the reference's {@code (bool,
-   * list[str])} tuple: a validity flag plus the list of error messages.
-   */
+  /** Result of {@link #validateConfig(Map)}: a validity flag plus the list of error messages. */
   public static final class ValidationResult {
     private final boolean valid;
     private final List<String> errors;

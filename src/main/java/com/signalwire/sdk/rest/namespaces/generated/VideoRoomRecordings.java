@@ -69,4 +69,15 @@ public class VideoRoomRecordings extends BaseResource {
         com.signalwire.sdk.rest.namespaces.generated.types.video.ListRoomRecordingEventsResponse
             .class);
   }
+
+  /** download (generated from operation 'download_room_recording'). */
+  public String download(String id, java.util.Map<String, String> params) {
+    return download(id, params, (RequestOptions) null);
+  }
+
+  /** download with a per-request {@link RequestOptions} override. */
+  public String download(
+      String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return restGetRedirectLocation(getBasePath() + "/" + id + ".mp4", params, requestOptions);
+  }
 }

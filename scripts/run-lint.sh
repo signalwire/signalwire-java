@@ -40,4 +40,14 @@ if [ -n "${1:-}" ]; then
 fi
 
 echo "==> LINT (errorprone warnings-as-errors + checkstyle, zero findings) — repo: $REPO_ROOT"
+# `build` pulls in `check`, which runs checkstyle for EVERY source set — main,
+# test, examples (examples/ + rest/examples/ + relay/examples/) and auditTools
+# (scripts/SignatureDump.java). The two names below are redundant with that but
+# kept explicit so a future `build` reshuffle cannot silently drop them. Error
+# Prone runs inside each source set's javac, so it covers all four too.
 sw_gradle -q --no-build-cache clean build -x test checkstyleMain checkstyleTest
+
+# The Python half — the scripts/ enumerators and generators, at the same
+# zero-findings bar. Config in the repo-root ruff.toml.
+echo "==> LINT — Python (ruff check, zero findings)"
+sw_ruff check --no-cache .

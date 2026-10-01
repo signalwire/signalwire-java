@@ -10,10 +10,20 @@ package com.signalwire.sdk.rest.namespaces.generated.types.fabric;
  * SubscriberGuestTokenCreateRequest — generated wire type ('fabric' spec, components/schemas
  * 'SubscriberGuestTokenCreateRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class SubscriberGuestTokenCreateRequest {
   public java.util.List<Object> allowed_addresses;
   public Long expire_at;
+  public String ch;
+  public String region;
+  public String email;
+  public String first_name;
+  public String last_name;
+  public String display_name;
+  public String job_title;
+  public String time_zone;
+  public String country;
+  public String company_name;
 }

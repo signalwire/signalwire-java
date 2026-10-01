@@ -8,7 +8,7 @@ import java.util.*;
 /** Pre-built agent for venue concierge with amenity info and availability checking. */
 public class ConciergeAgent {
 
-  /** Default operating hours when the caller supplies none — the reference's fallback. */
+  /** Default operating hours used when the caller supplies none. */
   private static final Map<String, String> DEFAULT_HOURS = Map.of("default", "9 AM - 5 PM");
 
   private final AgentBase agent;
@@ -29,19 +29,18 @@ public class ConciergeAgent {
   }
 
   /**
-   * Full construction contract, mirroring the reference {@code ConciergeAgent(venue_name, services,
-   * amenities, hours_of_operation, special_instructions, ..., name, route)}.
+   * Full construction contract.
    *
    * @param name agent name
-   * @param venueName name of the venue or business (the {@code venue_name} param)
-   * @param amenities amenities with details (the {@code amenities} param)
+   * @param venueName name of the venue or business
+   * @param amenities amenities with details
    * @param route HTTP route for this agent
    * @param port HTTP port for this agent
-   * @param services services offered (the {@code services} param); empty when {@code null}
-   * @param hoursOfOperation operating hours (the {@code hours_of_operation} param); defaults to
-   *     {@code {"default": "9 AM - 5 PM"}} when {@code null}, as the reference does
-   * @param specialInstructions extra instruction bullets appended to the Instructions section (the
-   *     {@code special_instructions} param); empty when {@code null}
+   * @param services services offered; empty when {@code null}
+   * @param hoursOfOperation operating hours; defaults to {@code {"default": "9 AM - 5 PM"}} when
+   *     {@code null}
+   * @param specialInstructions extra instruction bullets appended to the Instructions section;
+   *     empty when {@code null}
    */
   public ConciergeAgent(
       String name,
@@ -191,9 +190,9 @@ public class ConciergeAgent {
   }
 
   /**
-   * SWAIG tool handler: check availability of an amenity/service on a date and time. Ported from
-   * the Python ConciergeAgent.check_availability -- returns an availability confirmation when the
-   * requested amenity is offered, otherwise lists the available amenities.
+   * SWAIG tool handler: check availability of an amenity/service on a date and time. Returns an
+   * availability confirmation when the requested amenity is offered, otherwise lists the available
+   * amenities.
    */
   public FunctionResult checkAvailability(Map<String, Object> args, Map<String, Object> rawData) {
     String amenityName = (String) args.getOrDefault("amenity", "");
@@ -227,9 +226,9 @@ public class ConciergeAgent {
   }
 
   /**
-   * SWAIG tool handler: provide directions to a location or amenity. Ported from the Python
-   * ConciergeAgent.get_directions -- if the location is a known amenity with a "location" field it
-   * returns that; otherwise it points the guest at the front desk.
+   * SWAIG tool handler: provide directions to a location or amenity. If the location is a known
+   * amenity with a "location" field it returns that; otherwise it points the guest at the front
+   * desk.
    */
   public FunctionResult getDirections(Map<String, Object> args, Map<String, Object> rawData) {
     String location = (String) args.getOrDefault("location", "");
@@ -255,9 +254,9 @@ public class ConciergeAgent {
   }
 
   /**
-   * Register a post-prompt summary callback. Ported from the Python ConciergeAgent.on_summary hook:
-   * the callback is invoked with the parsed summary and the raw post-prompt payload after the
-   * conversation completes. Wires through to {@link AgentBase#onSummary}.
+   * Register a post-prompt summary callback: it is invoked with the parsed summary and the raw
+   * post-prompt payload after the conversation completes. Wires through to {@link
+   * AgentBase#onSummary}.
    *
    * @param handler callback receiving (summary, rawData); {@code null} clears any handler
    * @return this prefab for chaining
@@ -275,6 +274,12 @@ public class ConciergeAgent {
     return summaryHandler;
   }
 
+  /**
+   * The underlying agent this prefab configured. Use it to add tools, prompt sections, or skills
+   * beyond what the prefab sets up.
+   *
+   * @return the wrapped agent.
+   */
   public AgentBase getAgent() {
     return agent;
   }
@@ -307,10 +312,20 @@ public class ConciergeAgent {
     return specialInstructions;
   }
 
+  /**
+   * Start the agent's HTTP server and serve until stopped.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void serve() throws Exception {
     agent.serve();
   }
 
+  /**
+   * Start the agent's HTTP server. Equivalent to {@link #serve()}.
+   *
+   * @throws Exception if the server cannot be started.
+   */
   public void run() throws Exception {
     agent.run();
   }

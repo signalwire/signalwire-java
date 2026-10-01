@@ -9,11 +9,17 @@ package com.signalwire.sdk.rest.namespaces.generated.types.calling;
 /**
  * Expression — generated wire type ('calling' spec, components/schemas 'Expression').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class Expression {
-  public String string;
   public String pattern;
+  public String expr;
+
+  /** wire key: nomatch-output */
+  @com.google.gson.annotations.SerializedName("nomatch-output")
+  public java.util.Map<String, Object> nomatch_output;
+
   public java.util.Map<String, Object> output;
+  public String string;
 }

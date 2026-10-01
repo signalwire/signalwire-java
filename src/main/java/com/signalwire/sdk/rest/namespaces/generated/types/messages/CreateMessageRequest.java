@@ -10,8 +10,8 @@ package com.signalwire.sdk.rest.namespaces.generated.types.messages;
  * CreateMessageRequest — generated wire type ('messages' spec, components/schemas
  * 'CreateMessageRequest').
  *
- * <p>Pure data DTO: public fields carrying the snake wire key; no methods (the reference records
- * this as a method-less type definition).
+ * <p>Pure data DTO: public fields carrying the snake wire key, and no methods — read and write the
+ * fields directly.
  */
 public final class CreateMessageRequest {
   public String to;
@@ -21,4 +21,9 @@ public final class CreateMessageRequest {
   public Boolean send_as_mms;
   public String status_callback;
   public java.util.Map<String, Object> custom_variables;
+  public String message_type;
+  public String template_id;
+  public java.util.Map<String, Object> header_template_parameters;
+  public java.util.Map<String, Object> body_template_parameters;
+  public java.util.List<Object> button_template_parameters;
 }
