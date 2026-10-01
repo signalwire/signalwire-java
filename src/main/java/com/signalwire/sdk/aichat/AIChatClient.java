@@ -9,6 +9,8 @@ package com.signalwire.sdk.aichat;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.signalwire.sdk.logging.Logger;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -17,6 +19,8 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Client for the SignalWire AI Chat service.
@@ -54,6 +58,8 @@ public class AIChatClient implements AutoCloseable {
   private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
 
   private static final Gson GSON = new Gson();
+
+  private static final Logger LOG = Logger.getLogger("signalwire.ai_chat.client");
 
   /** JSON-RPC error code → the typed error it maps to. Unmapped codes fall to the base error. */
   private static final Map<Integer, ErrorFactory> ERROR_BY_CODE = new LinkedHashMap<>();
@@ -180,25 +186,7 @@ public class AIChatClient implements AutoCloseable {
    * @throws AIChatError (or a typed subclass) when the body carries {@code error}.
    */
   private JsonObject request(String method, JsonObject params) {
-    requestCounter += 1;
-    JsonObject payload = new JsonObject();
-    payload.addProperty("jsonrpc", "2.0");
-    payload.addProperty("method", method);
-    payload.add("params", params);
-    payload.addProperty("id", "req-" + requestCounter);
-
-    HttpRequest req =
-        HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("Authorization", authHeader)
-            .header("Content-Type", "application/json")
-            .header("Accept", "application/json")
-            .header("User-Agent", userAgent)
-            // No per-request timeout: it is a wall-clock cap on the whole exchange a
-            // keepalive heartbeat cannot reset, so setting it would sever a slow-but-
-            // live turn. See the class javadoc / streaming_note.
-            .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(payload), StandardCharsets.UTF_8))
-            .build();
+    HttpRequest req = post(envelope(method, params));
 
     HttpResponse<String> response;
     try {
@@ -247,7 +235,96 @@ public class AIChatClient implements AutoCloseable {
     return new JsonObject();
   }
 
+  /**
+   * POST one JSON-RPC call and return the response body unread, for proxies that must stream the
+   * body through rather than buffer it.
+   *
+   * <p>The service pads a slow response with keepalive whitespace so intermediaries do not sever
+   * the connection mid-turn; a proxy that awaits the whole body absorbs that padding and
+   * reintroduces the very timeout it exists to prevent. Read the returned stream and forward the
+   * bytes as they arrive (this is what {@link ChatGateway#router()} does), and close it when done.
+   *
+   * <p>The caller owns interpreting the result — including that a JSON-RPC error arrives under HTTP
+   * 200. Prefer the typed methods unless you are genuinely relaying bytes.
+   *
+   * @param method the JSON-RPC method, e.g. {@code chat}.
+   * @param params the JSON-RPC params, sent as given.
+   * @return the response body as it arrives; the caller must close it.
+   * @throws AIChatError if the request cannot be sent.
+   */
+  public InputStream rawPost(String method, Map<String, Object> params) {
+    JsonObject payload = envelope(method, GSON.toJsonTree(params).getAsJsonObject());
+    try {
+      return httpClient.send(post(payload), HttpResponse.BodyHandlers.ofInputStream()).body();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new AIChatError(null, "request interrupted: " + e.getMessage());
+    } catch (java.io.IOException e) {
+      throw new AIChatError(null, "request failed: " + e.getMessage());
+    }
+  }
+
+  private synchronized JsonObject envelope(String method, JsonObject params) {
+    requestCounter += 1;
+    JsonObject payload = new JsonObject();
+    payload.addProperty("jsonrpc", "2.0");
+    payload.addProperty("method", method);
+    payload.add("params", params);
+    payload.addProperty("id", "req-" + requestCounter);
+    return payload;
+  }
+
+  private HttpRequest post(JsonObject payload) {
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .header("Authorization", authHeader)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("User-Agent", userAgent)
+        // No per-request timeout: see request().
+        .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(payload), StandardCharsets.UTF_8))
+        .build();
+  }
+
   // ── API methods ───────────────────────────────────────────────────
+
+  /** Characters the chat service keeps in a conversation id; anything else is stripped. */
+  private static final Pattern ID_UNSAFE = Pattern.compile("[^a-zA-Z0-9_\\-.:]");
+
+  /**
+   * The id the service will store {@code conversationId} under, when that differs from it.
+   *
+   * <p>The service sanitizes conversation ids and drops disallowed characters without reporting it,
+   * so a caller that composes ids — {@code root~2} for a second leg of {@code root}, say — gets
+   * back {@code root2}, a DIFFERENT, valid-looking id. Use {@code .} to compose ids.
+   *
+   * @return the stored-as id, or {@code null} when the id is kept as given (or is empty).
+   */
+  static String idAlteredTo(String conversationId) {
+    if (conversationId == null || conversationId.isEmpty()) {
+      return null;
+    }
+    String cleaned = ID_UNSAFE.matcher(conversationId).replaceAll("");
+    return cleaned.equals(conversationId) ? null : cleaned;
+  }
+
+  private static void warnIfIdWillBeAltered(String conversationId) {
+    String storedAs = idAlteredTo(conversationId);
+    if (storedAs == null) {
+      return;
+    }
+    java.util.TreeSet<String> removed = new java.util.TreeSet<>();
+    Matcher m = ID_UNSAFE.matcher(conversationId);
+    while (m.find()) {
+      removed.add(m.group());
+    }
+    LOG.warn(
+        "conversation_id_will_be_sanitized requested=%s stored_as=%s removed_characters=%s "
+            + "message=[signalwire] the chat service will store this conversation under a "
+            + "different id; anything filed under the requested id will not be found. Use '.' "
+            + "to compose ids.",
+        conversationId, storedAs, String.join("", removed));
+  }
 
   /**
    * Create a conversation (or, with {@code reinit}, reinitialize an existing one) and optionally
@@ -259,6 +336,7 @@ public class AIChatClient implements AutoCloseable {
    */
   public ConversationInfo createConversation(
       String conversationId, CreateConversationOptions options) {
+    warnIfIdWillBeAltered(conversationId);
     JsonObject params = new JsonObject();
     params.addProperty("id", conversationId);
     params.addProperty("config_url", options.getConfigUrl());
