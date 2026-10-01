@@ -72,12 +72,31 @@ public class SWMLBuilder {
    * Add an 'answer' verb to the main section, with SIP authentication credentials.
    *
    * @param maxDuration maximum duration in seconds, or {@code null} to omit
+   * @param codecs the codecs to offer, as a list, or {@code null} to omit
+   * @param username username to use for SIP authentication, or {@code null} to omit
+   * @param password password to use for SIP authentication, or {@code null} to omit
+   * @return this for chaining
+   */
+  public SWMLBuilder answer(
+      Integer maxDuration, List<String> codecs, String username, String password) {
+    return answerConfig(maxDuration, codecs, username, password);
+  }
+
+  /**
+   * Add an 'answer' verb to the main section, with SIP authentication credentials.
+   *
+   * @param maxDuration maximum duration in seconds, or {@code null} to omit
    * @param codecs comma-separated list of codecs, or {@code null} to omit
    * @param username username to use for SIP authentication, or {@code null} to omit
    * @param password password to use for SIP authentication, or {@code null} to omit
    * @return this for chaining
    */
   public SWMLBuilder answer(Integer maxDuration, String codecs, String username, String password) {
+    return answerConfig(maxDuration, codecs, username, password);
+  }
+
+  private SWMLBuilder answerConfig(
+      Integer maxDuration, Object codecs, String username, String password) {
     Map<String, Object> config = new LinkedHashMap<>();
     if (maxDuration != null) {
       config.put("max_duration", maxDuration);

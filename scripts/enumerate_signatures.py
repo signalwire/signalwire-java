@@ -1082,6 +1082,30 @@ FREE_FUNCTION_PROJECTIONS = {
 # param is keyword-only in the Python reference (``*, signing_key``); recording
 # it as ``kind: keyword`` keeps the drift compare exact.
 FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    # post_prompt.dialogue_turns: ``roles`` / ``drop_echo`` are keyword-only in the
+    # reference and ``roles`` defaults to the DIALOGUE_ROLES tuple. Java's named idiom is
+    # the dialogueTurns(callLog) / dialogueTurns(callLog, roles, dropEcho) overload pair
+    # (List<String> for the role tuple); record the reference's keyword shape.
+    ("com.signalwire.sdk.core.PostPrompt", "dialogueTurns"): {
+        "params": [
+            {"name": "call_log", "type": "any", "required": True},
+            {
+                "name": "roles",
+                "kind": "keyword",
+                "type": "tuple<string,any>",
+                "required": False,
+                "default": "DIALOGUE_ROLES",
+            },
+            {
+                "name": "drop_echo",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "list<dict<string,string>>",
+    },
     # get_logger(name) -> logger. Java's Logger.getLogger is overloaded
     # (String name / Class<?> clazz) and both overloads have arity 1, so the
     # generic fewer-param collapse cannot separate them and the Class<?> one
@@ -1188,6 +1212,161 @@ FREE_FUNCTION_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
 # both SWMLService (the base core) and AgentBase (the render-override), matching the
 # reference which declares it on both.
 METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
+    # AgentBase.addPerCallConfig takes the AgentBase.DynamicConfigCallback functional
+    # interface -- Java's typed spelling of the reference's 4-arg callable
+    # (query_params, body_params, headers, agent); reflection can only name the interface.
+    ("AgentBase", "add_per_call_config"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {
+                "name": "callback",
+                "type": "callable<list<dict<string,any>,dict<string,any>,dict<string,any>,any>,void>",
+                "required": True,
+            },
+        ],
+        "returns": "class:signalwire.core.agent_base.AgentBase",
+    },
+    # AgentBase.mount: ``prefix`` / ``name`` are keyword-only in the reference; Java's
+    # mount(handler) / mount(handler, prefix) / mount(handler, prefix, name) overload set
+    # is the named idiom; the mounted unit is the JDK HttpHandler (the reference's
+    # router/ASGI app, recorded ``any``).
+    ("AgentBase", "mount"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "app_or_router", "type": "any", "required": True},
+            {
+                "name": "prefix",
+                "kind": "keyword",
+                "type": "string",
+                "required": False,
+                "default": "",
+            },
+            {
+                "name": "name",
+                "kind": "keyword",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "class:signalwire.core.agent_base.AgentBase",
+    },
+    # SWMLBuilder.answer: ``codecs: str | list[str]`` is two Java overloads (String and
+    # List<String>) of the same 4-arg form; reflection records one overload, so record the
+    # union the overload pair accepts (all four params optional via the shorter forms).
+    ("SWMLBuilder", "answer"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {
+                "name": "max_duration",
+                "type": "optional<int>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "codecs",
+                "type": "optional<union<string,list<string>>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "username",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "password",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "class:Self",
+    },
+    # FunctionResult.hold: the reference's first param is ``prompt: str | int | None`` (an
+    # int is the back-compat timeout, hold(120)). Java expresses that union as the
+    # overload set hold() / hold(int) / hold(String) / hold(String, int) /
+    # hold(String, int, String, String) -- every reference call form compiles -- but
+    # reflection can only record one overload's ``String``. Record the union the
+    # overload set accepts.
+    ("FunctionResult", "hold"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {
+                "name": "prompt",
+                "type": "optional<union<string,int>>",
+                "required": False,
+                "default": None,
+            },
+            {"name": "timeout", "type": "int", "required": False, "default": 300},
+            {
+                "name": "step",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "timeout_step",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "class:signalwire.core.function_result.FunctionResult",
+    },
+    # FunctionResult.rpc_ai_message: message_text is optional (global_data alone is a
+    # valid payload). Java's full overload takes a nullable ``String messageText`` --
+    # rpcAiMessage(callId, null, role, globalData) -- which reflection records as
+    # required (Java has no defaults); record the reference's optional shape.
+    ("FunctionResult", "rpc_ai_message"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "call_id", "type": "string", "required": True},
+            {
+                "name": "message_text",
+                "type": "optional<string>",
+                "required": False,
+                "default": None,
+            },
+            {"name": "role", "type": "string", "required": False, "default": "system"},
+            {
+                "name": "global_data",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "class:signalwire.core.function_result.FunctionResult",
+    },
+    # HttpClient.get_text: ``headers`` is keyword-only in the reference; Java's trailing
+    # optional Map param (with the shorter delegating overloads) is the named idiom for it.
+    ("HttpClient", "get_text"): {
+        "params": [
+            {"name": "self", "kind": "self"},
+            {"name": "path", "type": "string", "required": True},
+            {
+                "name": "params",
+                "type": "optional<dict<string,any>>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "request_options",
+                "type": "optional<class:signalwire.rest._request_options.RequestOptions>",
+                "required": False,
+                "default": None,
+            },
+            {
+                "name": "headers",
+                "kind": "keyword",
+                "type": "optional<dict<string,string>>",
+                "required": False,
+                "default": None,
+            },
+        ],
+        "returns": "string",
+    },
     ("SWMLService", "handle_request"): {
         "params": [
             {"name": "self", "kind": "self"},
@@ -1586,6 +1765,8 @@ MIXIN_PROJECTIONS = {
         "serve",
         "set_dynamic_config_callback",
         "setup_graceful_shutdown",
+        "add_per_call_config",
+        "mount",
     ],
     ("signalwire.core.mixins.state_mixin", "StateMixin"): [
         "validate_tool_token",
@@ -1642,6 +1823,9 @@ VARARGS_HEAD_OPTIONAL: set[tuple[str, str | None, str]] = {
     # trailing kwargs door is already handled by KWARGS_TAIL_OPTIONAL above; this
     # covers the leading ``*args`` half of the same signature.
     ("signalwire", None, "RestClient"),
+    # core/logging_config.py:33 -- ``def strip_control_chars(*args)``; Java's
+    # ``stripControlChars(Object... args)`` varargs may likewise be called with none.
+    ("signalwire.core.logging_config", None, "strip_control_chars"),
 }
 
 

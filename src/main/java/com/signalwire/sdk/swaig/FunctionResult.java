@@ -92,6 +92,17 @@ public class FunctionResult {
    * @param toolPrompt instruction for what to say next (may be {@code null})
    * @return this result, for chaining.
    */
+  /** Structured response with neither half set (an empty {@code {}} response object). */
+  public FunctionResult setToolResponse() {
+    return setToolResponse(null, null);
+  }
+
+  /** Structured response with only the factual outcome (no instruction). */
+  public FunctionResult setToolResponse(String toolResult) {
+    return setToolResponse(toolResult, null);
+  }
+
+  /** Structured response form; see {@link #setToolResponse(String, String)}. */
   public FunctionResult setToolResponse(String toolResult, String toolPrompt) {
     Map<String, Object> payload = new LinkedHashMap<>();
     if (toolResult != null) {

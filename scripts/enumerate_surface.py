@@ -1418,6 +1418,10 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     #  - RequestOptionsSupportEffectiveOptions: the nested value record standing in for
     #    the reference's PRIVATE _EffectiveOptions (like SWMLServiceHttpResult).
     "RequestOptionsBuilder",
+    # RestClient.Builder: the NAMED-param builder for the reference's RestClient.__init__
+    # kwargs (emitted as RestClient.__init__ via _PRIVATE_CTOR_PUBLIC_FACTORY), exactly
+    # like RequestOptionsBuilder.
+    "RestClientBuilder",
     "AbortSignal",
     "RequestOptionsSupport",
     "RequestOptionsSupportEffectiveOptions",
@@ -1497,6 +1501,11 @@ _RECORD_SURFACE_MEMBERS: dict[str, list[str]] = {
 # emitting `__init__` instead of silently claiming construction it no longer offers.
 _PRIVATE_CTOR_PUBLIC_FACTORY: dict[str, str] = {
     "RequestOptions": "builder",
+    # RestClient: `private RestClient(Builder)` + `RestClient.builder()`; the builder's
+    # project/token/space/requestOptions/personalAccessToken setters are the named-param
+    # idiom for the reference's RestClient(project, token, host, request_options,
+    # personal_access_token) constructor.
+    "RestClient": "builder",
 }
 
 # A named record's parenthesised component list: `record X(A a, B b)`.
@@ -2283,6 +2292,12 @@ def enumerate_file(
             snake_form = _METHOD_RENAMES.get(snake_form, snake_form)
             if java_method in cls_methods or snake_form in cls_methods:
                 projected_free_fns.append((target_mod, target_fn))
+                # MOVE, not copy: the static method IS the projected free function, so
+                # it no longer also surfaces as a method of its Java host class (which
+                # would read as a port-only addition of the same capability).
+                classes[outer_name] = [
+                    m for m in cls_methods if m not in (java_method, snake_form)
+                ]
 
     # Assign each class to its Python-reference module.
     out: dict[str, dict] = {}
