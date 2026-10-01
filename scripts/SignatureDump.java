@@ -303,10 +303,34 @@ public class SignatureDump {
     sb.append("\"is_constructor\":false,");
     sb.append("\"is_field\":true,");
     sb.append("\"is_static\":").append(Modifier.isStatic(f.getModifiers())).append(",");
+    String wire = serializedName(f);
+    if (wire != null) {
+      // The exact wire key a generated DTO binds via Gson's @SerializedName when the
+      // Java field name had to be sanitised (``nomatch-output`` -> ``nomatch_output``).
+      sb.append("\"wire_name\":").append(jsonString(wire)).append(",");
+    }
     sb.append("\"parameters\":[],");
     sb.append("\"return_type\":").append(jsonString(typeName(f.getGenericType())));
     sb.append("}");
     return sb.toString();
+  }
+
+  /**
+   * The value of a Gson {@code @SerializedName} on {@code f}, read reflectively by annotation type
+   * name so this tool needs no Gson compile dependency; {@code null} when absent.
+   */
+  static String serializedName(java.lang.reflect.Field f) {
+    for (java.lang.annotation.Annotation a : f.getAnnotations()) {
+      if ("com.google.gson.annotations.SerializedName".equals(a.annotationType().getName())) {
+        try {
+          Object v = a.annotationType().getMethod("value").invoke(a);
+          return v instanceof String ? (String) v : null;
+        } catch (ReflectiveOperationException e) {
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
   static String dumpParams(Parameter[] params, Type[] genericTypes) {

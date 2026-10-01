@@ -18,16 +18,16 @@ public class AiAgents extends FabricResource {
   }
 
   /** listVoices (generated from operation 'list_ai_agent_voices'). */
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice listVoices(
-      java.util.Map<String, String> params) {
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice>
+      listVoices(java.util.Map<String, String> params) {
     return listVoices(params, (RequestOptions) null);
   }
 
   /** listVoices with a per-request {@link RequestOptions} override. */
-  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice listVoices(
-      java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return asType(
-        restGet(getBasePath() + "/" + "voices", params, requestOptions),
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice>
+      listVoices(java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asTypeList(
+        restGetList(getBasePath() + "/" + "voices", params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.fabric.AIAgentVoice.class);
   }
 

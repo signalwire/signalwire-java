@@ -18,7 +18,7 @@ public final class VideoRoomCallLeg {
   public String to;
   public String direction;
   public String source;
-  public Object url;
+  public Void url;
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;

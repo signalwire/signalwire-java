@@ -216,6 +216,23 @@ public class DataMap {
     return this;
   }
 
+  /**
+   * Set the JSON request body for the last added webhook — the same as {@link #params(Map)}. The
+   * platform reads a webhook's body from its {@code params} field and has no {@code body} field, so
+   * this sets {@code params}.
+   *
+   * @param data request body data (may include {@code ${variable}} substitutions)
+   * @return this DataMap
+   * @throws IllegalStateException if no webhook has been added yet
+   */
+  public DataMap body(Map<String, Object> data) {
+    if (webhooks.isEmpty()) {
+      throw new IllegalStateException("Must add webhook before setting body");
+    }
+    webhooks.getLast().put("params", data);
+    return this;
+  }
+
   /** Set request params for the last added webhook. */
   public DataMap params(Map<String, Object> data) {
     if (webhooks.isEmpty()) {

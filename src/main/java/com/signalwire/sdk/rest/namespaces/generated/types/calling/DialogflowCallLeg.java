@@ -17,7 +17,7 @@ public final class DialogflowCallLeg {
   public String from;
   public String to;
   public String source;
-  public Object url;
+  public Void url;
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;

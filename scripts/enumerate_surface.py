@@ -774,6 +774,8 @@ _JAVA_SURFACE_MODULE_OVERRIDES: dict[str, str] = {
     "com.signalwire.sdk.swml.SWMLService": "signalwire.core.swml_service",
     "com.signalwire.sdk.swml.Document": "signalwire.swml.document",
     "com.signalwire.sdk.pom.Section": "signalwire.pom.pom",
+    # The post-prompt normalizer's result record (reference @dataclass in core.post_prompt).
+    "com.signalwire.sdk.core.NormalizedPostPrompt": "signalwire.core.post_prompt",
     "com.signalwire.sdk.pom.PromptObjectModel": "signalwire.pom.pom",
     "com.signalwire.sdk.logging.Logger": "signalwire.core.logging_config",
     "com.signalwire.sdk.swaig.ToolDefinition": "signalwire.core.swaig_function",
@@ -905,6 +907,37 @@ _FREE_FUNCTION_SURFACE_PROJECTIONS: dict[tuple[str, str], tuple[str, str]] = {
     ("RequestOptionsSupport", "resolve"): (
         "signalwire.rest._request_options",
         "resolve",
+    ),
+    # post_prompt / capabilities free functions on the static-only PostPrompt /
+    # Capabilities facades (mirrors FREE_FUNCTION_PROJECTIONS in enumerate_signatures.py).
+    ("PostPrompt", "stripJsonFence"): (
+        "signalwire.core.post_prompt",
+        "strip_json_fence",
+    ),
+    ("PostPrompt", "parsePostPromptData"): (
+        "signalwire.core.post_prompt",
+        "parse_post_prompt_data",
+    ),
+    ("PostPrompt", "dialogueTurns"): ("signalwire.core.post_prompt", "dialogue_turns"),
+    ("PostPrompt", "normalizePostPrompt"): (
+        "signalwire.core.post_prompt",
+        "normalize_post_prompt",
+    ),
+    ("Capabilities", "userVariables"): (
+        "signalwire.core.capabilities",
+        "user_variables",
+    ),
+    ("Capabilities", "declaredCapabilities"): (
+        "signalwire.core.capabilities",
+        "declared_capabilities",
+    ),
+    ("Capabilities", "hasCapability"): (
+        "signalwire.core.capabilities",
+        "has_capability",
+    ),
+    ("WebhookValidator", "validateWebhookSignatureSha256"): (
+        "signalwire.core.security.webhook_validator",
+        "validate_webhook_signature_sha256",
     ),
     ("RequestOptionsSupport", "statusIsRetryable"): (
         "signalwire.rest._request_options",
@@ -1364,6 +1397,11 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
     # otherwise leak into that module alongside the projected functions. Python has
     # only the free functions (classes: {}); drop the host class.
     "TypeInference",
+    # PostPrompt / Capabilities static-utility hosts — their methods are projected to the
+    # module-level free functions of signalwire.core.post_prompt / .capabilities via
+    # _FREE_FUNCTION_SURFACE_PROJECTIONS; the reference has only the functions.
+    "PostPrompt",
+    "Capabilities",
     # RequestOptions envelope (plan 4.2) idiom-scaffolding types with no reference
     # class counterpart:
     #  - RequestOptionsBuilder: the Java NAMED-param builder for the reference's
@@ -1438,6 +1476,15 @@ _SURFACE_EXCLUDED_CLASSES: set[str] = {
 # rather than inventing surface.
 _RECORD_SURFACE_MEMBERS: dict[str, list[str]] = {
     "BasicCredentials": ["__init__", "username", "password"],
+    "NormalizedPostPrompt": [
+        "__init__",
+        "medium",
+        "conversation_id",
+        "summary",
+        "dialogue",
+        "call_id",
+        "raw",
+    ],
     "BearerCredentials": ["__init__", "scheme", "credentials"],
 }
 

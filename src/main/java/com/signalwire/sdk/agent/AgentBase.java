@@ -122,6 +122,13 @@ public class AgentBase extends Service {
 
   // --- Web ---
   private DynamicConfigCallback dynamicConfigCallback;
+
+  /**
+   * The registered per-call configuration callbacks, in run order. Rebound (never mutated in place)
+   * on registration, so an ephemeral per-request copy can never write into the master's chain.
+   */
+  private List<DynamicConfigCallback> perCallConfigs = List.of();
+
   private String webhookUrl;
   // proxyUrlBase is INHERITED from Service (protected). AgentBase used to
   // re-declare it privately, which shadowed the superclass field: overridden
@@ -2160,7 +2167,35 @@ public class AgentBase extends Service {
    * @return this agent, for chaining.
    */
   public AgentBase setDynamicConfigCallback(DynamicConfigCallback callback) {
+    this.perCallConfigs = callback == null ? List.of() : List.of(callback);
     this.dynamicConfigCallback = callback;
+    return this;
+  }
+
+  /**
+   * Register a per-request configuration callback, KEEPING any already set. Same contract as {@link
+   * #setDynamicConfigCallback(DynamicConfigCallback)}, except that callbacks accumulate instead of
+   * overwriting: they run in registration order against the same ephemeral agent, so a later one
+   * sees what an earlier one configured. This is the composable form — a base class and a subclass
+   * can each register what they own without finding and chaining each other's callbacks.
+   *
+   * @param callback callable taking {@code (queryParams, bodyParams, headers, agent)}; configure
+   *     the EPHEMERAL {@code agent} it is handed, never {@code this}
+   * @return this agent, for chaining.
+   */
+  public AgentBase addPerCallConfig(DynamicConfigCallback callback) {
+    List<DynamicConfigCallback> next = new ArrayList<>(perCallConfigs);
+    next.add(Objects.requireNonNull(callback, "callback"));
+    List<DynamicConfigCallback> chain = List.copyOf(next);
+    this.perCallConfigs = chain;
+    this.dynamicConfigCallback =
+        chain.size() == 1
+            ? chain.get(0)
+            : (query, body, headers, agent) -> {
+              for (DynamicConfigCallback c : chain) {
+                c.configure(query, body, headers, agent);
+              }
+            };
     return this;
   }
 
@@ -2565,6 +2600,75 @@ public class AgentBase extends Service {
   public AgentBase onSummary(BiConsumer<Map<String, Object>, Map<String, Object>> callback) {
     this.onSummaryCallback = callback;
     return this;
+  }
+
+  /** The {@link #onCallEnd} handlers, in registration order. */
+  private final List<BiConsumer<List<Map<String, Object>>, Map<String, Object>>> callEndHandlers =
+      new java.util.concurrent.CopyOnWriteArrayList<>();
+
+  /**
+   * Register a handler that runs when the call ends, with the transcript. Handlers run in
+   * registration order and receive {@code (callLog, rawData)}: the conversation as the platform
+   * recorded it (resolved from {@code call_log} or {@code raw_call_log}), and the complete SWAIG
+   * request (including {@code global_data} and {@code call_id}).
+   *
+   * <p>This wraps the platform's reserved {@code hangup_hook} function — it fires on hangup and is
+   * never offered to the model. Registering a handler also turns on {@code
+   * swaig_post_conversation}: {@code call_log} is a CONDITIONAL field of a SWAIG request, and
+   * without that parameter the hook would fire with no transcript at all. If the parameter was
+   * explicitly set to {@code false} it is left alone and a warning is logged. A handler that throws
+   * is logged and isolated — it cannot stop the others, nor fail the hangup.
+   *
+   * @param handler callable taking {@code (callLog, rawData)}
+   * @return the handler, unchanged
+   */
+  public BiConsumer<List<Map<String, Object>>, Map<String, Object>> onCallEnd(
+      BiConsumer<List<Map<String, Object>>, Map<String, Object>> handler) {
+    boolean first = callEndHandlers.isEmpty();
+    callEndHandlers.add(handler);
+    if (first) {
+      ensureCallEndHook();
+    }
+    return handler;
+  }
+
+  /** Register the reserved hangup_hook once, and enable its payload. */
+  private void ensureCallEndHook() {
+    if (Boolean.FALSE.equals(params.get("swaig_post_conversation"))) {
+      log.warn(
+          "[signalwire] on_call_end handlers are registered but swaig_post_conversation is"
+              + " explicitly False -- they will receive an empty call_log");
+    } else if (!params.containsKey("swaig_post_conversation")) {
+      params.put("swaig_post_conversation", true);
+    }
+    defineTool(
+        "hangup_hook",
+        "Internal: fires when the call ends.",
+        new LinkedHashMap<>(),
+        (args, rawData) -> {
+          Map<String, Object> raw = rawData != null ? rawData : Map.of();
+          List<Map<String, Object>> callLog = callLogOf(raw);
+          for (var callback : callEndHandlers) {
+            try {
+              callback.accept(callLog, raw);
+            } catch (RuntimeException e) {
+              log.error("call_end_handler_failed: " + e.getMessage(), e);
+            }
+          }
+          return new FunctionResult("");
+        });
+  }
+
+  /** The call log of a SWAIG request — both spellings are seen depending on engine. */
+  @SuppressWarnings("unchecked")
+  private static List<Map<String, Object>> callLogOf(Map<String, Object> raw) {
+    for (String key : new String[] {"call_log", "raw_call_log"}) {
+      Object v = raw.get(key);
+      if (v instanceof List<?> l && !l.isEmpty()) {
+        return (List<Map<String, Object>>) v;
+      }
+    }
+    return new ArrayList<>();
   }
 
   /**
@@ -3459,9 +3563,86 @@ public class AgentBase extends Service {
     return q >= 0 ? url.substring(q + 1) : "";
   }
 
+  /** Extra handlers mounted via {@link #mount}, as (context path, handler), in mount order. */
+  private final List<Map.Entry<String, com.sun.net.httpserver.HttpHandler>> mounts =
+      new java.util.concurrent.CopyOnWriteArrayList<>();
+
+  /**
+   * Mount an extra handler at the server root, alongside this agent's own routes.
+   *
+   * @param appOrRouter the handler to mount
+   * @return this agent, for chaining.
+   */
+  public AgentBase mount(com.sun.net.httpserver.HttpHandler appOrRouter) {
+    return mount(appOrRouter, "", null);
+  }
+
+  /**
+   * Mount an extra handler at {@code prefix}, alongside this agent's own routes.
+   *
+   * @param appOrRouter the handler to mount
+   * @param prefix path prefix (no trailing slash)
+   * @return this agent, for chaining.
+   */
+  public AgentBase mount(com.sun.net.httpserver.HttpHandler appOrRouter, String prefix) {
+    return mount(appOrRouter, prefix, null);
+  }
+
+  /**
+   * Mount an extra router or handler alongside this agent's own routes — e.g. an AI Chat gateway's
+   * router or a static-file handler. The JDK server dispatches by longest matching context path, so
+   * a mounted handler never shadows (or is shadowed by) the agent's own SWML, SWAIG and post-prompt
+   * endpoints. A mount made after {@link #serve()} has started is registered on the live server
+   * immediately; one made before is installed when the server starts.
+   *
+   * @param appOrRouter the {@link com.sun.net.httpserver.HttpHandler} to mount (an embeddable
+   *     router such as {@link #asRouter()}, or any handler)
+   * @param prefix path prefix (no trailing slash; {@code ""} mounts at the root)
+   * @param name optional mount name (descriptive only; may be {@code null})
+   * @return this agent, for chaining.
+   * @throws IllegalArgumentException when the path is one of the agent's own routes, or already
+   *     mounted
+   */
+  public AgentBase mount(
+      com.sun.net.httpserver.HttpHandler appOrRouter, String prefix, String name) {
+    Objects.requireNonNull(appOrRouter, "appOrRouter");
+    String clean = prefix == null ? "" : prefix.replaceAll("/+$", "");
+    String path = clean.isEmpty() ? "/" : (clean.startsWith("/") ? clean : "/" + clean);
+    String basePath = route.equals("/") ? "" : route;
+    List<String> own =
+        List.of(
+            basePath.isEmpty() ? "/" : basePath,
+            basePath + "/swaig",
+            basePath + "/post_prompt",
+            basePath + "/mcp",
+            "/health",
+            "/ready");
+    if (own.contains(path)) {
+      throw new IllegalArgumentException(
+          "mount path " + path + " is one of this agent's own routes; mount under a prefix");
+    }
+    for (Map.Entry<String, com.sun.net.httpserver.HttpHandler> m : mounts) {
+      if (m.getKey().equals(path)) {
+        throw new IllegalArgumentException("a handler is already mounted at " + path);
+      }
+    }
+    mounts.add(Map.entry(path, appOrRouter));
+    if (httpServer != null) {
+      httpServer.createContext(path, appOrRouter);
+    }
+    if (name != null) {
+      log.debug("mounted '%s' at %s", name, path);
+    }
+    return this;
+  }
+
   @Override
   protected void registerAdditionalRoutes(com.sun.net.httpserver.HttpServer server) {
     String basePath = route.equals("/") ? "" : route;
+
+    for (Map.Entry<String, com.sun.net.httpserver.HttpHandler> m : mounts) {
+      server.createContext(m.getKey(), m.getValue());
+    }
 
     // Post-prompt endpoint
     server.createContext(

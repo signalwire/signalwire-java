@@ -47,6 +47,17 @@ public class BaseResource {
    * absent DTO fields stay {@code null} — the projection is lenient and non-validating, so the
    * server response shape is never asserted at the SDK boundary.
    */
+  protected static <T> java.util.List<T> asTypeList(java.util.List<Object> raw, Class<T> type) {
+    if (raw == null) {
+      return null;
+    }
+    java.util.List<T> out = new java.util.ArrayList<>(raw.size());
+    for (Object item : raw) {
+      out.add(RESPONSE_GSON.fromJson(RESPONSE_GSON.toJsonTree(item), type));
+    }
+    return out;
+  }
+
   protected static <T> T asType(Map<String, Object> raw, Class<T> type) {
     if (raw == null) {
       return null;
@@ -96,6 +107,12 @@ public class BaseResource {
       RequestOptions requestOptions,
       Map<String, String> headers) {
     return httpClient.post(path, body, requestOptions, headers);
+  }
+
+  /** GET {@code path} whose success body is a top-level JSON array. */
+  protected java.util.List<Object> restGetList(
+      String path, Map<String, String> params, RequestOptions requestOptions) {
+    return httpClient.getList(path, params, requestOptions);
   }
 
   /** GET {@code path} whose success body is not JSON; returns it as text. */

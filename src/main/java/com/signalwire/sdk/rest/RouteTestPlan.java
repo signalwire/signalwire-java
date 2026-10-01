@@ -203,6 +203,13 @@ final class RouteTestPlan {
     }
 
     @Override
+    java.util.List<Object> getList(
+        String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+      CALLS.add(new Call("GET", wire(path)));
+      return Collections.emptyList();
+    }
+
+    @Override
     public String getRedirectLocation(
         String path, Map<String, String> queryParams, RequestOptions requestOptions) {
       CALLS.add(new Call("GET", wire(path)));

@@ -155,8 +155,8 @@ public final class Logger {
   /**
    * Remove ASCII control characters (except tab/newline/carriage-return) from a single string.
    *
-   * <p>INTERNAL: the public contract is the event-map form ({@link #stripControlChars(Map)}); this
-   * is the per-value scrub that form is built out of, and the unit the emitter needs.
+   * <p>INTERNAL: the public contract is the event-map form ({@link #stripControlChars(Object...)});
+   * this is the per-value scrub that form is built out of, and the unit the emitter needs.
    * Package-private, so it is not part of the SDK's public surface.
    *
    * @param value the raw log string (null-safe → returns null)
@@ -180,22 +180,39 @@ public final class Logger {
    * Strip control characters from log event values to prevent log injection.
    *
    * <p>Takes the log event map, scrubs every STRING value, and returns the map. Non-string values
-   * pass through untouched.
+   * pass through untouched. Accepts the event map alone ({@code stripControlChars(event)}) or a
+   * processor-style call whose LAST argument is the event map ({@code stripControlChars(logger,
+   * methodName, event)}), mirroring the reference.
    *
    * <p>{@link #log} calls this on every emission, so the scrub sits on the real logging path rather
    * than merely being available to callers who remember to invoke it.
    *
-   * @param eventDict the log event map (null-safe → returns null)
+   * @param args the event map, or any leading arguments followed by the event map (a {@code null}
+   *     event map returns {@code null})
    * @return a map with every string value sanitized
+   * @throws IllegalArgumentException when called with no arguments, or when the last argument is
+   *     not a map
    */
-  public static Map<String, Object> stripControlChars(Map<String, Object> eventDict) {
-    if (eventDict == null) {
+  public static Map<String, Object> stripControlChars(Object... args) {
+    if (args == null) {
+      return null; // a lone null event map: stripControlChars(null)
+    }
+    if (args.length == 0) {
+      throw new IllegalArgumentException("stripControlChars() requires the event map");
+    }
+    Object last = args[args.length - 1];
+    if (last == null) {
       return null;
     }
-    Map<String, Object> out = new LinkedHashMap<>(eventDict);
+    if (!(last instanceof Map<?, ?> eventDict)) {
+      throw new IllegalArgumentException(
+          "stripControlChars(): the last argument must be the event map");
+    }
+    Map<String, Object> out = new LinkedHashMap<>();
+    eventDict.forEach((k, v) -> out.put(String.valueOf(k), v));
     for (Map.Entry<String, Object> e : out.entrySet()) {
-      if (e.getValue() instanceof String s) {
-        e.setValue(stripControlCharsValue(s));
+      if (e.getValue() instanceof String str) {
+        e.setValue(stripControlCharsValue(str));
       }
     }
     return out;

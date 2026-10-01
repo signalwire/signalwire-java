@@ -17,6 +17,24 @@ public class CallFlows extends FabricResourcePUT {
     super(httpClient, "/fabric/resources/call_flows");
   }
 
+  /** listAddresses (generated from operation 'list_call_flow_addresses'). */
+  @Override
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+      listAddresses(String id, java.util.Map<String, String> params) {
+    return listAddresses(id, params, (RequestOptions) null);
+  }
+
+  /** listAddresses with a per-request {@link RequestOptions} override. */
+  @Override
+  public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+      listAddresses(
+          String id, java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asType(
+        restGet(getBasePath() + "/" + id + "/" + "addresses", params, requestOptions),
+        com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowAddressListResponse
+            .class);
+  }
+
   /** listVersions (generated from operation 'list_call_flow_versions'). */
   public com.signalwire.sdk.rest.namespaces.generated.types.fabric.CallFlowVersionListResponse
       listVersions(String id, java.util.Map<String, String> params) {

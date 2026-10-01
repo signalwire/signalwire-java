@@ -55,6 +55,12 @@ public final class WebhookValidator {
   /** Header name that carries the signature on every signed SignalWire request. */
   public static final String SIGNALWIRE_SIGNATURE_HEADER = "X-SignalWire-Signature";
 
+  /**
+   * The SHA-256 signature header SignalWire sends alongside {@link #SIGNALWIRE_SIGNATURE_HEADER}:
+   * the same Scheme A message, HMAC-SHA256.
+   */
+  public static final String SIGNALWIRE_SHA256_SIGNATURE_HEADER = "X-SignalWire-Sha256-Signature";
+
   /** Legacy alias accepted by the cXML/Compatibility surface. */
   public static final String TWILIO_COMPAT_SIGNATURE_HEADER = "X-Twilio-Signature";
 
@@ -85,8 +91,9 @@ public final class WebhookValidator {
    * servlet or framework type, it can be driven from any server layer; {@link WebhookFilter} is the
    * servlet-filter wrapper around this method.
    *
-   * <p>The {@code headers} map is consulted for the signature header ({@code
-   * X-SignalWire-Signature} or the {@code X-Twilio-Signature} alias); lookup is case-insensitive.
+   * <p>The {@code headers} map is consulted for the signature header: the stronger {@code
+   * X-SignalWire-Sha256-Signature} is preferred when present, falling back to {@code
+   * X-SignalWire-Signature} (or the {@code X-Twilio-Signature} alias); lookup is case-insensitive.
    * {@code method} is accepted for signature-shape consistency but is not part of the HMAC.
    *
    * @param method HTTP method (accepted for signature-shape consistency; not HMAC'd). May be {@code
@@ -105,6 +112,20 @@ public final class WebhookValidator {
       String method, String url, Map<String, String> headers, String body, String signingKey) {
     if (signingKey == null || signingKey.isEmpty()) {
       throw new IllegalArgumentException("signingKey is required");
+    }
+
+    // Prefer the stronger SHA-256 signature when the platform sends it; fall back to the SHA-1
+    // header so older platform builds -- and the cXML/form Scheme B path -- keep validating.
+    String sha256Signature = headerLookup(headers, SIGNALWIRE_SHA256_SIGNATURE_HEADER);
+    if (sha256Signature != null && !sha256Signature.isEmpty()) {
+      try {
+        if (validateWebhookSignatureSha256(
+            signingKey, sha256Signature, url == null ? "" : url, body == null ? "" : body)) {
+          return null;
+        }
+      } catch (IllegalArgumentException ex) {
+        // fall back to the SHA-1 header path below
+      }
     }
 
     String signature = headerLookup(headers, SIGNALWIRE_SIGNATURE_HEADER);
@@ -231,6 +252,38 @@ public final class WebhookValidator {
   }
 
   /**
+   * Validate the SHA-256 webhook signature (Scheme A with a stronger hash): {@code
+   * hex(HMAC-SHA256(signingKey, url + rawBody))}, sent as {@code X-SignalWire-Sha256-Signature}.
+   * Only Scheme A is defined for this header; the legacy cXML/form Scheme B stays on SHA-1 (see
+   * {@link #validateWebhookSignature}).
+   *
+   * @param signingKey customer's Signing Key. {@code null} / empty throws (a programming error).
+   * @param signature the {@code X-SignalWire-Sha256-Signature} header value (64-char lowercase
+   *     hex). {@code null} / empty returns {@code false}.
+   * @param url the full public URL SignalWire POSTed to, exactly as the platform saw it.
+   * @param rawBody the raw request body as a UTF-8 string, BEFORE any parsing; must not be {@code
+   *     null}.
+   * @return {@code true} if the SHA-256 signature matches.
+   * @throws IllegalArgumentException when {@code signingKey} is missing or {@code rawBody} is
+   *     {@code null}.
+   */
+  public static boolean validateWebhookSignatureSha256(
+      String signingKey, String signature, String url, String rawBody) {
+    if (signingKey == null || signingKey.isEmpty()) {
+      throw new IllegalArgumentException("signingKey is required");
+    }
+    if (rawBody == null) {
+      throw new IllegalArgumentException(
+          "rawBody must be a String (use \"\" for empty bodies); did you pass parsed JSON by mistake?");
+    }
+    if (signature == null || signature.isEmpty()) {
+      return false;
+    }
+    String expected = hexHmac("HmacSHA256", signingKey, (url == null ? "" : url) + rawBody);
+    return safeEquals(expected, signature);
+  }
+
+  /**
    * Legacy {@code @signalwire/compatibility-api} drop-in entry point.
    *
    * <p>Dispatches on the runtime type of {@code paramsOrRawBody}:
@@ -289,7 +342,20 @@ public final class WebhookValidator {
 
   /** Lowercase hex of HMAC-SHA1. */
   private static String hexHmacSha1(String key, String message) {
-    byte[] mac = hmacSha1(key, message);
+    return hexHmac("HmacSHA1", key, message);
+  }
+
+  /** Lowercase hex of the named JDK HMAC ({@code HmacSHA1} / {@code HmacSHA256}). */
+  private static String hexHmac(String algorithm, String key, String message) {
+    byte[] mac;
+    try {
+      Mac m = Mac.getInstance(algorithm);
+      m.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), algorithm));
+      mac = m.doFinal(message.getBytes(StandardCharsets.UTF_8));
+    } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+      // HmacSHA1 / HmacSHA256 are JDK-mandated MAC algorithms.
+      throw new IllegalStateException(algorithm + " unavailable in this JRE", e);
+    }
     StringBuilder sb = new StringBuilder(mac.length * 2);
     for (byte b : mac) {
       sb.append(Character.forDigit((b >> 4) & 0xF, 16));

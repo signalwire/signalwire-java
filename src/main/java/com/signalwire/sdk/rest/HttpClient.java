@@ -210,6 +210,40 @@ public class HttpClient {
   }
 
   /**
+   * GET request whose success body is a top-level JSON array (package-private: the generated
+   * resources reach it through {@link BaseResource}).
+   */
+  java.util.List<Object> getList(
+      String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+    String url = buildUrl(path, queryParams);
+    String body = send("GET", path, url, null, requestOptions, null, false).body();
+    if (body == null || body.isEmpty()) {
+      return Collections.emptyList();
+    }
+    try {
+      return gson.fromJson(body, new TypeToken<java.util.List<Object>>() {}.getType());
+    } catch (RuntimeException e) {
+      throw new SignalWireRestTransportError("GET", path, url, e);
+    }
+  }
+
+  /** GET request whose success body is not JSON; returns it as text. */
+  public String getText(String path) {
+    return getText(path, null, null, null);
+  }
+
+  /** GET request (with query parameters) whose success body is not JSON; returns it as text. */
+  public String getText(String path, Map<String, String> queryParams) {
+    return getText(path, queryParams, null, null);
+  }
+
+  /** GET request whose success body is not JSON, with a per-request {@link RequestOptions}. */
+  public String getText(
+      String path, Map<String, String> queryParams, RequestOptions requestOptions) {
+    return getText(path, queryParams, requestOptions, null);
+  }
+
+  /**
    * GET request whose success body is NOT JSON (e.g. {@code text/csv}); returns it as text. Pass
    * the success media type as the {@code Accept} header. Errors are raised exactly as {@link #get}.
    *
@@ -227,6 +261,16 @@ public class HttpClient {
     String url = buildUrl(path, queryParams);
     String body = send("GET", path, url, null, requestOptions, headers, false).body();
     return body != null ? body : "";
+  }
+
+  /** GET request whose success IS a redirect; returns its {@code Location} unfollowed. */
+  public String getRedirectLocation(String path) {
+    return getRedirectLocation(path, null, null);
+  }
+
+  /** GET request (with query parameters) whose success IS a redirect; returns its Location. */
+  public String getRedirectLocation(String path, Map<String, String> queryParams) {
+    return getRedirectLocation(path, queryParams, null);
   }
 
   /**

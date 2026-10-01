@@ -365,6 +365,12 @@ def _translate_sdk_class_ref(full: str) -> str:
     if "$" in name:
         name = name.split("$", 1)[0]
     canonical = _CLASS_RENAMES.get(name, name)
+    # A generated wire-type DTO resolves by its PACKAGE, never by bare name: the SWML and
+    # REST/RELAY trees share leaf names (video ``Stream`` vs the SWML ``Stream`` verb), so a
+    # name-keyed lookup would file a REST return under the wrong generated module.
+    gen_mod = _gen_type_module(full.rsplit(".", 1)[0])
+    if gen_mod is not None:
+        return f"class:{gen_mod}.{_gen_type_unrename(canonical)}"
     if canonical in CLASS_TO_MODULE:
         return f"class:{CLASS_TO_MODULE[canonical]}.{canonical}"
     # Fallback: derive a Python module from the Java package
@@ -763,6 +769,8 @@ PREFER_FULL_OVERLOAD: set[tuple[str, str]] = {
     ("HttpClient", "put"),
     ("HttpClient", "patch"),
     ("HttpClient", "delete"),
+    ("HttpClient", "get_text"),
+    ("HttpClient", "get_redirect_location"),
     # ReadResource.paginate (+ inherited on read-resource subclasses) carries the optional
     # request_options envelope; its oracle-exact keyword+optional shape is pinned via
     # METHOD_SIGNATURE_OVERRIDES (which short-circuits the overload collapse), so no
@@ -794,6 +802,9 @@ PREFER_FULL_OVERLOAD_FREE_FUNCTIONS: set[tuple[str, str]] = {
     # UrlValidator.validateUrl(url) delegates to validateUrl(url, allowPrivate)
     # with the reference's default False (signalwire/utils/url_validator.py:34).
     ("signalwire.utils.url_validator", "validate_url"),
+    # PostPrompt.dialogueTurns(callLog) delegates to dialogueTurns(callLog, roles, dropEcho)
+    # with the reference's defaults (DIALOGUE_ROLES, None): core/post_prompt.py:157.
+    ("signalwire.core.post_prompt", "dialogue_turns"),
 }
 
 # Java skill class renames to match Python casing
@@ -823,6 +834,8 @@ JAVA_MODULE_OVERRIDES = {
     # signature gate while the surface gate — which already had this pin — was green.
     "com.signalwire.sdk.pom.Section": "signalwire.pom.pom",
     "com.signalwire.sdk.pom.PromptObjectModel": "signalwire.pom.pom",
+    # The post-prompt normalizer's result record (reference @dataclass in core.post_prompt).
+    "com.signalwire.sdk.core.NormalizedPostPrompt": "signalwire.core.post_prompt",
     # Java's SWML ``Document`` (the doc model) is port-only — the reference
     # ``swml_builder`` module records ``SWMLBuilder``, not ``Document``. Pin it
     # to the same port-only home the SURFACE enumerator uses
@@ -1017,6 +1030,43 @@ FREE_FUNCTION_PROJECTIONS = {
         "signalwire.rest._request_options",
         "status_is_retryable",
     ),
+    # post_prompt / capabilities module-level free functions, hosted on the static-only
+    # PostPrompt / Capabilities facades (Java has no module-level functions).
+    ("com.signalwire.sdk.core.PostPrompt", "stripJsonFence"): (
+        "signalwire.core.post_prompt",
+        "strip_json_fence",
+    ),
+    ("com.signalwire.sdk.core.PostPrompt", "parsePostPromptData"): (
+        "signalwire.core.post_prompt",
+        "parse_post_prompt_data",
+    ),
+    ("com.signalwire.sdk.core.PostPrompt", "dialogueTurns"): (
+        "signalwire.core.post_prompt",
+        "dialogue_turns",
+    ),
+    ("com.signalwire.sdk.core.PostPrompt", "normalizePostPrompt"): (
+        "signalwire.core.post_prompt",
+        "normalize_post_prompt",
+    ),
+    ("com.signalwire.sdk.core.Capabilities", "userVariables"): (
+        "signalwire.core.capabilities",
+        "user_variables",
+    ),
+    ("com.signalwire.sdk.core.Capabilities", "declaredCapabilities"): (
+        "signalwire.core.capabilities",
+        "declared_capabilities",
+    ),
+    ("com.signalwire.sdk.core.Capabilities", "hasCapability"): (
+        "signalwire.core.capabilities",
+        "has_capability",
+    ),
+    (
+        "com.signalwire.sdk.security.WebhookValidator",
+        "validateWebhookSignatureSha256",
+    ): (
+        "signalwire.core.security.webhook_validator",
+        "validate_webhook_signature_sha256",
+    ),
 }
 
 
@@ -1204,6 +1254,7 @@ METHOD_SIGNATURE_OVERRIDES: dict[tuple[str, str], dict] = {
             "MessageLogs",
             "VideoRoomSessions",
             "VoiceLogs",
+            "WhatsappNumbers",
         )
     },
     # AI Chat client verbs: Java collapses the reference's optional kwargs into a
@@ -1954,6 +2005,14 @@ def collect(
                     continue  # enum constants / static tables are not data members
                 wire = m.get("name", "")
                 if not wire or wire.startswith("$"):
+                    continue
+                if m.get("wire_name"):
+                    # The generator bound the exact wire key via @SerializedName (the
+                    # Java field name was sanitised: ``nomatch-output``); record that key.
+                    members[m["wire_name"]] = {
+                        "params": [{"name": "self", "kind": "self"}],
+                        "returns": "any",
+                    }
                     continue
                 # Undo the generator's reserved-word field suffix (`default_` →
                 # `default`, `enum_` → `enum`) so the recorded name is the bare wire

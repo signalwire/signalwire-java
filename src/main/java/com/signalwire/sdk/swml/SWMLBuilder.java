@@ -65,12 +65,31 @@ public class SWMLBuilder {
    * @return this for chaining
    */
   public SWMLBuilder answer(Integer maxDuration, String codecs) {
+    return answer(maxDuration, codecs, null, null);
+  }
+
+  /**
+   * Add an 'answer' verb to the main section, with SIP authentication credentials.
+   *
+   * @param maxDuration maximum duration in seconds, or {@code null} to omit
+   * @param codecs comma-separated list of codecs, or {@code null} to omit
+   * @param username username to use for SIP authentication, or {@code null} to omit
+   * @param password password to use for SIP authentication, or {@code null} to omit
+   * @return this for chaining
+   */
+  public SWMLBuilder answer(Integer maxDuration, String codecs, String username, String password) {
     Map<String, Object> config = new LinkedHashMap<>();
     if (maxDuration != null) {
       config.put("max_duration", maxDuration);
     }
     if (codecs != null) {
       config.put("codecs", codecs);
+    }
+    if (username != null) {
+      config.put("username", username);
+    }
+    if (password != null) {
+      config.put("password", password);
     }
     service.addVerb("answer", config);
     return this;

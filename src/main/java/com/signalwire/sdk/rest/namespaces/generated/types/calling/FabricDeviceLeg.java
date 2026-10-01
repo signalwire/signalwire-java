@@ -22,6 +22,6 @@ public final class FabricDeviceLeg {
   public Double charge;
   public String created_at;
   public java.util.List<Object> charge_details;
-  public Object status;
+  public Void status;
   public String type;
 }

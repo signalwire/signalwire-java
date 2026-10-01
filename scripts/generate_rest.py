@@ -1240,10 +1240,20 @@ def response_java_type(spec: Spec, op_id: str) -> str:
     """The fully-qualified Java return type for an operation: the generated response
     DTO class (``types.<sub>.<Name>``) when the op has a named OBJECT response schema,
     else ``java.util.Map<String, Object>``."""
-    leaf = response_ref_leaf(spec.op_response.get(op_id) or {}, spec)
+    schema = spec.op_response.get(op_id) or {}
+    leaf = response_ref_leaf(schema, spec)
     if not leaf:
         return "java.util.Map<String, Object>"
-    return f"{TYPES_PACKAGE}.{_types_subpackage(spec.name)}.{leaf}"
+    fqn = f"{TYPES_PACKAGE}.{_types_subpackage(spec.name)}.{leaf}"
+    # A top-level ARRAY response is a list of the item type, not one item (the server
+    # sends ``[...]``: GET /resources/ai_agents/voices, GET /space/payment_methods).
+    if (
+        isinstance(schema, dict)
+        and schema.get("type") == "array"
+        and "$ref" not in schema
+    ):
+        return f"java.util.List<{fqn}>"
+    return fqn
 
 
 def item_java_type(spec: Spec, anchor: str, markup: dict) -> str:
@@ -1342,9 +1352,12 @@ def _is_map_type(java_type: str) -> bool:
 
 def _wrap_return(java_type: str, map_expr: str) -> str:
     """A return-statement expression: pass the raw Map through when the return is Map,
-    else project it onto the typed DTO via ``asType``."""
+    else project it onto the typed DTO via ``asType`` (``asTypeList`` for a list)."""
     if _is_map_type(java_type):
         return map_expr
+    if java_type.startswith("java.util.List<"):
+        elem = java_type[len("java.util.List<") : -1]
+        return f"asTypeList({map_expr}, {elem}.class)"
     return f"asType({map_expr}, {java_type}.class)"
 
 
@@ -1539,6 +1552,8 @@ def emit_method(
             )
         elif response_kind == "redirect":
             map_expr = f"restGetRedirectLocation({path_expr}, params, requestOptions)"
+        elif ret_type.startswith("java.util.List<"):
+            map_expr = f"restGetList({path_expr}, params, requestOptions)"
         else:
             map_expr = f"restGet({path_expr}, params, requestOptions)"
     else:  # delete
@@ -1968,14 +1983,11 @@ def emit_resource(spec: Spec, anchor: str, markup: dict) -> str:
         is_override = False
         if method_snake in provided:
             if method_snake == "list_addresses":
-                _verb, op_path, _ = spec.ops[op_id]
-                _, sibling = relative_tail(spec, anchor, markup, op_path)
-                if not sibling:
-                    continue
-                # A declared method that the base ALSO provides (a fabric
-                # resource with a non-standard address sub-path overriding the
-                # base ``listAddresses``) must carry ``@Override`` — errorprone
-                # MissingOverride is an ERROR in the port's build.
+                # A DECLARED list_addresses is emitted even though the base provides
+                # one — exactly as the reference does — so the resource carries its
+                # typed ``*AddressListResponse`` return (and any non-standard path).
+                # It overrides the base ``listAddresses``, so it must carry
+                # ``@Override`` (errorprone MissingOverride is an ERROR).
                 is_override = True
             else:
                 continue
@@ -2339,7 +2351,7 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
         object / $ref-to-object / union / empty-or-description-only schema
                 -> java.util.Map<String, Object>  (an untyped JSON-object blob — the
                    go emitter renders these `map[string]any`, NEVER a bare escape hatch)
-        type: null -> Object (an always-null placeholder field; go's parity is bare `any`)
+        type: null -> Void (an always-null placeholder field: only null is assignable)
     """
     schemas = schemas or {}
     if schema.get("$ref") or (
@@ -2403,9 +2415,10 @@ def type_field_type(schema: dict, schemas: dict | None = None) -> str:
     if t == "object":
         return "java.util.Map<String, Object>"
     if t == "null":
-        # `type: null` — an always-null placeholder field (voice-log url/status). No
-        # narrower type exists; go emits the equivalent bare `any`. Kept as Object.
-        return "Object"
+        # `type: null` — an always-null placeholder field (voice-log / call-leg url,
+        # status). ``Void`` is the exact Java type for it: uninstantiable, so the field
+        # can only ever hold null — the schema faithfully rendered, not a loose Object.
+        return "Void"
     # No explicit type, no const, no combinator → an untyped JSON-object blob
     # (empty `{}` / description-only schema, e.g. RELAY `result`/`data`/`params`,
     # SWAIG `dest`/`file`). Emit the open Map, matching go's `map[string]any` — a

@@ -31,7 +31,9 @@ public class FunctionResult {
 
   private static final Gson gson = new Gson();
 
-  private String response;
+  /** The plain-string response, or the structured {@code {tool_result, tool_prompt}} map. */
+  private Object response;
+
   private final List<Map<String, Object>> actions;
   private boolean postProcess;
 
@@ -44,9 +46,26 @@ public class FunctionResult {
   }
 
   public FunctionResult(String response, boolean postProcess) {
+    this(response, postProcess, null, null);
+  }
+
+  /**
+   * A result in the structured response form: when {@code toolResult} or {@code toolPrompt} is
+   * given, the response is set by {@link #setToolResponse(String, String)}.
+   *
+   * @param response the plain-string response (may be {@code null})
+   * @param postProcess whether the model takes another turn before the actions run
+   * @param toolResult factual outcome of the call (may be {@code null})
+   * @param toolPrompt instruction for what the model should say next (may be {@code null})
+   */
+  public FunctionResult(
+      String response, boolean postProcess, String toolResult, String toolPrompt) {
     this.response = response != null ? response : "";
     this.actions = new ArrayList<>();
     this.postProcess = postProcess;
+    if (toolResult != null || toolPrompt != null) {
+      setToolResponse(toolResult, toolPrompt);
+    }
   }
 
   // -------- Core Setters --------
@@ -60,6 +79,28 @@ public class FunctionResult {
    */
   public FunctionResult setResponse(String response) {
     this.response = response != null ? response : "";
+    return this;
+  }
+
+  /**
+   * Set the structured response form, separating outcome from instruction: {@code {"tool_result":
+   * ..., "tool_prompt": ...}}. {@code toolResult} is what the tool DID (a factual status line for
+   * the model to reason from); {@code toolPrompt} is what the model should now SAY. Splitting them
+   * keeps the model from reading a status line aloud. A {@code null} argument is omitted.
+   *
+   * @param toolResult factual outcome of the call (may be {@code null})
+   * @param toolPrompt instruction for what to say next (may be {@code null})
+   * @return this result, for chaining.
+   */
+  public FunctionResult setToolResponse(String toolResult, String toolPrompt) {
+    Map<String, Object> payload = new LinkedHashMap<>();
+    if (toolResult != null) {
+      payload.put("tool_result", toolResult);
+    }
+    if (toolPrompt != null) {
+      payload.put("tool_prompt", toolPrompt);
+    }
+    this.response = payload;
     return this;
   }
 
@@ -165,7 +206,65 @@ public class FunctionResult {
 
   /** Put the call on hold (timeout clamped 0-900). */
   public FunctionResult hold(int timeout) {
-    return addAction("hold", Math.max(0, Math.min(timeout, 900)));
+    return hold(null, timeout, null, null);
+  }
+
+  /** Announce, then put the call on hold with the default 300-second timeout. */
+  public FunctionResult hold(String prompt) {
+    return hold(prompt, 300, null, null);
+  }
+
+  /** Announce, then put the call on hold. */
+  public FunctionResult hold(String prompt, int timeout) {
+    return hold(prompt, timeout, null, null);
+  }
+
+  /**
+   * Put the call on hold, optionally announcing it and routing what happens next.
+   *
+   * <p>During hold, speech detection is paused and the agent does not respond, so anything the
+   * caller needs to hear must be said BEFORE the action lands. A {@code prompt} becomes the
+   * structured response ({@code tool_result: "status: on hold"}, {@code tool_prompt: prompt}) and
+   * switches on post-processing, so the model speaks before the hold executes. {@code step} /
+   * {@code timeoutStep} move the caller to a chosen step when the hold ends (taken off hold / timed
+   * out); with neither, the bare integer form is emitted and the caller resumes in place.
+   *
+   * @param prompt instruction for the model to deliver before the hold (may be {@code null})
+   * @param timeout timeout in seconds, clamped to 0-900
+   * @param step step to move to when the call is taken off hold (may be {@code null})
+   * @param timeoutStep step to move to when the hold times out (may be {@code null})
+   * @return this result, for chaining.
+   */
+  public FunctionResult hold(String prompt, int timeout, String step, String timeoutStep) {
+    if (prompt != null) {
+      setToolResponse("status: on hold", prompt);
+      this.postProcess = true;
+    }
+    int clamped = Math.max(0, Math.min(timeout, 900));
+    if (step == null && timeoutStep == null) {
+      return addAction("hold", clamped);
+    }
+    Map<String, Object> holdConfig = new LinkedHashMap<>();
+    holdConfig.put("timeout", clamped);
+    if (step != null) {
+      holdConfig.put("step", step);
+    }
+    if (timeoutStep != null) {
+      holdConfig.put("timeout_step", timeoutStep);
+    }
+    return addAction("hold", holdConfig);
+  }
+
+  /**
+   * Change the agent's voice for the rest of the call. The voice is an {@code engine.voice:model}
+   * spec (the {@code engine.} prefix and {@code :model} suffix are optional); it replaces the voice
+   * of the language currently in use, applied at the next speech batch boundary.
+   *
+   * @param voice voice spec in {@code engine.voice:model} form
+   * @return this result, for chaining.
+   */
+  public FunctionResult changeVoice(String voice) {
+    return addAction("change_voice", voice);
   }
 
   /** Control how agent waits for user input. */
@@ -1384,11 +1483,47 @@ public class FunctionResult {
    * @return this, for chaining
    */
   public FunctionResult rpcAiMessage(String callId, String messageText, String role) {
-    return executeRpc(
-        "ai_message",
-        Map.of("role", role != null ? role : "system", "message_text", messageText),
-        callId,
-        null);
+    return rpcAiMessage(callId, messageText, role, null);
+  }
+
+  /**
+   * Send a message and/or global_data to an AI agent on another call. {@code messageText} lands as
+   * a conversation turn; {@code globalData} is MERGED into the other call's global_data, silent
+   * until a prompt expands it ({@code ${global_data.key}}). Either or both may be given.
+   *
+   * @param callId target call ID (required)
+   * @param messageText message to inject (may be {@code null})
+   * @param role message role (default "system"; sent only with a message)
+   * @param globalData object merged into the target call's global_data (may be {@code null})
+   * @return this, for chaining
+   * @throws IllegalArgumentException when neither a message nor global_data is given
+   */
+  public FunctionResult rpcAiMessage(
+      String callId, String messageText, String role, Map<String, Object> globalData) {
+    Map<String, Object> params = new LinkedHashMap<>();
+    if (messageText != null) {
+      params.put("role", role != null ? role : "system");
+      params.put("message_text", messageText);
+    }
+    if (globalData != null) {
+      params.put("global_data", globalData);
+    }
+    if (params.isEmpty()) {
+      throw new IllegalArgumentException("rpc_ai_message needs message_text, global_data, or both");
+    }
+    return executeRpc("ai_message", params, callId, null);
+  }
+
+  /**
+   * Merge data into another call's global_data, with no conversation turn — the same as {@link
+   * #rpcAiMessage(String, String, String, Map)} with only {@code globalData}.
+   *
+   * @param callId target call ID (required)
+   * @param data object merged into that call's global_data
+   * @return this, for chaining
+   */
+  public FunctionResult rpcAiGlobalData(String callId, Map<String, Object> data) {
+    return rpcAiMessage(callId, null, "system", data);
   }
 
   /**
@@ -1452,7 +1587,7 @@ public class FunctionResult {
   /** Convert to the Map structure expected by SWAIG. */
   public Map<String, Object> toMap() {
     Map<String, Object> result = new LinkedHashMap<>();
-    if (response != null && !response.isEmpty()) {
+    if (response instanceof String str ? !str.isEmpty() : !((Map<?, ?>) response).isEmpty()) {
       result.put("response", response);
     }
     if (!actions.isEmpty()) {
@@ -1475,12 +1610,14 @@ public class FunctionResult {
   // ======== Getters for testing ========
 
   /**
-   * The text handed back to the model as this tool's result.
+   * The text handed back to the model as this tool's result. For the structured form set by {@link
+   * #setToolResponse(String, String)} this is that {@code {tool_result, tool_prompt}} object
+   * rendered as JSON — exactly the value {@link #toMap()} carries on the wire.
    *
    * @return the response text, never {@code null}.
    */
   public String getResponse() {
-    return response;
+    return response instanceof String str ? str : gson.toJson(response);
   }
 
   public List<Map<String, Object>> getActions() {

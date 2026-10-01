@@ -18,16 +18,16 @@ public class SpacePaymentMethods extends BaseResource {
   }
 
   /** list (generated from operation 'list_payment_methods'). */
-  public com.signalwire.sdk.rest.namespaces.generated.types.space.PaymentMethod list(
-      java.util.Map<String, String> params) {
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.space.PaymentMethod>
+      list(java.util.Map<String, String> params) {
     return list(params, (RequestOptions) null);
   }
 
   /** list with a per-request {@link RequestOptions} override. */
-  public com.signalwire.sdk.rest.namespaces.generated.types.space.PaymentMethod list(
-      java.util.Map<String, String> params, RequestOptions requestOptions) {
-    return asType(
-        restGet(getBasePath(), params, requestOptions),
+  public java.util.List<com.signalwire.sdk.rest.namespaces.generated.types.space.PaymentMethod>
+      list(java.util.Map<String, String> params, RequestOptions requestOptions) {
+    return asTypeList(
+        restGetList(getBasePath(), params, requestOptions),
         com.signalwire.sdk.rest.namespaces.generated.types.space.PaymentMethod.class);
   }
 

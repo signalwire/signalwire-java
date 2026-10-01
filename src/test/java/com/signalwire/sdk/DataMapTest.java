@@ -134,24 +134,30 @@ class DataMapTest {
   }
 
   /**
-   * {@code DataMap.body()} is GONE — the key it wrote is invalid, not merely ignored.
-   *
-   * <p>Owner-ruled 2026-07-29 (reference {@code signalwire-python 71eed0c}), extending the {@code
-   * f171ce3} ruling ("if the server doesn't read them, remove them") from {@code
-   * create_simple_api_tool}'s PARAMETER to the public BUILDER METHOD. Its only possible effect was
-   * producing an invalid document while silently discarding the caller's payload. {@code params()}
-   * is the correct method for POST/PUT request data.
+   * {@code DataMap.body()} is restored as the same as {@code params()}: the platform reads a
+   * webhook's request body from its {@code params} field and has no {@code body} field, so {@code
+   * body()} writes {@code params} (reference {@code signalwire-python core/data_map.py:310}).
    */
   @Test
-  void testBodyBuilderIsGone() throws Exception {
-    var declared = new ArrayList<String>();
-    for (var m : DataMap.class.getMethods()) {
-      declared.add(m.getName());
-    }
-    assertFalse(
-        declared.contains("body"),
-        "DataMap.body() must be removed — it writes a schema-forbidden key that no engine"
-            + " reader consumes; use params() instead");
+  void testBodySetsParams() {
+    var dm =
+        new DataMap("search")
+            .purpose("Search")
+            .webhook("POST", "https://api.example.com/search")
+            .body(Map.of("query", "${args.query}"))
+            .output(new FunctionResult("Found: ${response.title}"));
+
+    @SuppressWarnings("unchecked")
+    var dataMap = (Map<String, Object>) dm.toSwaigFunction().get("data_map");
+    @SuppressWarnings("unchecked")
+    var webhooks = (List<Map<String, Object>>) dataMap.get("webhooks");
+    assertEquals(Map.of("query", "${args.query}"), webhooks.get(0).get("params"));
+    assertFalse(webhooks.get(0).containsKey("body"));
+  }
+
+  @Test
+  void testBodyRequiresWebhook() {
+    assertThrows(IllegalStateException.class, () -> new DataMap("t").body(Map.of("k", "v")));
   }
 
   @Test
